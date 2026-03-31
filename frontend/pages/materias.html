@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Materias</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- MENU -->
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="alumnos.html">Alumnos</a>
+            <a href="materias.html" class="active">Materias</a>
+            <a href="calificaciones.html">Calificaciones</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="content">
+
+        <h1>Materias</h1>
+
+        <div class="card">
+            <h2>Registrar Materia</h2>
+            <form id="formMateria">
+                <input type="text" id="nombreMateria" placeholder="Nombre de la materia" required>
+                <button type="submit">Guardar</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Materias</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaMaterias"></tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+<script src="../js/materias.js"></script>
+
+</body>
+</html>

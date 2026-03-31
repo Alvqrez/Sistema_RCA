@@ -86,6 +86,17 @@ button {
 button:hover {
     background: #2563eb;
 }
+button {
+    margin: 5px;
+}
+
+button:nth-child(1) {
+    background: #10b981;
+}
+
+button:nth-child(2) {
+    background: #ef4444;
+}
 
 /* TABLE */
 table {

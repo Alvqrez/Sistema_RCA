@@ -1,56 +1,60 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Alumnos</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
+
 <body>
 
-<div class="layout">
+    <div class="layout">
 
-    <!-- MENU LATERAL -->
-    <aside class="sidebar">
-        <h2>RCA</h2>
-        <nav>
-            <a href="alumnos.html" class="active">Alumnos</a>
-            <a href="materias.html">Materias</a>
-            <a href="calificaciones.html">Calificaciones</a>
-        </nav>
-    </aside>
+        <!-- MENU LATERAL -->
+        <aside class="sidebar">
+            <h2>RCA</h2>
+            <nav>
+                <a href="alumnos.html" class="active">Alumnos</a>
+                <a href="materias.html">Materias</a>
+                <a href="calificaciones.html">Calificaciones</a>
+            </nav>
+        </aside>
 
-    <!-- CONTENIDO -->
-    <main class="content">
+        <!-- CONTENIDO -->
+        <main class="content">
 
-        <h1>Alumnos</h1>
+            <h1>Alumnos</h1>
 
-        <div class="card">
-            <h2>Registrar Alumno</h2>
-            <form id="formAlumno">
-                <input type="text" id="nombre" placeholder="Nombre completo" required>
-                <input type="text" id="matricula" placeholder="Matrícula" required>
-                <button type="submit">Guardar</button>
-            </form>
-        </div>
+            <div class="card">
+                <h2>Registrar Alumno</h2>
+                <form id="formAlumno">
+                    <input type="text" id="nombre" placeholder="Nombre completo" required>
+                    <input type="text" id="matricula" placeholder="Matrícula" required>
+                    <button type="submit">Guardar</button>
+                </form>
+            </div>
 
-        <div class="card">
-            <h2>Lista de Alumnos</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Matrícula</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaAlumnos"></tbody>
-            </table>
-        </div>
+            <div class="card">
+                <h2>Lista de Alumnos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Matrícula</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAlumnos"></tbody>
+                </table>
+            </div>
 
-    </main>
+        </main>
 
-</div>
+    </div>
 
-<script src="../js/app.js"></script>
+    <script src="../js/api.js"></script>
 
 </body>
+
 </html>
