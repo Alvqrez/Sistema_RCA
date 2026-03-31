@@ -1,0 +1,43 @@
+# Dependencias de Node
+node_modules/
+
+# Variables de entorno (contraseñas, tokens, etc)
+.env
+.env.local
+.env.development
+.env.production
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de VS Code (opcional si no quieres compartir config)
+.vscode/
+
+# Archivos de build
+dist/
+build/
+
+# Archivos temporales
+tmp/
+temp/
+
+# Cobertura de tests
+coverage/
+
+# Archivos de base de datos locales
+*.sqlite
+*.db
+
+# Archivos de entorno del backend
+backend/.env
+
+# Archivos de sistema
+*.swp
