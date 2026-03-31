@@ -14,6 +14,7 @@ app.get("/", (req, res) => {
 });
 
 // Rutas
+console.log(require("./src/routes/auth")); // ¿Qué imprime?
 app.use("/api/auth", require("./src/routes/auth"));
 app.use("/api/alumnos", require("./src/routes/alumnos"));
 app.use("/api/grupos", require("./src/routes/grupos"));
