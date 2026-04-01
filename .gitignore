@@ -1,5 +1,7 @@
 # Dependencias de Node
 node_modules/
+backend/node_modules/
+frontend/node_modules/
 
 # Variables de entorno (contraseñas, tokens, etc)
 .env
