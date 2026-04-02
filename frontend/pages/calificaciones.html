@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calificaciones</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="alumnos.html">Alumnos</a>
+            <a href="materias.html">Materias</a>
+            <a href="calificaciones.html" class="active">Calificaciones</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Calificaciones</h1>
+
+        <div class="card">
+            <h2>Registrar Calificación</h2>
+            <form id="formCalificacion">
+                <input type="text" id="alumno" placeholder="Alumno" required>
+                <input type="text" id="materia" placeholder="Materia" required>
+                <input type="number" id="calificacion" placeholder="Calificación" required>
+                <button type="submit">Guardar</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Alumno</th>
+                        <th>Materia</th>
+                        <th>Calificación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCalificaciones"></tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+<script src="../js/calificaciones.js"></script>
+
+</body>
+</html>
