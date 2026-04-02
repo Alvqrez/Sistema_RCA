@@ -119,13 +119,12 @@ td {
     border-bottom: 1px solid #ddd;
 }
 /*------------------------------------ESTILOS LOGIN ------------------------------------------------------*/
-/* Fondo moderno */
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    background: linear-gradient(135deg, #275f90, #00f2fe);
 }
 
 /* Tarjeta */
@@ -138,7 +137,6 @@ td {
     text-align: center;
 }
 
-/* Encabezado */
 .login-header h1 {
     margin: 0;
     color: #333;
@@ -174,7 +172,6 @@ td {
     pointer-events: none;
 }
 
-/* Animación */
 .input-group input:focus + label,
 .input-group input:valid + label {
     top: -8px;
@@ -184,7 +181,6 @@ td {
     padding: 0 5px;
 }
 
-/* Select */
 .input-group select {
     width: 100%;
     padding: 10px;
@@ -192,7 +188,6 @@ td {
     border: 1px solid #ccc;
 }
 
-/* Botón */
 .btn-login {
     width: 100%;
     padding: 10px;
@@ -209,7 +204,6 @@ td {
     background: #00c6ff;
 }
 
-/* Error */
 .mensaje-error {
     color: red;
     margin-top: 10px;
