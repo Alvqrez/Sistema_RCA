@@ -11,7 +11,6 @@
 
     <div class="layout">
 
-        <!-- MENU LATERAL -->
         <aside class="sidebar">
             <h2>RCA</h2>
             <nav>
@@ -21,7 +20,6 @@
             </nav>
         </aside>
 
-        <!-- CONTENIDO -->
         <main class="content">
 
             <h1>Alumnos</h1>
@@ -29,9 +27,17 @@
             <div class="card">
                 <h2>Registrar Alumno</h2>
                 <form id="formAlumno">
-                    <input type="text" id="nombre" placeholder="Nombre completo" required>
-                    <input type="text" id="matricula" placeholder="Matrícula" required>
+
+                    <input type="text" id="nombre" placeholder="Nombre" required>
+
+                    <input type="text" id="apellidoPaterno" placeholder="Apellido paterno" required>
+
+                    <input type="text" id="apellidoMaterno" placeholder="Apellido materno" required>
+
+                    <input type="text" id="noControl" placeholder="No. Control / Matrícula" required>
+
                     <button type="submit">Guardar</button>
+
                 </form>
             </div>
 
@@ -41,7 +47,8 @@
                     <thead>
                         <tr>
                             <th>Nombre</th>
-                            <th>Matrícula</th>
+                            <th>Apellidos</th>
+                            <th>No. Control</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>

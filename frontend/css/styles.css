@@ -1,5 +1,5 @@
 /* Les recomiendo usar Pigment, una pagina de Google que les da a elegir entre muchisimos colores y que les da
-el valor hexadecimal, estan muy bonitos los tonos :D */
+el valor hexadecimal, estan muy bonitos los tonos :D */ 
 
 body {
     margin: 0;
@@ -12,7 +12,7 @@ body {
     display: flex;
 }
 
-/* SIDEBAR */
+/* --------------------------ESTILOS PARA BARRA LATERAL--------------------------------------------- */
 .sidebar {
     width: 220px;
     height: 100vh;
@@ -43,6 +43,7 @@ body {
     background: #3b82f6;
     color: white;
 }
+/*-------------------------------------------------------------------------------------------------------*/
 
 /* CONTENT */
 .content {
@@ -117,3 +118,100 @@ td {
     padding: 10px;
     border-bottom: 1px solid #ddd;
 }
+/*------------------------------------ESTILOS LOGIN ------------------------------------------------------*/
+/* Fondo moderno */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+/* Tarjeta */
+.login-card {
+    background: white;
+    padding: 30px;
+    width: 350px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+/* Encabezado */
+.login-header h1 {
+    margin: 0;
+    color: #333;
+}
+
+.login-header p {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 20px;
+}
+
+/* Inputs flotantes */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+}
+
+.input-group label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #888;
+    font-size: 14px;
+    transition: 0.3s;
+    pointer-events: none;
+}
+
+/* Animación */
+.input-group input:focus + label,
+.input-group input:valid + label {
+    top: -8px;
+    left: 8px;
+    font-size: 12px;
+    background: white;
+    padding: 0 5px;
+}
+
+/* Select */
+.input-group select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* Botón */
+.btn-login {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #4facfe;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background: #00c6ff;
+}
+
+/* Error */
+.mensaje-error {
+    color: red;
+    margin-top: 10px;
+}
+/*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/

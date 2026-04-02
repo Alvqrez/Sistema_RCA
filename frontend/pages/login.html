@@ -1,25 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Login - RCA</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
-    <div style="display:flex; justify-content:center; align-items:center; height:100vh;">
-    
-    <div class="card" style="width:300px;">
-        <h2>Iniciar Sesión</h2>
 
-        <form id="loginForm">
-            <input type="text" id="user" placeholder="Usuario" required>
-            <input type="password" id="pass" placeholder="Contraseña" required>
-            <button type="submit">Entrar</button>
-        </form>
+    <div class="login-container">
 
-        <p id="error" style="color:red;"></p>
+        <div class="login-card">
+
+            <div class="login-header">
+                <h1>RCA</h1>
+                <p>Sistema de Resultados Académicos</p>
+                <h1 style="color:red;">PRUEBA</h1>
+            </div>
+
+            <form id="loginForm">
+
+                <div class="input-group">
+                    <input type="text" id="user" required>
+                    <label>Usuario</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" id="pass" required>
+                    <label>Contraseña</label>
+                </div>
+
+                <div class="input-group">
+                    <select id="rol">
+                        <option value="admin">Administrador</option>
+                        <option value="maestro">Maestro</option>
+                        <option value="alumno">Alumno</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-login">Iniciar sesión</button>
+
+                <p id="error" class="mensaje-error"></p>
+
+            </form>
+
+        </div>
+
     </div>
-</div>
-<script src="js/login.js"></script>
+
+    <script src="js/login.js"></script>
 </body>
+
 </html>
