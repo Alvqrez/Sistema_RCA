@@ -27,3 +27,20 @@ form.addEventListener("submit", function(e) {
         error.textContent = "Usuario o contraseña incorrectos";
     }
 });
+
+const tabs = document.querySelectorAll(".tab");
+const rolInput = document.getElementById("rol");
+
+tabs.forEach(tab => {
+
+    tab.addEventListener("click", () => {
+
+        tabs.forEach(t => t.classList.remove("active"));
+
+        tab.classList.add("active");
+
+        rolInput.value = tab.dataset.rol;
+
+    });
+
+});

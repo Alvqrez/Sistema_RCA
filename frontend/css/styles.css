@@ -119,6 +119,32 @@ td {
     border-bottom: 1px solid #ddd;
 }
 /*------------------------------------ESTILOS LOGIN ------------------------------------------------------*/
+.tabs{
+    display:flex;
+    gap: 10px;
+    margin-bottom:25px;
+}
+
+.tab{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    cursor:pointer;
+    background:#e5e5e5;
+    border-radius:10px;
+    font-weight:600;
+    transition:0.2s;
+}
+
+.tab:hover{
+    background:#dcdcdc;
+}
+
+.tab.active{
+    background:white;
+    border-bottom:3px solid #4da3ff;
+}
+
 .login-container {
     display: flex;
     justify-content: center;
@@ -160,6 +186,7 @@ td {
     border: 1px solid #ccc;
     border-radius: 8px;
     outline: none;
+    box-sizing: border-box;
 }
 
 .input-group label {
@@ -208,4 +235,5 @@ td {
     color: red;
     margin-top: 10px;
 }
+
 /*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/
