@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Maestros</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- MENU LATERAL (MISMO QUE ALUMNOS) -->
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="alumnos.html">Alumnos</a>
+            <a href="materias.html">Materias</a>
+            <a href="maestros.html" class="active">Maestros</a>
+            <a href="calificaciones.html">Calificaciones</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Maestros</h1>
+
+        <div class="card">
+            <h2>Registrar Maestro</h2>
+
+            <form class="form-grid">
+
+                <div>
+                    <label>ID Maestro</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Nombre(s)</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Apellido paterno</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Apellido materno</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>CURP</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Fecha de nacimiento</label>
+                    <input type="date">
+                </div>
+
+                <div>
+                    <label>Género</label>
+                    <select>
+                        <option>Masculino</option>
+                        <option>Femenino</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Correo institucional</label>
+                    <input type="email">
+                </div>
+
+                <div>
+                    <label>Correo personal</label>
+                    <input type="email">
+                </div>
+
+                <div>
+                    <label>Teléfono celular</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Teléfono oficina</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Dirección</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Tipo de contrato</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Estatus</label>
+                    <select>
+                        <option>Activo</option>
+                        <option>Inactivo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Fecha de ingreso</label>
+                    <input type="date">
+                </div>
+
+                <div>
+                    <label>Grado académico</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Especialidad</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Departamento</label>
+                    <input type="text">
+                </div>
+
+                <div class="botones">
+                    <button type="submit">Guardar</button>
+                    <button type="reset">Cancelar</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Maestros</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Departamento</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>Estatus</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
