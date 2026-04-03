@@ -43,6 +43,21 @@ body {
     background: #3b82f6;
     color: white;
 }
+
+.logout-btn{
+    margin-top:auto;
+    padding:10px;
+    width:100%;
+    border:none;
+    background:#e74c3c;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.logout-btn:hover{
+    background:#c0392b;
+}
 /*-------------------------------------------------------------------------------------------------------*/
 
 /* CONTENT */
@@ -235,5 +250,6 @@ td {
     color: red;
     margin-top: 10px;
 }
+
 
 /*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/

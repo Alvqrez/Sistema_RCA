@@ -61,4 +61,15 @@ function guardarDatos() {
     localStorage.setItem("alumnos", JSON.stringify(alumnos));
 }
 
+
+document.getElementById("logoutBtn").addEventListener("click", function(){
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+
+    window.location.href = "../../login.html";
+
+});
+
 mostrarAlumnos();
+
