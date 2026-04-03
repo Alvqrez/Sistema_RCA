@@ -4,36 +4,46 @@ const db = require("../db");
 
 // Obtener todos los alumnos
 router.get("/", (req, res) => {
-    const query = "SELECT * FROM alumno";
+
+    const query = "SELECT * FROM Alumno";
 
     db.query(query, (err, results) => {
+
         if (err) {
             return res.status(500).json(err);
         }
+
         res.json(results);
+
     });
+
 });
 
 // Registrar alumno
 router.post("/", (req, res) => {
 
-    const { Nombre, NumeroControl, IdCarrera } = req.body;
+    const { nombre, apellido_paterno, apellido_materno, matricula, correo_institucional } = req.body;
 
     const query = `
-        INSERT INTO alumno (Nombre, NumeroControl, IdCarrera)
-        VALUES (?, ?, ?)
+        INSERT INTO Alumno 
+        (nombre, apellido_paterno, apellido_materno, matricula, id_carrera, correo_institucional)
+        VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(query, [Nombre, NumeroControl, IdCarrera], (err, result) => {
+    db.query(query, [nombre, apellido_paterno, apellido_materno, matricula, 1, correo_institucional], (err, result) => {
+
         if (err) {
-            return res.status(500).json(err);
+            console.error(err);
+            return res.status(500).json({ success:false });
         }
 
         res.json({
-            mensaje: "Alumno registrado",
-            id: result.insertId
+            success:true,
+            mensaje:"Alumno registrado"
         });
+
     });
+
 });
 
 module.exports = router;

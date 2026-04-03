@@ -5,39 +5,64 @@ const tabla = document.getElementById("tablaAlumnos");
 
 let editIndex = null;
 
-form.addEventListener("submit", function(e) {
+form.addEventListener("submit", async function(e){
+
     e.preventDefault();
 
-    let nombre = document.getElementById("nombre").value;
-    let matricula = document.getElementById("matricula").value;
+    const alumno = {
 
-    if (editIndex !== null) {
-        alumnos[editIndex] = { nombre, matricula };
-        editIndex = null;
-    } else {
-        alumnos.push({ nombre, matricula });
+        nombre: document.getElementById("nombre").value,
+        apellido_paterno: document.getElementById("apellidoPaterno").value,
+        apellido_materno: document.getElementById("apellidoMaterno").value,
+        matricula: document.getElementById("noControl").value,
+        correo_institucional: document.getElementById("correo").value
+    };
+
+    const response = await fetch("http://localhost:3000/api/alumnos",{
+
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(alumno)
+
+    });
+
+    const data = await response.json();
+
+    if(data.success){
+        alert("Alumno registrado");
+        form.reset();
     }
 
-    guardarDatos();
-    mostrarAlumnos();
-    form.reset();
 });
 
-function mostrarAlumnos() {
+form.addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    alert("Funciona el botón");
+
+});
+async function obtenerAlumnos(){
+
+    const respuesta = await fetch("http://localhost:3000/alumnos");
+    const alumnos = await respuesta.json();
+
     tabla.innerHTML = "";
 
-    alumnos.forEach((alumno, index) => {
+    alumnos.forEach(alumno => {
+
         tabla.innerHTML += `
             <tr>
                 <td>${alumno.nombre}</td>
-                <td>${alumno.matricula}</td>
-                <td>
-                    <button onclick="editarAlumno(${index})">Editar</button>
-                    <button onclick="eliminarAlumno(${index})">Eliminar</button>
-                </td>
+                <td>${alumno.apellidoPaterno} ${alumno.apellidoMaterno}</td>
+                <td>${alumno.NumeroControl}</td>
             </tr>
         `;
+
     });
+
 }
 
 function editarAlumno(index) {
@@ -61,4 +86,15 @@ function guardarDatos() {
     localStorage.setItem("alumnos", JSON.stringify(alumnos));
 }
 
-mostrarAlumnos();
+
+document.getElementById("logoutBtn").addEventListener("click", function(){
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+
+    window.location.href = "../../login.html";
+
+});
+
+obtenerAlumnos();
+

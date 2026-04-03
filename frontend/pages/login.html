@@ -13,6 +13,16 @@
 
         <div class="login-card">
 
+            <div class="tabs">
+
+                <div class="tab active" data-rol="alumno">Alumno</div>
+                <div class="tab" data-rol="maestro">Maestro</div>
+                <div class="tab" data-rol="admin">Administrativo</div>
+
+        </div>
+
+        <input type="hidden" id="rol" value="alumno">
+
             <div class="login-header">
                 <h1>RCA</h1>
                 <p>Sistema de Resultados Académicos</p>
@@ -30,14 +40,6 @@
                     <label>Contraseña</label>
                 </div>
 
-                <div class="input-group">
-                    <select id="rol">
-                        <option value="admin">Administrador</option>
-                        <option value="maestro">Maestro</option>
-                        <option value="alumno">Alumno</option>
-                    </select>
-                </div>
-
                 <button type="submit" class="btn-login">Iniciar sesión</button>
 
                 <p id="error" class="mensaje-error"></p>
@@ -47,8 +49,8 @@
         </div>
 
     </div>
-
-    <script src="js/login.js"></script>
+    
+    <script src="../js/login.js"></script>
 </body>
 
 </html>
