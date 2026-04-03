@@ -22,7 +22,7 @@ async function cargarAlumnos(){
                 <td>${alumno.matricula}</td>
                 <td>
                     <button>Editar</button>
-                      <button onclick="eliminarAlumno(${alumno.id_alumno})">Eliminar</button>
+                      <button onclick="eliminarAlumno(${alumno.matricula})">Eliminar</button>
                 </td>
             </tr>
         `;
@@ -74,11 +74,12 @@ function editarAlumno(index) {
     editIndex = index;
 }
 
-async function eliminarAlumno(id){
+async function eliminarAlumno(matricula){
+    console.log("Eliminar alumno:", matricula);
 
     if(!confirm("¿Eliminar alumno?")) return;
 
-    await fetch(`http://localhost:3000/api/alumnos/${id}`,{
+    await fetch(`http://localhost:3000/api/alumnos/${matricula}`,{
         method:"DELETE"
     });
 

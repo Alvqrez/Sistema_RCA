@@ -50,7 +50,7 @@ router.delete("/:id", (req,res)=>{
 
     const id = req.params.id;
 
-    const query = "DELETE FROM Alumno WHERE id_alumno = ?";
+    const query = "DELETE FROM Alumno WHERE matricula = ?";
 
     db.query(query,[id],(err,result)=>{
 
