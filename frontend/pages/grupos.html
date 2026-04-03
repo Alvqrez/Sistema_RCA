@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Grupos - RCA</title>
+    <title>Grupos</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 
@@ -10,13 +11,15 @@
 
 <div class="layout">
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <h2>RCA</h2>
         <nav>
+            <a href="alumnos.html">Alumnos</a>
             <a href="materias.html">Materias</a>
+            <a href="maestros.html">Maestros</a>
             <a href="grupos.html" class="active">Grupos</a>
-            <a href="unidades.html">Unidades</a>
-            <a href="actividades.html">Actividades</a>
+            <a href="calificaciones.html">Calificaciones</a>
         </nav>
     </aside>
 
@@ -27,47 +30,47 @@
         <div class="card">
             <h2>Registrar Grupo</h2>
 
-            <form id="formGrupo">
+            <form class="form-grid">
 
-                <div class="form-group">
+                <div>
                     <label>ID Grupo</label>
-                    <input type="text" id="idGrupo" placeholder="Ej: G1" required>
+                    <input type="text">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Materia</label>
-                    <select id="materiaGrupo" required></select>
+                    <input type="text">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Maestro</label>
-                    <input type="text" id="maestro" placeholder="Nombre del maestro" required>
+                    <input type="text">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Periodo</label>
-                    <input type="text" id="periodo" placeholder="Ej: Ene-Jun 2026" required>
+                    <input type="text">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Límite de alumnos</label>
-                    <input type="number" id="limite" min="1" required>
+                    <input type="number">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Horario</label>
-                    <input type="text" id="horario" placeholder="Ej: Lun-Mie 10:00-12:00" required>
+                    <input type="text">
                 </div>
 
-                <div class="form-group">
+                <div>
                     <label>Aula</label>
-                    <input type="text" id="aula" placeholder="Ej: A-203" required>
+                    <input type="text">
                 </div>
 
-                <button type="submit">Guardar</button>
-                <button type="button" onclick="cancelarEdicion()">Cancelar</button>
-
-                <p id="mensajeGrupo"></p>
+                <div class="botones">
+                    <button type="submit">Guardar</button>
+                    <button type="reset">Cancelar</button>
+                </div>
 
             </form>
         </div>
@@ -82,21 +85,21 @@
                         <th>Materia</th>
                         <th>Maestro</th>
                         <th>Periodo</th>
+                        <th>Límite</th>
+                        <th>Horario</th>
                         <th>Aula</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
-
-                <tbody id="tablaGrupos"></tbody>
+                <tbody>
+                  
+                </tbody>
             </table>
-
         </div>
 
     </main>
 
 </div>
-
-<script src="../js/grupos.js"></script>
 
 </body>
 </html>
