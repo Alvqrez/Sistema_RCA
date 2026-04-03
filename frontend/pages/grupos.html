@@ -17,7 +17,6 @@
         <nav>
             <a href="alumnos.html">Alumnos</a>
             <a href="materias.html">Materias</a>
-            <a href="maestros.html">Maestros</a>
             <a href="grupos.html" class="active">Grupos</a>
             <a href="calificaciones.html">Calificaciones</a>
         </nav>
@@ -31,6 +30,8 @@
             <h2>Registrar Grupo</h2>
 
             <form class="form-grid">
+
+                <h3 class="section-title">Datos del grupo</h3>
 
                 <div>
                     <label>ID Grupo</label>
@@ -67,6 +68,46 @@
                     <input type="text">
                 </div>
 
+                <h3 class="section-title">Unidad</h3>
+
+                <div>
+                    <label>ID Unidad</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>ID Grupo</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Número de unidades</label>
+                    <input type="number">
+                </div>
+
+                <div>
+                    <label>Nombre de unidad</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Temario</label>
+                    <input type="text">
+                </div>
+
+                <div>
+                    <label>Estatus</label>
+                    <select>
+                        <option>Activo</option>
+                        <option>Inactivo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Fecha de cierre</label>
+                    <input type="date">
+                </div>
+
                 <div class="botones">
                     <button type="submit">Guardar</button>
                     <button type="reset">Cancelar</button>
@@ -81,20 +122,21 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>ID Grupo</th>
                         <th>Materia</th>
                         <th>Maestro</th>
                         <th>Periodo</th>
-                        <th>Límite</th>
-                        <th>Horario</th>
                         <th>Aula</th>
+                        <th>Unidades</th>
+                        <th>Estatus</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                  
+                   
                 </tbody>
             </table>
+
         </div>
 
     </main>
