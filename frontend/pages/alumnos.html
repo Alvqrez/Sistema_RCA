@@ -11,53 +11,139 @@
 
     <div class="layout">
 
+        <!-- MENU LATERAL -->
         <aside class="sidebar">
             <h2>RCA</h2>
+
             <nav>
                 <a href="alumnos.html" class="active">Alumnos</a>
                 <a href="materias.html">Materias</a>
                 <a href="calificaciones.html">Calificaciones</a>
             </nav>
 
-            <button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
-
         </aside>
 
+        <!-- CONTENIDO -->
         <main class="content">
 
             <h1>Alumnos</h1>
 
+            <!-- FORMULARIO -->
             <div class="card">
-                <h2>Registrar Alumno</h2>
-                <form id="formAlumno">
 
-                    <input type="text" id="nombre" placeholder="Nombre" required>
+                <h2>Registrar alumno</h2>
 
-                    <input type="text" id="apellidoPaterno" placeholder="Apellido paterno" required>
+                <form id="formAlumno" class="form-grid">
 
-                    <input type="text" id="apellidoMaterno" placeholder="Apellido materno" required>
+                    <!-- PRIMERA FILA -->
+                    <div>
+                        <label>Número de control</label>
+                        <input type="text" id="numeroControl" required>
+                    </div>
 
-                    <input type="text" id="noControl" placeholder="No. Control / Matrícula" required>
+                    <div>
+                        <label>Carrera</label>
+                        <input type="text" id="carrera" required>
+                    </div>
 
-                    <input type="email" id="correo" placeholder="Correo Institucional" required>
-                    <button type="submit">Guardar</button>
+                    <div>
+                        <label>Correo institucional</label>
+                        <input type="email" id="correoInstitucional">
+                    </div>
+
+                    <h3 class="section-title">Datos del alumno</h3>
+
+                    <!-- FILA -->
+                    <div>
+                        <label>Nombre(s)</label>
+                        <input type="text" id="nombre">
+                    </div>
+
+                    <div>
+                        <label>Apellido paterno</label>
+                        <input type="text" id="apellidoPaterno">
+                    </div>
+
+                    <div>
+                        <label>Apellido materno</label>
+                        <input type="text" id="apellidoMaterno">
+                    </div>
+
+                    <!-- FILA -->
+                    <div>
+                        <label>CURP</label>
+                        <input type="text" id="curp">
+                    </div>
+
+                    <div>
+                        <label>Fecha de nacimiento</label>
+                        <input type="date" id="fechaNacimiento">
+                    </div>
+
+                    <div>
+                        <label>Género</label>
+                        <select id="genero">
+                            <option value="">Seleccionar</option>
+                            <option>Masculino</option>
+                            <option>Femenino</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+
+                    <!-- FILA -->
+                    <div>
+                        <label>Dirección</label>
+                        <input type="text" id="direccion">
+                    </div>
+
+                    <div>
+                        <label>Teléfono celular</label>
+                        <input type="text" id="celular">
+                    </div>
+
+                    <div>
+                        <label>Teléfono de casa</label>
+                        <input type="text" id="telefonoCasa">
+                    </div>
+
+                    <!-- FILA -->
+                    <div>
+                        <label>Correo personal</label>
+                        <input type="email" id="correoPersonal">
+                    </div>
+
+                    <!-- BOTONES -->
+                    <div class="botones">
+                        <button type="submit">Guardar</button>
+                        <button type="reset">Cancelar</button>
+                    </div>
 
                 </form>
+
             </div>
 
+            <!-- TABLA -->
             <div class="card">
-                <h2>Lista de Alumnos</h2>
+
+                <h2>Lista de alumnos</h2>
+
                 <table>
+
                     <thead>
                         <tr>
-                            <th>Nombre</th>
-                            <th>Apellidos</th>
                             <th>No. Control</th>
+                            <th>Nombre</th>
+                            <th>Carrera</th>
+                            <th>Correo</th>
+                            <th>Teléfono</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
+
                     <tbody id="tablaAlumnos"></tbody>
+
                 </table>
+
             </div>
 
         </main>

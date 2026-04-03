@@ -16,9 +16,11 @@ body {
 .sidebar {
     width: 220px;
     height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;   
     background: #1e293b;
     color: white;
-    padding: 20px;
 }
 
 .sidebar h2 {
@@ -62,8 +64,9 @@ body {
 
 /* CONTENT */
 .content {
-    flex: 1;
+    margin-left: 220px; 
     padding: 20px;
+    width: calc(100% - 220px); 
 }
 
 h1 {
@@ -132,6 +135,33 @@ th {
 td {
     padding: 10px;
     border-bottom: 1px solid #ddd;
+}
+.form-grid{
+display:grid;
+grid-template-columns: repeat(3, 1fr);
+gap:20px;
+margin-top:20px;
+}
+
+.form-grid input,
+.form-grid select{
+width:100%;
+padding:8px;
+border:1px solid #ccc;
+border-radius:4px;
+}
+
+.section-title{
+grid-column: span 3;
+margin-top:20px;
+}
+
+.botones{
+grid-column: span 3;
+display:flex;
+justify-content:center;
+gap:20px;
+margin-top:20px;
 }
 /*------------------------------------ESTILOS LOGIN ------------------------------------------------------*/
 .tabs{
