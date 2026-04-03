@@ -46,6 +46,7 @@ router.post("/", (req, res) => {
 
 });
 
+// Eliminar alumno
 router.delete("/:id", (req,res)=>{
 
     const id = req.params.id;
@@ -63,5 +64,28 @@ router.delete("/:id", (req,res)=>{
     });
 
 });
+
+// Editar alumno
+// router.put("/:id", (req,res)=>{
+
+//     const id = req.params.id;
+
+//     const { nombre, apellido_paterno, apellido_materno } = req.body;
+
+//     const query = `
+//         UPDATE Alumno
+//         SET nombre=?, apellido_paterno=?, apellido_materno=?
+//         WHERE id_alumno=?
+//     `;
+
+//     db.query(query,[nombre,apellido_paterno,apellido_materno,id],(err,result)=>{
+
+//         if(err) return res.status(500).json(err);
+
+//         res.json({success:true});
+
+//     });
+
+// });
 
 module.exports = router;
