@@ -14,7 +14,7 @@ form.addEventListener("submit", async function(e){
         nombre: document.getElementById("nombre").value,
         apellido_paterno: document.getElementById("apellidoPaterno").value,
         apellido_materno: document.getElementById("apellidoMaterno").value,
-        matricula: document.getElementById("noControl").value,
+        matricula: document.getElementById("matricula").value,
         correo_institucional: document.getElementById("correo").value
     };
 
