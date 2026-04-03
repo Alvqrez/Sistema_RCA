@@ -500,3 +500,16 @@ RENAME TABLE ModificacionFinal  TO modificacion_final;
  
 SET FOREIGN_KEY_CHECKS = 1;
  
+----------------------------- CORRECCIÓN 3 --------------------------------------
+
+ALTER TABLE rca_sistema.alumno 
+CHANGE COLUMN curp curp CHAR(18) NULL ,
+CHANGE COLUMN fecha_nacimiento fecha_nacimiento DATE NULL ,
+CHANGE COLUMN genero genero ENUM('M', 'F', 'Otro') NULL ;
+
+ALTER TABLE rca_sistema.carrera 
+CHANGE COLUMN siglas siglas VARCHAR(10) NULL COMMENT 'Abreviatura oficial (ej. ISC)' ,
+CHANGE COLUMN plan_estudios plan_estudios VARCHAR(20) NULL COMMENT 'Clave SEP/TecNM del plan vigente' ,
+CHANGE COLUMN modalidad modalidad ENUM('Presencial', 'A distancia', 'Mixta') NULL DEFAULT 'Presencial' ,
+CHANGE COLUMN total_semestres total_semestres TINYINT UNSIGNED NULL COMMENT 'Número total de semestres del plan' ,
+CHANGE COLUMN total_creditos total_creditos SMALLINT UNSIGNED NULL COMMENT 'Créditos totales requeridos' ;
