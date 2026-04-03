@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Grupos</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+<aside class="sidebar">
+    <h2>RCA</h2>
+    <nav>
+        <a href="materias.html">Materias</a>
+        <a href="grupos.html" class="active">Grupos</a>
+        <a href="unidades.html">Unidades</a>
+    </nav>
+</aside>
+
+<main class="content">
+
+<h1>Grupos</h1>
+
+<div class="card">
+    <h2>Registrar Grupo</h2>
+
+    <form id="formGrupo">
+        <label>Materia</label>
+        <select id="materiaGrupo"></select>
+
+        <label>Nombre del grupo</label>
+        <input type="text" id="nombreGrupo" placeholder="Ej: 3A" required>
+
+        <button type="submit">Guardar</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Lista de Grupos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Materia</th>
+                <th>Grupo</th>
+            </tr>
+        </thead>
+        <tbody id="tablaGrupos"></tbody>
+    </table>
+</div>
+
+</main>
+</div>
+
+</body>
+</html>
