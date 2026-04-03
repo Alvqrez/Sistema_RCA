@@ -5,6 +5,34 @@ const tabla = document.getElementById("tablaAlumnos");
 
 let editIndex = null;
 
+async function cargarAlumnos(){
+
+    const response = await fetch("http://localhost:3000/api/alumnos");
+
+    const alumnos = await response.json();
+
+    const tabla = document.getElementById("tablaAlumnos");
+
+    tabla.innerHTML = "";
+
+    alumnos.forEach(alumno => {
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${alumno.nombre}</td>
+                <td>${alumno.apellido_paterno} ${alumno.apellido_materno}</td>
+                <td>${alumno.matricula}</td>
+                <td>
+                    <button>Editar</button>
+                      <button onclick="eliminarAlumno(${alumno.id_alumno})">Eliminar</button>
+                </td>
+            </tr>
+        `;
+
+    });
+
+}
+
 form.addEventListener("submit", async function(e){
 
     e.preventDefault();
@@ -56,12 +84,16 @@ function editarAlumno(index) {
     editIndex = index;
 }
 
-function eliminarAlumno(index) {
-    if (confirm("¿Seguro que quieres eliminar este alumno?")) {
-        alumnos.splice(index, 1);
-        guardarDatos();
-        mostrarAlumnos();
-    }
+async function eliminarAlumno(id){
+
+    if(!confirm("¿Eliminar alumno?")) return;
+
+    await fetch(`http://localhost:3000/api/alumnos/${id}`,{
+        method:"DELETE"
+    });
+
+    cargarAlumnos();
+
 }
 
 function guardarDatos() {
@@ -77,33 +109,5 @@ document.getElementById("logoutBtn").addEventListener("click", function(){
     window.location.href = "../../login.html";
 
 });
-
-async function cargarAlumnos(){
-
-    const response = await fetch("http://localhost:3000/api/alumnos");
-
-    const alumnos = await response.json();
-
-    const tabla = document.getElementById("tablaAlumnos");
-
-    tabla.innerHTML = "";
-
-    alumnos.forEach(alumno => {
-
-        tabla.innerHTML += `
-            <tr>
-                <td>${alumno.nombre}</td>
-                <td>${alumno.apellido_paterno} ${alumno.apellido_materno}</td>
-                <td>${alumno.matricula}</td>
-                <td>
-                    <button>Editar</button>
-                    <button>Eliminar</button>
-                </td>
-            </tr>
-        `;
-
-    });
-
-}
 
 cargarAlumnos();

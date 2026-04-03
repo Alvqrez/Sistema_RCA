@@ -46,4 +46,22 @@ router.post("/", (req, res) => {
 
 });
 
+router.delete("/:id", (req,res)=>{
+
+    const id = req.params.id;
+
+    const query = "DELETE FROM Alumno WHERE id_alumno = ?";
+
+    db.query(query,[id],(err,result)=>{
+
+        if(err){
+            return res.status(500).json(err);
+        }
+
+        res.json({mensaje:"Alumno eliminado"});
+
+    });
+
+});
+
 module.exports = router;
