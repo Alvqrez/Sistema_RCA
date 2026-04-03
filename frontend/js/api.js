@@ -1,5 +1,3 @@
-let alumnos = JSON.parse(localStorage.getItem("alumnos")) || [];
-
 const form = document.getElementById("formAlumno");
 const tabla = document.getElementById("tablaAlumnos");
 
@@ -67,14 +65,6 @@ form.addEventListener("submit", async function(e){
 
 });
 
-form.addEventListener("submit", function(e){
-
-    e.preventDefault();
-
-    alert("Funciona el botón");
-
-});
-
 function editarAlumno(index) {
     let alumno = alumnos[index];
 
@@ -101,13 +91,17 @@ function guardarDatos() {
 }
 
 
-document.getElementById("logoutBtn").addEventListener("click", function(){
+const logoutBtn = document.getElementById("logoutBtn");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
+if(logoutBtn){
+    logoutBtn.addEventListener("click", function(){
 
-    window.location.href = "../../login.html";
+        localStorage.removeItem("token");
+        localStorage.removeItem("usuario");
 
-});
+        window.location.href = "../../login.html";
+
+    });
+}
 
 cargarAlumnos();
