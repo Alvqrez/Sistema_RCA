@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Grupos</title>
+    <title>Grupos - RCA</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 
@@ -10,48 +10,93 @@
 
 <div class="layout">
 
-<aside class="sidebar">
-    <h2>RCA</h2>
-    <nav>
-        <a href="materias.html">Materias</a>
-        <a href="grupos.html" class="active">Grupos</a>
-        <a href="unidades.html">Unidades</a>
-    </nav>
-</aside>
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="materias.html">Materias</a>
+            <a href="grupos.html" class="active">Grupos</a>
+            <a href="unidades.html">Unidades</a>
+            <a href="actividades.html">Actividades</a>
+        </nav>
+    </aside>
 
-<main class="content">
+    <main class="content">
 
-<h1>Grupos</h1>
+        <h1>Grupos</h1>
 
-<div class="card">
-    <h2>Registrar Grupo</h2>
+        <div class="card">
+            <h2>Registrar Grupo</h2>
 
-    <form id="formGrupo">
-        <label>Materia</label>
-        <select id="materiaGrupo"></select>
+            <form id="formGrupo">
 
-        <label>Nombre del grupo</label>
-        <input type="text" id="nombreGrupo" placeholder="Ej: 3A" required>
+                <div class="form-group">
+                    <label>ID Grupo</label>
+                    <input type="text" id="idGrupo" placeholder="Ej: G1" required>
+                </div>
 
-        <button type="submit">Guardar</button>
-    </form>
+                <div class="form-group">
+                    <label>Materia</label>
+                    <select id="materiaGrupo" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Maestro</label>
+                    <input type="text" id="maestro" placeholder="Nombre del maestro" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Periodo</label>
+                    <input type="text" id="periodo" placeholder="Ej: Ene-Jun 2026" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Límite de alumnos</label>
+                    <input type="number" id="limite" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Horario</label>
+                    <input type="text" id="horario" placeholder="Ej: Lun-Mie 10:00-12:00" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Aula</label>
+                    <input type="text" id="aula" placeholder="Ej: A-203" required>
+                </div>
+
+                <button type="submit">Guardar</button>
+                <button type="button" onclick="cancelarEdicion()">Cancelar</button>
+
+                <p id="mensajeGrupo"></p>
+
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Grupos</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Materia</th>
+                        <th>Maestro</th>
+                        <th>Periodo</th>
+                        <th>Aula</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tablaGrupos"></tbody>
+            </table>
+
+        </div>
+
+    </main>
+
 </div>
 
-<div class="card">
-    <h2>Lista de Grupos</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Materia</th>
-                <th>Grupo</th>
-            </tr>
-        </thead>
-        <tbody id="tablaGrupos"></tbody>
-    </table>
-</div>
-
-</main>
-</div>
+<script src="../js/grupos.js"></script>
 
 </body>
 </html>
