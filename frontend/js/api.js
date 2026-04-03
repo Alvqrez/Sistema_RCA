@@ -35,6 +35,8 @@ form.addEventListener("submit", async function(e){
         form.reset();
     }
 
+    cargarAlumnos();
+
 });
 
 form.addEventListener("submit", function(e){
@@ -44,26 +46,6 @@ form.addEventListener("submit", function(e){
     alert("Funciona el botón");
 
 });
-async function obtenerAlumnos(){
-
-    const respuesta = await fetch("http://localhost:3000/alumnos");
-    const alumnos = await respuesta.json();
-
-    tabla.innerHTML = "";
-
-    alumnos.forEach(alumno => {
-
-        tabla.innerHTML += `
-            <tr>
-                <td>${alumno.nombre}</td>
-                <td>${alumno.apellidoPaterno} ${alumno.apellidoMaterno}</td>
-                <td>${alumno.NumeroControl}</td>
-            </tr>
-        `;
-
-    });
-
-}
 
 function editarAlumno(index) {
     let alumno = alumnos[index];
@@ -96,5 +78,32 @@ document.getElementById("logoutBtn").addEventListener("click", function(){
 
 });
 
-obtenerAlumnos();
+async function cargarAlumnos(){
 
+    const response = await fetch("http://localhost:3000/api/alumnos");
+
+    const alumnos = await response.json();
+
+    const tabla = document.getElementById("tablaAlumnos");
+
+    tabla.innerHTML = "";
+
+    alumnos.forEach(alumno => {
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${alumno.nombre}</td>
+                <td>${alumno.apellido_paterno} ${alumno.apellido_materno}</td>
+                <td>${alumno.matricula}</td>
+                <td>
+                    <button>Editar</button>
+                    <button>Eliminar</button>
+                </td>
+            </tr>
+        `;
+
+    });
+
+}
+
+cargarAlumnos();
