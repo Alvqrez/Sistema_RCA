@@ -284,32 +284,75 @@ margin-top:20px;
 
 /*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/
 /*------------------------------------ESTILOS PORTAL ALUMNO ------------------------------------------------------*/
-.header{
-    width: 100%;
-    max-width: 900px;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* CONTENIDO CENTRADO */
+/* ===== AJUSTE GENERAL ===== */
 .content{
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* TARJETAS */
-.card{
+/* ===== HEADER ===== */
+.header{
     width: 100%;
     max-width: 900px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    text-align: center;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
 }
 
-/* TITULO */
+/* ===== TITULO ===== */
 h1{
     width: 100%;
     max-width: 900px;
+    margin: 10px 0;
+    align-self: flex-start;
+}
+
+/* ===== TARJETAS ===== */
+.card{
+    width: 100%;
+    max-width: 900px;
+    margin: 10px auto;
+    padding: 20px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+/* ===== TABLA PRO ===== */
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+/* ENCABEZADO */
+th{
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* CELDAS */
+td{
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+/* EFECTO HOVER */
+tr:hover{
+    background: #f1f5f9;
+}
+
+/* FILAS PARES */
+tr:nth-child(even){
+    background: #f9fafb;
 }
