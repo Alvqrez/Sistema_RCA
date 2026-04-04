@@ -393,26 +393,52 @@ table{
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
 }
 
 th{
-    background: #3b82f6;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
     color: white;
-    padding: 12px;
+    padding: 14px;
     text-align: center;
+    font-size: 15px;
+    letter-spacing: 0.5px;
 }
 
 td{
     padding: 12px;
-    border: 1px solid #ddd;
+    border-bottom: 1px solid #eee;
     text-align: center;
 }
 
+/* FILAS PARES */
 tbody tr:nth-child(even){
-    background: #f9fafb;
+    background: #f8fafc;
+}
+
+tbody tr:hover{
+    background: #f1f5f9;
+    transition: 0.2s;
 }
 
 /* DATOS */
 p{
     margin: 8px 0;
+}
+
+/* PROMEDIO */
+#promedio{
+    font-size: 18px;
+    font-weight: bold;
+    color: #1d4ed8;
+}
+
+/* SELECT PERIODO */
+select{
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-left: 5px;
 }

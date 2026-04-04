@@ -22,7 +22,6 @@
     <!-- CONTENIDO -->
     <main class="content">
 
-        <!-- HEADER -->
         <div class="header">
             <h2>RCA - Sistema de Resultados Académicos</h2>
         </div>
@@ -34,19 +33,21 @@
             <h2>Datos del Alumno</h2>
             <p><b>Matrícula:</b> <span id="matricula"></span></p>
             <p><b>Nombre:</b> <span id="nombre"></span></p>
-            <p><b>Carrera:</b> Sistemas</p>
+            <p><b>Carrera:</b> <span id="carrera"></span></p>
         </div>
 
         <!-- BOLETA -->
         <div class="card">
 
-            <!-- ENCABEZADO DE BOLETA -->
+            <!-- ENCABEZADO -->
             <div style="text-align:center; margin-bottom:15px;">
                 <h2>BOLETA DE CALIFICACIONES</h2>
-                <p><b>Periodo:</b> 2026</p>
+
+                <!--SELECT DE PERIODO -->
+                <label><b>Periodo:</b></label>
+                <select id="periodoSelect"></select>
             </div>
 
-            <!-- TABLA -->
             <table>
                 <thead>
                     <tr>
@@ -57,7 +58,6 @@
                 <tbody id="tablaBoleta"></tbody>
             </table>
 
-            <!-- PROMEDIO -->
             <div style="margin-top:15px; text-align:right;">
                 <p><b>Promedio:</b> <span id="promedio"></span></p>
             </div>

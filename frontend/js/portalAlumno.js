@@ -1,46 +1,41 @@
-// Obtener alumno activo
 let alumno = JSON.parse(localStorage.getItem("usuarioActivo"));
-
-// Obtener calificaciones
 let calificaciones = JSON.parse(localStorage.getItem("calificaciones")) || [];
 
-// Mostrar datos del alumno
 document.getElementById("matricula").textContent = alumno?.matricula || "N/A";
 document.getElementById("nombre").textContent = alumno?.nombre || "N/A";
+document.getElementById("carrera").textContent = alumno?.carrera || "N/A";
 
-// Referencia tabla
 const tabla = document.getElementById("tablaBoleta");
+const selectPeriodo = document.getElementById("periodoSelect");
 
-// Mostrar boleta
+// CARGAR PERIODOS
+function cargarPeriodos(){
+    let periodos = [...new Set(calificaciones.map(c => c.periodo))];
+
+    selectPeriodo.innerHTML = "";
+
+    periodos.forEach(p => {
+        selectPeriodo.innerHTML += `<option value="${p}">${p}</option>`;
+    });
+}
+
+// MOSTRAR BOLETA POR PERIODO
 function mostrarBoleta() {
-    tabla.innerHTML = "";
+    let periodo = selectPeriodo.value;
 
-    let datos = calificaciones.filter(c => c.matricula === alumno?.matricula);
+    let datos = calificaciones.filter(c =>
+        c.matricula === alumno?.matricula &&
+        c.periodo === periodo
+    );
+
+    tabla.innerHTML = "";
 
     if(datos.length === 0){
         tabla.innerHTML = `
             <tr>
-                <td colspan="2">No hay calificaciones registradas</td>
+                <td colspan="2">No hay calificaciones</td>
             </tr>
         `;
-        return;
-    }
-
-    datos.forEach(c => {
-        tabla.innerHTML += `
-            <tr>
-                <td>${c.materia}</td>
-                <td>${c.calificacion}</td>
-            </tr>
-        `;
-    });
-}
-
-// Calcular promedio
-function calcularPromedio() {
-    let datos = calificaciones.filter(c => c.matricula === alumno?.matricula);
-
-    if(datos.length === 0){
         document.getElementById("promedio").textContent = "N/A";
         return;
     }
@@ -49,19 +44,28 @@ function calcularPromedio() {
 
     datos.forEach(c => {
         suma += Number(c.calificacion);
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${c.materia}</td>
+                <td>${c.calificacion}</td>
+            </tr>
+        `;
     });
 
     let promedio = (suma / datos.length).toFixed(1);
-
     document.getElementById("promedio").textContent = promedio;
 }
 
-// Cerrar sesión
+// EVENTO CAMBIO DE PERIODO
+selectPeriodo.addEventListener("change", mostrarBoleta);
+
+// CERRAR SESION
 function cerrarSesion() {
     localStorage.removeItem("usuarioActivo");
     window.location.href = "login.html";
 }
 
-// Ejecutar funciones
+// INICIALIZAR
+cargarPeriodos();
 mostrarBoleta();
-calcularPromedio();
