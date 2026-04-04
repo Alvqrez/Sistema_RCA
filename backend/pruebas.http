@@ -1,0 +1,3 @@
+### Obtener materias (Solo si el token es válido)
+GET http://localhost:3000/api/materias
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoyLCJpZF9yZWZlcmVuY2lhIjoiRU1QMDAxIiwidXNlcm5hbWUiOiJwcm9mZTAxIiwicm9sIjoibWFlc3RybyIsImlhdCI6MTc3NTM0NDIyOCwiZXhwIjoxNzc1MzczMDI4fQ.mtVnBeUVxTpBCAvoEs9F_kQJpOJGU7zNc7Vhs6E3xUw

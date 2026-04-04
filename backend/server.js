@@ -8,6 +8,10 @@ require("dotenv").config();
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const db   = require("./src/db");
+// Ejemplo de cómo proteger una ruta en server.js o en tus archivos de rutas
+const { verificarToken, soloMaestro } = require('./src/middleware/auth');
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -96,6 +100,7 @@ app.use("/api/materias",       require("./src/routes/materias"));
 app.use("/api/grupos",         require("./src/routes/grupos"));
 app.use("/api/calificaciones", require("./src/routes/calificaciones"));
 app.use("/api/admin",          require("./src/routes/admin"));
+app.use("/api/materias", verificarToken, soloMaestro, require("./src/routes/materias"));
 
 app.get("/", (req, res) => {
     res.json({ mensaje: "API RCA activa", version: "1.0" });
