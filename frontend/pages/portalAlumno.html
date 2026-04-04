@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Portal Alumno</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="#" class="active">Boleta</a>
+            <a href="#">Horario</a>
+            <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="content">
+
+        <h1>Portal de Alumno</h1>
+
+        <!-- DATOS -->
+        <div class="card">
+            <h2>Datos del Alumno</h2>
+            <p><b>Matrícula:</b> <span id="matricula"></span></p>
+            <p><b>Nombre:</b> <span id="nombre"></span></p>
+            <p><b>Carrera:</b> Sistemas</p>
+        </div>
+
+        <!-- BOLETA -->
+        <div class="card">
+            <h2>Boleta de Calificaciones</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Materia</th>
+                        <th>Calificación</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBoleta"></tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+
+<script src="../js/portalAlumno.js"></script>
+
+</body>
+</html>
