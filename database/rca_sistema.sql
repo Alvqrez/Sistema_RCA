@@ -513,3 +513,13 @@ CHANGE COLUMN plan_estudios plan_estudios VARCHAR(20) NULL COMMENT 'Clave SEP/Te
 CHANGE COLUMN modalidad modalidad ENUM('Presencial', 'A distancia', 'Mixta') NULL DEFAULT 'Presencial' ,
 CHANGE COLUMN total_semestres total_semestres TINYINT UNSIGNED NULL COMMENT 'Número total de semestres del plan' ,
 CHANGE COLUMN total_creditos total_creditos SMALLINT UNSIGNED NULL COMMENT 'Créditos totales requeridos' ;
+
+------------------------- CORRECCIÓN 4 -------------
+
+ALTER TABLE Alumno
+    ADD COLUMN usuario VARCHAR(50) UNIQUE,
+    ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT '';
+
+ALTER TABLE Maestro
+    ADD COLUMN usuario VARCHAR(50) UNIQUE,
+    ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT '';
