@@ -284,32 +284,72 @@ margin-top:20px;
 
 /*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/
 /*------------------------------------ESTILOS PORTAL ALUMNO ------------------------------------------------------*/
-.header{
-    width: 100%;
-    max-width: 900px;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+body{
+    background: #d1d5db;
 }
 
-/* CONTENIDO CENTRADO */
+/* ===== CONTENIDO CENTRADO ===== */
 .content{
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 40px 20px;
 }
 
-/* TARJETAS */
-.card{
+/* ===== HEADER ===== */
+.header{
     width: 100%;
     max-width: 900px;
+    background: #e5e7eb;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    font-weight: bold;
 }
 
-/* TITULO */
+/* ===== TITULO ===== */
 h1{
     width: 100%;
     max-width: 900px;
+    margin-bottom: 20px;
+    font-size: 32px;
+}
+
+/* ===== TARJETAS ===== */
+.card{
+    width: 100%;
+    max-width: 900px;
+    background: #e5e7eb;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* ===== TABLA ===== */
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th{
+    background: #3b82f6;
+    color: white;
+    padding: 15px;
+    font-size: 16px;
+}
+
+td{
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+}
+
+tr:nth-child(even){
+    background: #f3f4f6;
 }
