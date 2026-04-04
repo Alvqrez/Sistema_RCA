@@ -293,7 +293,9 @@ margin-top:20px;
     margin-bottom: 20px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    /* CONTENIDO CENTRADO */
+}
+
+/* CONTENIDO CENTRADO */
 .content{
     display: flex;
     flex-direction: column;
@@ -310,5 +312,4 @@ margin-top:20px;
 h1{
     width: 100%;
     max-width: 900px;
-}
 }
