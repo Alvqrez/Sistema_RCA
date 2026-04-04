@@ -283,3 +283,14 @@ margin-top:20px;
 
 
 /*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/
+/*------------------------------------ESTILOS PORTAL ALUMNO ------------------------------------------------------*/
+.header{
+    width: 100%;
+    max-width: 900px;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
