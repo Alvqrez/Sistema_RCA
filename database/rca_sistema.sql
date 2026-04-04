@@ -523,3 +523,10 @@ ALTER TABLE Alumno
 ALTER TABLE Maestro
     ADD COLUMN usuario VARCHAR(50) UNIQUE,
     ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT '';
+
+--- Correción 5 ---
+
+ALTER TABLE `rca_sistema`.`maestro` 
+CHANGE COLUMN `rfc` `rfc` VARCHAR(13) NULL ,
+CHANGE COLUMN `fecha_nacimiento` `fecha_nacimiento` DATE NULL ,
+CHANGE COLUMN `genero` `genero` ENUM('M', 'F', 'Otro') NULL ;
