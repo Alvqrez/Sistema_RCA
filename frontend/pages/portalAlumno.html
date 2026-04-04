@@ -21,6 +21,8 @@
 
     <!-- CONTENIDO -->
     <main class="content">
+
+        <!-- HEADER -->
         <div class="header">
             <h2>RCA - Sistema de Resultados Académicos</h2>
         </div>
@@ -37,8 +39,14 @@
 
         <!-- BOLETA -->
         <div class="card">
-            <h2>Boleta de Calificaciones</h2>
 
+            <!-- ENCABEZADO DE BOLETA -->
+            <div style="text-align:center; margin-bottom:15px;">
+                <h2>BOLETA DE CALIFICACIONES</h2>
+                <p><b>Periodo:</b> 2026</p>
+            </div>
+
+            <!-- TABLA -->
             <table>
                 <thead>
                     <tr>
@@ -48,6 +56,12 @@
                 </thead>
                 <tbody id="tablaBoleta"></tbody>
             </table>
+
+            <!-- PROMEDIO -->
+            <div style="margin-top:15px; text-align:right;">
+                <p><b>Promedio:</b> <span id="promedio"></span></p>
+            </div>
+
         </div>
 
     </main>
