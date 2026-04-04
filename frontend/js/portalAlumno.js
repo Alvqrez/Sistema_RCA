@@ -1,16 +1,22 @@
+// DATOS
 let alumno = JSON.parse(localStorage.getItem("usuarioActivo"));
 let calificaciones = JSON.parse(localStorage.getItem("calificaciones")) || [];
 
-document.getElementById("matricula").textContent = alumno?.matricula || "N/A";
-document.getElementById("nombre").textContent = alumno?.nombre || "N/A";
-document.getElementById("carrera").textContent = alumno?.carrera || "N/A";
-
+// ELEMENTOS
 const tabla = document.getElementById("tablaBoleta");
 const selectPeriodo = document.getElementById("periodoSelect");
 
+// MOSTRAR DATOS BASICOS
+document.getElementById("matricula").textContent = alumno?.matricula || "N/A";
+document.getElementById("nombre").textContent = alumno?.nombre || "N/A";
+document.getElementById("semestre").textContent = alumno?.semestre || "N/A";
+document.getElementById("carrera").textContent = alumno?.carrera || "N/A";
+
 // CARGAR PERIODOS
 function cargarPeriodos(){
-    let periodos = [...new Set(calificaciones.map(c => c.periodo))];
+    let periodos = [...new Set(calificaciones
+        .filter(c => c.matricula === alumno?.matricula)
+        .map(c => c.periodo))];
 
     selectPeriodo.innerHTML = "";
 
@@ -19,9 +25,11 @@ function cargarPeriodos(){
     });
 }
 
-// MOSTRAR BOLETA POR PERIODO
+// MOSTRAR BOLETA
 function mostrarBoleta() {
     let periodo = selectPeriodo.value;
+
+    document.getElementById("periodoActual").textContent = periodo || "N/A";
 
     let datos = calificaciones.filter(c =>
         c.matricula === alumno?.matricula &&
@@ -33,32 +41,23 @@ function mostrarBoleta() {
     if(datos.length === 0){
         tabla.innerHTML = `
             <tr>
-                <td colspan="2">No hay calificaciones</td>
+                <td colspan="4">No hay calificaciones</td>
             </tr>
         `;
-        document.getElementById("promedio").textContent = "N/A";
         return;
     }
 
-    let suma = 0;
-
     datos.forEach(c => {
-        suma += Number(c.calificacion);
-
         tabla.innerHTML += `
             <tr>
                 <td>${c.materia}</td>
+                <td>${c.cr || "-"}</td>
                 <td>${c.calificacion}</td>
+                <td>${c.observaciones || (c.calificacion >= 6 ? "Aprobado" : "Reprobado")}</td>
             </tr>
         `;
     });
-
-    let promedio = (suma / datos.length).toFixed(1);
-    document.getElementById("promedio").textContent = promedio;
 }
-
-// EVENTO CAMBIO DE PERIODO
-selectPeriodo.addEventListener("change", mostrarBoleta);
 
 // CERRAR SESION
 function cerrarSesion() {
@@ -68,4 +67,3 @@ function cerrarSesion() {
 
 // INICIALIZAR
 cargarPeriodos();
-mostrarBoleta();

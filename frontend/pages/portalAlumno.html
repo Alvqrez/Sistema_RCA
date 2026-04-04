@@ -22,44 +22,95 @@
     <!-- CONTENIDO -->
     <main class="content">
 
+        <!-- HEADER -->
         <div class="header">
             <h2>RCA - Sistema de Resultados Académicos</h2>
         </div>
 
         <h1>Portal de Alumno</h1>
 
-        <!-- DATOS -->
-        <div class="card">
-            <h2>Datos del Alumno</h2>
-            <p><b>Matrícula:</b> <span id="matricula"></span></p>
-            <p><b>Nombre:</b> <span id="nombre"></span></p>
-            <p><b>Carrera:</b> <span id="carrera"></span></p>
-        </div>
+        <div style="display:flex; gap:20px; width:100%; max-width:1100px;">
 
-        <!-- BOLETA -->
-        <div class="card">
+            <!-- LADO IZQUIERDO -->
+            <div class="card" style="width:250px;">
 
-            <!-- ENCABEZADO -->
-            <div style="text-align:center; margin-bottom:15px;">
-                <h2>BOLETA DE CALIFICACIONES</h2>
+                <h3>Consultar Boleta</h3>
 
-                <!--SELECT DE PERIODO -->
-                <label><b>Periodo:</b></label>
-                <select id="periodoSelect"></select>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PERIODO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <select id="periodoSelect" style="width:100%;">
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <button onclick="mostrarBoleta()" style="margin-top:10px; width:100%;">
+                    Consultar
+                </button>
+
             </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Materia</th>
-                        <th>Calificación</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaBoleta"></tbody>
-            </table>
+            <!--LADO DERECHO -->
+            <div style="flex:1;">
 
-            <div style="margin-top:15px; text-align:right;">
-                <p><b>Promedio:</b> <span id="promedio"></span></p>
+                <!-- TABLA 1 -->
+                <div class="card">
+                    <table>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Nombre</th>
+                            <th>Semestre</th>
+                            <th>Periodo</th>
+                        </tr>
+                        <tr>
+                            <td id="matricula"></td>
+                            <td id="nombre"></td>
+                            <td id="semestre"></td>
+                            <td id="periodoActual"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- TABLA 2 -->
+                <div class="card">
+                    <table>
+                        <tr>
+                            <th>Carrera</th>
+                        </tr>
+                        <tr>
+                            <td id="carrera"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- TABLA 3 -->
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Materia</th>
+                                <th>CR</th>
+                                <th>Calificación</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBoleta"></tbody>
+                    </table>
+
+                    <!-- BOTÓN IMPRIMIR -->
+                    <button onclick="window.print()" style="margin-top:15px;">
+                        Imprimir Boleta
+                    </button>
+                </div>
+
             </div>
 
         </div>

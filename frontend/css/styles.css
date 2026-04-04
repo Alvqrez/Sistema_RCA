@@ -313,10 +313,6 @@ body {
     margin-bottom: 30px;
 }
 
-.sidebar nav {
-    flex: 1;
-}
-
 .sidebar nav a {
     display: block;
     color: #cbd5f5;
@@ -349,7 +345,7 @@ body {
 /* HEADER */
 .header{
     width: 100%;
-    max-width: 900px;
+    max-width: 1100px;
     background: white;
     padding: 15px;
     border-radius: 12px;
@@ -358,87 +354,68 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.header h2{
-    margin: 0;
-    font-size: 20px;
-    font-weight: bold;
-}
-
 /* TITULOS */
 h1{
     width: 100%;
-    max-width: 900px;
-    font-size: 28px;
-    font-weight: bold;
+    max-width: 1100px;
+    font-size: 26px;
 }
 
 /* CARDS */
 .card{
-    width: 100%;
-    max-width: 900px;
     background: white;
-    padding: 25px;
+    padding: 20px;
     border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.card h2{
-    font-size: 20px;
-    margin-bottom: 15px;
-}
-
-/* TABLA BOLETA */
+/* TABLAS */
 table{
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
     border-radius: 10px;
     overflow: hidden;
-    background: white;
 }
 
 th{
-    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+    background: #2563eb;
     color: white;
-    padding: 14px;
-    text-align: center;
-    font-size: 15px;
-    letter-spacing: 0.5px;
+    padding: 12px;
+    font-size: 14px;
 }
 
 td{
-    padding: 12px;
+    padding: 10px;
     border-bottom: 1px solid #eee;
     text-align: center;
 }
 
-/* FILAS PARES */
-tbody tr:nth-child(even){
+tr:nth-child(even){
     background: #f8fafc;
 }
 
-tbody tr:hover{
+tr:hover{
     background: #f1f5f9;
-    transition: 0.2s;
 }
 
-/* DATOS */
-p{
-    margin: 8px 0;
+/* BOTONES */
+button{
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
 }
 
-/* PROMEDIO */
-#promedio{
-    font-size: 18px;
-    font-weight: bold;
-    color: #1d4ed8;
+button:hover{
+    background: #2563eb;
 }
 
-/* SELECT PERIODO */
+/* SELECT */
 select{
-    padding: 6px 10px;
+    padding: 6px;
     border-radius: 6px;
     border: 1px solid #ccc;
-    margin-left: 5px;
 }
