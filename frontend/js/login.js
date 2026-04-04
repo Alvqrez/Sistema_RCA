@@ -1,44 +1,58 @@
-const form = document.getElementById("loginForm");
+// frontend/js/login.js
+const BASE_URL = "http://localhost:3000";
+
+const form  = document.getElementById("loginForm");
 const error = document.getElementById("error");
 
-form.addEventListener("submit", function(e) {
+form.addEventListener("submit", async function(e) {
+
     e.preventDefault();
 
-    const user = document.getElementById("user").value;
-    const pass = document.getElementById("pass").value;
-    const rol = document.getElementById("rol").value;
+    // Ahora solo necesitas username y password, el rol viene del token
+    const username = document.getElementById("user").value;
+    const password = document.getElementById("pass").value;
 
-    if (user === "admin" && pass === "1234") {
+    try {
 
-        // Guardar sesión
-        localStorage.setItem("usuario", user);
-        localStorage.setItem("rol", rol);
+        const response = await fetch(`${BASE_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
 
-        // Redirección según rol
-        if(rol === "alumno"){
-            window.location.href = "alumnos.html";
-        }else{
-            window.location.href = "maestros.html";
+        const data = await response.json();
+
+        if (data.success) {
+
+            localStorage.setItem("token",   data.token);
+            localStorage.setItem("nombre",  data.nombre);
+            localStorage.setItem("rol",     data.rol);
+
+            // Redirige según el rol que devuelve el servidor
+            if (data.rol === "alumno") {
+                window.location.href = "alumnos.html";
+            } else if (data.rol === "maestro") {
+                window.location.href = "maestros.html";
+            } else if (data.rol === "administrador") {
+                window.location.href = "admin.html";
+            }
+
+        } else {
+            error.textContent = data.message || "Credenciales incorrectas";
         }
 
-    } else {
-        error.textContent = "Usuario o contraseña incorrectos";
+    } catch (e) {
+        error.textContent = "No se pudo conectar con el servidor";
     }
+
 });
 
-const tabs = document.querySelectorAll(".tab");
-const rolInput = document.getElementById("rol");
+// Tabs de rol (ahora son opcionales, el rol lo determina el servidor)
+const tabs     = document.querySelectorAll(".tab");
 
 tabs.forEach(tab => {
-
     tab.addEventListener("click", () => {
-
         tabs.forEach(t => t.classList.remove("active"));
-
         tab.classList.add("active");
-
-        rolInput.value = tab.dataset.rol;
-
     });
-
 });

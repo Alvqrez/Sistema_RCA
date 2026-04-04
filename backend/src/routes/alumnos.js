@@ -1,17 +1,16 @@
-const express = require("express");
-const router = express.Router();
-const db = require("../db");
+// src/routes/alumnos.js
+const express  = require("express");
+const router   = express.Router();
+const bcrypt   = require("bcrypt");
+const db       = require("../db");
+const { verificarToken, soloMaestro } = require("../middleware/auth");
 
-// Obtener todos los alumnos
-router.get("/", (req, res) => {
+// GET — todos los alumnos
+router.get("/", verificarToken, (req, res) => {
 
-    const query = "SELECT * FROM Alumno";
+    db.query("SELECT matricula, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno", (err, results) => {
 
-    db.query(query, (err, results) => {
-
-        if (err) {
-            return res.status(500).json(err);
-        }
+        if (err) return res.status(500).json({ error: "Error interno del servidor" });
 
         res.json(results);
 
@@ -19,73 +18,98 @@ router.get("/", (req, res) => {
 
 });
 
-// Registrar alumno
-router.post("/", (req, res) => {
+// GET — un alumno por matrícula
+router.get("/:matricula", verificarToken, (req, res) => {
 
-    const { nombre, apellido_paterno, apellido_materno, matricula, correo_institucional } = req.body;
+    db.query(
+        "SELECT matricula, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno WHERE matricula = ?",
+        [req.params.matricula],
+        (err, results) => {
 
-    const query = `
-        INSERT INTO Alumno 
-        (nombre, apellido_paterno, apellido_materno, matricula, id_carrera, correo_institucional)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
+            if (err) return res.status(500).json({ error: "Error interno del servidor" });
 
-    db.query(query, [nombre, apellido_paterno, apellido_materno, matricula, 1, correo_institucional], (err, result) => {
+            if (results.length === 0) return res.status(404).json({ error: "Alumno no encontrado" });
 
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ success:false });
+            res.json(results[0]);
+
         }
+    );
 
-        res.json({
-            success:true,
-            mensaje:"Alumno registrado"
+});
+
+// POST — registrar alumno (solo maestro)
+router.post("/", soloMaestro, (req, res) => {
+
+    const { nombre, apellido_paterno, apellido_materno, matricula, id_carrera, correo_institucional, usuario, password } = req.body;
+
+    if (!nombre || !matricula || !id_carrera || !correo_institucional || !usuario || !password) {
+        return res.status(400).json({ error: "Faltan campos requeridos" });
+    }
+
+    bcrypt.hash(password, 10, (hashErr, hash) => {
+
+        if (hashErr) return res.status(500).json({ error: "Error interno del servidor" });
+
+        const query = `
+            INSERT INTO Alumno (matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional, usuario, password)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.query(query, [matricula, nombre, apellido_paterno, apellido_materno ?? null, id_carrera, correo_institucional, usuario, hash], (err) => {
+
+            if (err) {
+                if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "La matrícula o usuario ya existe" });
+                return res.status(500).json({ error: "Error interno del servidor" });
+            }
+
+            res.status(201).json({ success: true, mensaje: "Alumno registrado" });
+
         });
 
     });
 
 });
 
-// Eliminar alumno
-router.delete("/:id", (req,res)=>{
+// PUT — editar alumno (solo maestro)
+router.put("/:matricula", soloMaestro, (req, res) => {
 
-    const id = req.params.id;
+    const { nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera } = req.body;
 
-    const query = "DELETE FROM Alumno WHERE matricula = ?";
+    if (!nombre || !apellido_paterno || !correo_institucional) {
+        return res.status(400).json({ error: "Faltan campos requeridos" });
+    }
 
-    db.query(query,[id],(err,result)=>{
+    const query = `
+        UPDATE Alumno
+        SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, correo_institucional = ?, id_carrera = ?
+        WHERE matricula = ?
+    `;
 
-        if(err){
-            return res.status(500).json(err);
-        }
+    db.query(query, [nombre, apellido_paterno, apellido_materno ?? null, correo_institucional, id_carrera, req.params.matricula], (err, result) => {
 
-        res.json({mensaje:"Alumno eliminado"});
+        if (err) return res.status(500).json({ error: "Error interno del servidor" });
+
+        if (result.affectedRows === 0) return res.status(404).json({ error: "Alumno no encontrado" });
+
+        res.json({ success: true, mensaje: "Alumno actualizado" });
 
     });
 
 });
 
-// Editar alumno
-// router.put("/:id", (req,res)=>{
+// DELETE — eliminar alumno (solo maestro)
+router.delete("/:matricula", soloMaestro, (req, res) => {
 
-//     const id = req.params.id;
+    db.query("DELETE FROM Alumno WHERE matricula = ?", [req.params.matricula], (err, result) => {
 
-//     const { nombre, apellido_paterno, apellido_materno } = req.body;
+        if (err) return res.status(500).json({ error: "Error interno del servidor" });
 
-//     const query = `
-//         UPDATE Alumno
-//         SET nombre=?, apellido_paterno=?, apellido_materno=?
-//         WHERE id_alumno=?
-//     `;
+        if (result.affectedRows === 0) return res.status(404).json({ error: "Alumno no encontrado" });
 
-//     db.query(query,[nombre,apellido_paterno,apellido_materno,id],(err,result)=>{
+        res.json({ success: true, mensaje: "Alumno eliminado" });
 
-//         if(err) return res.status(500).json(err);
+    });
 
-//         res.json({success:true});
-
-//     });
-
-// });
+});
 
 module.exports = router;

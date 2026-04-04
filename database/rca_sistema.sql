@@ -530,3 +530,16 @@ ALTER TABLE `rca_sistema`.`maestro`
 CHANGE COLUMN `rfc` `rfc` VARCHAR(13) NULL ,
 CHANGE COLUMN `fecha_nacimiento` `fecha_nacimiento` DATE NULL ,
 CHANGE COLUMN `genero` `genero` ENUM('M', 'F', 'Otro') NULL ;
+
+ALTER TABLE `rca_sistema`.`periodoescolar` 
+RENAME TO  `rca_sistema`.`periodo_escolar` ;
+
+
+ALTER TABLE Maestro 
+ADD COLUMN usuario VARCHAR(50) UNIQUE,
+ADD COLUMN password VARCHAR(255);
+
+
+ALTER TABLE Alumno 
+ADD COLUMN usuario VARCHAR(50) UNIQUE,
+ADD COLUMN password VARCHAR(255);
