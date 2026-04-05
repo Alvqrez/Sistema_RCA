@@ -1,5 +1,5 @@
 // frontend/js/login.js — COMPLETO CORREGIDO
-const BASE_URL = "http://127.0.0.1:3000";
+const BASE_URL = "http://localhost:3000";
 
 const form = document.getElementById("loginForm");
 const error = document.getElementById("error");
