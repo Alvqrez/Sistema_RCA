@@ -559,11 +559,6 @@ button:hover {
 .btn-login:hover {
   background: #2563eb;
 }
-/* =====================================================================
-   formulario.css — Estilos de la página de Formulario de Evaluación
-   Guardar en: frontend/css/formulario.css
-   ===================================================================== */
-
 /* ── VARIABLES ─────────────────────────────────────────── */
 :root {
   --primary: #1e40af;
