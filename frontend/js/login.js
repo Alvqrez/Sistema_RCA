@@ -1,25 +1,30 @@
-// frontend/js/login.js
+// frontend/js/login.js — COMPLETO CORREGIDO
 const BASE_URL = "http://localhost:3000";
 
 const form = document.getElementById("loginForm");
 const error = document.getElementById("error");
 
+// Inicializa tabRol en "alumno" al cargar la página
+let tabRolActual = "alumno";
+
 form.addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  // Ahora solo necesitas username y password, el rol viene del token
-  const username = document.getElementById("user").value;
+  const username = document.getElementById("user").value.trim();
   const password = document.getElementById("pass").value;
+
+  if (!username || !password) {
+    error.textContent = "Ingresa usuario y contraseña";
+    return;
+  }
+
+  error.textContent = "";
 
   try {
     const response = await fetch(`${BASE_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        password,
-        rol: localStorage.getItem("tabRol"),
-      }),
+      body: JSON.stringify({ username, password, rol: tabRolActual }),
     });
 
     const data = await response.json();
@@ -29,14 +34,10 @@ form.addEventListener("submit", async function (e) {
       localStorage.setItem("nombre", data.nombre);
       localStorage.setItem("rol", data.rol);
 
-      // Redirige según el rol que devuelve el servidor
-      if (data.rol === "alumno") {
-        window.location.href = "portalAlumno.html";
-      } else if (data.rol === "maestro") {
-        window.location.href = "maestros.html";
-      } else if (data.rol === "administrador") {
+      if (data.rol === "alumno") window.location.href = "portalAlumno.html";
+      else if (data.rol === "maestro") window.location.href = "maestros.html";
+      else if (data.rol === "administrador")
         window.location.href = "admin.html";
-      }
     } else {
       error.textContent = data.message || "Credenciales incorrectas";
     }
@@ -45,15 +46,13 @@ form.addEventListener("submit", async function (e) {
   }
 });
 
+// Tabs
 const tabs = document.querySelectorAll(".tab");
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
-    localStorage.setItem("tabRol", tab.dataset.rol);
+    tabRolActual = tab.dataset.rol; // ← variable local, no localStorage
   });
 });
-
-// Activa la primera tab por defecto
-localStorage.setItem("tabRol", "alumno");

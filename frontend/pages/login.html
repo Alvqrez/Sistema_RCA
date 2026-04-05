@@ -1,59 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Login - RCA</title>
-    
-    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/styles.css">
-</head>
 
-<body>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
 
+  <body>
     <div class="login-container">
-
-        <div class="login-card">
-
-            <div class="tabs">
-
-                <div class="tab active" data-rol="alumno">Alumno</div>
-                <div class="tab" data-rol="maestro">Maestro</div>
-                <div class="tab" data-rol="admin">Administrativo</div>
-
+      <div class="login-card">
+        <div class="tabs">
+          <div class="tab active" data-rol="alumno">Alumno</div>
+          <div class="tab" data-rol="maestro">Maestro</div>
+          <div class="tab" data-rol="administrador">Administrativo</div>
         </div>
 
-        <input type="hidden" id="rol" value="alumno">
+        <input type="hidden" id="rol" value="alumno" />
 
-            <div class="login-header">
-                <h1>RCA</h1>
-                <p>Sistema de Resultados Académicos</p>
-            </div>
-
-            <form id="loginForm">
-
-                <div class="input-group">
-                    <input type="text" id="user" required>
-                    <label>Usuario</label>
-                </div>
-
-                <div class="input-group">
-                    <input type="password" id="pass" required>
-                    <label>Contraseña</label>
-                </div>
-
-                <button type="submit" class="btn-login">Iniciar sesión</button>
-
-                <p id="error" class="mensaje-error"></p>
-
-            </form>
-
+        <div class="login-header">
+          <h1>RCA</h1>
+          <p>Sistema de Resultados Académicos</p>
         </div>
 
+        <form id="loginForm">
+          <div class="input-group">
+            <input type="text" id="user" required />
+            <label>Usuario</label>
+          </div>
+
+          <div class="input-group">
+            <input type="password" id="pass" required />
+            <label>Contraseña</label>
+          </div>
+
+          <button type="submit" class="btn-login">Iniciar sesión</button>
+
+          <p id="error" class="mensaje-error"></p>
+        </form>
+      </div>
     </div>
-    
-    <script src="../js/login.js"></script>
-</body>
 
+    <script src="../js/login.js"></script>
+  </body>
 </html>

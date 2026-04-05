@@ -1,159 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Maestros - RCA</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Maestros</title>
-    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-
-<body>
-
-<div class="layout">
-
-    <!-- MENU LATERAL (MISMO QUE ALUMNOS) -->
-    <aside class="sidebar"></aside>
-
-    <main class="content">
-
+      <main class="content">
         <h1>Maestros</h1>
 
-        <div class="card">
-            <h2>Registrar Maestro</h2>
+        <div class="card" id="cardRegistroMaestro">
+          <h2>Registrar Maestro</h2>
+          <form id="formMaestro" class="form-grid">
+            <div>
+              <label>Número de empleado</label>
+              <input type="text" id="idMaestro" required />
+            </div>
+            <div>
+              <label>Nombre(s)</label>
+              <input type="text" id="nombre" required />
+            </div>
+            <div>
+              <label>Apellido paterno</label>
+              <input type="text" id="apellidoPaterno" required />
+            </div>
+            <div>
+              <label>Apellido materno</label>
+              <input type="text" id="apellidoMaterno" />
+            </div>
+            <div>
+              <label>CURP</label>
+              <input type="text" id="curp" />
+            </div>
+            <div>
+              <label>Correo institucional</label>
+              <input type="email" id="correoInstitucional" required />
+            </div>
+            <div>
+              <label>Correo personal</label>
+              <input type="email" id="correoPersonal" />
+            </div>
+            <div>
+              <label>Teléfono celular</label>
+              <input type="text" id="telCelular" />
+            </div>
+            <div>
+              <label>Teléfono oficina</label>
+              <input type="text" id="telOficina" />
+            </div>
+            <div>
+              <label>Dirección</label>
+              <input type="text" id="direccion" />
+            </div>
+            <div>
+              <label>Tipo de contrato</label>
+              <input type="text" id="tipoContrato" />
+            </div>
+            <div>
+              <label>Estatus</label>
+              <select id="estatus">
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Licencia">Licencia</option>
+              </select>
+            </div>
+            <div>
+              <label>Fecha de ingreso</label>
+              <input type="date" id="fechaIngreso" />
+            </div>
+            <div>
+              <label>Grado académico</label>
+              <input type="text" id="gradoAcademico" />
+            </div>
+            <div>
+              <label>Especialidad</label>
+              <input type="text" id="especialidad" />
+            </div>
+            <div>
+              <label>Departamento</label>
+              <input type="text" id="departamento" />
+            </div>
 
-            <form id="formMaestro" class="form-grid">
+            <h3 class="section-title">Acceso al sistema</h3>
+            <div>
+              <label>Usuario (login)</label>
+              <input type="text" id="username" required />
+            </div>
+            <div>
+              <label>Contraseña inicial</label>
+              <input type="password" id="password" required />
+            </div>
 
-                <div>
-                    <label>ID Maestro</label>
-                    <input type="text" id="idMaestro" required>
-                </div>
-
-                <div>
-                    <label>Nombre(s)</label>
-                    <input type="text" id="nombre" required>
-                </div>
-
-                <div>
-                    <label>Apellido paterno</label>
-                    <input type="text" id="apellidoPaterno" required>
-                </div>
-
-                <div>
-                    <label>Apellido materno</label>
-                    <input type="text" id="apellidoMaterno">
-                </div>
-
-                <div>
-                    <label>CURP</label>
-                    <input type="text" id="curp">
-                </div>
-
-                <div>
-                    <label>Fecha de nacimiento</label>
-                    <input type="date" id="fechaNacimiento">
-                </div>
-
-                <div>
-                    <label>Género</label>
-                    <select id="genero">
-                        <option>Masculino</option>
-                        <option>Femenino</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>Correo institucional</label>
-                    <input type="email" id="correoInstitucional">
-                </div>
-
-                <div>
-                    <label>Correo personal</label>
-                    <input type="email" id="correoPersonal">
-                </div>
-
-                <div>
-                    <label>Teléfono celular</label>
-                    <input type="text" id="telCelular">
-                </div>
-
-                <div>
-                    <label>Teléfono oficina</label>
-                    <input type="text" id="telOficina">
-                </div>
-
-                <div>
-                    <label>Dirección</label>
-                    <input type="text" id="direccion">
-                </div>
-
-                <div>
-                    <label>Tipo de contrato</label>
-                    <input type="text" id="tipoContrato">
-                </div>
-
-                <div>
-                    <label>Estatus</label>
-                    <select id="estatus">
-                        <option>Activo</option>
-                        <option>Inactivo</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>Fecha de ingreso</label>
-                    <input type="date" id="fechaIngreso">
-                </div>
-
-                <div>
-                    <label>Grado académico</label>
-                    <input type="text" id="gradoAcademico">
-                </div>
-
-                <div>
-                    <label>Especialidad</label>
-                    <input type="text" id="especialidad">
-                </div>
-
-                <div>
-                    <label>Departamento</label>
-                    <input type="text" id="departamento">
-                </div>
-
-                <div class="botones">
-                    <button type="submit">Guardar</button>
-                    <button type="reset">Cancelar</button>
-                </div>
-
-            </form>
+            <div class="botones">
+              <button type="submit" class="btn-guardar">Guardar</button>
+              <button type="reset" class="btn-cancelar">Cancelar</button>
+            </div>
+          </form>
         </div>
 
         <div class="card">
-            <h2>Lista de Maestros</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Departamento</th>
-                        <th>Correo</th>
-                        <th>Teléfono</th>
-                        <th>Estatus</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaMaestros">
-    
-                </tbody>
-            </table>
+          <h2>Lista de Maestros</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Estatus</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMaestros"></tbody>
+          </table>
         </div>
+      </main>
+    </div>
 
-    </main>
+    <!-- Scripts FUERA del layout, antes de </body> -->
     <script src="../js/sidebar.js"></script>
     <script src="../js/maestros.js"></script>
-</div>
-
-</body>
+  </body>
 </html>

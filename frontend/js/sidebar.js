@@ -15,10 +15,10 @@
   // Links según el rol
   const linksPorRol = {
     maestro: [
-      { href: "misGrupos.html", texto: "Mis grupos", icono: "🏫" },
-      { href: "actividades.html", texto: "Actividades", icono: "📝" },
+      { href: "grupos.html", texto: "Mis grupos", icono: "🏫" },
       { href: "calificaciones.html", texto: "Calificaciones", icono: "📊" },
-      { href: "alumnos.html", texto: "Ver alumnos", icono: "👤" },
+      { href: "unidades.html", texto: "Unidades", icono: "📋" },
+      { href: "alumnos.html", texto: "Alumnos", icono: "👤" },
     ],
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "🛠️" },
@@ -26,7 +26,7 @@
       { href: "maestros.html", texto: "Maestros", icono: "🎓" },
       { href: "materias.html", texto: "Materias", icono: "📚" },
       { href: "grupos.html", texto: "Grupos", icono: "🏫" },
-      { href: "carreras.html", texto: "Carreras", icono: "🎓" },
+      { href: "unidades.html", texto: "Unidades", icono: "📋" },
     ],
   };
 
