@@ -132,6 +132,6 @@ app.get("/", (req, res) => {
   res.json({ mensaje: "API RCA activa", version: "1.0" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log("Servidor corriendo en puerto " + PORT);
 });
