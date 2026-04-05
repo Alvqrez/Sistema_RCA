@@ -1,429 +1,53 @@
-/* Les recomiendo usar Pigment, una pagina de Google que les da a elegir entre muchisimos colores y que les da
-el valor hexadecimal, estan muy bonitos los tonos :D */ 
+/* =====================================================================
+   RCA — Sistema de Resultados y Calificaciones Académicas
+   ===================================================================== */
 
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6f9;
-}
-
-/* LAYOUT */
-.layout {
-    display: flex;
+/* Denifiremos la paleta de colores aquí, para que nos sea mas sencillo estilizar:*/
+:root{
+    --color-primario:#3b82f6;
+    --color-exito:#10b981;
+    --color-peligro:#ef4444;
+    --color-warning:#f59e0b;
 }
 
-/* --------------------------ESTILOS PARA BARRA LATERAL--------------------------------------------- */
-.sidebar {
-    width: 220px;
-    height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;   
-    background: #1e293b;
-    color: white;
+/* ESTO ES PARA CELULARES O TABLETS */
+@media (max-width: 900px){
+
+.sidebar{
+    width:70px;
 }
 
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
+.content{
+    margin-left:70px;
+    width:calc(100% - 70px);
 }
 
-.sidebar nav a {
-    display: block;
-    color: #cbd5f5;
-    text-decoration: none;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
+.sidebar-logo h2{
+    display:none;
 }
 
-.sidebar nav a:hover {
-    background: #334155;
+.sidebar nav a{
+    font-size:12px;
+}
 }
 
-.sidebar nav a.active {
-    background: #3b82f6;
-    color: white;
-}
-
-.logout-btn{
-    margin-top:auto;
-    padding:10px;
-    width:100%;
-    border:none;
-    background:#e74c3c;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.logout-btn:hover{
-    background:#c0392b;
-}
-/*-------------------------------------------------------------------------------------------------------*/
-
-/* CONTENT */
-.content {
-    margin-left: 220px; 
-    padding: 20px;
-    width: calc(100% - 220px); 
-}
-
-h1 {
-    margin-bottom: 20px;
-}
-
-/* CARD */
-.card {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* FORM */
-form {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-input {
-    padding: 10px;
-    flex: 1;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-button {
-    padding: 10px 20px;
-    border: none;
-    background: #3b82f6;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-button:hover {
-    background: #2563eb;
-}
-button {
-    margin: 5px;
-}
-
-button:nth-child(1) {
-    background: #10b981;
-}
-
-button:nth-child(2) {
-    background: #ef4444;
-}
-
-/* TABLE */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th {
-    background: #3b82f6;
-    color: white;
-    padding: 10px;
-}
-
-td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
-.form-grid{
-display:grid;
-grid-template-columns: repeat(3, 1fr);
-gap:20px;
-margin-top:20px;
-}
-
-.form-grid input,
-.form-grid select{
-width:100%;
-padding:8px;
-border:1px solid #ccc;
-border-radius:4px;
-}
-
-.section-title{
-grid-column: span 3;
-margin-top:20px;
-}
-
-.botones{
-grid-column: span 3;
-display:flex;
-justify-content:center;
-gap:20px;
-margin-top:20px;
-}
-/*------------------------------------ESTILOS LOGIN ------------------------------------------------------*/
-.tabs{
-    display:flex;
-    gap: 10px;
-    margin-bottom:25px;
-}
-
-.tab{
-    flex:1;
-    text-align:center;
-    padding:10px;
-    cursor:pointer;
-    background:#e5e5e5;
-    border-radius:10px;
-    font-weight:600;
-    transition:0.2s;
-}
-
-.tab:hover{
-    background:#dcdcdc;
-}
-
-.tab.active{
-    background:white;
-    border-bottom:3px solid #4da3ff;
-}
-
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #275f90, #00f2fe);
-}
-
-/* Tarjeta */
-.login-card {
-    background: white;
-    padding: 30px;
-    width: 350px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    text-align: center;
-}
-
-.login-header h1 {
-    margin: 0;
-    color: #333;
-}
-
-.login-header p {
-    font-size: 14px;
-    color: #777;
-    margin-bottom: 20px;
-}
-
-/* Inputs flotantes */
-.input-group {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    outline: none;
+/* ── BASE ─────────────────────────────────────────────────────────── */
+* {
     box-sizing: border-box;
 }
 
-.input-group label {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    color: #888;
-    font-size: 14px;
-    transition: 0.3s;
-    pointer-events: none;
-}
-
-.input-group input:focus + label,
-.input-group input:valid + label {
-    top: -8px;
-    left: 8px;
-    font-size: 12px;
-    background: white;
-    padding: 0 5px;
-}
-
-.input-group select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-.btn-login {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #4facfe;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.btn-login:hover {
-    background: #00c6ff;
-}
-
-.mensaje-error {
-    color: red;
-    margin-top: 10px;
-}
-
-
-/*-----------------------------------------FIN DE ESTILOS LOGIN :D---------------------------------------*/
-/*------------------------------------ESTILOS PORTAL ALUMNO ------------------------------------------------------*/
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #e5e7eb;
+    font-family: 'Inter', sans-serif;
+    background: #f4f6f9;
 }
 
-/* LAYOUT */
+/* ── LAYOUT ───────────────────────────────────────────────────────── */
 .layout {
     display: flex;
 }
 
-/* SIDEBAR */
-.sidebar {
-    width: 220px;
-    height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;   
-    background: #1e293b;
-    color: white;
-    display: flex;
-    flex-direction: column;
-}
-
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.sidebar nav a {
-    display: block;
-    color: #cbd5f5;
-    text-decoration: none;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-.sidebar nav a:hover {
-    background: #334155;
-}
-
-.sidebar nav a.active {
-    background: #3b82f6;
-    color: white;
-}
-
-/* CONTENT */
-.content {
-    margin-left: 220px; 
-    padding: 20px;
-    width: calc(100% - 220px);
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* HEADER */
-.header{
-    width: 100%;
-    max-width: 1100px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* TITULOS */
-h1{
-    width: 100%;
-    max-width: 1100px;
-    font-size: 26px;
-}
-
-/* CARDS */
-.card{
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-/* TABLAS */
-table{
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-th{
-    background: #2563eb;
-    color: white;
-    padding: 12px;
-    font-size: 14px;
-}
-
-td{
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-}
-
-tr:nth-child(even){
-    background: #f8fafc;
-}
-
-tr:hover{
-    background: #f1f5f9;
-}
-
-/* BOTONES */
-button{
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #3b82f6;
-    color: white;
-    cursor: pointer;
-}
-
-button:hover{
-    background: #2563eb;
-}
-
-/* SELECT */
-select{
-    padding: 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
-
-
-/* Sidebarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr */
-
-/* ── SIDEBAR UNIFICADO ─────────────────────────────── */
+/* ── SIDEBAR ──────────────────────────────────────────────────────── */
 .sidebar {
     width: 220px;
     height: 100vh;
@@ -433,8 +57,7 @@ select{
     background: #1e293b;
     color: white;
     display: flex;
-    flex-direction: column;    /* ← apila logo + nav + botón verticalmente */
-    padding: 0;
+    flex-direction: column;   /* ← necesario para que el botón quede abajo */
     overflow: hidden;
 }
 
@@ -457,13 +80,13 @@ select{
 }
 
 .sidebar nav {
-    flex: 1;                   /* ← ocupa el espacio disponible */
+    flex: 1;                  /* ← ocupa el espacio libre y empuja el botón abajo */
     padding: 15px 10px;
     overflow-y: auto;
 }
 
 .sidebar nav a {
-    display: block;
+    display: flex;
     color: #cbd5e1;
     text-decoration: none;
     padding: 10px 12px;
@@ -471,6 +94,9 @@ select{
     margin-bottom: 4px;
     font-size: 14px;
     transition: background 0.15s;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
 }
 
 .sidebar nav a:hover {
@@ -484,22 +110,341 @@ select{
     font-weight: 600;
 }
 
-/* Botón de cerrar sesión — rojo, pegado al fondo */
+.sidebar nav::-webkit-scrollbar{
+    width:6px;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb{
+    background:#475569;
+    border-radius:10px;
+}
+
+/* Botón cerrar sesión — rojo, pegado al fondo */
 .logout-btn {
     margin: 0;
     padding: 14px;
     width: 100%;
     border: none;
     border-top: 1px solid #334155;
-    background: #dc2626;       /* ← rojo */
+    background: #dc2626;
     color: white;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
     text-align: center;
+    border-radius: 0;
 }
 
 .logout-btn:hover {
     background: #b91c1c;
 }
+
+/* ── CONTENT ──────────────────────────────────────────────────────── */
+.content {
+    margin-left: 220px;
+    padding: 20px;
+    width: calc(100% - 220px);
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+/* ── CARD ─────────────────────────────────────────────────────────── */
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* ── TABLA ────────────────────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
+    background:white;
+}
+
+th {
+    background: #3b82f6;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 14px;
+}
+
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+tr:hover {
+    background:#eef2ff;
+}
+
+tbody tr{
+    transition: background 0.15s;
+}
+/* ── FORMULARIOS ──────────────────────────────────────────────────── */
+form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    background:#f9fafb;
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background:white;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+    width: 100%;
+}
+
+.section-title {
+    grid-column: span 3;
+    margin-top: 10px;
+    margin-bottom: 0;
+    color: #1e293b;
+    font-size: 15px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+}
+
+.botones {
+    grid-column: span 3;
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* ── BOTONES ──────────────────────────────────────────────────────── */
+button {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+
+button:active{
+    transform: scale(0.97);
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.btn-guardar  { background: #10b981; }
+.btn-guardar:hover  { background: #059669; }
+
+.btn-cancelar { background: #6b7280; }
+.btn-cancelar:hover { background: #4b5563; }
+
+.btn-eliminar { background: #ef4444; }
+.btn-eliminar:hover { background: #dc2626; }
+
+.btn-editar   { background: #f59e0b; }
+.btn-editar:hover   { background: #d97706; }
+
+/* ── ESTADOS / BADGES ─────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing:0.3px;
+}
+
+.badge-verde  { background: #d1fae5; color: #065f46; }
+.badge-rojo   { background: #fee2e2; color: #991b1b; }
+.badge-gris   { background: #f1f5f9; color: #475569; }
+.badge-azul   { background: #dbeafe; color: #1e40af; }
+
+/* ── MENSAJES ─────────────────────────────────────────────────────── */
+.mensaje-error   { color: #dc2626; font-size: 13px; margin-top: 6px; }
+.mensaje-exito   { color: #059669; font-size: 13px; margin-top: 6px; }
+
+/* =====================================================================
+   LOGIN
+   ===================================================================== */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg,#2563eb,#06b6d4);
+}
+
+.login-card {
+    background: white;
+    padding: 30px;
+    width: 360px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    animation: aparecer 0.4s ease;
+}
+
+@keyframes aparecer{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.login-header h1 {
+    margin: 0;
+    color: #1e293b;
+}
+
+.login-header p {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    background: #e5e7eb;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    transition: 0.2s;
+    color: #374151;
+}
+
+.tab:hover  { background: #d1d5db; }
+.tab.active {
+    background: white;
+    border-bottom: 3px solid #3b82f6;
+    color: #1e293b;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+    text-align: left;
+    width:100%;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 10px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.input-group label {
+    position: absolute;
+    top: 11px;
+    left: 10px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 400;
+    transition: 0.2s;
+    pointer-events: none;
+    background: transparent;
+}
+
+.login-card form{
+    display:flex;
+    flex-direction:column;
+}
+
+.input-group input:focus + label,
+.input-group input:valid + label {
+    top: -8px;
+    left: 8px;
+    font-size: 11px;
+    background: white;
+    padding: 0 4px;
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.input-group input:focus{
+    outline:none;
+    border-color:#3b82f6;
+    box-shadow:0 0 0 3px rgba(59,130,246,0.15);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-login:hover { background: #2563eb; }

@@ -21,6 +21,7 @@
             { href: "materias.html",        texto: "Materias",       icono: "📚" },
             { href: "grupos.html",          texto: "Grupos",         icono: "🏫" },
             { href: "calificaciones.html",  texto: "Calificaciones", icono: "📊" },
+            { href: "unidades.html", texto: "Unidades", icono: "📋" },
         ],
         administrador: [
             { href: "admin.html",           texto: "Panel",          icono: "🛠️" },

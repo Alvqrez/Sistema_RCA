@@ -2,43 +2,81 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Unidades</title>
+    <title>Unidades - RCA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/styles.css">
+    
 </head>
-
 <body>
 
 <div class="layout">
+    <aside class="sidebar"></aside>
 
-<aside class="sidebar">
-    <h2>RCA</h2>
-    <nav>
-        <a href="grupos.html">Grupos</a>
-        <a href="unidades.html" class="active">Unidades</a>
-        <a href="actividades.html">Actividades</a>
-    </nav>
-</aside>
+    <main class="content">
+        <h1>Unidades</h1>
 
-<main class="content">
+        <div class="card">
+            <h2>Registrar Unidad</h2>
+            <form id="formUnidad" class="form-grid">
 
-<h1>Unidades</h1>
+                <div>
+                    <label>Clave de materia</label>
+                    <input type="text" id="claveMateria" placeholder="Ej. ISC-101" required>
+                </div>
 
-<div class="card">
-    <h2>Registrar Unidad</h2>
+                <div>
+                    <label>Nombre de la unidad</label>
+                    <input type="text" id="nombreUnidad" placeholder="Ej. Unidad 1: Introducción" required>
+                </div>
 
-    <form id="formUnidad">
-        <label>Grupo</label>
-        <select id="grupoUnidad"></select>
+                <div>
+                    <label>Estatus</label>
+                    <select id="estatus">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En curso">En curso</option>
+                        <option value="Cerrada">Cerrada</option>
+                    </select>
+                </div>
 
-        <label>Nombre de la unidad</label>
-        <input type="text" id="nombreUnidad" placeholder="Unidad 1" required>
+                <div>
+                    <label>Fecha de cierre</label>
+                    <input type="date" id="fechaCierre">
+                </div>
 
-        <button type="submit">Guardar</button>
-    </form>
+                <div style="grid-column: span 2;">
+                    <label>Temario</label>
+                    <textarea id="temario" rows="3" placeholder="Contenido de la unidad..."></textarea>
+                </div>
+
+                <div class="botones">
+                    <button type="submit" class="btn-guardar">Guardar</button>
+                    <button type="reset"  class="btn-cancelar">Cancelar</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Unidades</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Materia</th>
+                        <th>Nombre</th>
+                        <th>Estatus</th>
+                        <th>Fecha cierre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUnidades"></tbody>
+            </table>
+        </div>
+
+    </main>
 </div>
 
-</main>
-</div>
-
+<script src="../js/sidebar.js"></script>
+<script src="../js/unidades.js"></script>
 </body>
 </html>

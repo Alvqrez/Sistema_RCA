@@ -1,7 +1,5 @@
+// frontend/js/calificaciones.js
 const BASE_URL = "http://localhost:3000";
-
-const form  = document.getElementById("formCalificacion");
-const tabla = document.getElementById("tablaCalificaciones");
 
 async function cargarCalificaciones() {
 
@@ -17,48 +15,54 @@ async function cargarCalificaciones() {
     }
 
     const califs = await response.json();
-
+    const tabla  = document.getElementById("tablaCalificaciones");
     tabla.innerHTML = "";
 
     califs.forEach(c => {
+        const estatusClass = c.estatus_unidad === "Aprobada" ? "badge-verde" : c.estatus_unidad === "Reprobada" ? "badge-rojo" : "badge-gris";
         tabla.innerHTML += `
             <tr>
                 <td>${c.matricula}</td>
+                <td>${c.nombre_alumno}</td>
+                <td>${c.nombre_unidad}</td>
                 <td>${c.id_grupo}</td>
-                <td>${c.id_unidad}</td>
+                <td>${c.promedio_ponderado ?? "—"}</td>
                 <td>${c.calificacion_unidad_final ?? "Pendiente"}</td>
+                <td><span class="badge ${estatusClass}">${c.estatus_unidad}</span></td>
             </tr>
         `;
     });
 
 }
 
-form.addEventListener("submit", async function(e) {
+document.getElementById("formCalificacion").addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
     const token = localStorage.getItem("token");
 
     const data = {
-        matricula:                 document.getElementById("alumno").value,
-        id_grupo:                  document.getElementById("grupo").value,
-        id_unidad:                 document.getElementById("unidad").value,
+        matricula:                 document.getElementById("matricula").value,
+        id_grupo:                  document.getElementById("idGrupo").value,
+        id_unidad:                 document.getElementById("idUnidad").value,
         calificacion_unidad_final: document.getElementById("calificacion").value
     };
 
     const response = await fetch(`${BASE_URL}/api/calificaciones`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(data)
     });
 
     const result = await response.json();
-    alert(result.mensaje || result.error);
-    form.reset();
-    cargarCalificaciones();
+
+    if (result.success) {
+        alert("Calificación registrada");
+        this.reset();
+        cargarCalificaciones();
+    } else {
+        alert(result.error || "Error al registrar");
+    }
 
 });
 

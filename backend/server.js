@@ -105,6 +105,7 @@ app.use("/api/grupos",         require("./src/routes/grupos"));
 app.use("/api/calificaciones", require("./src/routes/calificaciones"));
 app.use("/api/admin",          require("./src/routes/admin"));
 app.use("/api/maestros", require("./src/routes/maestros"));
+app.use("/api/unidades", require("./src/routes/unidades"));
 
 app.get("/", (req, res) => {
     res.json({ mensaje: "API RCA activa", version: "1.0" });
