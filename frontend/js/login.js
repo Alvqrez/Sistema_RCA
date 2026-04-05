@@ -17,8 +17,8 @@ form.addEventListener("submit", async function(e) {
         const response = await fetch(`${BASE_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
+            body: JSON.stringify({ username, password, rol: localStorage.getItem("tabRol") || "alumno" }) // Envía el rol seleccionado
+        }); 
 
         const data = await response.json();
 
@@ -47,12 +47,15 @@ form.addEventListener("submit", async function(e) {
 
 });
 
-// Tabs de rol (ahora son opcionales, el rol lo determina el servidor)
-const tabs     = document.querySelectorAll(".tab");
+const tabs = document.querySelectorAll(".tab");
 
 tabs.forEach(tab => {
     tab.addEventListener("click", () => {
         tabs.forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
+        localStorage.setItem("tabRol", tab.dataset.rol);
     });
 });
+
+// Activa la primera tab por defecto
+localStorage.setItem("tabRol", "alumno");

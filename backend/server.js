@@ -15,7 +15,7 @@ app.use(express.json());
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/login", (req, res) => {
 
-    const { username, password } = req.body;
+    const { username, password, rol} = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Faltan campos requeridos" });
@@ -43,6 +43,13 @@ app.post("/login", (req, res) => {
         if (!passwordValida) {
             return res.status(401).json({ success: false, message: "Credenciales incorrectas" });
         }
+
+        if (rol && userRow.rol !== rol) {
+            return res.status(401).json({ 
+            success: false, 
+            message: `Esta cuenta no es de tipo "${rol}"` 
+         });
+    }
 
         // Actualizar último acceso
         db.query(
