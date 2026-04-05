@@ -1,103 +1,104 @@
-// frontend/js/api.js
+// api.js — versión final con filtros
 const BASE_URL = "http://localhost:3000";
-
 let alumnosGlobal = [];
+let filtroCarrera = "";
+let filtroBusqueda = "";
 
 async function cargarAlumnos() {
+  const token = localStorage.getItem("token");
 
-    const token = localStorage.getItem("token");
+  const response = await fetch(`${BASE_URL}/api/alumnos`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    const response = await fetch(`${BASE_URL}/api/alumnos`, {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
+  if (response.status === 401 || response.status === 403) {
+    window.location.href = "login.html";
+    return;
+  }
 
-    if (response.status === 401 || response.status === 403) {
-        window.location.href = "login.html";
-        return;
-    }
+  alumnosGlobal = await response.json();
+  renderTabla();
+}
 
-    alumnosGlobal = await response.json();
+function renderTabla() {
+  let datos = [...alumnosGlobal];
 
-    const tabla = document.getElementById("tablaAlumnos");
-    tabla.innerHTML = "";
+  // Filtro por carrera
+  if (filtroCarrera) {
+    datos = datos.filter((a) => a.id_carrera === filtroCarrera);
+  }
 
-    alumnosGlobal.forEach((alumno, index) => {
-        tabla.innerHTML += `
+  // Filtro por búsqueda de nombre o matrícula
+  if (filtroBusqueda) {
+    const q = filtroBusqueda.toLowerCase();
+    datos = datos.filter(
+      (a) =>
+        a.matricula.toLowerCase().includes(q) ||
+        a.nombre.toLowerCase().includes(q) ||
+        a.apellido_paterno.toLowerCase().includes(q),
+    );
+  }
+
+  // Orden alfabético por apellido
+  datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
+
+  const tabla = document.getElementById("tablaAlumnos");
+  tabla.innerHTML = "";
+
+  if (datos.length === 0) {
+    tabla.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94a3b8">Sin resultados</td></tr>`;
+    return;
+  }
+
+  const rol = localStorage.getItem("rol");
+
+  datos.forEach((alumno, index) => {
+    const globalIndex = alumnosGlobal.indexOf(alumno);
+    tabla.innerHTML += `
             <tr>
                 <td>${alumno.matricula}</td>
-                <td>${alumno.nombre} ${alumno.apellido_paterno} ${alumno.apellido_materno ?? ""}</td>
+                <td>${alumno.apellido_paterno} ${alumno.apellido_materno ?? ""}, ${alumno.nombre}</td>
                 <td>${alumno.id_carrera}</td>
                 <td>${alumno.correo_institucional}</td>
                 <td>
-                    <button class="btn-editar"  onclick="editarAlumno(${index})">Editar</button>
-                    <button class="btn-eliminar" onclick="eliminarAlumno('${alumno.matricula}')">Eliminar</button>
+                    ${
+                      rol === "administrador"
+                        ? `
+                        <button class="btn-editar"   onclick="editarAlumno(${globalIndex})">Editar</button>
+                        <button class="btn-eliminar" onclick="eliminarAlumno('${alumno.matricula}')">Eliminar</button>
+                    `
+                        : "—"
+                    }
                 </td>
             </tr>
         `;
-    });
-
+  });
 }
 
-document.getElementById("formAlumno").addEventListener("submit", async function(e) {
+// Filtros — conectar a los inputs en el HTML
+document.addEventListener("DOMContentLoaded", () => {
+  const rol = localStorage.getItem("rol");
+  const cardForm = document.getElementById("cardRegistroAlumno");
+  if (rol !== "administrador" && cardForm) cardForm.style.display = "none";
 
-    e.preventDefault();
+  const inputBusqueda = document.getElementById("filtroBusqueda");
+  const selectCarreraFiltro = document.getElementById("filtroCarrera");
 
-    const token = localStorage.getItem("token");
-
-    const alumno = {
-        nombre:               document.getElementById("nombre").value,
-        apellido_paterno:     document.getElementById("apellidoPaterno").value,
-        apellido_materno:     document.getElementById("apellidoMaterno").value,
-        matricula:            document.getElementById("matricula").value,
-        id_carrera:           document.getElementById("carrera").value,
-        correo_institucional: document.getElementById("correo").value,
-        username:             document.getElementById("username").value,
-        password:             document.getElementById("password").value
-    };
-
-    const response = await fetch(`${BASE_URL}/api/alumnos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify(alumno)
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener("input", (e) => {
+      filtroBusqueda = e.target.value;
+      renderTabla();
     });
+  }
 
-    const data = await response.json();
+  if (selectCarreraFiltro) {
+    selectCarreraFiltro.addEventListener("change", (e) => {
+      filtroCarrera = e.target.value;
+      renderTabla();
+    });
+  }
 
-    if (data.success) {
-        alert("Alumno registrado");
-        document.getElementById("formAlumno").reset();
-        cargarAlumnos();
-    } else {
-        alert(data.error || "Error al registrar");
-    }
-
+  cargarCarrerasEnSelect("carrera");
+  cargarCarrerasEnSelect("filtroCarrera");
+  cargarAlumnos();
 });
-
-function editarAlumno(index) {
-    const a = alumnosGlobal[index];
-    document.getElementById("nombre").value          = a.nombre;
-    document.getElementById("apellidoPaterno").value = a.apellido_paterno;
-    document.getElementById("apellidoMaterno").value = a.apellido_materno ?? "";
-    document.getElementById("matricula").value        = a.matricula;
-    document.getElementById("carrera").value          = a.id_carrera;
-    document.getElementById("correo").value           = a.correo_institucional;
-}
-
-async function eliminarAlumno(matricula) {
-
-    if (!confirm("¿Eliminar este alumno?")) return;
-
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(`${BASE_URL}/api/alumnos/${matricula}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await res.json();
-    if (data.success) cargarAlumnos();
-    else alert(data.error);
-
-}
-
-cargarAlumnos();
