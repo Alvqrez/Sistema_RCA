@@ -532,3 +532,15 @@ COMMENT = 'Autenticación y control de acceso. id_referencia apunta a Alumno, Ma
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+
+-- Correción 1
+CREATE TABLE IF NOT EXISTS `rca_sistema`.`grupo_unidad` (
+    `id_grupo`    INT UNSIGNED  NOT NULL COMMENT 'FK → Grupo',
+    `id_unidad`   INT UNSIGNED  NOT NULL COMMENT 'FK → Unidad',
+    `ponderacion` DECIMAL(5,2)  NOT NULL DEFAULT 0 
+                  COMMENT 'Peso de esta unidad en la calificación final del grupo (suma debe ser 100)',
+    PRIMARY KEY (`id_grupo`, `id_unidad`),
+    CONSTRAINT `fk_GU_Grupo`  FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`(`id_grupo`)  ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT `fk_GU_Unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidad`(`id_unidad`) ON UPDATE CASCADE ON DELETE RESTRICT
+) COMMENT = 'Peso de cada unidad dentro de un grupo específico';
