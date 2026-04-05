@@ -30,7 +30,7 @@ form.addEventListener("submit", async function(e) {
 
             // Redirige según el rol que devuelve el servidor
             if (data.rol === "alumno") {
-                window.location.href = "alumnos.html";
+                window.location.href = "portalAlumno.html";
             } else if (data.rol === "maestro") {
                 window.location.href = "maestros.html";
             } else if (data.rol === "administrador") {
