@@ -38,35 +38,50 @@ router.get("/:matricula", verificarToken, (req, res) => {
 });
 
 // POST — registrar alumno (solo maestro)
-router.post("/", soloMaestro, (req, res) => {
+// src/routes/alumnos.js — solo el POST corregido
+router.post("/", soloMaestro, async (req, res) => {
 
-    const { nombre, apellido_paterno, apellido_materno, matricula, id_carrera, correo_institucional, usuario, password } = req.body;
+    const { nombre, apellido_paterno, apellido_materno, matricula,
+            id_carrera, correo_institucional, username, password } = req.body;
 
-    if (!nombre || !matricula || !id_carrera || !correo_institucional || !usuario || !password) {
+    if (!nombre || !matricula || !id_carrera || !correo_institucional || !username || !password) {
         return res.status(400).json({ error: "Faltan campos requeridos" });
     }
 
-    bcrypt.hash(password, 10, (hashErr, hash) => {
+    try {
+        const hash = await bcrypt.hash(password, 10);
 
-        if (hashErr) return res.status(500).json({ error: "Error interno del servidor" });
-
-        const query = `
-            INSERT INTO Alumno (matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional, usuario, password)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        // 1. Inserta en alumno (sin usuario ni password — esos campos ya no se usan)
+        const queryAlumno = `
+            INSERT INTO alumno (matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
-        db.query(query, [matricula, nombre, apellido_paterno, apellido_materno ?? null, id_carrera, correo_institucional, usuario, hash], (err) => {
+        db.query(queryAlumno, [matricula, nombre, apellido_paterno, apellido_materno ?? null, id_carrera, correo_institucional], (err) => {
 
             if (err) {
-                if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "La matrícula o usuario ya existe" });
+                if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "La matrícula ya existe" });
                 return res.status(500).json({ error: "Error interno del servidor" });
             }
 
-            res.status(201).json({ success: true, mensaje: "Alumno registrado" });
+            // 2. Crea el acceso en la tabla usuario
+            db.query(
+                `INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'alumno', ?)`,
+                [username, hash, matricula],
+                (err2) => {
+                    if (err2) {
+                        if (err2.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "El username ya existe" });
+                        return res.status(500).json({ error: "Error interno del servidor" });
+                    }
+                    res.status(201).json({ success: true, mensaje: "Alumno registrado" });
+                }
+            );
 
         });
 
-    });
+    } catch (err) {
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
 
 });
 

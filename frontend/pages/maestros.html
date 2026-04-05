@@ -29,41 +29,41 @@
         <div class="card">
             <h2>Registrar Maestro</h2>
 
-            <form class="form-grid">
+            <form id="formMaestro" class="form-grid">
 
                 <div>
                     <label>ID Maestro</label>
-                    <input type="text">
+                    <input type="text" id="idMaestro" required>
                 </div>
 
                 <div>
                     <label>Nombre(s)</label>
-                    <input type="text">
+                    <input type="text" id="nombre" required>
                 </div>
 
                 <div>
                     <label>Apellido paterno</label>
-                    <input type="text">
+                    <input type="text" id="apellidoPaterno" required>
                 </div>
 
                 <div>
                     <label>Apellido materno</label>
-                    <input type="text">
+                    <input type="text" id="apellidoMaterno">
                 </div>
 
                 <div>
                     <label>CURP</label>
-                    <input type="text">
+                    <input type="text" id="curp">
                 </div>
 
                 <div>
                     <label>Fecha de nacimiento</label>
-                    <input type="date">
+                    <input type="date" id="fechaNacimiento">
                 </div>
 
                 <div>
                     <label>Género</label>
-                    <select>
+                    <select id="genero">
                         <option>Masculino</option>
                         <option>Femenino</option>
                     </select>
@@ -71,37 +71,37 @@
 
                 <div>
                     <label>Correo institucional</label>
-                    <input type="email">
+                    <input type="email" id="correoInstitucional">
                 </div>
 
                 <div>
                     <label>Correo personal</label>
-                    <input type="email">
+                    <input type="email" id="correoPersonal">
                 </div>
 
                 <div>
                     <label>Teléfono celular</label>
-                    <input type="text">
+                    <input type="text" id="telCelular">
                 </div>
 
                 <div>
                     <label>Teléfono oficina</label>
-                    <input type="text">
+                    <input type="text" id="telOficina">
                 </div>
 
                 <div>
                     <label>Dirección</label>
-                    <input type="text">
+                    <input type="text" id="direccion">
                 </div>
 
                 <div>
                     <label>Tipo de contrato</label>
-                    <input type="text">
+                    <input type="text" id="tipoContrato">
                 </div>
 
                 <div>
                     <label>Estatus</label>
-                    <select>
+                    <select id="estatus">
                         <option>Activo</option>
                         <option>Inactivo</option>
                     </select>
@@ -109,22 +109,22 @@
 
                 <div>
                     <label>Fecha de ingreso</label>
-                    <input type="date">
+                    <input type="date" id="fechaIngreso">
                 </div>
 
                 <div>
                     <label>Grado académico</label>
-                    <input type="text">
+                    <input type="text" id="gradoAcademico">
                 </div>
 
                 <div>
                     <label>Especialidad</label>
-                    <input type="text">
+                    <input type="text" id="especialidad">
                 </div>
 
                 <div>
                     <label>Departamento</label>
-                    <input type="text">
+                    <input type="text" id="departamento">
                 </div>
 
                 <div class="botones">
@@ -150,14 +150,14 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tablaMaestros">
     
                 </tbody>
             </table>
         </div>
 
     </main>
-
+    <script src="../js/maestros.js"></script>
 </div>
 
 </body>

@@ -1,0 +1,75 @@
+<!-- frontend/pages/admin.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrador - RCA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <h2>RCA</h2>
+        <nav>
+            <a href="admin.html" class="active">Panel</a>
+            <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <h1>Panel de Administración</h1>
+
+        <div class="card">
+            <h2>Crear usuario</h2>
+            <form id="formUsuario" class="form-grid">
+                <div>
+                    <label>Username</label>
+                    <input type="text" id="uUsername" required>
+                </div>
+                <div>
+                    <label>Contraseña</label>
+                    <input type="password" id="uPassword" required>
+                </div>
+                <div>
+                    <label>Rol</label>
+                    <select id="uRol">
+                        <option value="alumno">Alumno</option>
+                        <option value="maestro">Maestro</option>
+                        <option value="administrador">Administrador</option>
+                    </select>
+                </div>
+                <div>
+                    <label>ID de referencia (matrícula / num. empleado)</label>
+                    <input type="text" id="uReferencia" required>
+                </div>
+                <div class="botones">
+                    <button type="submit">Crear usuario</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Usuarios del sistema</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Rol</th>
+                        <th>Referencia</th>
+                        <th>Último acceso</th>
+                        <th>Estatus</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios"></tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+
+<script src="../js/admin.js"></script>
+</body>
+</html>
