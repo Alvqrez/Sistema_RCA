@@ -60,31 +60,39 @@ app.post("/login", (req, res) => {
             sqlNombre = "SELECT nombre, apellido_paterno FROM administrador WHERE id_admin = ?";
         }
 
-        db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
+        // server.js — bloque del login, solo la parte del nombre (reemplaza la que tienes)
+db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
 
-            if (err2 || persona.length === 0) {
-                return res.status(500).json({ success: false, message: "Error interno del servidor" });
-            }
+    if (err2) {
+        console.error("Error buscando persona:", err2);
+        return res.status(500).json({ success: false, message: "Error interno del servidor" });
+    }
 
-            const token = jwt.sign(
-                {
-                    id_usuario:   userRow.id_usuario,
-                    id_referencia: userRow.id_referencia,
-                    username:     userRow.username,
-                    rol:          userRow.rol
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: "8h" }
-            );
+    // Si no encuentra al alumno/maestro/admin referenciado — problema de datos
+    if (persona.length === 0) {
+        console.error(`No se encontró la persona con id_referencia: ${userRow.id_referencia} para rol: ${userRow.rol}`);
+        return res.status(500).json({ success: false, message: "Error interno del servidor: perfil de usuario incompleto" });
+    }
 
-            res.json({
-                success: true,
-                token,
-                rol:    userRow.rol,
-                nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`
-            });
+    const token = jwt.sign(
+        {
+            id_usuario:    userRow.id_usuario,
+            id_referencia: userRow.id_referencia,
+            username:      userRow.username,
+            rol:           userRow.rol
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "8h" }
+    );
 
-        });
+    res.json({
+        success: true,
+        token,
+        rol:    userRow.rol,
+        nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`
+    });
+
+});
 
     });
 

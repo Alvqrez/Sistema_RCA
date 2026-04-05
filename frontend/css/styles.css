@@ -419,3 +419,87 @@ select{
     border-radius: 6px;
     border: 1px solid #ccc;
 }
+
+
+/* Sidebarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr */
+
+/* ── SIDEBAR UNIFICADO ─────────────────────────────── */
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #1e293b;
+    color: white;
+    display: flex;
+    flex-direction: column;    /* ← apila logo + nav + botón verticalmente */
+    padding: 0;
+    overflow: hidden;
+}
+
+.sidebar-logo {
+    padding: 20px 15px 15px;
+    border-bottom: 1px solid #334155;
+    text-align: center;
+}
+
+.sidebar-logo h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    color: white;
+}
+
+.sidebar-usuario {
+    font-size: 12px;
+    color: #94a3b8;
+    display: block;
+}
+
+.sidebar nav {
+    flex: 1;                   /* ← ocupa el espacio disponible */
+    padding: 15px 10px;
+    overflow-y: auto;
+}
+
+.sidebar nav a {
+    display: block;
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    transition: background 0.15s;
+}
+
+.sidebar nav a:hover {
+    background: #334155;
+    color: white;
+}
+
+.sidebar nav a.active {
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+}
+
+/* Botón de cerrar sesión — rojo, pegado al fondo */
+.logout-btn {
+    margin: 0;
+    padding: 14px;
+    width: 100%;
+    border: none;
+    border-top: 1px solid #334155;
+    background: #dc2626;       /* ← rojo */
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+}
+
+.logout-btn:hover {
+    background: #b91c1c;
+}

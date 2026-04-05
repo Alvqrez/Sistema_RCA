@@ -545,7 +545,7 @@ ADD COLUMN usuario VARCHAR(50) UNIQUE,
 ADD COLUMN password VARCHAR(255);
 
 
------ O bien, puedes ejecutar este código con Foward Engineering: --
+------------------------ O bien, puedes ejecutar este código con Foward Engineering: -------------------------------
 -- MySQL Workbench Forward Engineering
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
