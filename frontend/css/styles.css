@@ -3,448 +3,517 @@
    ===================================================================== */
 
 /* Denifiremos la paleta de colores aquí, para que nos sea mas sencillo estilizar:*/
-:root{
-    --color-primario:#3b82f6;
-    --color-exito:#10b981;
-    --color-peligro:#ef4444;
-    --color-warning:#f59e0b;
+:root {
+  --primary: #1e40af; /* Azul Institucional */
+  --primary-hover: #1e3a8a;
+  --primary-light: #dbeafe;
+  --success: #059669;
+  --danger: #dc2626;
+  --bg-app: #f8fafc; /* Gris muy claro, profesional */
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --radius: 10px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* ESTO ES PARA CELULARES O TABLETS */
-@media (max-width: 900px){
+@media (max-width: 900px) {
+  .sidebar {
+    width: 70px;
+  }
 
-.sidebar{
-    width:70px;
-}
+  .content {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+  }
 
-.content{
-    margin-left:70px;
-    width:calc(100% - 70px);
-}
+  .sidebar-logo h2 {
+    display: none;
+  }
 
-.sidebar-logo h2{
-    display:none;
-}
-
-.sidebar nav a{
-    font-size:12px;
-}
+  .sidebar nav a {
+    font-size: 12px;
+  }
 }
 
 /* ── BASE ─────────────────────────────────────────────────────────── */
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: #f4f6f9;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: #f4f6f9;
 }
 
 /* ── LAYOUT ───────────────────────────────────────────────────────── */
 .layout {
-    display: flex;
+  display: flex;
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────────────── */
 .sidebar {
-    width: 220px;
-    height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;
-    background: #1e293b;
-    color: white;
-    display: flex;
-    flex-direction: column;   /* ← necesario para que el botón quede abajo */
-    overflow: hidden;
+  width: 220px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #1e293b;
+  color: white;
+  display: flex;
+  flex-direction: column; /* ← necesario para que el botón quede abajo */
+  overflow: hidden;
 }
 
 .sidebar-logo {
-    padding: 20px 15px 15px;
-    border-bottom: 1px solid #334155;
-    text-align: center;
+  padding: 20px 15px 15px;
+  border-bottom: 1px solid #334155;
+  text-align: center;
 }
 
 .sidebar-logo h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    color: white;
+  margin: 0 0 4px;
+  font-size: 22px;
+  color: white;
 }
 
 .sidebar-usuario {
-    font-size: 12px;
-    color: #94a3b8;
-    display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  display: block;
 }
 
 .sidebar nav {
-    flex: 1;                  /* ← ocupa el espacio libre y empuja el botón abajo */
-    padding: 15px 10px;
-    overflow-y: auto;
+  flex: 1; /* ← ocupa el espacio libre y empuja el botón abajo */
+  padding: 15px 10px;
+  overflow-y: auto;
 }
 
 .sidebar nav a {
-    display: flex;
-    color: #cbd5e1;
-    text-decoration: none;
-    padding: 10px 12px;
-    border-radius: 6px;
-    margin-bottom: 4px;
-    font-size: 14px;
-    transition: background 0.15s;
-    align-items:center;
-    gap:8px;
-    cursor:pointer;
+  display: flex;
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  transition: background 0.15s;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
 }
 
 .sidebar nav a:hover {
-    background: #334155;
-    color: white;
+  background: #334155;
+  color: white;
 }
 
 .sidebar nav a.active {
-    background: #3b82f6;
-    color: white;
-    font-weight: 600;
+  background: rgba(59, 130, 246, 0.1); /* Fondo azul transparente */
+  color: #60a5fa; /* Texto azul claro */
+  border-left: 4px solid #3b82f6; /* Indicador lateral */
+  border-radius: 0 6px 6px 0; /* Redondeado solo de un lado */
+  margin-left: -10px; /* Ajuste para que pegue al borde */
+  padding-left: 18px;
 }
 
-.sidebar nav::-webkit-scrollbar{
-    width:6px;
+.sidebar nav::-webkit-scrollbar {
+  width: 6px;
 }
 
-.sidebar nav::-webkit-scrollbar-thumb{
-    background:#475569;
-    border-radius:10px;
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
 }
 
 /* Botón cerrar sesión — rojo, pegado al fondo */
 .logout-btn {
-    margin: 0;
-    padding: 14px;
-    width: 100%;
-    border: none;
-    border-top: 1px solid #334155;
-    background: #dc2626;
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-    text-align: center;
-    border-radius: 0;
+  margin: 0;
+  padding: 14px;
+  width: 100%;
+  border: none;
+  border-top: 1px solid #334155;
+  background: #dc2626;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+  border-radius: 0;
 }
 
 .logout-btn:hover {
-    background: #b91c1c;
+  background: #b91c1c;
 }
 
 /* ── CONTENT ──────────────────────────────────────────────────────── */
 .content {
-    margin-left: 220px;
-    padding: 20px;
-    width: calc(100% - 220px);
+  margin-left: 220px;
+  padding: 20px;
+  width: calc(100% - 220px);
 }
 
 h1 {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 /* ── CARD ─────────────────────────────────────────────────────────── */
 .card {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
+  background: white;
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 /* ── TABLA ────────────────────────────────────────────────────────── */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 10px;
-    overflow: hidden;
-    background:white;
+  width: 100%;
+  border-collapse: separate; /* Cambiado para que el radio funcione mejor */
+  border-spacing: 0;
+  background: white;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
 }
 
 th {
-    background: #3b82f6;
-    color: white;
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 14px;
+  background: #f1f5f9; /* Color neutro */
+  color: var(--text-muted);
+  padding: 14px;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 14px;
+  padding: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: var(--text-main);
 }
 
 tr:nth-child(even) {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 tr:hover {
-    background:#eef2ff;
+  background-color: #f1f7ff; /* Feedback visual sutil al pasar el mouse */
 }
 
-tbody tr{
-    transition: background 0.15s;
+tbody tr {
+  transition: background 0.15s;
 }
 /* ── FORMULARIOS ──────────────────────────────────────────────────── */
 form {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 label {
-    display: block;
-    font-size: 13px;
-    color: #475569;
-    margin-bottom: 4px;
-    font-weight: 600;
+  display: block;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 4px;
+  font-weight: 600;
 }
 
 input,
 select,
 textarea {
-    background:#f9fafb;
-    padding: 9px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 14px;
-    width: 100%;
-    transition: border-color 0.15s;
+  background: #ffffff;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.2s ease;
 }
 
+/* ESTE ES EL QUE ME PEDISTE, ponlo justo aquí */
 input:focus,
 select:focus,
 textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    background:white;
+  outline: none;
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1); /* Ring de enfoque azul */
 }
 
 .form-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
 }
 
 .form-grid input,
 .form-grid select,
 .form-grid textarea {
-    width: 100%;
+  width: 100%;
 }
 
 .section-title {
-    grid-column: span 3;
-    margin-top: 10px;
-    margin-bottom: 0;
-    color: #1e293b;
-    font-size: 15px;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 6px;
+  grid-column: span 3;
+  margin-top: 10px;
+  margin-bottom: 0;
+  color: #1e293b;
+  font-size: 15px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
 }
 
 .botones {
-    grid-column: span 3;
-    display: flex;
-    gap: 12px;
-    margin-top: 10px;
+  grid-column: span 3;
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 /* ── BOTONES ──────────────────────────────────────────────────────── */
 button {
-    padding: 9px 20px;
-    border: none;
-    border-radius: 6px;
-    background: #3b82f6;
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
-button:active{
-    transform: scale(0.97);
+button:active {
+  transform: scale(0.97);
 }
 
 button:hover {
-    background: #2563eb;
+  background: #2563eb;
 }
 
-.btn-guardar  { background: #10b981; }
-.btn-guardar:hover  { background: #059669; }
+.btn-guardar {
+  background: #10b981;
+}
+.btn-guardar:hover {
+  background: #059669;
+}
 
-.btn-cancelar { background: #6b7280; }
-.btn-cancelar:hover { background: #4b5563; }
+.btn-cancelar {
+  background: #6b7280;
+}
+.btn-cancelar:hover {
+  background: #4b5563;
+}
 
-.btn-eliminar { background: #ef4444; }
-.btn-eliminar:hover { background: #dc2626; }
+.btn-editar {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid transparent;
+}
+.btn-editar:hover {
+  background: var(--primary-light);
+  border-radius: 6px;
+}
 
-.btn-editar   { background: #f59e0b; }
-.btn-editar:hover   { background: #d97706; }
+.btn-eliminar {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid transparent;
+}
+.btn-eliminar:hover {
+  background: #fee2e2;
+  border-radius: 6px;
+}
 
 /* ── ESTADOS / BADGES ─────────────────────────────────────────────── */
 .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing:0.3px;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-.badge-verde  { background: #d1fae5; color: #065f46; }
-.badge-rojo   { background: #fee2e2; color: #991b1b; }
-.badge-gris   { background: #f1f5f9; color: #475569; }
-.badge-azul   { background: #dbeafe; color: #1e40af; }
+.badge-verde {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badge-rojo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badge-gris {
+  background: #f1f5f9;
+  color: #475569;
+}
+.badge-azul {
+  background: #dbeafe;
+  color: #1e40af;
+}
 
 /* ── MENSAJES ─────────────────────────────────────────────────────── */
-.mensaje-error   { color: #dc2626; font-size: 13px; margin-top: 6px; }
-.mensaje-exito   { color: #059669; font-size: 13px; margin-top: 6px; }
+.mensaje-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 6px;
+}
+.mensaje-exito {
+  color: #059669;
+  font-size: 13px;
+  margin-top: 6px;
+}
 
 /* =====================================================================
    LOGIN
    ===================================================================== */
 .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg,#2563eb,#06b6d4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
 }
 
 .login-card {
-    background: white;
-    padding: 30px;
-    width: 360px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    animation: aparecer 0.4s ease;
+  background: white;
+  padding: 30px;
+  width: 360px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: aparecer 0.4s ease;
 }
 
-@keyframes aparecer{
-    from{
-        opacity:0;
-        transform:translateY(10px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-header h1 {
-    margin: 0;
-    color: #1e293b;
+  margin: 0;
+  color: #1e293b;
 }
 
 .login-header p {
-    font-size: 14px;
-    color: #64748b;
-    margin-bottom: 20px;
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 20px;
 }
 
 .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .tab {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-    cursor: pointer;
-    background: #e5e7eb;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-    transition: 0.2s;
-    color: #374151;
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+  background: #e5e7eb;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: 0.2s;
+  color: #374151;
 }
 
-.tab:hover  { background: #d1d5db; }
+.tab:hover {
+  background: #d1d5db;
+}
 .tab.active {
-    background: white;
-    border-bottom: 3px solid #3b82f6;
-    color: #1e293b;
+  background: white;
+  border-bottom: 3px solid #3b82f6;
+  color: #1e293b;
 }
 
 .input-group {
-    position: relative;
-    margin-bottom: 20px;
-    text-align: left;
-    width:100%;
+  position: relative;
+  margin-bottom: 20px;
+  text-align: left;
+  width: 100%;
 }
 
 .input-group input {
-    width: 100%;
-    padding: 12px 10px 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
+  width: 100%;
+  padding: 12px 10px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .input-group label {
-    position: absolute;
-    top: 11px;
-    left: 10px;
-    color: #94a3b8;
-    font-size: 14px;
-    font-weight: 400;
-    transition: 0.2s;
-    pointer-events: none;
-    background: transparent;
+  position: absolute;
+  top: 11px;
+  left: 10px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 400;
+  transition: 0.2s;
+  pointer-events: none;
+  background: transparent;
 }
 
-.login-card form{
-    display:flex;
-    flex-direction:column;
+.login-card form {
+  display: flex;
+  flex-direction: column;
 }
 
 .input-group input:focus + label,
 .input-group input:valid + label {
-    top: -8px;
-    left: 8px;
-    font-size: 11px;
-    background: white;
-    padding: 0 4px;
-    color: #3b82f6;
-    font-weight: 600;
+  top: -8px;
+  left: 8px;
+  font-size: 11px;
+  background: white;
+  padding: 0 4px;
+  color: #3b82f6;
+  font-weight: 600;
 }
 
-.input-group input:focus{
-    outline:none;
-    border-color:#3b82f6;
-    box-shadow:0 0 0 3px rgba(59,130,246,0.15);
+.input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .btn-login {
-    width: 100%;
-    padding: 11px;
-    border: none;
-    border-radius: 8px;
-    background: #3b82f6;
-    color: white;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.btn-login:hover { background: #2563eb; }
+.btn-login:hover {
+  background: #2563eb;
+}
