@@ -85,37 +85,41 @@ body {
 }
 
 .sidebar nav {
-  flex: 1; /* ← ocupa el espacio libre y empuja el botón abajo */
-  padding: 15px 10px;
+  flex: 1;
+  padding: 10px 0px;
   overflow-y: auto;
 }
 
 .sidebar nav a {
   display: flex;
+  align-items: center;
+  gap: 12px;
   color: #cbd5e1;
   text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 6px;
-  margin-bottom: 4px;
   font-size: 14px;
-  transition: background 0.15s;
-  align-items: center;
-  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  transition: all 0.2s;
   cursor: pointer;
+  border-left: 3px solid transparent;
 }
 
 .sidebar nav a:hover {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.08); /* Blanco transparente sutil */
   color: white;
 }
 
 .sidebar nav a.active {
-  background: rgba(59, 130, 246, 0.1); /* Fondo azul transparente */
-  color: #60a5fa; /* Texto azul claro */
+  background: rgba(37, 99, 235, 0.1); /* Fondo azul transparente */
+  color: #3b82f6; /* Texto azul claro */
   border-left: 4px solid #3b82f6; /* Indicador lateral */
-  border-radius: 0 6px 6px 0; /* Redondeado solo de un lado */
-  margin-left: -10px; /* Ajuste para que pegue al borde */
-  padding-left: 18px;
+  border-radius: 0; /* Redondeado solo de un lado */
+  font-weight: 600;
+}
+
+.sidebar nav a iconify-icon {
+  font-size: 20px; /* Tamaño del icono */
+  flex-shrink: 0;
 }
 
 .sidebar nav::-webkit-scrollbar {
@@ -129,16 +133,20 @@ body {
 
 /* Botón cerrar sesión — rojo, pegado al fondo */
 .logout-btn {
-  margin: 0;
-  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  border: none;
-  border-top: 1px solid #334155;
+  padding: 14px;
   background: #dc2626;
   color: white;
-  font-size: 14px;
-  font-weight: 600;
+  border: none;
   cursor: pointer;
+  font-weight: 600;
+  margin: 0;
+  border-top: 1px solid #334155;
+  font-size: 14px;
   transition: background 0.15s;
   text-align: center;
   border-radius: 0;
@@ -182,8 +190,7 @@ h1 {
 /* ── TABLA ────────────────────────────────────────────────────────── */
 table {
   width: 100%;
-  border-collapse: separate; /* Cambiado para que el radio funcione mejor */
-  border-spacing: 0;
+  border-collapse: collapse; /* Cambiado para que el radio funcione mejor */
   background: white;
   border-radius: var(--radius);
   overflow: hidden;
@@ -213,7 +220,7 @@ tr:nth-child(even) {
 }
 
 tr:hover {
-  background-color: #f1f7ff; /* Feedback visual sutil al pasar el mouse */
+  background-color: #f8fafc; /* Feedback visual sutil al pasar el mouse */
 }
 
 tbody tr {
@@ -286,6 +293,25 @@ textarea:focus {
   margin-top: 10px;
 }
 
+.table-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px; /* Este es el "aire" que mencionamos */
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.table-filters input {
+  flex: 2; /* El buscador es más largo */
+}
+
+.table-filters select {
+  flex: 1; /* El select es más corto */
+}
+
 /* ── BOTONES ──────────────────────────────────────────────────────── */
 button {
   padding: 9px 20px;
@@ -309,17 +335,33 @@ button:hover {
 }
 
 .btn-guardar {
-  background: #10b981;
+  background: var(--primary); /* Usamos el azul institucional */
+  font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.2);
 }
+
 .btn-guardar:hover {
-  background: #059669;
+  background: var(--primary-hover);
+  transform: translateY(-1px); /* Efecto de elevación sutil */
+  box-shadow: 0 10px 15px -3px rgba(30, 64, 175, 0.3);
 }
 
 .btn-cancelar {
-  background: #6b7280;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid #e2e8f0;
 }
+
 .btn-cancelar:hover {
-  background: #4b5563;
+  background: #f8fafc;
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+.btn-editar,
+.btn-eliminar {
+  margin: 0 4px; /* Un poco de espacio lateral */
+  font-size: 13px; /* Un poco más pequeños en la tabla */
 }
 
 .btn-editar {

@@ -1,83 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Unidades - RCA</title>
-    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/styles.css">
-    
-</head>
-<body>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
 
-<div class="layout">
-    <aside class="sidebar"></aside>
-
-    <main class="content">
+      <main class="content">
         <h1>Unidades</h1>
 
         <div class="card">
-            <h2>Registrar Unidad</h2>
-            <form id="formUnidad" class="form-grid">
+          <h2>Registrar Unidad</h2>
+          <form id="formUnidad" class="form-grid">
+            <div>
+              <label>Clave de materia</label>
+              <input
+                type="text"
+                id="claveMateria"
+                placeholder="Ej. ISC-101"
+                required
+              />
+            </div>
 
-                <div>
-                    <label>Clave de materia</label>
-                    <input type="text" id="claveMateria" placeholder="Ej. ISC-101" required>
-                </div>
+            <div>
+              <label>Nombre de la unidad</label>
+              <input
+                type="text"
+                id="nombreUnidad"
+                placeholder="Ej. Unidad 1: Introducción"
+                required
+              />
+            </div>
 
-                <div>
-                    <label>Nombre de la unidad</label>
-                    <input type="text" id="nombreUnidad" placeholder="Ej. Unidad 1: Introducción" required>
-                </div>
+            <div>
+              <label>Estatus</label>
+              <select id="estatus">
+                <option value="Pendiente">Pendiente</option>
+                <option value="En curso">En curso</option>
+                <option value="Cerrada">Cerrada</option>
+              </select>
+            </div>
 
-                <div>
-                    <label>Estatus</label>
-                    <select id="estatus">
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En curso">En curso</option>
-                        <option value="Cerrada">Cerrada</option>
-                    </select>
-                </div>
+            <div>
+              <label>Fecha de cierre</label>
+              <input type="date" id="fechaCierre" />
+            </div>
 
-                <div>
-                    <label>Fecha de cierre</label>
-                    <input type="date" id="fechaCierre">
-                </div>
+            <div style="grid-column: span 2">
+              <label>Temario</label>
+              <textarea
+                id="temario"
+                rows="3"
+                placeholder="Contenido de la unidad..."
+              ></textarea>
+            </div>
 
-                <div style="grid-column: span 2;">
-                    <label>Temario</label>
-                    <textarea id="temario" rows="3" placeholder="Contenido de la unidad..."></textarea>
-                </div>
-
-                <div class="botones">
-                    <button type="submit" class="btn-guardar">Guardar</button>
-                    <button type="reset"  class="btn-cancelar">Cancelar</button>
-                </div>
-
-            </form>
+            <div class="botones">
+              <button type="submit" class="btn-guardar">Guardar</button>
+              <button type="reset" class="btn-cancelar">Cancelar</button>
+            </div>
+          </form>
         </div>
 
         <div class="card">
-            <h2>Lista de Unidades</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Materia</th>
-                        <th>Nombre</th>
-                        <th>Estatus</th>
-                        <th>Fecha cierre</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaUnidades"></tbody>
-            </table>
+          <h2>Lista de Unidades</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Materia</th>
+                <th>Nombre</th>
+                <th>Estatus</th>
+                <th>Fecha cierre</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaUnidades"></tbody>
+          </table>
         </div>
+      </main>
+    </div>
 
-    </main>
-</div>
-
-<script src="../js/sidebar.js"></script>
-<script src="../js/unidades.js"></script>
-</body>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/unidades.js"></script>
+  </body>
 </html>

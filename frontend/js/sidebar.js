@@ -15,42 +15,57 @@
   // Links según el rol
   const linksPorRol = {
     maestro: [
-      { href: "grupos.html", texto: "Mis grupos", icono: "🏫" },
-      { href: "calificaciones.html", texto: "Calificaciones", icono: "📊" },
-      { href: "unidades.html", texto: "Unidades", icono: "📋" },
-      { href: "alumnos.html", texto: "Alumnos", icono: "👤" },
+      { href: "grupos.html", texto: "Mis grupos", icono: "lucide:users-round" },
+      {
+        href: "calificaciones.html",
+        texto: "Calificaciones",
+        icono: "lucide:bar-chart-3",
+      },
+      {
+        href: "unidades.html",
+        texto: "Unidades",
+        icono: "lucide:clipboard-list",
+      },
+      { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
     ],
     administrador: [
-      { href: "admin.html", texto: "Panel", icono: "🛠️" },
-      { href: "alumnos.html", texto: "Alumnos", icono: "👤" },
-      { href: "maestros.html", texto: "Maestros", icono: "🎓" },
-      { href: "materias.html", texto: "Materias", icono: "📚" },
-      { href: "grupos.html", texto: "Grupos", icono: "🏫" },
-      { href: "unidades.html", texto: "Unidades", icono: "📋" },
+      { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
+      { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
+      {
+        href: "maestros.html",
+        texto: "Maestros",
+        icono: "lucide:graduation-cap",
+      },
+      { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
+      { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
+      { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
     ],
   };
 
   const links = linksPorRol[rol] || [];
-
-  // Detecta la página actual para marcar el link como activo
   const paginaActual = window.location.pathname.split("/").pop();
 
   // Construye el HTML del sidebar
   const linksHTML = links
     .map((link) => {
       const activo = link.href === paginaActual ? "active" : "";
-      return `<a href="${link.href}" class="${activo}">${link.icono} ${link.texto}</a>`;
+      return `
+        <a href="${link.href}" class="${activo}">
+          <iconify-icon icon="${link.icono}"></iconify-icon>
+          <span>${link.texto}</span>
+        </a>`;
     })
     .join("");
 
   const sidebarHTML = `
         <div class="sidebar-logo">
             <h2>RCA</h2>
-            <span class="sidebar-usuario">${nombre || ""}</span>
+            <span class="sidebar-usuario">${nombre || "Usuario"}</span>
         </div>
         <nav>${linksHTML}</nav>
         <button class="logout-btn" onclick="cerrarSesion()">
-            🔒 Cerrar sesión
+            <iconify-icon icon="lucide:log-out"></iconify-icon>
+            <span>Cerrar sesión</span>
         </button>
     `;
 
@@ -61,7 +76,6 @@
   }
 })();
 
-// Función global de logout (disponible desde cualquier página)
 function cerrarSesion() {
   localStorage.clear();
   window.location.href = "login.html";

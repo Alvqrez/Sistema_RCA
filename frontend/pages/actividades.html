@@ -1,129 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Actividades - RCA</title>
-    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/styles.css">
-</head>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
 
-<body>
-
-<div class="layout">
-
-    <!-- MENU -->
-    <aside class="sidebar">
+  <body>
+    <div class="layout">
+      <!-- MENU -->
+      <aside class="sidebar">
         <h2>RCA</h2>
         <nav>
-            <a href="grupos.html">Grupos</a>
-            <a href="unidades.html">Unidades</a>
-            <a href="actividades.html" class="active">Actividades</a>
+          <a href="grupos.html">Grupos</a>
+          <a href="unidades.html">Unidades</a>
+          <a href="actividades.html" class="active">Actividades</a>
         </nav>
-    </aside>
+      </aside>
 
-    <!-- CONTENIDO -->
-    <main class="content">
-
+      <!-- CONTENIDO -->
+      <main class="content">
         <h1>Actividades</h1>
 
         <!-- FORMULARIO -->
         <div class="card">
-            <h2>Registrar Actividad</h2>
+          <h2>Registrar Actividad</h2>
 
-            <form id="formActividad">
+          <form id="formActividad">
+            <div class="form-group">
+              <label>ID Actividad</label>
+              <input type="text" id="idActividad" required />
+            </div>
 
-                <div class="form-group">
-                    <label>ID Actividad</label>
-                    <input type="text" id="idActividad" required>
-                </div>
+            <div class="form-group">
+              <label>Grupo</label>
+              <select id="grupoActividad" required></select>
+            </div>
 
-                <div class="form-group">
-                    <label>Grupo</label>
-                    <select id="grupoActividad" required></select>
-                </div>
+            <div class="form-group">
+              <label>Unidad</label>
+              <select id="unidadActividad" required></select>
+            </div>
 
-                <div class="form-group">
-                    <label>Unidad</label>
-                    <select id="unidadActividad" required></select>
-                </div>
+            <div class="form-group">
+              <label>Nombre de la actividad</label>
+              <input type="text" id="nombreActividad" required />
+            </div>
 
-                <div class="form-group">
-                    <label>Nombre de la actividad</label>
-                    <input type="text" id="nombreActividad" required>
-                </div>
+            <div class="form-group">
+              <label>Ponderación (%)</label>
+              <input
+                type="number"
+                id="ponderacion"
+                min="1"
+                max="100"
+                required
+              />
+            </div>
 
-                <div class="form-group">
-                    <label>Ponderación (%)</label>
-                    <input type="number" id="ponderacion" min="1" max="100" required>
-                </div>
+            <div class="form-group">
+              <label>Tipo de evaluación</label>
+              <select id="tipoEvaluacion" required>
+                <option value="">Seleccione</option>
+                <option value="examen">Examen</option>
+                <option value="tarea">Tarea</option>
+                <option value="proyecto">Proyecto</option>
+                <option value="participacion">Participación</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
 
-                <div class="form-group">
-                    <label>Tipo de evaluación</label>
-                    <select id="tipoEvaluacion" required>
-                        <option value="">Seleccione</option>
-                        <option value="examen">Examen</option>
-                        <option value="tarea">Tarea</option>
-                        <option value="proyecto">Proyecto</option>
-                        <option value="participacion">Participación</option>
-                        <option value="otro">Otro</option>
-                    </select>
-                </div>
+            <!-- NUEVO -->
+            <div class="form-group">
+              <label>Estatus</label>
+              <select id="estatus" required>
+                <option value="pendiente">Pendiente</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="entregado">Entregado</option>
+                <option value="calificado">Calificado</option>
+              </select>
+            </div>
 
-                <!-- NUEVO -->
-                <div class="form-group">
-                    <label>Estatus</label>
-                    <select id="estatus" required>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="en_proceso">En proceso</option>
-                        <option value="entregado">Entregado</option>
-                        <option value="calificado">Calificado</option>
-                    </select>
-                </div>
+            <!-- NUEVO -->
+            <div class="form-group">
+              <label>Fecha de entrega</label>
+              <input type="date" id="fechaEntrega" required />
+            </div>
 
-                <!-- NUEVO -->
-                <div class="form-group">
-                    <label>Fecha de entrega</label>
-                    <input type="date" id="fechaEntrega" required>
-                </div>
+            <button type="submit" class="btn-guardar">Guardar</button>
+            <button
+              type="button"
+              class="btn-cancelar"
+              onclick="cancelarEdicion()"
+            >
+              Cancelar
+            </button>
 
-                <button type="submit">Guardar</button>
-                <button type="button" onclick="cancelarEdicion()">Cancelar</button>
-
-                <p id="mensajeActividad"></p>
-
-            </form>
+            <p id="mensajeActividad"></p>
+          </form>
         </div>
 
         <!-- TABLA -->
         <div class="card">
-            <h2>Lista de Actividades</h2>
+          <h2>Lista de Actividades</h2>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Grupo</th>
-                        <th>Unidad</th>
-                        <th>Actividad</th>
-                        <th>%</th>
-                        <th>Tipo</th>
-                        <th>Estatus</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Grupo</th>
+                <th>Unidad</th>
+                <th>Actividad</th>
+                <th>%</th>
+                <th>Tipo</th>
+                <th>Estatus</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
 
-                <tbody id="tablaActividades"></tbody>
-            </table>
-
+            <tbody id="tablaActividades"></tbody>
+          </table>
         </div>
+      </main>
+    </div>
 
-    </main>
-
-</div>
-
-<script src="../js/actividades.js"></script>
-
-</body>
+    <script src="../js/actividades.js"></script>
+  </body>
 </html>

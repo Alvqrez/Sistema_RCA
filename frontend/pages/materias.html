@@ -1,77 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Materias - RCA</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/styles.css">
-</head>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
 
-<body>
+  <body>
+    <div class="layout">
+      <!-- MENU -->
+      <aside class="sidebar"></aside>
 
-<div class="layout">
-
-    <!-- MENU -->
-    <aside class="sidebar"></aside>
-
-    <!-- CONTENIDO -->
-    <main class="content">
-
+      <!-- CONTENIDO -->
+      <main class="content">
         <h1>Materias</h1>
 
         <!-- FORMULARIO -->
         <div class="card">
-            <h2>Registrar Materia</h2>
+          <h2>Registrar Materia</h2>
 
-            <form id="formMateria">
+          <form id="formMateria">
+            <div class="form-group">
+              <label>Nombre de la materia</label>
+              <input type="text" id="nombreMateria" required />
+            </div>
 
-                <div class="form-group">
-                    <label>Nombre de la materia</label>
-                    <input type="text" id="nombreMateria" required>
-                </div>
+            <div class="form-group">
+              <label>Clave</label>
+              <input type="text" id="claveMateria" placeholder="Ej: ISC-101" />
+            </div>
 
-                <div class="form-group">
-                    <label>Clave</label>
-                    <input type="text" id="claveMateria" placeholder="Ej: ISC-101">
-                </div>
+            <div class="form-group">
+              <label>Créditos</label>
+              <input type="number" id="creditos" min="0" />
+            </div>
 
-                <div class="form-group">
-                    <label>Créditos</label>
-                    <input type="number" id="creditos" min="0">
-                </div>
+            <button type="submit" class="btn-guardar">Guardar</button>
+            <button
+              type="button"
+              class="btn-cancelar"
+              onclick="cancelarEdicion()"
+            >
+              Cancelar
+            </button>
 
-                <button type="submit">Guardar</button>
-                <button type="button" onclick="cancelarEdicion()">Cancelar</button>
-
-                <p id="mensajeMateria"></p>
-
-            </form>
+            <p id="mensajeMateria"></p>
+          </form>
         </div>
 
         <!-- TABLA -->
         <div class="card">
-            <h2>Lista de Materias</h2>
+          <h2>Lista de Materias</h2>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Clave</th>
-                        <th>Créditos</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Clave</th>
+                <th>Créditos</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
 
-                <tbody id="tablaMaterias"></tbody>
-            </table>
+            <tbody id="tablaMaterias"></tbody>
+          </table>
         </div>
-
-    </main>
-
-</div>
-<script src="../js/sidebar.js"></script>
-<script src="../js/materias.js"></script>
-
-</body>
+      </main>
+    </div>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/materias.js"></script>
+  </body>
 </html>

@@ -23,12 +23,10 @@ async function cargarAlumnos() {
 function renderTabla() {
   let datos = [...alumnosGlobal];
 
-  // Filtro por carrera
+  // Filtros (se mantienen igual)
   if (filtroCarrera) {
     datos = datos.filter((a) => a.id_carrera === filtroCarrera);
   }
-
-  // Filtro por búsqueda de nombre o matrícula
   if (filtroBusqueda) {
     const q = filtroBusqueda.toLowerCase();
     datos = datos.filter(
@@ -39,32 +37,34 @@ function renderTabla() {
     );
   }
 
-  // Orden alfabético por apellido
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
 
   const tabla = document.getElementById("tablaAlumnos");
   tabla.innerHTML = "";
 
+  // CORRECCIÓN 1: Colspan debe ser 6 porque tienes 6 columnas en el header
   if (datos.length === 0) {
-    tabla.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94a3b8">Sin resultados</td></tr>`;
+    tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Sin resultados</td></tr>`;
     return;
   }
 
   const rol = localStorage.getItem("rol");
 
-  datos.forEach((alumno, index) => {
+  datos.forEach((alumno) => {
     const globalIndex = alumnosGlobal.indexOf(alumno);
+    // CORRECCIÓN 2: Agregamos la celda de Teléfono para que coincida con el header
     tabla.innerHTML += `
             <tr>
                 <td>${alumno.matricula}</td>
                 <td>${alumno.apellido_paterno} ${alumno.apellido_materno ?? ""}, ${alumno.nombre}</td>
                 <td>${alumno.id_carrera}</td>
                 <td>${alumno.correo_institucional}</td>
-                <td>
+                <td>${alumno.telefono || "—"}</td> 
+                <td style="text-align: center;">
                     ${
                       rol === "administrador"
                         ? `
-                        <button class="btn-editar"   onclick="editarAlumno(${globalIndex})">Editar</button>
+                        <button class="btn-editar" onclick="editarAlumno(${globalIndex})">Editar</button>
                         <button class="btn-eliminar" onclick="eliminarAlumno('${alumno.matricula}')">Eliminar</button>
                     `
                         : "—"
