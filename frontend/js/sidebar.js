@@ -27,6 +27,11 @@
         icono: "lucide:clipboard-list",
       },
       { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
+      {
+        href: "formulario.html",
+        texto: "Formulario de evaluación",
+        icono: "mdi:file-document-edit-outline"
+      }
     ],
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
