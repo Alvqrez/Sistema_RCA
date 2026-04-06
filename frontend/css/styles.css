@@ -1364,5 +1364,856 @@ th.col-final {
   color: var(--text-muted);
 }
 
-.empty-state iconify-icon { font-size: 3rem; color: #cbd5e1; margin-bottom: 12px; }
-.empty-state p { font-size: 0.9rem; }
+.empty-state iconify-icon {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+.empty-state p {
+  font-size: 0.9rem;
+}
+
+/* ======================================================================
+   DARK MODE PATCH 
+   ======================================================================
+
+/* ── Variables adicionales para dark mode ──────────────────────────── */
+:root {
+  --input-bg: #ffffff;
+  --th-bg: #f1f5f9;
+  --td-border: #f1f5f9;
+  --row-even: #fafbff;
+  --row-hover: #f0f6ff;
+  --row-even-hover: #f0f6ff;
+  --filter-bg: #f8fafc;
+  --chip-bg: #f1f5f9;
+  --modal-bg: #ffffff;
+  --warning-btn: #d97706;
+}
+
+.dark-mode {
+  --input-bg: #1e293b;
+  --th-bg: #1e293b;
+  --td-border: #334155;
+  --row-even: rgba(255, 255, 255, 0.03);
+  --row-hover: rgba(59, 130, 246, 0.08);
+  --row-even-hover: rgba(59, 130, 246, 0.12);
+  --filter-bg: #1e293b;
+  --chip-bg: #1e293b;
+  --modal-bg: #1e293b;
+}
+
+/* ── Tabla general ──────────────────────────────────────────────────── */
+.dark-mode table {
+  border-color: var(--border);
+}
+
+.dark-mode th {
+  background: var(--th-bg);
+  color: var(--text-muted);
+  border-bottom-color: var(--border);
+}
+
+.dark-mode td {
+  border-bottom-color: var(--td-border);
+  color: var(--text-main);
+}
+
+.dark-mode tr:hover,
+.dark-mode tbody tr:hover {
+  background: var(--row-hover);
+}
+
+.dark-mode tbody tr:nth-child(even) {
+  background: var(--row-even);
+}
+
+.dark-mode tbody tr:nth-child(even):hover {
+  background: var(--row-even-hover);
+}
+
+/* ── Inputs, selects, textareas ─────────────────────────────────────── */
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border-color: var(--border);
+}
+
+.dark-mode input:focus,
+.dark-mode select:focus,
+.dark-mode textarea:focus {
+  background: #0f172a;
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+.dark-mode input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Inputs del formulario de configuración ─────────────────────────── */
+.dark-mode .field-group select,
+.dark-mode .field-group input[type="number"],
+.dark-mode .field-group input[type="text"],
+.dark-mode .field-group input[type="date"] {
+  background: #0f172a;
+  color: var(--text-main);
+}
+
+.dark-mode .field-group select:focus,
+.dark-mode .field-group input:focus {
+  background: #0f172a;
+}
+
+/* ── Labels ─────────────────────────────────────────────────────────── */
+.dark-mode label {
+  color: var(--text-muted);
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.dark-mode .card {
+  border-color: var(--border);
+}
+
+/* ── Table filters ──────────────────────────────────────────────────── */
+.dark-mode .table-filters {
+  background: var(--filter-bg);
+  border-color: var(--border);
+}
+
+/* ── section-title ──────────────────────────────────────────────────── */
+.dark-mode .section-title {
+  color: var(--text-main);
+  border-color: var(--border);
+}
+
+/* ── Pond items ─────────────────────────────────────────────────────── */
+.dark-mode .pond-item {
+  background: #0f172a;
+  border-color: var(--border);
+}
+
+/* ── Tab buttons ─────────────────────────────────────────────────────── */
+.dark-mode .tab-btn,
+.dark-mode .tab-unidad {
+  background: #1e293b;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.dark-mode .tab-btn:hover:not(.active),
+.dark-mode .tab-unidad:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Tabla calificaciones ───────────────────────────────────────────── */
+.dark-mode .tabla-calificaciones tbody tr:nth-child(even) {
+  background: var(--row-even);
+}
+
+.dark-mode .tabla-calificaciones tbody tr:hover {
+  background: var(--row-hover);
+}
+
+.dark-mode .tabla-calificaciones tbody tr:nth-child(even):hover {
+  background: var(--row-even-hover);
+}
+
+.dark-mode .td-alumno {
+  color: var(--text-main);
+}
+
+.dark-mode .tabla-calificaciones tbody tr:hover .td-alumno {
+  background: transparent;
+}
+
+.dark-mode .tabla-calificaciones tbody tr:nth-child(even) .td-alumno {
+  background: transparent;
+}
+
+/* ── Inputs de calificación ─────────────────────────────────────────── */
+.dark-mode .cal-input {
+  background: #0f172a;
+  color: var(--text-main);
+  border-color: var(--border);
+}
+
+.dark-mode .cal-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.dark-mode .cal-input.invalid {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: var(--danger);
+}
+
+.dark-mode .bonus-input {
+  background: rgba(124, 58, 237, 0.15);
+  color: #c4b5fd;
+  border-color: rgba(196, 181, 253, 0.3);
+}
+
+.dark-mode .cal-input.cal-locked,
+.dark-mode .bonus-input.cal-locked {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+/* ── cal-final badges ───────────────────────────────────────────────── */
+.dark-mode .cal-final.pendiente {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.dark-mode .cal-final.aprobado {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+
+.dark-mode .cal-final.reprobado {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+
+/* ── info-chip y pond-chip ──────────────────────────────────────────── */
+.dark-mode .info-chip {
+  background: var(--chip-bg);
+  border-color: var(--border);
+}
+
+.dark-mode .chip-act {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+.dark-mode .chip-exa {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+.dark-mode .chip-asi {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+.dark-mode .chip-par {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+}
+.dark-mode .chip-bon {
+  background: rgba(124, 58, 237, 0.15);
+  color: #c4b5fd;
+}
+
+/* ── Modales ────────────────────────────────────────────────────────── */
+.dark-mode .modal {
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+}
+
+.dark-mode .modal h3 {
+  color: var(--text-main);
+}
+.dark-mode .modal p {
+  color: var(--text-muted);
+}
+
+/* ── btn-outline en dark mode ───────────────────────────────────────── */
+.dark-mode .btn-outline {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.dark-mode .btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* ── Botones guardar/cancelar básicos ───────────────────────────────── */
+.dark-mode .btn-guardar,
+.dark-mode .btn-cancelar {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+
+/* ── Suma bar ──────────────────────────────────────────────────────── */
+.dark-mode .suma-bar.ok {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+.dark-mode .suma-bar.warn {
+  background: rgba(217, 119, 6, 0.15);
+  color: #fcd34d;
+}
+.dark-mode .suma-bar.error {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+
+/* ── empty-state icon ──────────────────────────────────────────────── */
+.dark-mode .empty-state iconify-icon {
+  color: var(--text-muted);
+}
+
+/* ── Badge de grupo ─────────────────────────────────────────────────── */
+.dark-mode .badge-grupo {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+/* ======================================================================
+   NUEVOS ESTILOS PARA FEATURES NUEVAS
+   ====================================================================== */
+
+/* ── Botón gear ─────────────────────────────────────────────────────── */
+.btn-gear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-gear:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.btn-gear iconify-icon {
+  font-size: 1rem;
+}
+
+.btn-gear-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  padding: 0;
+}
+
+.btn-gear-small:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* ── Tab bloqueado ──────────────────────────────────────────────────── */
+.tab-unidad.locked {
+  border-color: var(--success);
+  color: var(--success);
+  background: var(--success-light);
+}
+
+.dark-mode .tab-unidad.locked {
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #34d399;
+}
+
+/* ── Banner bloqueado ───────────────────────────────────────────────── */
+.banner-bloqueado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--warning);
+  margin: 10px 0;
+}
+
+.dark-mode .banner-bloqueado {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(217, 119, 6, 0.35);
+  color: #fcd34d;
+}
+
+/* ── Badge guardado ─────────────────────────────────────────────────── */
+.badge-estatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-guardado {
+  background: var(--success-light);
+  color: var(--success);
+}
+.badge-aprobado {
+  background: var(--success-light);
+  color: var(--success);
+}
+.badge-reprobado {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+.badge-np {
+  background: #f1f5f9;
+  color: var(--text-muted);
+}
+.badge-pendiente {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.dark-mode .badge-guardado {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+.dark-mode .badge-aprobado {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+.dark-mode .badge-reprobado {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+.dark-mode .badge-np {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+.dark-mode .badge-pendiente {
+  background: rgba(217, 119, 6, 0.15);
+  color: #fcd34d;
+}
+
+/* ── btn-sm ─────────────────────────────────────────────────────────── */
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 0.78rem;
+}
+
+/* ── btn-warning ─────────────────────────────────────────────────────── */
+.btn-warning {
+  background: var(--warning);
+  color: #fff;
+}
+.btn-warning:hover {
+  background: #b45309;
+}
+
+.btn-warning-outline {
+  background: transparent;
+  color: var(--warning);
+  border: 1.5px solid var(--warning);
+}
+.btn-warning-outline:hover {
+  background: var(--warning-light);
+}
+
+.dark-mode .btn-warning-outline {
+  color: #fcd34d;
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+/* ── btn-danger-outline ─────────────────────────────────────────────── */
+.btn-danger-outline {
+  background: transparent;
+  color: var(--danger);
+  border: 1.5px solid var(--border);
+}
+.btn-danger-outline:hover {
+  border-color: var(--danger);
+  background: var(--danger-light);
+}
+
+/* ── badge-unidad ─────────────────────────────────────────────────────*/
+.badge-unidad {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.dark-mode .badge-unidad {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+
+/* ── tipo-badge ──────────────────────────────────────────────────────── */
+.tipo-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.tipo-sum {
+  background: var(--success-light);
+  color: var(--success);
+}
+.tipo-for {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.tipo-dia {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+.dark-mode .tipo-sum {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+.dark-mode .tipo-for {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+.dark-mode .tipo-dia {
+  background: rgba(217, 119, 6, 0.15);
+  color: #fcd34d;
+}
+
+/* ── Fila activa en tabla actividades ───────────────────────────────── */
+.fila-activa {
+  background: rgba(59, 130, 246, 0.06) !important;
+  border-left: 3px solid var(--primary);
+}
+.dark-mode .fila-activa {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* ── Toggle entrego ─────────────────────────────────────────────────── */
+.toggle-entrego {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.toggle-entrego input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track-cal {
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.toggle-track-cal::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+}
+
+.toggle-entrego input:checked + .toggle-track-cal {
+  background: var(--success);
+}
+
+.toggle-entrego input:checked + .toggle-track-cal::after {
+  transform: translateX(16px);
+}
+
+/* ── CSV Drop Zone ──────────────────────────────────────────────────── */
+.csv-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--filter-bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.csv-drop-zone p {
+  margin: 8px 0;
+}
+
+.csv-drop-zone.drag-over {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.dark-mode .csv-drop-zone {
+  background: #0f172a;
+  border-color: var(--border);
+}
+
+.dark-mode .csv-drop-zone.drag-over {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--primary);
+}
+
+.csv-format-example {
+  background: var(--th-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  line-height: 1.7;
+  border: 1px solid var(--border);
+}
+
+.dark-mode .csv-format-example {
+  background: #0f172a;
+}
+
+/* ── Modal Gear ─────────────────────────────────────────────────────── */
+.modal-gear {
+  max-width: 540px;
+  width: 95%;
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+}
+
+.modal-gear-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-gear-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.btn-close-gear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.btn-close-gear:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.gear-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--filter-bg);
+}
+
+.gear-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 11px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.18s;
+  font-family: "Inter", sans-serif;
+}
+
+.gear-tab:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.gear-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--card-bg);
+}
+
+.dark-mode .gear-tabs {
+  background: #0f172a;
+}
+.dark-mode .gear-tab.active {
+  background: var(--modal-bg);
+}
+
+.gear-panel {
+  display: none;
+  padding: 20px 24px 24px;
+}
+
+.gear-panel.active {
+  display: block;
+}
+
+.gear-desc {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+
+/* ── Toast global ───────────────────────────────────────────────────── */
+.rca-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  max-width: 340px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  transform: translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 9999;
+}
+
+.rca-toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.rca-toast-success {
+  background: var(--success);
+  color: #fff;
+}
+
+.rca-toast-error {
+  background: var(--danger);
+  color: #fff;
+}
+
+.rca-toast-warning {
+  background: var(--warning);
+  color: #fff;
+}
+
+/* ── Animación spin para loading ────────────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── page-header ─────────────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── badge-grupo ─────────────────────────────────────────────────────── */
+.badge-grupo {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(30, 64, 175, 0.15);
+}
+
+/* ── tabla-actividades (hereda de la tabla base pero con columna extra) */
+.tabla-actividades thead th {
+  background: var(--th-bg);
+}
+
+.dark-mode .tabla-actividades thead th {
+  background: var(--th-bg);
+}
+
+/* ── theme-btn actualizado ──────────────────────────────────────────── */
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 14px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border: none;
+  border-top: 1px solid #334155;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: "Inter", sans-serif;
+  transition: background 0.15s;
+}
+
+.theme-btn:hover {
+  background: rgba(14, 165, 233, 0.22);
+}
+
+/* En modo claro el botón también debe leerse bien */
+:root:not(.dark-mode) .theme-btn {
+  background: rgba(30, 64, 175, 0.08);
+  color: #3b82f6;
+}
+
+:root:not(.dark-mode) .theme-btn:hover {
+  background: rgba(30, 64, 175, 0.15);
+}
