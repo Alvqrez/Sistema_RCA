@@ -18,6 +18,23 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
+router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+  const sql = `
+        SELECT a.matricula, a.nombre, a.apellido_paterno, a.apellido_materno,
+               a.correo_institucional, a.id_carrera
+        FROM inscripcion i
+        JOIN alumno a ON i.matricula = a.matricula
+        WHERE i.id_grupo = ? AND i.estatus = 'Cursando'
+        ORDER BY a.apellido_paterno, a.nombre
+    `;
+
+  db.query(sql, [req.params.id_grupo], (err, results) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(results);
+  });
+});
+
 // GET — un alumno por matrícula
 router.get("/:matricula", verificarToken, (req, res) => {
   db.query(

@@ -42,20 +42,49 @@
 /* ESTO ES PARA CELULARES O TABLETS */
 @media (max-width: 900px) {
   .sidebar {
-    width: 70px;
+    width: 64px;
   }
 
   .content {
-    margin-left: 70px;
-    width: calc(100% - 70px);
+    margin-left: 64px;
+    width: calc(100% - 64px);
   }
 
-  .sidebar-logo h2 {
+  .sidebar-logo,
+  .sidebar-bienvenida,
+  .sidebar-nombre,
+  .sidebar-rol-badge {
     display: none;
   }
 
-  .sidebar nav a {
-    font-size: 12px;
+  .sidebar-avatar {
+    margin-bottom: 0;
+  }
+
+  .sidebar nav a span,
+  .nav-group-btn span,
+  .nav-group-btn .chevron,
+  .logout-btn span {
+    display: none;
+  }
+
+  .sidebar nav a,
+  .nav-group-btn,
+  .logout-btn,
+  .theme-icon-btn {
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .submenu-item span {
+    display: none;
+  }
+  .submenu-item {
+    padding: 10px 14px;
+    justify-content: center;
+  }
+  .submenu {
+    background: rgba(0, 0, 0, 0.2);
   }
 }
 

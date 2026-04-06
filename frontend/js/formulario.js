@@ -90,17 +90,20 @@ function cargarGrupo() {
 async function cargarAlumnos() {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/alumnos`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const todos = await res.json();
-    estado.alumnos = todos.map((a) => ({
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/alumnos/grupo/${estado.grupoId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const alumnos = await res.json();
+    estado.alumnos = alumnos.map((a) => ({
       matricula: a.matricula,
       nombre:
         `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
     }));
   } catch (e) {
-    console.error("No se pudo cargar alumnos:", e);
+    console.error("Error cargando alumnos:", e);
     estado.alumnos = [];
   }
 }
