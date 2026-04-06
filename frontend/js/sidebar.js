@@ -42,18 +42,13 @@
       // "Alumnos" ELIMINADO — el maestro ve a sus alumnos desde "Mis grupos"
     ],
 
-    administrador: [
-      { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
-      { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
-      {
-        href: "maestros.html",
-        texto: "Maestros",
-        icono: "lucide:graduation-cap",
-      },
-      { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
-      { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
-      { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
-    ],
+administrador: [
+  { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
+  { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
+  { href: "maestros.html", texto: "Maestros", icono: "lucide:graduation-cap" },
+  { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
+  { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
+],
   };
 
   const links = linksPorRol[rol] || [];
