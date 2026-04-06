@@ -15,7 +15,11 @@
   // Links según el rol
   const linksPorRol = {
     maestro: [
-      { href: "grupos.html", texto: "Mis grupos", icono: "lucide:users-round" },
+      {
+        href: "mis_grupos.html",
+        texto: "Mis grupos",
+        icono: "lucide:users-round",
+      },
       {
         href: "calificaciones.html",
         texto: "Calificaciones",
