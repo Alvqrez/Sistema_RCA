@@ -1,121 +1,124 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Portal Alumno</title>
-    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
 
-<div class="layout">
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar"></aside>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar"></aside>
-
-    <!-- CONTENIDO -->
-    <main class="content">
-
+      <!-- CONTENIDO -->
+      <main class="content">
         <!-- HEADER -->
         <div class="header">
-            <h2>Resultados de Calificaciones</h2>
+          <h2>Resultados de Calificaciones</h2>
         </div>
 
         <h1>Portal de Alumno</h1>
 
-        <div style="display:flex; gap:20px; width:100%; max-width:1100px;">
+        <div style="display: flex; gap: 20px; width: 100%; max-width: 1100px">
+          <!-- LADO IZQUIERDO -->
+          <div class="card" style="width: 250px">
+            <h3>Consultar Boleta</h3>
 
-            <!-- LADO IZQUIERDO -->
-            <div class="card" style="width:250px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>PERIODO</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <select id="periodoSelect" style="width: 100%"></select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-                <h3>Consultar Boleta</h3>
+            <button
+              onclick="mostrarBoleta()"
+              style="margin-top: 10px; width: 100%"
+            >
+              Consultar
+            </button>
+          </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>PERIODO</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <select id="periodoSelect" style="width:100%;">
-                                </select>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <button onclick="mostrarBoleta()" style="margin-top:10px; width:100%;">
-                    Consultar
-                </button>
-
+          <!--LADO DERECHO -->
+          <div style="flex: 1">
+            <!-- TABLA 1 -->
+            <div class="card">
+              <table>
+                <tr>
+                  <th>Matrícula</th>
+                  <th>Nombre</th>
+                  <th>Semestre</th>
+                  <th>Periodo</th>
+                </tr>
+                <tr>
+                  <td id="matricula"></td>
+                  <td id="nombre"></td>
+                  <td id="semestre"></td>
+                  <td id="periodoActual"></td>
+                </tr>
+              </table>
             </div>
 
-            <!--LADO DERECHO -->
-            <div style="flex:1;">
-
-                <!-- TABLA 1 -->
-                <div class="card">
-                    <table>
-                        <tr>
-                            <th>Matrícula</th>
-                            <th>Nombre</th>
-                            <th>Semestre</th>
-                            <th>Periodo</th>
-                        </tr>
-                        <tr>
-                            <td id="matricula"></td>
-                            <td id="nombre"></td>
-                            <td id="semestre"></td>
-                            <td id="periodoActual"></td>
-                        </tr>
-                    </table>
-                </div>
-
-                <!-- TABLA 2 -->
-                <div class="card">
-                    <table>
-                        <tr>
-                            <th>Carrera</th>
-                        </tr>
-                        <tr>
-                            <td id="carrera"></td>
-                        </tr>
-                    </table>
-                </div>
-
-                <!-- TABLA 3 -->
-                <div class="card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Materia</th>
-                                <th>CR</th>
-                                <th>Calificación</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaBoleta"></tbody>
-                    </table>
-
-                    <!-- BOTÓN IMPRIMIR -->
-                    <button onclick="window.print()" style="margin-top:15px;">
-                        Imprimir Boleta
-                    </button>
-                </div>
-
+            <!-- TABLA 2 -->
+            <div class="card">
+              <table>
+                <tr>
+                  <th>Carrera</th>
+                </tr>
+                <tr>
+                  <td id="carrera"></td>
+                </tr>
+              </table>
             </div>
 
+            <!-- TABLA 3 -->
+            <div class="card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Materia</th>
+                    <th>CR</th>
+                    <th>Calificación</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaBoleta"></tbody>
+              </table>
+
+              <!-- BOTÓN IMPRIMIR -->
+              <button onclick="window.print()" style="margin-top: 15px">
+                Imprimir Boleta
+              </button>
+            </div>
+          </div>
         </div>
+      </main>
+    </div>
 
-    </main>
-</div>
-
-<script src="../js/sidebar.js"></script>
-<script src="../js/portalAlumno.js"></script>
-
-</body>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/portalAlumno.js"></script>
+  </body>
 </html>

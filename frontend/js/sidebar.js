@@ -6,16 +6,19 @@
   const nombre = localStorage.getItem("nombre");
   const token = localStorage.getItem("token");
 
-  // Si no hay sesión, redirige al login
   if (!token) {
     window.location.href = "login.html";
     return;
   }
 
-  // Links según el rol
+  // ─── LINKS POR ROL ─────────────────────────────────────────────────────────
   const linksPorRol = {
     maestro: [
-      { href: "grupos.html", texto: "Mis grupos", icono: "lucide:users-round" },
+      {
+        href: "mis_grupos.html",
+        texto: "Mis grupos",
+        icono: "lucide:users-round",
+      },
       {
         href: "calificaciones.html",
         texto: "Calificaciones",
@@ -26,13 +29,19 @@
         texto: "Unidades",
         icono: "lucide:clipboard-list",
       },
-      { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
+      {
+        href: "actividades.html",
+        texto: "Actividades",
+        icono: "lucide:clipboard-pen",
+      },
       {
         href: "formulario.html",
         texto: "Formulario de evaluación",
-        icono: "mdi:file-document-edit-outline"
-      }
+        icono: "mdi:file-document-edit-outline",
+      },
+      // "Alumnos" ELIMINADO — el maestro ve a sus alumnos desde "Mis grupos"
     ],
+
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
       { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
@@ -44,6 +53,7 @@
       { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
       { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
       { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
+      { href: "carreras.html", texto: "Carreras", icono: "lucide:briefcase" },
     ],
   };
 
@@ -85,7 +95,6 @@
     .join("");
 
   const sidebarHTML = `
-        <button id="toggleSidebar">☰</button>
         <div class="sidebar-logo">
             <h2>RCA</h2>
             <span class="sidebar-usuario">${nombre || "Usuario"}</span>
@@ -97,27 +106,44 @@
         </button>
     `;
 
-  // Inyecta el sidebar en el aside que ya existe en cada página
   const aside = document.querySelector("aside.sidebar");
   if (aside) {
     aside.innerHTML = sidebarHTML;
-    
-    document.getElementById("toggleSidebar").addEventListener("click", () => {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    });
-
-    const dropdowns = document.querySelectorAll(".dropdown-btn");
-
-    dropdowns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const submenu = btn.nextElementSibling;
-        submenu.classList.toggle("active");
-      });
-    });
   }
 })();
+
+// ─── GUARDIA DE ROL ────────────────────────────────────────────────────────
+// Llama esta función al inicio de cualquier página exclusiva de un rol.
+// Ejemplo: soloPermitido("administrador")  → redirige si no es admin
+//          soloPermitido("maestro", "administrador") → permite ambos
+function soloPermitido(...rolesPermitidos) {
+  const rol = localStorage.getItem("rol");
+  if (!rolesPermitidos.includes(rol)) {
+    // Redirige a la página principal del rol que sí tiene sesión
+    const inicio = { maestro: "mis_grupos.html", alumno: "portalAlumno.html" };
+    window.location.href = inicio[rol] || "login.html";
+  }
+}
 
 function cerrarSesion() {
   localStorage.clear();
   window.location.href = "login.html";
 }
+
+function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+
+  if (document.body.classList.contains("dark-mode")) {
+    localStorage.setItem("tema", "oscuro");
+  } else {
+    localStorage.setItem("tema", "claro");
+  }
+}
+
+(function () {
+  const tema = localStorage.getItem("tema");
+
+  if (tema === "oscuro") {
+    document.body.classList.add("dark-mode");
+  }
+})();

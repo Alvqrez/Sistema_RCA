@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mis Grupos - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
+    <script>
+      (function () {
+        if (localStorage.getItem("tema") === "dark")
+          document.documentElement.setAttribute("data-theme", "dark");
+      })();
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <h1>Mis Grupos</h1>
+        <div class="card">
+          <h2>Grupos que imparto</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Materia</th>
+                <th>Aula</th>
+                <th>Horario</th>
+                <th>Estatus</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaGrupos"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+    <script src="../js/sidebar.js"></script>
+    <script>
+      // Solo muestra los grupos del maestro logueado
+      const BASE_URL = "http://localhost:3000";
+      const token = localStorage.getItem("token");
+
+      function parsearToken(t) {
+        try {
+          return JSON.parse(atob(t.split(".")[1]));
+        } catch {
+          return null;
+        }
+      }
+
+      const payload = parsearToken(token);
+      const id_referencia = payload?.id_referencia;
+
+      async function cargarMisGrupos() {
+        const res = await fetch(`${BASE_URL}/api/grupos`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const grupos = await res.json();
+        const tabla = document.getElementById("tablaGrupos");
+        tabla.innerHTML = "";
+
+        // Filtra solo los del maestro logueado
+        const misg = grupos.filter((g) => g.numero_empleado === id_referencia);
+
+        misg.forEach((g) => {
+          tabla.innerHTML += `
+            <tr>
+                <td>${g.id_grupo}</td>
+                <td>${g.nombre_materia}</td>
+                <td>${g.aula ?? "—"}</td>
+                <td>${g.horario ?? "—"}</td>
+                <td><span class="badge ${g.estatus === "Activo" ? "badge-verde" : "badge-gris"}">${g.estatus}</span></td>
+                <td>
+                    <a href="formulario.html?grupo=${g.id_grupo}" class="btn-editar" style="text-decoration:none;display:inline-block;">
+                        Capturar calificaciones
+                    </a>
+                </td>
+            </tr>
+        `;
+        });
+
+        if (misg.length === 0) {
+          tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Sin grupos asignados</td></tr>`;
+        }
+      }
+
+      cargarMisGrupos();
+    </script>
+  </body>
+</html>

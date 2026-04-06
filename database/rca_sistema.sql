@@ -544,3 +544,8 @@ CREATE TABLE IF NOT EXISTS `rca_sistema`.`grupo_unidad` (
     CONSTRAINT `fk_GU_Grupo`  FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`(`id_grupo`)  ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT `fk_GU_Unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidad`(`id_unidad`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) COMMENT = 'Peso de cada unidad dentro de un grupo específico';
+
+-- correción 2: ---
+ALTER TABLE alumno DROP COLUMN usuario;
+
+ALTER TABLE alumno DROP COLUMN password;

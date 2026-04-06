@@ -78,23 +78,22 @@ app.post("/login", (req, res) => {
     // server.js — bloque del login, solo la parte del nombre (reemplaza la que tienes)
     db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
       if (err2) {
-        console.error("Error buscando persona:", err2);
+        console.error("Error en DB:", err2);
         return res
           .status(500)
-          .json({ success: false, message: "Error interno del servidor" });
+          .json({ success: false, message: "Error de conexión" });
       }
 
       // Si no encuentra al alumno/maestro/admin referenciado — problema de datos
-      if (persona.length === 0) {
+      if (!persona || persona.length === 0) {
         console.error(
-          `No se encontró la persona con id_referencia: ${userRow.id_referencia} para rol: ${userRow.rol}`,
+          `Inconsistencia: El usuario ${userRow.username} existe pero no tiene datos en la tabla ${userRow.rol}`,
         );
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "Error interno del servidor: perfil de usuario incompleto",
-          });
+        return res.status(401).json({
+          success: false,
+          message:
+            "Error de perfil: No se encontró información del alumno/maestro.",
+        });
       }
 
       const token = jwt.sign(
@@ -127,6 +126,7 @@ app.use("/api/admin", require("./src/routes/admin"));
 app.use("/api/maestros", require("./src/routes/maestros"));
 app.use("/api/unidades", require("./src/routes/unidades"));
 app.use("/api/carreras", require("./src/routes/carreras"));
+app.use("/api/actividades", require("./src/routes/actividades"));
 
 app.get("/", (req, res) => {
   res.json({ mensaje: "API RCA activa", version: "1.0" });

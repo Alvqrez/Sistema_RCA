@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Unidades - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
@@ -26,13 +31,12 @@
           <h2>Registrar Unidad</h2>
           <form id="formUnidad" class="form-grid">
             <div>
-              <label>Clave de materia</label>
-              <input
-                type="text"
-                id="claveMateria"
-                placeholder="Ej. ISC-101"
-                required
-              />
+              <label>Materia</label>
+              <select id="claveMateria" required></select>
+              <small
+                id="hintUnidades"
+                style="color: #6c757d; display: block; margin-top: 4px"
+              ></small>
             </div>
 
             <div>

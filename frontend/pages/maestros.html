@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Maestros - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
@@ -23,7 +28,7 @@
         <h1>Maestros</h1>
 
         <div class="card" id="cardRegistroMaestro">
-          <h2>Registrar Maestro</h2>
+          <h2 id="tituloFormMaestro">Registrar Maestro</h2>
           <form id="formMaestro" class="form-grid">
             <div>
               <label>Número de empleado</label>
@@ -94,7 +99,9 @@
               <input type="text" id="departamento" />
             </div>
 
-            <h3 class="section-title">Acceso al sistema</h3>
+            <h3 class="section-title" id="seccionAccesoMaestro">
+              Acceso al sistema
+            </h3>
             <div>
               <label>Usuario (login)</label>
               <input type="text" id="username" required />
