@@ -1,185 +1,209 @@
-<!doctype html> 
-
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <title>Formulario de Evaluación - RCA</title>
-
-```
-<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-
-<link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png" />
-<link rel="stylesheet" href="../css/styles.css" />
-<link rel="stylesheet" href="../css/styles.css" />
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-```
-
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
   </head>
-  <script src="../js/formulario.js"></script>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
 
-```
-  <main class="content">
-
-    <!-- ── ENCABEZADO ─────────────────────────────────── -->
-    <div class="page-header">
-      <h1>
-        <iconify-icon icon="mdi:file-document-edit-outline"></iconify-icon>
-        Formulario de Evaluación
-      </h1>
-
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span class="badge-grupo" id="badgeGrupo">Sin grupo seleccionado</span>
-
-        <span class="estado-badge sin-config" id="estadoBadge">
-          <span class="dot-live"></span>
-          Sin configurar
-        </span>
-      </div>
-    </div>
-
-    <!-- ════════════════════════════════════════════════
-         PASO 1 — CONFIGURACIÓN DE LA EVALUACIÓN
-    ════════════════════════════════════════════════════ -->
-    <div class="card" id="cardConfig">
-
-      <div class="card-title">
-        <span class="step-number">1</span>
-        Configuración de evaluación
-      </div>
-
-      <div class="config-grid">
-
-        <div class="field-group">
-          <label>Grupo</label>
-          <select id="selGrupo" onchange="cargarGrupo()">
-            <option value="">Selecciona un grupo</option>
-          </select>
+      <main class="content">
+        <div class="page-header">
+          <h1>
+            <iconify-icon icon="mdi:file-document-edit-outline"></iconify-icon>
+            Formulario de Evaluación
+          </h1>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              flex-wrap: wrap;
+            "
+          >
+            <span class="badge-grupo" id="badgeGrupo"
+              >Sin grupo seleccionado</span
+            >
+            <span class="estado-badge sin-config" id="estadoBadge">
+              <span class="dot-live"></span>Sin configurar
+            </span>
+          </div>
         </div>
 
-        <div class="field-group">
-          <label>Número de unidades</label>
-          <input type="number" id="numUnidades" value="3" min="1" max="6" onchange="generarPonderaciones()" />
+        <!-- PASO 1 — CONFIGURACIÓN -->
+        <div class="card" id="cardConfig">
+          <div class="card-title">
+            <span class="step-number">1</span>
+            Configuración de evaluación
+          </div>
+          <div class="config-grid">
+            <div class="field-group">
+              <label>Grupo</label>
+              <select id="selGrupo" onchange="cargarGrupo()">
+                <option value="">Selecciona un grupo</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Número de unidades</label>
+              <input
+                type="number"
+                id="numUnidades"
+                value="3"
+                min="1"
+                max="6"
+                onchange="generarPonderaciones()"
+              />
+            </div>
+          </div>
+          <div id="emptyConfig" class="empty-state">
+            <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
+            <p>Selecciona un grupo para comenzar</p>
+          </div>
         </div>
 
+        <!-- PASO 2 — PONDERACIONES -->
+        <div id="seccionPonderaciones" class="card" style="display: none">
+          <div class="card-title">
+            <span class="step-number">2</span>
+            Configurar ponderaciones
+          </div>
+          <div id="tabsConfig" class="unidades-tabs"></div>
+          <div id="panelesConfig"></div>
+          <div class="acciones-row">
+            <button class="btn btn-primary" onclick="pedirGuardarConfig()">
+              Guardar configuración
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3 — CALIFICACIONES -->
+        <div id="seccionCalificaciones" class="card" style="display: none">
+          <div class="card-title">
+            <span class="step-number">3</span>
+            Captura de calificaciones
+          </div>
+          <div id="tabsTabla" class="selector-unidad-tabla"></div>
+          <div id="resumenPond" style="margin: 12px 0"></div>
+          <div class="tabla-wrapper">
+            <table class="tabla-calificaciones">
+              <thead id="theadCalificaciones"></thead>
+              <tbody id="tbodyCalificaciones"></tbody>
+            </table>
+          </div>
+          <div class="acciones-row">
+            <button
+              class="btn btn-success"
+              onclick="pedirGuardarCalificaciones()"
+            >
+              Guardar calificaciones
+            </button>
+            <button class="btn btn-outline" onclick="pedirSalir()">
+              Salir
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- MODALES -->
+    <div class="modal-overlay" id="modalGuardarConfig">
+      <div class="modal">
+        <div class="modal-icon save">
+          <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+        </div>
+        <h3>¿Guardar configuración?</h3>
+        <p>Una vez guardada podrás capturar calificaciones.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-primary" onclick="confirmarGuardarConfig()">
+            Sí, guardar
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="cerrarModal('modalGuardarConfig')"
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
+    </div>
 
-      <!-- Estado vacío -->
-      <div id="emptyConfig" class="empty-state">
-        <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
-        <p>Selecciona un grupo para comenzar</p>
+    <div class="modal-overlay" id="modalModificarConfig">
+      <div class="modal">
+        <div class="modal-icon save">
+          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+        </div>
+        <h3>Modificar configuración</h3>
+        <p>Esto afectará las calificaciones existentes.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-primary" onclick="activarModoEdicionConfig()">
+            Modificar
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="cerrarModal('modalModificarConfig')"
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
-
     </div>
 
-    <!-- ── SECCIÓN PONDERACIONES ─────────────────────── -->
-    <div id="seccionPonderaciones" class="card">
-
-      <div class="card-title">
-        <span class="step-number">2</span>
-        Configurar ponderaciones
+    <div class="modal-overlay" id="modalGuardarCal">
+      <div class="modal">
+        <div class="modal-icon save">
+          <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
+        </div>
+        <h3>Guardar calificaciones</h3>
+        <p>¿Deseas guardar los cambios realizados?</p>
+        <div class="modal-buttons">
+          <button
+            class="btn btn-success"
+            onclick="confirmarGuardarCalificaciones()"
+          >
+            Guardar
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="cerrarModal('modalGuardarCal')"
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
+    </div>
 
-      <div id="tabsConfig" class="unidades-tabs"></div>
-
-      <div id="panelesConfig"></div>
-
-      <div class="acciones-row">
-        <button class="btn btn-primary" onclick="pedirGuardarConfig()">Guardar configuración</button>
+    <div class="modal-overlay" id="modalSalir">
+      <div class="modal">
+        <div class="modal-icon exit">
+          <iconify-icon icon="mdi:exit-to-app"></iconify-icon>
+        </div>
+        <h3>Salir</h3>
+        <p>Tienes cambios sin guardar.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-danger" onclick="confirmarSalir()">
+            Salir sin guardar
+          </button>
+          <button class="btn btn-outline" onclick="cerrarModal('modalSalir')">
+            Cancelar
+          </button>
+        </div>
       </div>
-
     </div>
 
-    <!-- ── SECCIÓN CALIFICACIONES ────────────────────── -->
-    <div id="seccionCalificaciones" class="card">
-
-      <div class="card-title">
-        <span class="step-number">3</span>
-        Captura de calificaciones
-      </div>
-
-      <div id="tabsTabla" class="selector-unidad-tabla"></div>
-
-      <div id="resumenPond" style="margin: 12px 0;"></div>
-
-      <div class="tabla-wrapper">
-        <table class="tabla-calificaciones">
-          <thead id="theadCalificaciones"></thead>
-          <tbody id="tbodyCalificaciones"></tbody>
-        </table>
-      </div>
-
-      <div class="acciones-row">
-        <button class="btn btn-success" onclick="pedirGuardarCalificaciones()">Guardar calificaciones</button>
-        <button class="btn btn-outline" onclick="pedirSalir()">Salir</button>
-      </div>
-
-    </div>
-
-  </main>
-</div>
-
-<!-- ── MODALES ─────────────────────────────────────── -->
-
-<div class="modal-overlay" id="modalGuardarConfig">
-  <div class="modal">
-    <div class="modal-icon save">
-      <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-    </div>
-    <h3>¿Guardar configuración?</h3>
-    <p>Una vez guardada podrás capturar calificaciones.</p>
-    <div class="modal-buttons">
-      <button class="btn btn-primary" onclick="confirmarGuardarConfig()">Sí, guardar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalGuardarConfig')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalModificarConfig">
-  <div class="modal">
-    <div class="modal-icon save">
-      <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
-    </div>
-    <h3>Modificar configuración</h3>
-    <p>Esto afectará las calificaciones existentes.</p>
-    <div class="modal-buttons">
-      <button class="btn btn-primary" onclick="activarModoEdicionConfig()">Modificar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalModificarConfig')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalGuardarCal">
-  <div class="modal">
-    <div class="modal-icon save">
-      <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
-    </div>
-    <h3>Guardar calificaciones</h3>
-    <p>¿Deseas guardar los cambios realizados?</p>
-    <div class="modal-buttons">
-      <button class="btn btn-success" onclick="confirmarGuardarCalificaciones()">Guardar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalGuardarCal')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalSalir">
-  <div class="modal">
-    <div class="modal-icon exit">
-      <iconify-icon icon="mdi:exit-to-app"></iconify-icon>
-    </div>
-    <h3>Salir</h3>
-    <p>Tienes cambios sin guardar.</p>
-    <div class="modal-buttons">
-      <button class="btn btn-danger" onclick="confirmarSalir()">Salir</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalSalir')">Cancelar</button>
-    </div>
-  </div>
-</div>
-```
-
+    <!-- Scripts al final del body -->
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/formulario.js"></script>
   </body>
 </html>
