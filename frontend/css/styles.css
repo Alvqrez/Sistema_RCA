@@ -1183,3 +1183,50 @@ th.col-final        { border-bottom: 3px solid #1e293b; background: #0f172a !imp
 
 .empty-state iconify-icon { font-size: 3rem; color: #cbd5e1; margin-bottom: 12px; }
 .empty-state p { font-size: 0.9rem; }
+
+/* BOTÓN TOGGLE */
+#toggleSidebar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+
+  z-index: 10;
+}
+
+/* SIDEBAR COLAPSADO */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar.collapsed span {
+  display: none;
+}
+
+/* DROPDOWN */
+.dropdown-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px;
+}
+
+/* SUBMENU */
+.submenu {
+  display: none;
+  padding-left: 30px;
+}
+
+.submenu.active {
+  display: block;
+}

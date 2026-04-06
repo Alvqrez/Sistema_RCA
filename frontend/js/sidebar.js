@@ -50,19 +50,42 @@
   const links = linksPorRol[rol] || [];
   const paginaActual = window.location.pathname.split("/").pop();
 
-  // Construye el HTML del sidebar
   const linksHTML = links
     .map((link) => {
       const activo = link.href === paginaActual ? "active" : "";
+
+      // SOLO para ADMIN: hacer dropdown en algunos módulos
+      if (
+        rol === "administrador" &&
+        (link.texto === "Alumnos" ||
+          link.texto === "Maestros" ||
+          link.texto === "Materias")
+      ) {
+        return `
+        <div class="menu-item">
+          <button class="dropdown-btn">
+            <iconify-icon icon="${link.icono}"></iconify-icon>
+            <span>${link.texto}</span>
+          </button>
+          <div class="submenu">
+            <a href="${link.href}">Ver ${link.texto}</a>
+            <a href="${link.href}">Agregar ${link.texto}</a>
+          </div>
+        </div>
+      `;
+      }
+
+      // Links normales
       return `
-        <a href="${link.href}" class="${activo}">
-          <iconify-icon icon="${link.icono}"></iconify-icon>
-          <span>${link.texto}</span>
-        </a>`;
+      <a href="${link.href}" class="${activo}">
+        <iconify-icon icon="${link.icono}"></iconify-icon>
+        <span>${link.texto}</span>
+      </a>`;
     })
     .join("");
 
   const sidebarHTML = `
+        <button id="toggleSidebar">☰</button>
         <div class="sidebar-logo">
             <h2>RCA</h2>
             <span class="sidebar-usuario">${nombre || "Usuario"}</span>
@@ -78,6 +101,19 @@
   const aside = document.querySelector("aside.sidebar");
   if (aside) {
     aside.innerHTML = sidebarHTML;
+    
+    document.getElementById("toggleSidebar").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    });
+
+    const dropdowns = document.querySelectorAll(".dropdown-btn");
+
+    dropdowns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const submenu = btn.nextElementSibling;
+        submenu.classList.toggle("active");
+      });
+    });
   }
 })();
 
