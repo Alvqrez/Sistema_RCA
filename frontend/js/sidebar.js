@@ -53,7 +53,6 @@
       { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
       { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
       { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
-      { href: "carreras.html", texto: "Carreras", icono: "lucide:briefcase" },
     ],
   };
 
@@ -147,3 +146,11 @@ function toggleTheme() {
     document.body.classList.add("dark-mode");
   }
 })();
+document.addEventListener("click", function (e) {
+  if (e.target.closest(".dropdown-btn")) {
+    const btn = e.target.closest(".dropdown-btn");
+    const submenu = btn.nextElementSibling;
+
+    submenu.classList.toggle("open");
+  }
+});

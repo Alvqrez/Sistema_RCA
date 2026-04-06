@@ -1366,3 +1366,49 @@ th.col-final {
 
 .empty-state iconify-icon { font-size: 3rem; color: #cbd5e1; margin-bottom: 12px; }
 .empty-state p { font-size: 0.9rem; }
+/* ── DROPDOWN SIDEBAR ───────────────────── */
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.submenu {
+  display: none;
+  flex-direction: column;
+  background: rgba(255,255,255,0.03);
+}
+
+.submenu a {
+  padding: 10px 40px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.submenu a:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.submenu.open {
+  display: flex;
+}
