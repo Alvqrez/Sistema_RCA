@@ -22,22 +22,21 @@
       <main class="content">
         <h1>Grupos</h1>
 
-        <div class="card">
+        <div class="card" id="cardRegistroGrupo">
           <h2>Registrar Grupo</h2>
           <form id="formGrupo" class="form-grid">
             <div>
-              <label>Clave de materia</label>
-              <input
-                type="text"
-                id="claveMateria"
-                placeholder="Ej. ISC-101"
-                required
-              />
+              <label>Materia</label>
+              <select id="claveMateria" required>
+                <option value="">-- Selecciona una materia --</option>
+              </select>
             </div>
 
             <div>
-              <label>Número de empleado (maestro)</label>
-              <input type="text" id="numeroEmpleado" required />
+              <label>Maestro</label>
+              <select id="numeroEmpleado" required>
+                <option value="">-- Selecciona un maestro --</option>
+              </select>
             </div>
 
             <div>

@@ -89,12 +89,10 @@ app.post("/login", (req, res) => {
         console.error(
           `No se encontró la persona con id_referencia: ${userRow.id_referencia} para rol: ${userRow.rol}`,
         );
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "Error interno del servidor: perfil de usuario incompleto",
-          });
+        return res.status(500).json({
+          success: false,
+          message: "Error interno del servidor: perfil de usuario incompleto",
+        });
       }
 
       const token = jwt.sign(
@@ -127,6 +125,7 @@ app.use("/api/admin", require("./src/routes/admin"));
 app.use("/api/maestros", require("./src/routes/maestros"));
 app.use("/api/unidades", require("./src/routes/unidades"));
 app.use("/api/carreras", require("./src/routes/carreras"));
+app.use("/api/actividades", require("./src/routes/actividades"));
 
 app.get("/", (req, res) => {
   res.json({ mensaje: "API RCA activa", version: "1.0" });

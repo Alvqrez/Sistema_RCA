@@ -30,8 +30,13 @@
       {
         href: "formulario.html",
         texto: "Formulario de evaluación",
-        icono: "mdi:file-document-edit-outline"
-      }
+        icono: "mdi:file-document-edit-outline",
+      },
+      {
+        href: "actividades.html",
+        texto: "Actividades",
+        icono: "lucide:clipboard-pen",
+      },
     ],
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
