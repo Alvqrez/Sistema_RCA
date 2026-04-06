@@ -132,11 +132,6 @@ app.get("/", (req, res) => {
   res.json({ mensaje: "API RCA activa", version: "1.0" });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack); // Esto FORZARÁ el error a aparecer en tu terminal
-  res.status(500).send("Algo salió mal en el servidor");
-});
-
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto " + PORT);
 });
