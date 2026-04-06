@@ -37,7 +37,6 @@
         icono: "mdi:file-document-edit-outline",
       },
     ],
-
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
       { href: "alumnos.html", texto: "Alumnos", icono: "lucide:user" },
@@ -49,6 +48,7 @@
       { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
       { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
       { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
+      { href: "carreras.html", texto: "Carreras", icono: "lucide:briefcase" },
     ],
   };
 
@@ -121,29 +121,3 @@ function cerrarSesion() {
   localStorage.clear();
   window.location.href = "login.html";
 }
-
-function toggleTheme() {
-  document.body.classList.toggle("dark-mode");
-
-  if (document.body.classList.contains("dark-mode")) {
-    localStorage.setItem("tema", "oscuro");
-  } else {
-    localStorage.setItem("tema", "claro");
-  }
-}
-
-(function () {
-  const tema = localStorage.getItem("tema");
-
-  if (tema === "oscuro") {
-    document.body.classList.add("dark-mode");
-  }
-})();
-document.addEventListener("click", function (e) {
-  if (e.target.closest(".dropdown-btn")) {
-    const btn = e.target.closest(".dropdown-btn");
-    const submenu = btn.nextElementSibling;
-
-    submenu.classList.toggle("open");
-  }
-});
