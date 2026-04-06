@@ -77,7 +77,7 @@ body {
 
 /* ── SIDEBAR ──────────────────────────────────────────────────────── */
 .sidebar {
-  width: 220px;
+  width: 240px;
   height: 100vh;
   position: fixed;
   top: 0;
@@ -89,71 +89,233 @@ body {
   overflow: hidden;
 }
 
+/* ── LOGO / BIENVENIDA ────────────────────────────────────────────── */
 .sidebar-logo {
-  padding: 20px 15px 15px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid #334155;
   text-align: center;
 }
 
-.sidebar-logo h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
-  color: white;
-}
-
-.sidebar-usuario {
-  font-size: 12px;
-  color: #94a3b8;
-  display: block;
-}
-
-.sidebar nav {
-  flex: 1;
-  padding: 10px 0px;
-  overflow-y: auto;
-}
-
-.sidebar nav a {
+.sidebar-avatar {
+  width: 44px;
+  height: 44px;
+  background: rgba(59, 130, 246, 0.18);
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #cbd5e1;
-  text-decoration: none;
-  font-size: 14px;
-  padding: 12px 20px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  cursor: pointer;
-  border-left: 3px solid transparent;
+  justify-content: center;
+  margin: 0 auto 8px;
+  font-size: 22px;
+  color: #60a5fa;
 }
 
-.sidebar nav a:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-}
-
-.sidebar nav a.active {
-  background: rgba(37, 99, 235, 0.1);
-  color: #3b82f6;
-  border-left: 4px solid #3b82f6;
-  border-radius: 0;
+.sidebar-bienvenida {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
   font-weight: 600;
 }
 
-.sidebar nav a iconify-icon {
-  font-size: 20px;
-  flex-shrink: 0;
+.sidebar-nombre {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1.3;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge de rol */
+.sidebar-rol-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-rol-badge.rol-administrador {
+  background: rgba(124, 58, 237, 0.2);
+  color: #a78bfa;
+}
+
+.sidebar-rol-badge.rol-maestro {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.sidebar-rol-badge.rol-alumno {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* ── NAV ──────────────────────────────────────────────────────────── */
+.sidebar nav {
+  flex: 1;
+  padding: 8px 0;
+  overflow-y: auto;
 }
 
 .sidebar nav::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
-
 .sidebar nav::-webkit-scrollbar-thumb {
   background: #475569;
   border-radius: 10px;
 }
 
+/* Link normal */
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 13.5px;
+  padding: 10px 20px;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+
+.sidebar nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.sidebar nav a.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-left: 3px solid #3b82f6;
+  font-weight: 600;
+}
+
+.sidebar nav a iconify-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ── SUBMENÚ ──────────────────────────────────────────────────────── */
+.nav-group {
+  border-left: 3px solid transparent;
+}
+
+/* Botón padre del submenú */
+.nav-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.nav-group-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.nav-group-btn iconify-icon:first-child {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Chevron que rota al abrir */
+.nav-group-btn .chevron {
+  margin-left: auto;
+  font-size: 14px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-group.open .nav-group-btn .chevron {
+  transform: rotate(90deg);
+}
+
+.nav-group.open .nav-group-btn {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Contenedor del submenú — colapsado por defecto */
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
+  transition: max-height 0.25s ease;
+}
+
+.nav-group.open .submenu {
+  max-height: 300px; /* suficiente para cualquier cantidad de hijos */
+}
+
+/* Links dentro del submenú */
+.submenu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px 9px 44px; /* indentado a la derecha */
+  color: #64748b;
+  text-decoration: none;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+
+.submenu-item:hover {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.submenu-item.active {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3b82f6;
+  font-weight: 600;
+}
+
+.submenu-item iconify-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* ── BOTÓN TEMA — solo ícono ───────────────────────────────────────── */
+.theme-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid #1e3a5f;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.theme-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+/* ── CERRAR SESIÓN ────────────────────────────────────────────────── */
 .logout-btn {
   display: flex;
   align-items: center;
@@ -167,15 +329,21 @@ body {
   cursor: pointer;
   font-weight: 600;
   margin: 0;
-  border-top: 1px solid #334155;
   font-size: 14px;
+  font-family: "Inter", sans-serif;
   transition: background 0.15s;
-  text-align: center;
   border-radius: 0;
 }
 
 .logout-btn:hover {
   background: #b91c1c;
+}
+
+/* ── CONTENT ──────────────────────────────────────────────────────── */
+.content {
+  margin-left: 240px; /* coincide con el nuevo ancho del sidebar */
+  padding: 20px;
+  width: calc(100% - 240px);
 }
 
 /* ── CONTENT ──────────────────────────────────────────────────────── */
@@ -431,20 +599,6 @@ button:hover {
 .btn-eliminar:hover {
   background: #fee2e2;
   border-radius: 6px;
-}
-
-.theme-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 14px;
-  background: #0ea5e9;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
 }
 
 .theme-btn:hover {
@@ -2183,25 +2337,6 @@ th.col-final {
 
 .dark-mode .tabla-actividades thead th {
   background: var(--th-bg);
-}
-
-/* ── theme-btn actualizado ──────────────────────────────────────────── */
-.theme-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 13px 14px;
-  background: rgba(14, 165, 233, 0.12);
-  color: #38bdf8;
-  border: none;
-  border-top: 1px solid #334155;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  font-family: "Inter", sans-serif;
-  transition: background 0.15s;
 }
 
 .theme-btn:hover {
