@@ -10,44 +10,63 @@
     />
     <link rel="stylesheet" href="../css/styles.css" />
   </head>
-
   <body>
     <div class="layout">
-      <!-- MENU -->
       <aside class="sidebar"></aside>
-
-      <!-- CONTENIDO -->
       <main class="content">
         <h1>Materias</h1>
 
         <!-- FORMULARIO -->
-        <div class="card">
-          <h2>Registrar Materia</h2>
+        <div class="card" id="cardFormMateria">
+          <h2 id="tituloFormMateria">Registrar materia</h2>
+          <form id="formMateria" class="form-grid">
+            <div>
+              <label>Clave <span style="color: red">*</span></label>
+              <input
+                type="text"
+                id="claveMateria"
+                placeholder="Ej: ISC-101"
+                required
+              />
+            </div>
 
-          <form id="formMateria">
-            <div class="form-group">
-              <label>Nombre de la materia</label>
+            <div>
+              <label
+                >Nombre de la materia <span style="color: red">*</span></label
+              >
               <input type="text" id="nombreMateria" required />
             </div>
 
-            <div class="form-group">
-              <label>Clave</label>
-              <input type="text" id="claveMateria" placeholder="Ej: ISC-101" />
+            <div>
+              <label>Créditos totales</label>
+              <input type="number" id="creditos" min="0" value="0" />
             </div>
 
-            <div class="form-group">
-              <label>Créditos</label>
-              <input type="number" id="creditos" min="0" />
+            <div>
+              <label>Horas teóricas</label>
+              <input type="number" id="horasTeoricas" min="0" value="0" />
             </div>
 
-            <button type="submit" class="btn-guardar">Guardar</button>
-            <button
-              type="button"
-              class="btn-cancelar"
-              onclick="cancelarEdicion()"
-            >
-              Cancelar
-            </button>
+            <div>
+              <label>Horas prácticas</label>
+              <input type="number" id="horasPracticas" min="0" value="0" />
+            </div>
+
+            <div>
+              <label>Número de unidades</label>
+              <input type="number" id="noUnidades" min="1" value="3" />
+            </div>
+
+            <div class="botones">
+              <button type="submit" class="btn-guardar">Guardar</button>
+              <button
+                type="button"
+                class="btn-cancelar"
+                onclick="cancelarEdicion()"
+              >
+                Cancelar
+              </button>
+            </div>
 
             <p id="mensajeMateria"></p>
           </form>
@@ -55,18 +74,17 @@
 
         <!-- TABLA -->
         <div class="card">
-          <h2>Lista de Materias</h2>
-
+          <h2>Lista de materias</h2>
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
                 <th>Clave</th>
+                <th>Nombre</th>
                 <th>Créditos</th>
+                <th>Unidades</th>
                 <th>Acciones</th>
               </tr>
             </thead>
-
             <tbody id="tablaMaterias"></tbody>
           </table>
         </div>

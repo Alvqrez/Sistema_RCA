@@ -23,8 +23,8 @@
       <main class="content">
         <h1>Alumnos</h1>
 
-        <div class="card">
-          <h2>Registrar alumno</h2>
+        <div class="card" id="cardRegistroAlumno">
+          <h2 id="tituloFormAlumno">Registrar alumno</h2>
 
           <form id="formAlumno" class="form-grid">
             <div>
@@ -101,7 +101,7 @@
               <input type="email" id="correoPersonal" />
             </div>
 
-            <h3 class="section-title">Acceso al sistema</h3>
+            <h3 class="section-title" id="seccionAcceso">Acceso al sistema</h3>
 
             <div>
               <label>Usuario (login)</label>
@@ -117,10 +117,11 @@
               <button type="submit" class="btn-guardar">Guardar</button>
               <button type="reset" class="btn-cancelar">Cancelar</button>
             </div>
+            <p id="formMensaje"></p>
           </form>
         </div>
 
-        <div class="card">
+        <div class="card" id="cardRegistroAlumno">
           <h2>Lista de alumnos</h2>
 
           <div class="table-filters">
