@@ -2,12 +2,12 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Portal Alumno</title>
+    <title>Portal del Alumno - RCA</title>
     <script>
-      if (localStorage.getItem("tema") === "oscuro") {
+      if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      }
     </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
@@ -17,101 +17,152 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-
     <link rel="stylesheet" href="../css/styles.css" />
   </head>
   <body>
     <div class="layout">
-      <!-- SIDEBAR -->
       <aside class="sidebar"></aside>
 
-      <!-- CONTENIDO -->
       <main class="content">
-        <!-- HEADER -->
-        <div class="header">
-          <h2>Resultados de Calificaciones</h2>
+        <!-- HERO DE BIENVENIDA -->
+        <div class="portal-hero">
+          <div class="portal-hero-left">
+            <div class="portal-avatar">
+              <iconify-icon icon="lucide:user-circle-2"></iconify-icon>
+            </div>
+            <div>
+              <p class="portal-saludo">¡Bienvenido de nuevo!</p>
+              <h1 class="portal-nombre" id="heroNombre">Cargando...</h1>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  margin-top: 6px;
+                "
+              >
+                <span class="badge-unidad" id="heroMatricula"></span>
+                <span class="badge-unidad" id="heroCarrera"></span>
+              </div>
+            </div>
+          </div>
+          <div class="portal-hero-right">
+            <div class="stat-hero">
+              <iconify-icon
+                icon="mdi:check-circle-outline"
+                style="color: #10b981"
+              ></iconify-icon>
+              <div>
+                <strong id="cntAprobadas">—</strong><span>Aprobadas</span>
+              </div>
+            </div>
+            <div class="stat-hero">
+              <iconify-icon
+                icon="mdi:close-circle-outline"
+                style="color: #ef4444"
+              ></iconify-icon>
+              <div>
+                <strong id="cntReprobadas">—</strong><span>Reprobadas</span>
+              </div>
+            </div>
+            <div class="stat-hero">
+              <iconify-icon
+                icon="mdi:school-outline"
+                style="color: #3b82f6"
+              ></iconify-icon>
+              <div>
+                <strong id="cntCursando">—</strong><span>Cursando</span>
+              </div>
+            </div>
+            <div class="stat-hero">
+              <iconify-icon
+                icon="mdi:numeric"
+                style="color: #8b5cf6"
+              ></iconify-icon>
+              <div>
+                <strong id="promedioGeneral">—</strong><span>Promedio</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h1>Portal de Alumno</h1>
+        <!-- MATERIAS ACTUALES (Cursando) -->
+        <div class="card" id="cardCursando">
+          <div class="card-title">
+            <iconify-icon icon="mdi:book-open-outline"></iconify-icon>
+            Materias que cursa actualmente
+            <span
+              class="badge-unidad"
+              id="periodoActualBadge"
+              style="margin-left: auto"
+            ></span>
+          </div>
+          <div id="gridMaterias" class="materias-grid"></div>
+        </div>
 
-        <div style="display: flex; gap: 20px; width: 100%; max-width: 1100px">
-          <!-- LADO IZQUIERDO -->
-          <div class="card" style="width: 250px">
-            <h3>Consultar Boleta</h3>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>PERIODO</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <select id="periodoSelect" style="width: 100%"></select>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <button
-              onclick="mostrarBoleta()"
-              style="margin-top: 10px; width: 100%"
+        <!-- HISTORIAL DE CALIFICACIONES -->
+        <div class="card">
+          <div class="card-title">
+            <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
+            Historial de calificaciones
+            <div
+              style="
+                margin-left: auto;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+              "
             >
-              Consultar
-            </button>
+              <select
+                id="filtroPeriodo"
+                class="sel-mini"
+                onchange="filtrarHistorial()"
+              >
+                <option value="">Todos los periodos</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="window.print()">
+                <iconify-icon icon="mdi:printer-outline"></iconify-icon>
+                Imprimir
+              </button>
+            </div>
           </div>
 
-          <!--LADO DERECHO -->
-          <div style="flex: 1">
-            <!-- TABLA 1 -->
-            <div class="card">
-              <table>
+          <div class="tabla-wrapper">
+            <table class="tabla-calificaciones">
+              <thead>
                 <tr>
-                  <th>Matrícula</th>
-                  <th>Nombre</th>
-                  <th>Semestre</th>
+                  <th>Materia</th>
                   <th>Periodo</th>
+                  <th>Maestro</th>
+                  <th>Tipo</th>
+                  <th>Calificación</th>
+                  <th>Estatus</th>
                 </tr>
-                <tr>
-                  <td id="matricula"></td>
-                  <td id="nombre"></td>
-                  <td id="semestre"></td>
-                  <td id="periodoActual"></td>
-                </tr>
-              </table>
+              </thead>
+              <tbody id="tablaHistorial"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CALIFICACIONES POR UNIDAD (detalle) -->
+        <div class="card">
+          <div class="card-title">
+            <iconify-icon icon="mdi:table-large"></iconify-icon>
+            Detalle de unidades
+            <div style="margin-left: auto">
+              <select
+                id="filtroGrupoUnidades"
+                class="sel-mini"
+                onchange="cargarUnidades()"
+              >
+                <option value="">Selecciona una materia...</option>
+              </select>
             </div>
-
-            <!-- TABLA 2 -->
-            <div class="card">
-              <table>
-                <tr>
-                  <th>Carrera</th>
-                </tr>
-                <tr>
-                  <td id="carrera"></td>
-                </tr>
-              </table>
-            </div>
-
-            <!-- TABLA 3 -->
-            <div class="card">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Materia</th>
-                    <th>CR</th>
-                    <th>Calificación</th>
-                    <th>Observaciones</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaBoleta"></tbody>
-              </table>
-
-              <!-- BOTÓN IMPRIMIR -->
-              <button onclick="window.print()" style="margin-top: 15px">
-                Imprimir Boleta
-              </button>
+          </div>
+          <div id="tablaUnidadesWrap">
+            <div class="empty-state">
+              <iconify-icon icon="mdi:clipboard-list-outline"></iconify-icon>
+              <p>Selecciona una materia para ver el detalle de unidades</p>
             </div>
           </div>
         </div>

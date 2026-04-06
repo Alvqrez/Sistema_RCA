@@ -2381,3 +2381,366 @@ th.col-final {
 :root:not(.dark-mode) .theme-btn:hover {
   background: rgba(30, 64, 175, 0.15);
 }
+
+/* ======================================================================
+   PATCH DE ESTILOS 
+   ====================================================================== */
+
+/* ── Portal Alumno: Hero ─────────────────────────────────────────────── */
+.portal-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.portal-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.portal-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.dark-mode .portal-avatar {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+
+.portal-saludo {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 2px;
+}
+
+.portal-nombre {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+
+.portal-hero-right {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--bg-app);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  min-width: 110px;
+}
+
+.stat-hero iconify-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.stat-hero div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-hero strong {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.stat-hero span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Materias grid ───────────────────────────────────────────────────── */
+.materias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.materia-card {
+  background: var(--bg-app);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.materia-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(30, 64, 175, 0.1);
+}
+
+.dark-mode .materia-card {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark-mode .materia-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+.materia-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.dark-mode .materia-card-header {
+  color: #93c5fd;
+}
+
+.materia-card-nombre {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.materia-card-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.materia-card-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* ── Select mini para filtros en cards ───────────────────────────────── */
+.sel-mini {
+  padding: 5px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-family: "Inter", sans-serif;
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.dark-mode .sel-mini {
+  background: #0f172a;
+  border-color: var(--border);
+  color: var(--text-main);
+}
+
+/* ── Inscripción: Stepper ────────────────────────────────────────────── */
+.stepper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 180px;
+}
+
+.step span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.step.active .step-circle {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.15);
+}
+
+.step.active span {
+  color: var(--primary);
+}
+
+.step.completed .step-circle {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+.step.completed span {
+  color: var(--success);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin-bottom: 22px;
+  transition: background 0.2s;
+}
+
+/* ── Stat mini (resumen inscripción) ──────────────────────────────────── */
+.stat-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.stat-mini iconify-icon {
+  font-size: 1.4rem;
+  color: var(--primary);
+}
+
+.stat-mini div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-mini strong {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.stat-mini span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.dark-mode .stat-mini iconify-icon {
+  color: #93c5fd;
+}
+
+/* ── Resumen inscripción ─────────────────────────────────────────────── */
+.resumen-insc {
+  background: var(--bg-app);
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+/* ── sidebar theme-icon-btn con texto ───────────────────────────────── */
+.theme-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", sans-serif;
+  width: 100%;
+  border-top: 1px solid #334155;
+  transition: all 0.15s;
+}
+
+.theme-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.theme-icon-btn iconify-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .theme-icon-btn {
+    justify-content: center;
+    padding: 14px;
+  }
+  .theme-icon-btn #themeLabel {
+    display: none;
+  }
+  .stat-hero {
+    min-width: 90px;
+    padding: 10px 12px;
+  }
+  .portal-hero {
+    flex-direction: column;
+  }
+  .stepper .step span {
+    display: none;
+  }
+}
+
+/* ── Print styles ────────────────────────────────────────────────────── */
+@media print {
+  .sidebar,
+  .page-header button,
+  .acciones-row,
+  .table-filters,
+  .portal-hero-right,
+  #cardCursando,
+  button {
+    display: none !important;
+  }
+  .content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .portal-hero {
+    border: 1px solid #ccc;
+  }
+}

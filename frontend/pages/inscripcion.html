@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inscripción de Alumnos - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header">
+          <h1>
+            <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
+            Inscripción de Alumnos
+          </h1>
+          <button
+            class="btn btn-outline btn-sm"
+            onclick="window.location.href = 'alumnos.html'"
+          >
+            <iconify-icon icon="lucide:arrow-left"></iconify-icon> Volver a
+            alumnos
+          </button>
+        </div>
+
+        <!-- PASOS VISUALES -->
+        <div class="stepper" id="stepper">
+          <div class="step active" id="stepDot1">
+            <div class="step-circle">1</div>
+            <span>Seleccionar grupo</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step" id="stepDot2">
+            <div class="step-circle">2</div>
+            <span>Elegir alumnos</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step" id="stepDot3">
+            <div class="step-circle">3</div>
+            <span>Confirmar</span>
+          </div>
+        </div>
+
+        <!-- PASO 1 — GRUPO -->
+        <div class="card insc-step" id="paso1">
+          <div class="card-title">
+            <span class="step-number">1</span>
+            Seleccionar grupo de destino
+          </div>
+
+          <div class="config-grid">
+            <div class="field-group">
+              <label>Periodo escolar</label>
+              <select id="selPeriodo" onchange="filtrarGruposPorPeriodo()">
+                <option value="">Todos los periodos</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Materia</label>
+              <select id="selMateriaFiltro" onchange="filtrarGrupos()">
+                <option value="">Todas las materias</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tabla-wrapper" style="margin-top: 16px">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Grupo</th>
+                  <th>Materia</th>
+                  <th>Maestro</th>
+                  <th>Periodo</th>
+                  <th>Horario</th>
+                  <th>Capacidad</th>
+                </tr>
+              </thead>
+              <tbody id="tablaGrupos"></tbody>
+            </table>
+          </div>
+
+          <div class="acciones-row" style="margin-top: 16px">
+            <button
+              class="btn btn-primary"
+              onclick="irPaso2()"
+              id="btnIrPaso2"
+              disabled
+            >
+              Continuar <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 2 — ALUMNOS -->
+        <div class="card insc-step" id="paso2" style="display: none">
+          <div class="card-title">
+            <span class="step-number">2</span>
+            Seleccionar alumnos a inscribir
+            <span
+              id="grupoSelBadge"
+              style="margin-left: 8px"
+              class="badge-grupo"
+            ></span>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              gap: 12px;
+              flex-wrap: wrap;
+              margin-bottom: 16px;
+              align-items: flex-end;
+            "
+          >
+            <div class="field-group" style="flex: 2; min-width: 200px">
+              <label>Buscar alumno</label>
+              <input
+                type="text"
+                id="buscarAlumno"
+                placeholder="Nombre o matrícula..."
+                oninput="filtrarAlumnos()"
+              />
+            </div>
+            <div class="field-group" style="flex: 1; min-width: 160px">
+              <label>Carrera</label>
+              <select id="filtroCarreraAlumno" onchange="filtrarAlumnos()">
+                <option value="">Todas las carreras</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 6px">
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="seleccionarTodos()"
+              >
+                <iconify-icon icon="mdi:check-all"></iconify-icon> Seleccionar
+                todos
+              </button>
+              <button
+                class="btn btn-outline btn-sm"
+                style="margin-left: 6px"
+                onclick="deseleccionarTodos()"
+              >
+                <iconify-icon icon="mdi:close"></iconify-icon> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              gap: 4px;
+              margin-bottom: 10px;
+              font-size: 0.83rem;
+              color: var(--text-muted);
+            "
+          >
+            <iconify-icon icon="mdi:information-outline"></iconify-icon>
+            <span id="infoSeleccion">0 alumnos seleccionados</span>
+            <span style="margin-left: 8px" id="infoYaInscritos"></span>
+          </div>
+
+          <div class="tabla-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      id="chkTodos"
+                      onchange="toggleTodos(this)"
+                    />
+                  </th>
+                  <th>No. Control</th>
+                  <th>Nombre</th>
+                  <th>Carrera</th>
+                  <th>Correo</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAlumnos"></tbody>
+            </table>
+          </div>
+
+          <div class="acciones-row" style="margin-top: 16px">
+            <button class="btn btn-outline" onclick="volverPaso1()">
+              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="irPaso3()"
+              id="btnIrPaso3"
+              disabled
+            >
+              Revisar selección
+              <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3 — CONFIRMACIÓN -->
+        <div class="card insc-step" id="paso3" style="display: none">
+          <div class="card-title">
+            <span class="step-number">3</span>
+            Confirmar inscripción
+          </div>
+
+          <div class="resumen-insc" id="resumenInsc"></div>
+
+          <div class="field-group" style="max-width: 240px; margin-top: 12px">
+            <label>Tipo de curso</label>
+            <select id="tipoCurso">
+              <option value="Ordinario">Ordinario</option>
+              <option value="Recursado">Recursado</option>
+              <option value="Especial">Especial</option>
+            </select>
+          </div>
+
+          <div class="acciones-row" style="margin-top: 20px">
+            <button class="btn btn-outline" onclick="volverPaso2()">
+              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
+            </button>
+            <button
+              class="btn btn-success"
+              onclick="confirmarInscripcion()"
+              id="btnConfirmar"
+            >
+              <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
+              Inscribir alumnos
+            </button>
+          </div>
+        </div>
+
+        <!-- PANEL: INSCRIPCIONES ACTUALES -->
+        <div class="card" style="margin-top: 8px">
+          <div class="card-title">
+            <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
+            Inscripciones recientes
+            <button
+              class="btn btn-outline btn-sm"
+              style="margin-left: auto"
+              onclick="cargarInscripciones()"
+            >
+              <iconify-icon icon="mdi:refresh"></iconify-icon>
+            </button>
+          </div>
+
+          <div class="table-filters">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap">
+              <div class="field-group" style="flex: 1; min-width: 160px">
+                <label>Filtrar por grupo</label>
+                <select id="filtroGrupoInsc" onchange="filtrarTablaInsc()">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex: 1; min-width: 120px">
+                <label>Estatus</label>
+                <select id="filtroEstatusInsc" onchange="filtrarTablaInsc()">
+                  <option value="">Todos</option>
+                  <option value="Cursando">Cursando</option>
+                  <option value="Baja">Baja</option>
+                  <option value="Aprobado">Aprobado</option>
+                  <option value="Reprobado">Reprobado</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex: 2; min-width: 180px">
+                <label>Buscar</label>
+                <input
+                  type="text"
+                  id="buscarInsc"
+                  placeholder="Nombre o matrícula..."
+                  oninput="filtrarTablaInsc()"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="tabla-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Control</th>
+                  <th>Alumno</th>
+                  <th>Materia / Grupo</th>
+                  <th>Maestro</th>
+                  <th>Periodo</th>
+                  <th>Tipo</th>
+                  <th>Estatus</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInscripciones"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal baja -->
+    <div class="modal-overlay" id="modalBaja">
+      <div class="modal">
+        <div class="modal-icon exit">
+          <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
+        </div>
+        <h3>Dar de baja</h3>
+        <p>¿Cambiar estatus de la inscripción a <strong>Baja</strong>?</p>
+        <div class="modal-buttons">
+          <button class="btn btn-danger" id="btnConfirmarBaja">
+            Dar de baja
+          </button>
+          <button class="btn btn-outline" onclick="cerrarModal('modalBaja')">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/inscripcion.js"></script>
+  </body>
+</html>

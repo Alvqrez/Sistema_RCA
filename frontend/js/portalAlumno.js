@@ -1,85 +1,269 @@
 // frontend/js/portalAlumno.js
-const BASE_URL = "http://localhost:3000";
+const BASE = "http://localhost:3000";
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
 
-const token    = localStorage.getItem("token");
-const nombre   = localStorage.getItem("nombre");
-const rol      = localStorage.getItem("rol");
+if (!token || rol !== "alumno") window.location.href = "login.html";
 
-// Redirige si no hay sesión o si el rol no es alumno
-if (!token || rol !== "alumno") {
-    window.location.href = "login.html";
+function parsearToken(t) {
+  try {
+    return JSON.parse(atob(t.split(".")[1]));
+  } catch {
+    return null;
+  }
 }
-
-// Decodifica el token para obtener la matrícula
-function parsearToken(token) {
-    try {
-        return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-        return null;
-    }
-}
-
-const payload  = parsearToken(token);
+const payload = parsearToken(token);
 const matricula = payload?.id_referencia;
 
-// Muestra el nombre del header
-document.getElementById("nombre").textContent   = nombre || "—";
-document.getElementById("matricula").textContent = matricula || "—";
+let todasInscripciones = [];
+
+// ── INIT ──────────────────────────────────────────────────────────────
+(async () => {
+  await cargarDatosAlumno();
+  await cargarInscripciones();
+})();
 
 async function cargarDatosAlumno() {
-
-    const response = await fetch(`${BASE_URL}/api/alumnos/${matricula}`, {
-        headers: { "Authorization": `Bearer ${token}` }
+  try {
+    const r = await fetch(`${BASE}/api/alumnos/${matricula}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (response.status === 401 || response.status === 403) {
-        window.location.href = "login.html";
-        return;
+    if (!r.ok) {
+      window.location.href = "login.html";
+      return;
     }
+    const a = await r.json();
 
-    const alumno = await response.json();
-
-    document.getElementById("matricula").textContent = alumno.matricula;
-    document.getElementById("nombre").textContent    = `${alumno.nombre} ${alumno.apellido_paterno}`;
-    document.getElementById("carrera").textContent   = alumno.id_carrera;
-
+    document.getElementById("heroNombre").textContent =
+      `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.trim();
+    document.getElementById("heroMatricula").textContent =
+      `No. Control: ${a.matricula}`;
+    document.getElementById("heroCarrera").textContent = a.id_carrera;
+  } catch (_) {}
 }
 
-async function cargarCalificaciones() {
-
-    const response = await fetch(`${BASE_URL}/api/calificaciones/alumno/${matricula}`, {
-        headers: { "Authorization": `Bearer ${token}` }
+async function cargarInscripciones() {
+  try {
+    const r = await fetch(`${BASE}/api/inscripciones/alumno/${matricula}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    if (!r.ok) throw new Error();
+    todasInscripciones = await r.json();
+  } catch (_) {
+    // fallback a calificaciones directas
+    await cargarCalificacionesFallback();
+    return;
+  }
 
-    const califs = await response.json();
-    const tabla  = document.getElementById("tablaBoleta");
+  calcularStats();
+  renderMateriasCursando();
+  poblarFiltros();
+  filtrarHistorial();
+  poblarSelectGrupos();
+}
 
-    tabla.innerHTML = "";
-
-    if (califs.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="4">No hay calificaciones registradas</td></tr>`;
-        return;
+// Fallback si la API de inscripciones no existe aún
+async function cargarCalificacionesFallback() {
+  try {
+    const r = await fetch(`${BASE}/api/calificaciones/alumno/${matricula}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const califs = await r.json();
+    const tbody = document.getElementById("tablaHistorial");
+    if (!califs.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No hay calificaciones registradas aún.</td></tr>`;
+      return;
     }
+    tbody.innerHTML = califs
+      .map(
+        (c) => `
+      <tr>
+        <td>${c.nombre_unidad}</td>
+        <td>—</td><td>—</td><td>—</td>
+        <td><div class="cal-final ${(c.calificacion_unidad_final ?? 0) >= 60 ? "aprobado" : "reprobado"}">${c.calificacion_unidad_final ?? "Pendiente"}</div></td>
+        <td><span class="badge-estatus ${c.estatus_unidad === "Aprobada" ? "badge-aprobado" : c.estatus_unidad === "Reprobada" ? "badge-reprobado" : "badge-pendiente"}">${c.estatus_unidad}</span></td>
+      </tr>
+    `,
+      )
+      .join("");
+  } catch (_) {}
+}
 
-    califs.forEach(c => {
-        const estatus = c.calificacion_unidad_final >= 60 ? "Aprobada" : "Reprobada";
-        tabla.innerHTML += `
-            <tr>
-                <td>${c.nombre_unidad}</td>
-                <td>${c.id_grupo}</td>
-                <td>${c.calificacion_unidad_final ?? "Pendiente"}</td>
-                <td>${c.estatus_unidad}</td>
-            </tr>
-        `;
+function calcularStats() {
+  const aprobadas = todasInscripciones.filter(
+    (i) => i.estatus_final === "Aprobado",
+  ).length;
+  const reprobadas = todasInscripciones.filter(
+    (i) => i.estatus_final === "Reprobado",
+  ).length;
+  const cursando = todasInscripciones.filter(
+    (i) => i.estatus === "Cursando",
+  ).length;
+
+  const notas = todasInscripciones
+    .filter(
+      (i) =>
+        i.calificacion_oficial !== null && i.calificacion_oficial !== undefined,
+    )
+    .map((i) => parseFloat(i.calificacion_oficial));
+  const prom = notas.length
+    ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1)
+    : "—";
+
+  document.getElementById("cntAprobadas").textContent = aprobadas;
+  document.getElementById("cntReprobadas").textContent = reprobadas;
+  document.getElementById("cntCursando").textContent = cursando;
+  document.getElementById("promedioGeneral").textContent = prom;
+}
+
+function renderMateriasCursando() {
+  const cursando = todasInscripciones.filter((i) => i.estatus === "Cursando");
+  const grid = document.getElementById("gridMaterias");
+
+  if (!cursando.length) {
+    grid.innerHTML = `<div class="empty-state"><iconify-icon icon="mdi:book-off-outline"></iconify-icon><p>No tienes materias activas actualmente.</p></div>`;
+    // Obtener periodo del más reciente
+    const ultimoPeriodo = todasInscripciones[0]?.periodo;
+    if (ultimoPeriodo)
+      document.getElementById("periodoActualBadge").textContent = ultimoPeriodo;
+    return;
+  }
+
+  // Mostrar periodo vigente
+  const periodos = [...new Set(cursando.map((i) => i.periodo).filter(Boolean))];
+  if (periodos[0])
+    document.getElementById("periodoActualBadge").textContent = periodos[0];
+
+  grid.innerHTML = cursando
+    .map(
+      (i) => `
+    <div class="materia-card" onclick="seleccionarGrupo(${i.id_grupo})">
+      <div class="materia-card-header">
+        <iconify-icon icon="mdi:book-outline"></iconify-icon>
+        <span class="badge-unidad">${i.clave_materia || ""}</span>
+      </div>
+      <div class="materia-card-nombre">${i.nombre_materia}</div>
+      <div class="materia-card-info">
+        <iconify-icon icon="lucide:graduation-cap"></iconify-icon> ${i.nombre_maestro}
+      </div>
+      <div class="materia-card-footer">
+        <span class="badge-estatus badge-pendiente">${i.tipo_curso}</span>
+        <iconify-icon icon="lucide:chevron-right" style="margin-left:auto;color:var(--text-muted)"></iconify-icon>
+      </div>
+    </div>
+  `,
+    )
+    .join("");
+}
+
+function poblarFiltros() {
+  const periodos = [
+    ...new Set(todasInscripciones.map((i) => i.periodo).filter(Boolean)),
+  ];
+  const sel = document.getElementById("filtroPeriodo");
+  periodos.forEach(
+    (p) => (sel.innerHTML += `<option value="${p}">${p}</option>`),
+  );
+}
+
+function filtrarHistorial() {
+  const filtroPer = document.getElementById("filtroPeriodo").value;
+  const filtradas = todasInscripciones.filter(
+    (i) => !filtroPer || i.periodo === filtroPer,
+  );
+  renderTablaHistorial(filtradas);
+}
+
+function renderTablaHistorial(insc) {
+  const tbody = document.getElementById("tablaHistorial");
+  tbody.innerHTML = "";
+  if (!insc.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Sin calificaciones registradas aún.</td></tr>`;
+    return;
+  }
+  insc.forEach((i) => {
+    const cal = i.calificacion_oficial;
+    const est = i.estatus_final;
+    const color =
+      est === "Aprobado"
+        ? "aprobado"
+        : est === "Reprobado"
+          ? "reprobado"
+          : "pendiente";
+    const badgeEst =
+      est === "Aprobado"
+        ? "badge-aprobado"
+        : est === "Reprobado"
+          ? "badge-reprobado"
+          : "badge-pendiente";
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${i.nombre_materia}</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">${i.clave_materia || ""}</span></td>
+        <td style="font-size:0.82rem;color:var(--text-muted)">${i.periodo || "—"} ${i.anio || ""}</td>
+        <td style="font-size:0.82rem">${i.nombre_maestro || "—"}</td>
+        <td><span class="badge-estatus badge-guardado">${i.tipo_curso || "Ordinario"}</span></td>
+        <td><div class="cal-final ${color}" style="display:inline-flex">${cal ?? "Pendiente"}</div></td>
+        <td><span class="badge-estatus ${badgeEst}">${est || "En curso"}</span></td>
+      </tr>
+    `;
+  });
+}
+
+function poblarSelectGrupos() {
+  const sel = document.getElementById("filtroGrupoUnidades");
+  todasInscripciones.forEach((i) => {
+    sel.innerHTML += `<option value="${i.id_grupo}">${i.nombre_materia} — ${i.periodo || ""}</option>`;
+  });
+}
+
+function seleccionarGrupo(id) {
+  document.getElementById("filtroGrupoUnidades").value = id;
+  cargarUnidades();
+  document
+    .getElementById("filtroGrupoUnidades")
+    .closest(".card")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+async function cargarUnidades() {
+  const id_grupo = document.getElementById("filtroGrupoUnidades").value;
+  const wrap = document.getElementById("tablaUnidadesWrap");
+  if (!id_grupo) {
+    wrap.innerHTML = `<div class="empty-state"><iconify-icon icon="mdi:clipboard-list-outline"></iconify-icon><p>Selecciona una materia</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon></div>`;
+  try {
+    const r = await fetch(`${BASE}/api/calificaciones/alumno/${matricula}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
+    const todas = await r.json();
+    const delGrupo = todas.filter((c) => c.id_grupo == id_grupo);
+    if (!delGrupo.length) {
+      wrap.innerHTML = `<div class="empty-state"><iconify-icon icon="mdi:clipboard-off-outline"></iconify-icon><p>Aún no hay calificaciones de unidades para esta materia.</p></div>`;
+      return;
+    }
+    const filas = delGrupo
+      .map((c) => {
+        const cal = c.calificacion_unidad_final;
+        const color =
+          c.estatus_unidad === "Aprobada"
+            ? "aprobado"
+            : c.estatus_unidad === "Reprobada"
+              ? "reprobado"
+              : "pendiente";
+        return `<tr>
+        <td>${c.nombre_unidad}</td>
+        <td><div class="cal-final ${color}" style="display:inline-flex">${cal ?? "—"}</div></td>
+        <td><span class="badge-estatus ${c.estatus_unidad === "Aprobada" ? "badge-aprobado" : c.estatus_unidad === "Reprobada" ? "badge-reprobado" : "badge-pendiente"}">${c.estatus_unidad}</span></td>
+      </tr>`;
+      })
+      .join("");
+    wrap.innerHTML = `<div class="tabla-wrapper"><table>
+      <thead><tr><th>Unidad</th><th>Calificación</th><th>Estatus</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table></div>`;
+  } catch (_) {
+    wrap.innerHTML = `<div class="empty-state"><p>No se pudo cargar el detalle.</p></div>`;
+  }
 }
-
-function cerrarSesion() {
-    localStorage.clear();
-    window.location.href = "login.html";
-}
-
-// Inicializar
-cargarDatosAlumno();
-cargarCalificaciones();

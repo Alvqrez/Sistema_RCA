@@ -131,6 +131,8 @@ app.use(
   "/api/resultado-actividad",
   require("./src/routes/resultado_actividad"),
 );
+app.use("/api/inscripciones", require("./src/routes/inscripciones"));
+app.use("/api/periodos", require("./src/routes/periodos"));
 
 app.get("/", (req, res) => {
   res.json({ mensaje: "API RCA activa", version: "1.0" });

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Periodos Escolares - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header">
+          <h1>
+            <iconify-icon icon="mdi:calendar-range-outline"></iconify-icon>
+            Periodos Escolares
+          </h1>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
+            <span id="tituloPeriodoForm">Nuevo periodo</span>
+            <button
+              class="btn btn-outline btn-sm"
+              style="margin-left: auto"
+              id="btnCancelarEdicion"
+              onclick="cancelarEdicion()"
+              style="display: none"
+            >
+              <iconify-icon icon="mdi:close"></iconify-icon> Cancelar edición
+            </button>
+          </div>
+
+          <div class="config-grid">
+            <div class="field-group">
+              <label>Descripción</label>
+              <input
+                type="text"
+                id="pDesc"
+                placeholder="Ej. Enero–Junio 2026"
+              />
+            </div>
+            <div class="field-group">
+              <label>Año</label>
+              <input
+                type="number"
+                id="pAnio"
+                placeholder="2026"
+                min="2000"
+                max="2099"
+              />
+            </div>
+            <div class="field-group">
+              <label>Fecha inicio</label>
+              <input type="date" id="pInicio" />
+            </div>
+            <div class="field-group">
+              <label>Fecha fin</label>
+              <input type="date" id="pFin" />
+            </div>
+            <div class="field-group">
+              <label>Estatus</label>
+              <select id="pEstatus">
+                <option value="Proximo">Próximo</option>
+                <option value="Vigente">Vigente (activo)</option>
+                <option value="Concluido">Concluido</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="acciones-row" style="margin-top: 16px">
+            <button class="btn btn-primary" onclick="guardarPeriodo()">
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              <span id="lblBtnPeriodo">Crear periodo</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <iconify-icon icon="mdi:calendar-multiple"></iconify-icon>
+            Lista de periodos
+          </div>
+          <div class="tabla-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Descripción</th>
+                  <th>Año</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Estatus</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaPeriodos"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const tk = () => localStorage.getItem("token");
+      let editandoId = null;
+
+      async function cargarPeriodos() {
+        const r = await fetch(`${BASE}/api/periodos`, {
+          headers: { Authorization: `Bearer ${tk()}` },
+        });
+        const datos = await r.json();
+        const tbody = document.getElementById("tablaPeriodos");
+        tbody.innerHTML = "";
+        if (!datos.length) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Sin periodos registrados</td></tr>`;
+          return;
+        }
+        datos.forEach((p) => {
+          const col =
+            {
+              Vigente: "badge-aprobado",
+              Concluido: "badge-np",
+              Proximo: "badge-pendiente",
+            }[p.estatus] || "badge-pendiente";
+          tbody.innerHTML += `<tr>
+      <td>#${p.id_periodo}</td>
+      <td><strong>${p.descripcion}</strong></td>
+      <td>${p.anio}</td>
+      <td style="font-size:0.82rem">${p.fecha_inicio}</td>
+      <td style="font-size:0.82rem">${p.fecha_fin}</td>
+      <td><span class="badge-estatus ${col}">${p.estatus}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="editarPeriodo(${JSON.stringify(p).replace(/"/g, "&quot;")})">
+          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+        </button>
+        ${
+          p.estatus !== "Vigente"
+            ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(${p.id_periodo})">
+          <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+        </button>`
+            : ""
+        }
+      </td>
+    </tr>`;
+        });
+      }
+
+      function editarPeriodo(p) {
+        editandoId = p.id_periodo;
+        document.getElementById("pDesc").value = p.descripcion;
+        document.getElementById("pAnio").value = p.anio;
+        document.getElementById("pInicio").value = p.fecha_inicio;
+        document.getElementById("pFin").value = p.fecha_fin;
+        document.getElementById("pEstatus").value = p.estatus;
+        document.getElementById("tituloPeriodoForm").textContent =
+          `Editando: ${p.descripcion}`;
+        document.getElementById("lblBtnPeriodo").textContent =
+          "Actualizar periodo";
+        document.getElementById("btnCancelarEdicion").style.display =
+          "inline-flex";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function cancelarEdicion() {
+        editandoId = null;
+        document.getElementById("tituloPeriodoForm").textContent =
+          "Nuevo periodo";
+        document.getElementById("lblBtnPeriodo").textContent = "Crear periodo";
+        document.getElementById("btnCancelarEdicion").style.display = "none";
+        ["pDesc", "pAnio", "pInicio", "pFin"].forEach(
+          (id) => (document.getElementById(id).value = ""),
+        );
+        document.getElementById("pEstatus").value = "Proximo";
+      }
+
+      async function guardarPeriodo() {
+        const body = {
+          descripcion: document.getElementById("pDesc").value.trim(),
+          anio: document.getElementById("pAnio").value,
+          fecha_inicio: document.getElementById("pInicio").value,
+          fecha_fin: document.getElementById("pFin").value,
+          estatus: document.getElementById("pEstatus").value,
+        };
+        if (
+          !body.descripcion ||
+          !body.anio ||
+          !body.fecha_inicio ||
+          !body.fecha_fin
+        ) {
+          alert("Completa todos los campos requeridos");
+          return;
+        }
+        const url = editandoId
+          ? `${BASE}/api/periodos/${editandoId}`
+          : `${BASE}/api/periodos`;
+        const method = editandoId ? "PUT" : "POST";
+        const r = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tk()}`,
+          },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (d.success) {
+          cancelarEdicion();
+          cargarPeriodos();
+        } else alert(d.error || "Error");
+      }
+
+      async function eliminarPeriodo(id) {
+        if (
+          !confirm(
+            "¿Eliminar este periodo? Solo es posible si no tiene grupos asignados.",
+          )
+        )
+          return;
+        const r = await fetch(`${BASE}/api/periodos/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${tk()}` },
+        });
+        const d = await r.json();
+        if (d.success) cargarPeriodos();
+        else alert(d.error);
+      }
+
+      soloPermitido?.("administrador");
+      cargarPeriodos();
+    </script>
+  </body>
+</html>
