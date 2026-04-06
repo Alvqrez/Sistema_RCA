@@ -78,6 +78,10 @@
       <span class="sidebar-rol">${rol || ""}</span>
     </div>
     <nav>${linksHTML}</nav>
+    <button class="theme-btn" onclick="toggleTheme()">
+  <iconify-icon icon="lucide:moon"></iconify-icon>
+  <span>Modo oscuro</span>
+</button>
     <button class="logout-btn" onclick="cerrarSesion()">
       <iconify-icon icon="lucide:log-out"></iconify-icon>
       <span>Cerrar sesión</span>
@@ -105,3 +109,21 @@ function cerrarSesion() {
   localStorage.clear();
   window.location.href = "login.html";
 }
+
+function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+
+  if (document.body.classList.contains("dark-mode")) {
+    localStorage.setItem("tema", "oscuro");
+  } else {
+    localStorage.setItem("tema", "claro");
+  }
+}
+
+(function () {
+  const tema = localStorage.getItem("tema");
+
+  if (tema === "oscuro") {
+    document.body.classList.add("dark-mode");
+  }
+})();

@@ -1,19 +1,42 @@
-/* =====================================================================
-   RCA — Sistema de Resultados y Calificaciones Académicas
-   ===================================================================== */
-
 /* Denifiremos la paleta de colores aquí, para que nos sea mas sencillo estilizar:*/
 :root {
-  --primary: #1e40af; /* Azul Institucional */
+  /* COLORES PRINCIPALES */
+  --primary: #1e40af;
   --primary-hover: #1e3a8a;
   --primary-light: #dbeafe;
+
   --success: #059669;
+  --success-light: #d1fae5;
+
   --danger: #dc2626;
-  --bg-app: #f8fafc; /* Gris muy claro, profesional */
+  --danger-light: #fee2e2;
+
+  --warning: #d97706;
+  --warning-light: #fef3c7;
+
+  --bonus: #7c3aed;
+  --bonus-light: #ede9fe;
+
+  /* INTERFAZ */
+  --bg-app: #f1f5f9;
+  --card-bg: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
+  --border: #e2e8f0;
+
   --radius: 10px;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark-mode {
+  --bg-app: #0f172a;
+  --card-bg: #1e293b;
+
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+
+  --border: #334155;
 }
 
 /* ESTO ES PARA CELULARES O TABLETS */
@@ -44,7 +67,7 @@
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
-  background: #f4f6f9;
+  background: var(--bg-app);
 }
 
 /* ── LAYOUT ───────────────────────────────────────────────────────── */
@@ -62,7 +85,7 @@ body {
   background: #1e293b;
   color: white;
   display: flex;
-  flex-direction: column; /* ← necesario para que el botón quede abajo */
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -105,20 +128,20 @@ body {
 }
 
 .sidebar nav a:hover {
-  background: rgba(255, 255, 255, 0.08); /* Blanco transparente sutil */
+  background: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
 .sidebar nav a.active {
-  background: rgba(37, 99, 235, 0.1); /* Fondo azul transparente */
-  color: #3b82f6; /* Texto azul claro */
-  border-left: 4px solid #3b82f6; /* Indicador lateral */
-  border-radius: 0; /* Redondeado solo de un lado */
+  background: rgba(37, 99, 235, 0.1);
+  color: #3b82f6;
+  border-left: 4px solid #3b82f6;
+  border-radius: 0;
   font-weight: 600;
 }
 
 .sidebar nav a iconify-icon {
-  font-size: 20px; /* Tamaño del icono */
+  font-size: 20px;
   flex-shrink: 0;
 }
 
@@ -131,7 +154,6 @@ body {
   border-radius: 10px;
 }
 
-/* Botón cerrar sesión — rojo, pegado al fondo */
 .logout-btn {
   display: flex;
   align-items: center;
@@ -169,7 +191,7 @@ h1 {
 
 /* ── CARD ─────────────────────────────────────────────────────────── */
 .card {
-  background: white;
+  background: var(--card-bg);
   padding: 24px;
   margin-bottom: 24px;
   border-radius: 16px;
@@ -190,7 +212,7 @@ h1 {
 /* ── TABLA ────────────────────────────────────────────────────────── */
 table {
   width: 100%;
-  border-collapse: collapse; /* Cambiado para que el radio funcione mejor */
+  border-collapse: collapse;
   background: white;
   border-radius: var(--radius);
   overflow: hidden;
@@ -198,7 +220,7 @@ table {
 }
 
 th {
-  background: #f1f5f9; /* Color neutro */
+  background: #f1f5f9;
   color: var(--text-muted);
   padding: 14px;
   text-align: left;
@@ -220,7 +242,7 @@ tr:nth-child(even) {
 }
 
 tr:hover {
-  background-color: #f8fafc; /* Feedback visual sutil al pasar el mouse */
+  background-color: #f8fafc;
 }
 
 tbody tr {
@@ -253,14 +275,13 @@ textarea {
   transition: all 0.2s ease;
 }
 
-/* ESTE ES EL QUE ME PEDISTE, ponlo justo aquí */
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1); /* Ring de enfoque azul */
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
 }
 
 .form-grid {
@@ -297,7 +318,7 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px; /* Este es el "aire" que mencionamos */
+  margin-bottom: 20px;
   padding: 16px;
   background: #f8fafc;
   border-radius: 12px;
@@ -305,11 +326,11 @@ textarea:focus {
 }
 
 .table-filters input {
-  flex: 2; /* El buscador es más largo */
+  flex: 2;
 }
 
 .table-filters select {
-  flex: 1; /* El select es más corto */
+  flex: 1;
 }
 
 /* ── BOTONES ──────────────────────────────────────────────────────── */
@@ -335,14 +356,14 @@ button:hover {
 }
 
 .btn-guardar {
-  background: var(--primary); /* Usamos el azul institucional */
+  background: var(--primary);
   font-weight: 600;
   box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.2);
 }
 
 .btn-guardar:hover {
   background: var(--primary-hover);
-  transform: translateY(-1px); /* Efecto de elevación sutil */
+  transform: translateY(-1px);
   box-shadow: 0 10px 15px -3px rgba(30, 64, 175, 0.3);
 }
 
@@ -360,8 +381,8 @@ button:hover {
 
 .btn-editar,
 .btn-eliminar {
-  margin: 0 4px; /* Un poco de espacio lateral */
-  font-size: 13px; /* Un poco más pequeños en la tabla */
+  margin: 0 4px;
+  font-size: 13px;
 }
 
 .btn-editar {
@@ -384,6 +405,23 @@ button:hover {
   border-radius: 6px;
 }
 
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.theme-btn:hover {
+  background: #0284c7;
+}
 /* ── ESTADOS / BADGES ─────────────────────────────────────────────── */
 .badge {
   display: inline-block;
@@ -560,27 +598,6 @@ button:hover {
   background: #2563eb;
 }
 /* ── VARIABLES ─────────────────────────────────────────── */
-:root {
-  --primary: #1e40af;
-  --primary-hover: #1e3a8a;
-  --primary-light: #dbeafe;
-  --success: #059669;
-  --success-light: #d1fae5;
-  --danger: #dc2626;
-  --danger-light: #fee2e2;
-  --warning: #d97706;
-  --warning-light: #fef3c7;
-  --bonus: #7c3aed;
-  --bonus-light: #ede9fe;
-  --bg-app: #f1f5f9;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 10px;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
-}
 
 * {
   box-sizing: border-box;
@@ -963,7 +980,6 @@ body {
   background: #f0f6ff;
 }
 
-/* Inputs numéricos en la tabla */
 .cal-input {
   width: 68px;
   border: 1.5px solid var(--border);
@@ -990,7 +1006,6 @@ body {
   background: #fff5f5;
 }
 
-/* Input de bonus */
 .bonus-input {
   width: 68px;
   border: 1.5px solid #c4b5fd;
@@ -1013,7 +1028,6 @@ body {
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
 }
 
-/* Celda de calificación final calculada */
 .cal-final {
   font-weight: 700;
   font-size: 0.95rem;
@@ -1036,7 +1050,6 @@ body {
   background: #f1f5f9;
 }
 
-/* Colores de borde inferior por columna */
 th.col-actividad {
   border-bottom: 3px solid #3b82f6;
 }
