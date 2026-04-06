@@ -80,14 +80,19 @@ router.post("/", soloAdmin, async (req, res) => {
       ],
       (err) => {
         if (err) {
-          if (err.code === "ER_DUP_ENTRY")
-            return res.status(409).json({ error: "La matrícula ya existe" });
-          return res.status(500).json({ error: "Error interno del servidor" });
+          // ESTA LÍNEA ES VITAL PARA SABER QUÉ PASA
+          console.error("❌ ERROR REAL EN TABLA ALUMNO:", err);
+          return res
+            .status(500)
+            .json({ error: "Error al insertar perfil", detalle: err.message });
         }
+        console.log(
+          "✅ Perfil de alumno creado, procediendo a crear cuenta de usuario...",
+        );
 
         // 2. Crea el acceso en la tabla usuario
         db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'alumno', ?)`,
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?, ?, 'alumno', ?, 1)`,
           [username, hash, matricula],
           (err2) => {
             if (err2) {
@@ -124,7 +129,7 @@ router.put("/:matricula", soloAdmin, (req, res) => {
   }
 
   const query = `
-        UPDATE Alumno
+        UPDATE alumno
         SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, correo_institucional = ?, id_carrera = ?
         WHERE matricula = ?
     `;
@@ -154,7 +159,7 @@ router.put("/:matricula", soloAdmin, (req, res) => {
 // DELETE — eliminar alumno (solo maestro)
 router.delete("/:matricula", soloAdmin, (req, res) => {
   db.query(
-    "DELETE FROM Alumno WHERE matricula = ?",
+    "DELETE FROM alumno WHERE matricula = ?",
     [req.params.matricula],
     (err, result) => {
       if (err)
