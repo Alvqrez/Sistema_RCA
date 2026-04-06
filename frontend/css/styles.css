@@ -189,6 +189,18 @@ h1 {
   margin-bottom: 20px;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-main);
+}
+
+p,
+label,
+span {
+  color: var(--text-soft);
+}
 /* ── CARD ─────────────────────────────────────────────────────────── */
 .card {
   background: var(--card-bg);
@@ -213,10 +225,18 @@ h1 {
 table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--card-bg);
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid #e2e8f0;
+}
+
+thead {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode thead {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 th {
@@ -237,8 +257,8 @@ td {
   color: var(--text-main);
 }
 
-tr:nth-child(even) {
-  background: #f8fafc;
+tr {
+  border-bottom: 1px solid var(--border);
 }
 
 tr:hover {
@@ -247,6 +267,14 @@ tr:hover {
 
 tbody tr {
   transition: background 0.15s;
+}
+
+tbody tr:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark-mode tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 /* ── FORMULARIOS ──────────────────────────────────────────────────── */
 form {

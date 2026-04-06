@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <title>Mis Grupos - RCA</title>
     <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
+    <script>
       (function () {
         if (localStorage.getItem("tema") === "dark")
           document.documentElement.setAttribute("data-theme", "dark");

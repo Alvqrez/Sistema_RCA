@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Formulario de Evaluación - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"

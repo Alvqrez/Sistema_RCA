@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Unidades - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
@@ -28,7 +33,10 @@
             <div>
               <label>Materia</label>
               <select id="claveMateria" required></select>
-              <small id="hintUnidades" style="color:#6c757d;display:block;margin-top:4px;"></small>
+              <small
+                id="hintUnidades"
+                style="color: #6c757d; display: block; margin-top: 4px"
+              ></small>
             </div>
 
             <div>
