@@ -1,24 +1,25 @@
 // frontend/js/admin.js
 const BASE_URL = "http://localhost:3000";
-const token    = localStorage.getItem("token");
-const rol      = localStorage.getItem("rol");
+const token = localStorage.getItem("token");
+const rol = localStorage.getItem("rol");
+
+soloPermitido("administrador");
 
 if (!token || rol !== "administrador") {
-    window.location.href = "login.html";
+  window.location.href = "login.html";
 }
 
 async function cargarUsuarios() {
+  const response = await fetch(`${BASE_URL}/api/admin/usuarios`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    const response = await fetch(`${BASE_URL}/api/admin/usuarios`, {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
+  const usuarios = await response.json();
+  const tabla = document.getElementById("tablaUsuarios");
+  tabla.innerHTML = "";
 
-    const usuarios = await response.json();
-    const tabla    = document.getElementById("tablaUsuarios");
-    tabla.innerHTML = "";
-
-    usuarios.forEach(u => {
-        tabla.innerHTML += `
+  usuarios.forEach((u) => {
+    tabla.innerHTML += `
             <tr>
                 <td>${u.username}</td>
                 <td>${u.rol}</td>
@@ -32,58 +33,55 @@ async function cargarUsuarios() {
                 </td>
             </tr>
         `;
-    });
-
+  });
 }
 
-document.getElementById("formUsuario").addEventListener("submit", async function(e) {
-
+document
+  .getElementById("formUsuario")
+  .addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const data = {
-        username:     document.getElementById("uUsername").value,
-        password:     document.getElementById("uPassword").value,
-        rol:          document.getElementById("uRol").value,
-        id_referencia: document.getElementById("uReferencia").value
+      username: document.getElementById("uUsername").value,
+      password: document.getElementById("uPassword").value,
+      rol: document.getElementById("uRol").value,
+      id_referencia: document.getElementById("uReferencia").value,
     };
 
     const response = await fetch(`${BASE_URL}/api/admin/usuarios`, {
-        method: "POST",
-        headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
 
     const result = await response.json();
     alert(result.mensaje || result.error);
 
     if (result.success) {
-        this.reset();
-        cargarUsuarios();
+      this.reset();
+      cargarUsuarios();
     }
-
-});
+  });
 
 async function toggleEstatus(id, estadoActual) {
+  await fetch(`${BASE_URL}/api/admin/usuarios/${id}/estatus`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ activo: !estadoActual }),
+  });
 
-    await fetch(`${BASE_URL}/api/admin/usuarios/${id}/estatus`, {
-        method: "PUT",
-        headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ activo: !estadoActual })
-    });
-
-    cargarUsuarios();
-
+  cargarUsuarios();
 }
 
 function cerrarSesion() {
-    localStorage.clear();
-    window.location.href = "login.html";
+  localStorage.clear();
+  window.location.href = "login.html";
 }
 
 cargarUsuarios();

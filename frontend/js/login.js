@@ -1,10 +1,9 @@
-// frontend/js/login.js — COMPLETO CORREGIDO
+// frontend/js/login.js
 const BASE_URL = "http://localhost:3000";
 
 const form = document.getElementById("loginForm");
 const error = document.getElementById("error");
 
-// Inicializa tabRol en "alumno" al cargar la página
 let tabRolActual = "alumno";
 
 form.addEventListener("submit", async function (e) {
@@ -34,25 +33,26 @@ form.addEventListener("submit", async function (e) {
       localStorage.setItem("nombre", data.nombre);
       localStorage.setItem("rol", data.rol);
 
+      // ─── REDIRECCIÓN POR ROL ──────────────────────────────────────────
       if (data.rol === "alumno") window.location.href = "portalAlumno.html";
-      else if (data.rol === "maestro") window.location.href = "maestros.html";
+      else if (data.rol === "maestro")
+        window.location.href = "mis_grupos.html"; // ← CORREGIDO
       else if (data.rol === "administrador")
         window.location.href = "admin.html";
     } else {
       error.textContent = data.message || "Credenciales incorrectas";
     }
-  } catch (e) {
+  } catch {
     error.textContent = "No se pudo conectar con el servidor";
   }
 });
 
-// Tabs
+// Tabs de rol en la pantalla de login
 const tabs = document.querySelectorAll(".tab");
-
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
-    tabRolActual = tab.dataset.rol; // ← variable local, no localStorage
+    tabRolActual = tab.dataset.rol;
   });
 });

@@ -1,6 +1,8 @@
 // frontend/js/grupos.js — versión completa
 const BASE_URL = "http://localhost:3000";
 
+soloPermitido("administrador");
+
 document.addEventListener("DOMContentLoaded", async () => {
   const rol = localStorage.getItem("rol");
   const cardForm = document.getElementById("cardRegistroGrupo");

@@ -1,6 +1,8 @@
 // frontend/js/materias.js — CORREGIDO
 const BASE_URL = "http://localhost:3000";
 
+soloPermitido("administrador");
+
 let materiaEditando = null; // null = modo registro, string = clave en edición
 
 const form = document.getElementById("formMateria");

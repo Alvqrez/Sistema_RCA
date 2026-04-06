@@ -2,6 +2,8 @@
 const BASE_URL = "http://localhost:3000";
 const token = localStorage.getItem("token");
 
+soloPermitido("administrador");
+
 if (!token) window.location.href = "login.html";
 
 let maestroEditando = null; // null = registro, string = numero_empleado en edición
