@@ -25,76 +25,230 @@
       <aside class="sidebar"></aside>
 
       <main class="content">
-        <h1>Actividades</h1>
+        <div class="page-header">
+          <h1>
+            <iconify-icon icon="mdi:clipboard-check-outline"></iconify-icon>
+            Actividades
+          </h1>
+        </div>
 
+        <!-- Registrar actividad -->
         <div class="card">
-          <h2>Registrar Actividad</h2>
-          <form id="formActividad" class="form-grid">
-            <div>
+          <div class="card-title">
+            <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
+            Registrar actividad
+          </div>
+          <div class="form-grid">
+            <div class="field-group">
               <label>Grupo</label>
-              <select id="grupoActividad" required>
+              <select id="grupoActividad">
                 <option value="">-- Selecciona grupo --</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label>Unidad</label>
-              <select id="unidadActividad" required>
+              <select id="unidadActividad">
                 <option value="">-- Selecciona unidad --</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label>Nombre de la actividad</label>
-              <input type="text" id="nombreActividad" required />
+              <input
+                type="text"
+                id="nombreActividad"
+                placeholder="Ej. Práctica 1"
+              />
             </div>
-            <div>
-              <label>Ponderación (%)</label>
+            <div class="field-group">
+              <label>Ponderación dentro de la unidad (%)</label>
               <input
                 type="number"
                 id="ponderacion"
                 min="1"
                 max="100"
-                required
+                placeholder="0–100"
               />
             </div>
-            <div>
+            <div class="field-group">
               <label>Tipo de evaluación</label>
-              <select id="tipoEvaluacion" required>
+              <select id="tipoEvaluacion">
                 <option value="">Seleccione</option>
                 <option value="Sumativa">Sumativa</option>
                 <option value="Formativa">Formativa</option>
                 <option value="Diagnóstica">Diagnóstica</option>
               </select>
             </div>
-            <div>
+            <div class="field-group">
               <label>Fecha de entrega</label>
               <input type="date" id="fechaEntrega" />
             </div>
-            <div class="botones">
-              <button type="submit" class="btn-guardar">Guardar</button>
-              <button type="reset" class="btn-cancelar">Cancelar</button>
-            </div>
-          </form>
+          </div>
+          <div class="acciones-row" style="margin-top: 16px">
+            <button class="btn btn-primary" onclick="registrarActividad()">
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Guardar actividad
+            </button>
+            <button class="btn btn-outline" onclick="limpiarFormActividad()">
+              <iconify-icon icon="mdi:close"></iconify-icon>
+              Limpiar
+            </button>
+          </div>
         </div>
 
+        <!-- Lista de actividades -->
         <div class="card">
-          <h2>Lista de Actividades</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Grupo</th>
-                <th>Unidad</th>
-                <th>Actividad</th>
-                <th>Ponderación</th>
-                <th>Tipo</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaActividades"></tbody>
-          </table>
+          <div class="card-title">
+            <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
+            Lista de actividades
+            <span
+              id="filtroGrupoBadge"
+              style="
+                margin-left: auto;
+                font-size: 0.78rem;
+                font-weight: 400;
+                color: var(--text-muted);
+              "
+            ></span>
+          </div>
+
+          <!-- Filtros -->
+          <div class="table-filters">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap">
+              <div class="field-group" style="flex: 1; min-width: 160px">
+                <label>Filtrar por grupo</label>
+                <select id="filtroGrupo" onchange="filtrarActividades()">
+                  <option value="">Todos los grupos</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex: 1; min-width: 160px">
+                <label>Filtrar por unidad</label>
+                <select id="filtroUnidad" onchange="filtrarActividades()">
+                  <option value="">Todas las unidades</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex: 2; min-width: 180px">
+                <label>Buscar actividad</label>
+                <input
+                  type="text"
+                  id="buscarActividad"
+                  placeholder="Nombre..."
+                  oninput="filtrarActividades()"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="tabla-wrapper">
+            <table class="tabla-actividades">
+              <thead>
+                <tr>
+                  <th>Actividad</th>
+                  <th>Grupo / Materia</th>
+                  <th>Unidad</th>
+                  <th>Ponderación</th>
+                  <th>Tipo</th>
+                  <th>Entrega</th>
+                  <th>Alumnos calificados</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaActividades"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Panel de calificaciones por actividad -->
+        <div class="card" id="panelCalActividad" style="display: none">
+          <div class="card-title">
+            <iconify-icon icon="mdi:account-group-outline"></iconify-icon>
+            <span id="tituloPanelCal">Calificaciones</span>
+            <button
+              class="btn btn-outline btn-sm"
+              style="margin-left: auto"
+              onclick="cerrarPanelCal()"
+            >
+              <iconify-icon icon="mdi:close"></iconify-icon> Cerrar
+            </button>
+          </div>
+
+          <div
+            id="infoPanelCal"
+            style="
+              margin-bottom: 14px;
+              font-size: 0.85rem;
+              color: var(--text-muted);
+            "
+          ></div>
+
+          <div class="tabla-wrapper">
+            <table class="tabla-calificaciones">
+              <thead>
+                <tr>
+                  <th class="col-alumno">Alumno</th>
+                  <th>Matrícula</th>
+                  <th>Grupo</th>
+                  <th>
+                    <iconify-icon
+                      icon="mdi:check-circle-outline"
+                    ></iconify-icon>
+                    Entregó
+                  </th>
+                  <th>Calificación (0–100)</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyCal"></tbody>
+            </table>
+          </div>
+
+          <div class="acciones-row" style="margin-top: 16px">
+            <button class="btn btn-outline btn-sm" onclick="marcarTodosNP()">
+              <iconify-icon icon="mdi:close-circle-outline"></iconify-icon>
+              Marcar todos NP
+            </button>
+            <button
+              class="btn btn-outline btn-sm"
+              onclick="marcarTodosEntregados()"
+            >
+              <iconify-icon icon="mdi:check-all"></iconify-icon>
+              Marcar todos entregados
+            </button>
+            <button
+              class="btn btn-success"
+              onclick="guardarCalificacionesActividad()"
+            >
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Guardar calificaciones
+            </button>
+          </div>
         </div>
       </main>
+    </div>
+
+    <!-- Modal confirmación eliminar -->
+    <div class="modal-overlay" id="modalEliminar">
+      <div class="modal">
+        <div class="modal-icon exit">
+          <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+        </div>
+        <h3>¿Eliminar actividad?</h3>
+        <p>
+          Esta acción eliminará la actividad y
+          <strong>todos los resultados</strong> registrados. No se puede
+          deshacer.
+        </p>
+        <div class="modal-buttons">
+          <button class="btn btn-danger" id="btnConfirmarEliminar">
+            Eliminar
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="cerrarModal('modalEliminar')"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="../js/sidebar.js"></script>
