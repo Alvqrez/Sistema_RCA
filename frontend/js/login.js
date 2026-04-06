@@ -54,5 +54,10 @@ tabs.forEach((tab) => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
     tabRolActual = tab.dataset.rol;
+
+    // Limpiar campos y mensaje de error al cambiar de pestaña
+    document.getElementById("user").value = "";
+    document.getElementById("pass").value = "";
+    error.textContent = "";
   });
 });

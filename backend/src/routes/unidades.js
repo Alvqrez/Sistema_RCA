@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const { verificarToken, soloMaestro } = require("../middleware/auth");
+const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 
 router.get("/", verificarToken, (req, res) => {
   db.query(
@@ -28,6 +28,25 @@ router.get("/materia/:clave", verificarToken, (req, res) => {
   );
 });
 
+// Materias de los grupos asignados al maestro autenticado (para su dropdown)
+router.get("/mis-materias", verificarToken, (req, res) => {
+  if (req.usuario.rol !== "maestro") {
+    return res.status(403).json({ error: "Solo para maestros" });
+  }
+  db.query(
+    `SELECT DISTINCT m.clave_materia, m.nombre_materia, m.no_unidades
+     FROM grupo g
+     JOIN materia m ON g.clave_materia = m.clave_materia
+     WHERE g.numero_empleado = ?
+     ORDER BY m.nombre_materia`,
+    [req.usuario.id_referencia],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(results);
+    }
+  );
+});
+
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM unidad WHERE id_unidad = ?",
@@ -42,7 +61,7 @@ router.get("/:id", verificarToken, (req, res) => {
   );
 });
 
-router.post("/", soloMaestro, (req, res) => {
+router.post("/", maestroOAdmin, (req, res) => {
   const { clave_materia, nombre_unidad, temario, estatus, fecha_cierre } =
     req.body;
 
@@ -76,7 +95,7 @@ router.post("/", soloMaestro, (req, res) => {
   );
 });
 
-router.put("/:id", soloMaestro, (req, res) => {
+router.put("/:id", maestroOAdmin, (req, res) => {
   const { nombre_unidad, temario, estatus, fecha_cierre } = req.body;
 
   db.query(
@@ -98,7 +117,7 @@ router.put("/:id", soloMaestro, (req, res) => {
   );
 });
 
-router.delete("/:id", soloMaestro, (req, res) => {
+router.delete("/:id", maestroOAdmin, (req, res) => {
   db.query(
     "DELETE FROM unidad WHERE id_unidad = ?",
     [req.params.id],
