@@ -2,11 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Maestros - RCA</title>
+    <title>Maestros — RCA</title>
     <script>
-      if (localStorage.getItem("tema") === "oscuro") {
+      if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      }
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
@@ -14,131 +13,238 @@
       type="image/png"
       href="../assets/images/icons/rca-icon.png"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="../css/styles.css" />
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
-
       <main class="content">
-        <h1>Maestros</h1>
+        <div class="page-header-v2">
+          <div>
+            <h1>Maestros</h1>
+            <p class="page-subtitle">Gestión del personal docente</p>
+          </div>
+          <div class="header-actions" id="headerActions" style="display: none">
+            <button class="btn btn-outline" onclick="exportarCSVMaestros()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">
+              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo
+              maestro
+            </button>
+          </div>
+        </div>
 
-        <div class="card" id="cardRegistroMaestro">
-          <h2 id="tituloFormMaestro">Registrar Maestro</h2>
-          <form id="formMaestro" class="form-grid">
+        <div class="stats-row">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
             <div>
-              <label>Número de empleado</label>
-              <input type="text" id="idMaestro" required />
+              <p id="statTotal">—</p>
+              <span>Total maestros</span>
             </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:user-check"></iconify-icon>
             <div>
-              <label>Nombre(s)</label>
-              <input type="text" id="nombre" required />
+              <p id="statActivos">—</p>
+              <span>Activos</span>
             </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:filter"></iconify-icon>
             <div>
-              <label>Apellido paterno</label>
-              <input type="text" id="apellidoPaterno" required />
+              <p id="statFiltrados">—</p>
+              <span>Mostrando</span>
             </div>
-            <div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-filter-bar">
+            <input
+              type="text"
+              id="filtroBusqueda"
+              placeholder="🔍 Buscar por nombre o No. empleado…"
+              oninput="filtrarMaestros()"
+            />
+            <select id="filtroDepartamento" onchange="filtrarMaestros()">
+              <option value="">Todos los departamentos</option>
+            </select>
+          </div>
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Maestro</th>
+                  <th>No. Empleado</th>
+                  <th>Departamento</th>
+                  <th>Correo</th>
+                  <th>Estatus</th>
+                  <th style="text-align: right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaMaestros">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <iconify-icon icon="lucide:loader-2"></iconify-icon>
+                      <p>Cargando…</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- MODAL MAESTRO -->
+    <div id="modalMaestro" class="modal-overlay">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="modalTitulo">Nuevo maestro</h2>
+          <button class="modal-close" onclick="cerrarModal('modalMaestro')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="form-section-title">Datos de acceso</p>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>No. de Empleado *</label>
+              <input type="text" id="f_num_emp" placeholder="Ej: E001" />
+            </div>
+            <div class="form-group">
+              <label>Correo institucional *</label>
+              <input
+                type="email"
+                id="f_correo"
+                placeholder="maestro@itver.edu.mx"
+              />
+            </div>
+            <div class="form-group">
+              <label>Usuario (login) *</label>
+              <input type="text" id="f_username" />
+            </div>
+            <div class="form-group" id="grupoPassword">
+              <label>Contraseña inicial *</label>
+              <input type="password" id="f_password" />
+            </div>
+          </div>
+          <p class="form-section-title">Datos personales</p>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Nombre(s) *</label>
+              <input type="text" id="f_nombre" />
+            </div>
+            <div class="form-group">
+              <label>Apellido paterno *</label>
+              <input type="text" id="f_ap_pat" />
+            </div>
+            <div class="form-group">
               <label>Apellido materno</label>
-              <input type="text" id="apellidoMaterno" />
+              <input type="text" id="f_ap_mat" />
             </div>
-            <div>
+            <div class="form-group">
               <label>CURP</label>
-              <input type="text" id="curp" />
+              <input type="text" id="f_curp" maxlength="18" />
             </div>
-            <div>
-              <label>Correo institucional</label>
-              <input type="email" id="correoInstitucional" required />
+            <div class="form-group">
+              <label>RFC</label>
+              <input type="text" id="f_rfc" maxlength="13" />
             </div>
-            <div>
-              <label>Correo personal</label>
-              <input type="email" id="correoPersonal" />
+            <div class="form-group">
+              <label>Fecha de nacimiento</label>
+              <input type="date" id="f_fnac" />
             </div>
-            <div>
-              <label>Teléfono celular</label>
-              <input type="text" id="telCelular" />
+            <div class="form-group">
+              <label>Género</label>
+              <select id="f_genero">
+                <option value="">— Selecciona —</option>
+                <option>Masculino</option>
+                <option>Femenino</option>
+                <option>Otro</option>
+              </select>
             </div>
-            <div>
-              <label>Teléfono oficina</label>
-              <input type="text" id="telOficina" />
+            <div class="form-group">
+              <label>Tel. celular</label>
+              <input type="text" id="f_celular" />
             </div>
-            <div>
-              <label>Dirección</label>
-              <input type="text" id="direccion" />
+            <div class="form-group">
+              <label>Grado académico</label>
+              <select id="f_grado">
+                <option value="">— Selecciona —</option>
+                <option>Licenciatura</option>
+                <option>Especialidad</option>
+                <option>Maestría</option>
+                <option>Doctorado</option>
+              </select>
             </div>
-            <div>
+            <div class="form-group">
               <label>Tipo de contrato</label>
-              <input type="text" id="tipoContrato" />
+              <select id="f_contrato">
+                <option value="">— Selecciona —</option>
+                <option>Tiempo completo</option>
+                <option>Medio tiempo</option>
+                <option>Asignatura</option>
+              </select>
             </div>
-            <div>
+            <div class="form-group">
+              <label>Departamento</label>
+              <input type="text" id="f_departamento" />
+            </div>
+            <div class="form-group">
+              <label>Especialidad</label>
+              <input type="text" id="f_especialidad" />
+            </div>
+            <div class="form-group span-2">
+              <label>Dirección</label>
+              <input type="text" id="f_direccion" />
+            </div>
+            <div class="form-group">
               <label>Estatus</label>
-              <select id="estatus">
+              <select id="f_estatus">
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
                 <option value="Licencia">Licencia</option>
               </select>
             </div>
-            <div>
+            <div class="form-group">
               <label>Fecha de ingreso</label>
-              <input type="date" id="fechaIngreso" />
+              <input type="date" id="f_ingreso" />
             </div>
-            <div>
-              <label>Grado académico</label>
-              <input type="text" id="gradoAcademico" />
-            </div>
-            <div>
-              <label>Especialidad</label>
-              <input type="text" id="especialidad" />
-            </div>
-            <div>
-              <label>Departamento</label>
-              <input type="text" id="departamento" />
-            </div>
-
-            <h3 class="section-title" id="seccionAccesoMaestro">
-              Acceso al sistema
-            </h3>
-            <div>
-              <label>Usuario (login)</label>
-              <input type="text" id="username" required />
-            </div>
-            <div>
-              <label>Contraseña inicial</label>
-              <input type="password" id="password" required />
-            </div>
-
-            <div class="botones">
-              <button type="submit" class="btn-guardar">Guardar</button>
-              <button type="reset" class="btn-cancelar">Cancelar</button>
-            </div>
-          </form>
+          </div>
+          <p
+            id="modalError"
+            style="
+              color: var(--danger);
+              font-size: 0.85rem;
+              margin: 10px 0 0;
+              display: none;
+            "
+          ></p>
         </div>
-
-        <div class="card">
-          <h2>Lista de Maestros</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Departamento</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Estatus</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaMaestros"></tbody>
-          </table>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalMaestro')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnGuardar"
+            onclick="guardarMaestro()"
+          >
+            <iconify-icon icon="lucide:save"></iconify-icon> Guardar
+          </button>
         </div>
-      </main>
+      </div>
     </div>
 
-    <!-- Scripts FUERA del layout, antes de </body> -->
+    <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/maestros.js"></script>
   </body>

@@ -1,214 +1,315 @@
-// frontend/js/maestros.js — CORREGIDO (con editar)
+// frontend/js/maestros.js
 const BASE_URL = "http://localhost:3000";
-const token = localStorage.getItem("token");
+let maestrosGlobal = [];
+let modoEdicion = false;
+let empleadoEditando = null;
 
-soloPermitido("administrador");
+function toast(msg, tipo = "success") {
+  const c = document.getElementById("toast-container");
+  if (!c) return;
+  const t = document.createElement("div");
+  t.className = `toast toast-${tipo}`;
+  const icons = {
+    success: "lucide:check-circle",
+    error: "lucide:x-circle",
+    info: "lucide:info",
+  };
+  t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
 
-if (!token) window.location.href = "login.html";
+function abrirModal(id) {
+  document.getElementById(id).classList.add("visible");
+}
+function cerrarModal(id) {
+  document.getElementById(id).classList.remove("visible");
+}
 
-let maestroEditando = null; // null = registro, string = numero_empleado en edición
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("modal-overlay"))
+    e.target.classList.remove("visible");
+});
 
-// ─── CARGAR ────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", async () => {
+  soloPermitido("administrador");
+  document.getElementById("headerActions").style.display = "flex";
+  await cargarMaestros();
+  if (window.location.hash === "#registro") abrirModalNuevo();
+});
 
 async function cargarMaestros() {
-  const response = await fetch(`${BASE_URL}/api/maestros`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    window.location.href = "login.html";
-    return;
+  const token = localStorage.getItem("token");
+  try {
+    const r = await fetch(`${BASE_URL}/api/maestros`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (r.status === 401) {
+      window.location.href = "login.html";
+      return;
+    }
+    maestrosGlobal = await r.json();
+    actualizarStats();
+    poblarFiltroDpto();
+    filtrarMaestros();
+  } catch {
+    toast("No se pudo cargar la lista de maestros", "error");
   }
+}
 
-  const maestros = await response.json();
-  const tbody = document.getElementById("tablaMaestros");
-  tbody.innerHTML = "";
+function actualizarStats() {
+  document.getElementById("statTotal").textContent = maestrosGlobal.length;
+  document.getElementById("statActivos").textContent = maestrosGlobal.filter(
+    (m) => m.estatus === "Activo",
+  ).length;
+}
 
-  if (maestros.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">Sin maestros registrados</td></tr>`;
-    return;
-  }
-
-  const rol = localStorage.getItem("rol");
-
-  maestros.forEach((m) => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${m.numero_empleado}</td>
-        <td>${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}</td>
-        <td>${m.departamento ?? "—"}</td>
-        <td>${m.correo_institucional}</td>
-        <td>${m.tel_celular ?? "—"}</td>
-        <td>${m.estatus}</td>
-        <td>
-          ${
-            rol === "administrador"
-              ? `<button class="btn-editar" onclick="editarMaestro('${m.numero_empleado}')">Editar</button>
-                 <button class="btn-eliminar" onclick="eliminarMaestro('${m.numero_empleado}')">Eliminar</button>`
-              : "—"
-          }
-        </td>
-      </tr>
-    `;
+function poblarFiltroDpto() {
+  const sel = document.getElementById("filtroDepartamento");
+  const deptos = [
+    ...new Set(maestrosGlobal.map((m) => m.departamento).filter(Boolean)),
+  ].sort();
+  deptos.forEach((d) => {
+    sel.innerHTML += `<option value="${d}">${d}</option>`;
   });
 }
 
-// ─── SUBMIT ────────────────────────────────────────────────────────────────
+function filtrarMaestros() {
+  const q = document.getElementById("filtroBusqueda").value.toLowerCase();
+  const dpto = document.getElementById("filtroDepartamento").value;
+  let datos = maestrosGlobal.filter((m) => {
+    const nombre =
+      `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
+    return (
+      (!q ||
+        nombre.includes(q) ||
+        m.numero_empleado.toLowerCase().includes(q)) &&
+      (!dpto || m.departamento === dpto)
+    );
+  });
+  datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
+  document.getElementById("statFiltrados").textContent = datos.length;
+  renderTabla(datos);
+}
 
-document
-  .querySelector("#formMaestro")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
+function renderTabla(datos) {
+  const tbody = document.getElementById("tablaMaestros");
+  if (!datos.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><iconify-icon icon="lucide:search-x"></iconify-icon><p>Sin resultados</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = datos
+    .map((m) => {
+      const ini =
+        `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
+      const badge =
+        m.estatus === "Activo"
+          ? `<span class="badge badge-success">Activo</span>`
+          : m.estatus === "Licencia"
+            ? `<span class="badge badge-warning">Licencia</span>`
+            : `<span class="badge badge-danger">Inactivo</span>`;
+      return `<tr>
+      <td><div class="avatar-cell">
+        <div class="avatar" style="background:var(--success-light);color:var(--success)">${ini}</div>
+        <span>${m.apellido_paterno} ${m.apellido_materno ?? ""}, ${m.nombre}</span>
+      </div></td>
+      <td><code>${m.numero_empleado}</code></td>
+      <td>${m.departamento ?? "—"}</td>
+      <td>${m.correo_institucional ?? "—"}</td>
+      <td>${badge}</td>
+      <td><div class="table-actions">
+        <button class="btn-icon" onclick="editarMaestro('${m.numero_empleado}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
+        <button class="btn-icon btn-del" onclick="eliminarMaestro('${m.numero_empleado}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>
+      </div></td>
+    </tr>`;
+    })
+    .join("");
+}
 
-    const maestro = {
-      numero_empleado: document.getElementById("idMaestro").value.trim(),
-      nombre: document.getElementById("nombre").value.trim(),
-      apellido_paterno: document.getElementById("apellidoPaterno").value.trim(),
-      apellido_materno:
-        document.getElementById("apellidoMaterno").value.trim() || null,
-      curp: document.getElementById("curp").value.trim() || null,
-      correo_institucional: document
-        .getElementById("correoInstitucional")
-        .value.trim(),
-      correo_personal:
-        document.getElementById("correoPersonal").value.trim() || null,
-      tel_celular: document.getElementById("telCelular").value.trim() || null,
-      tel_oficina: document.getElementById("telOficina").value.trim() || null,
-      direccion: document.getElementById("direccion").value.trim() || null,
-      tipo_contrato:
-        document.getElementById("tipoContrato").value.trim() || null,
-      estatus: document.getElementById("estatus").value,
-      fecha_ingreso: document.getElementById("fechaIngreso").value || null,
-      grado_academico:
-        document.getElementById("gradoAcademico").value.trim() || null,
-      especialidad:
-        document.getElementById("especialidad").value.trim() || null,
-      departamento:
-        document.getElementById("departamento").value.trim() || null,
-      username: document.getElementById("username").value.trim(),
-      password: document.getElementById("password").value,
-    };
+function abrirModalNuevo() {
+  modoEdicion = false;
+  empleadoEditando = null;
+  document.getElementById("modalTitulo").textContent = "Nuevo maestro";
+  document.getElementById("f_num_emp").disabled = false;
+  document.getElementById("grupoPassword").style.display = "";
+  limpiarForm();
+  abrirModal("modalMaestro");
+}
 
-    let url = `${BASE_URL}/api/maestros`;
-    let method = "POST";
+function editarMaestro(ne) {
+  const m = maestrosGlobal.find((x) => x.numero_empleado === ne);
+  if (!m) return;
+  modoEdicion = true;
+  empleadoEditando = ne;
+  document.getElementById("modalTitulo").textContent = "Editar maestro";
+  document.getElementById("f_num_emp").value = m.numero_empleado;
+  document.getElementById("f_num_emp").disabled = true;
+  document.getElementById("f_correo").value = m.correo_institucional ?? "";
+  document.getElementById("f_nombre").value = m.nombre ?? "";
+  document.getElementById("f_ap_pat").value = m.apellido_paterno ?? "";
+  document.getElementById("f_ap_mat").value = m.apellido_materno ?? "";
+  document.getElementById("f_curp").value = m.curp ?? "";
+  document.getElementById("f_rfc").value = m.rfc ?? "";
+  document.getElementById("f_fnac").value =
+    m.fecha_nacimiento?.slice(0, 10) ?? "";
+  document.getElementById("f_genero").value = m.genero ?? "";
+  document.getElementById("f_celular").value = m.tel_celular ?? "";
+  document.getElementById("f_grado").value = m.grado_academico ?? "";
+  document.getElementById("f_contrato").value = m.tipo_contrato ?? "";
+  document.getElementById("f_departamento").value = m.departamento ?? "";
+  document.getElementById("f_especialidad").value = m.especialidad ?? "";
+  document.getElementById("f_direccion").value = m.direccion ?? "";
+  document.getElementById("f_estatus").value = m.estatus ?? "Activo";
+  document.getElementById("f_ingreso").value =
+    m.fecha_ingreso?.slice(0, 10) ?? "";
+  document.getElementById("f_username").value = "";
+  document.getElementById("grupoPassword").style.display = "none";
+  abrirModal("modalMaestro");
+}
 
-    if (maestroEditando) {
-      url = `${BASE_URL}/api/maestros/${maestroEditando}`;
-      method = "PUT";
-      delete maestro.numero_empleado;
-      delete maestro.username;
-      delete maestro.password;
-    }
-
-    const response = await fetch(url, {
+async function guardarMaestro() {
+  const ne = document.getElementById("f_num_emp").value.trim();
+  const nom = document.getElementById("f_nombre").value.trim();
+  const ap = document.getElementById("f_ap_pat").value.trim();
+  const user = document.getElementById("f_username").value.trim();
+  const pwd = document.getElementById("f_password").value;
+  const errEl = document.getElementById("modalError");
+  errEl.style.display = "none";
+  if (!modoEdicion && (!ne || !nom || !ap || !user || !pwd)) {
+    errEl.textContent = "Los campos marcados con * son obligatorios.";
+    errEl.style.display = "block";
+    return;
+  }
+  const token = localStorage.getItem("token");
+  const btn = document.getElementById("btnGuardar");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Guardando…`;
+  const body = {
+    numero_empleado: ne,
+    nombre: nom,
+    apellido_paterno: ap,
+    apellido_materno: document.getElementById("f_ap_mat").value.trim(),
+    correo_institucional: document.getElementById("f_correo").value.trim(),
+    curp: document.getElementById("f_curp").value.trim(),
+    rfc: document.getElementById("f_rfc").value.trim(),
+    fecha_nacimiento: document.getElementById("f_fnac").value || null,
+    genero: document.getElementById("f_genero").value || null,
+    tel_celular: document.getElementById("f_celular").value.trim(),
+    grado_academico: document.getElementById("f_grado").value || null,
+    tipo_contrato: document.getElementById("f_contrato").value || null,
+    departamento: document.getElementById("f_departamento").value.trim(),
+    especialidad: document.getElementById("f_especialidad").value.trim(),
+    direccion: document.getElementById("f_direccion").value.trim(),
+    estatus: document.getElementById("f_estatus").value,
+    fecha_ingreso: document.getElementById("f_ingreso").value || null,
+    username: user,
+    password: pwd,
+  };
+  try {
+    const url = modoEdicion
+      ? `${BASE_URL}/api/maestros/${empleadoEditando}`
+      : `${BASE_URL}/api/maestros`;
+    const method = modoEdicion ? "PUT" : "POST";
+    const r = await fetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(maestro),
+      body: JSON.stringify(body),
     });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Error al guardar");
+    toast(
+      modoEdicion ? "Maestro actualizado" : "Maestro registrado correctamente",
+    );
+    cerrarModal("modalMaestro");
+    await cargarMaestros();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<iconify-icon icon="lucide:save"></iconify-icon> Guardar`;
+  }
+}
 
-    const data = await response.json();
-
-    if (data.success) {
-      alert(data.mensaje || "Guardado correctamente.");
-      cancelarEdicionMaestro();
-      cargarMaestros();
-    } else {
-      alert(data.error || "Error al guardar.");
-    }
-  });
-
-// ─── EDITAR ────────────────────────────────────────────────────────────────
-
-async function editarMaestro(numero_empleado) {
+async function eliminarMaestro(ne) {
+  if (!confirm(`¿Eliminar al maestro ${ne}?`)) return;
+  const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${BASE_URL}/api/maestros/${numero_empleado}`, {
+    const r = await fetch(`${BASE_URL}/api/maestros/${ne}`, {
+      method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (!res.ok) {
-      alert("No se pudo cargar el maestro.");
-      return;
-    }
-
-    const m = await res.json();
-    maestroEditando = numero_empleado;
-
-    document.getElementById("idMaestro").value = m.numero_empleado;
-    document.getElementById("idMaestro").disabled = true;
-    document.getElementById("nombre").value = m.nombre ?? "";
-    document.getElementById("apellidoPaterno").value = m.apellido_paterno ?? "";
-    document.getElementById("apellidoMaterno").value = m.apellido_materno ?? "";
-    document.getElementById("curp").value = m.curp ?? "";
-    document.getElementById("correoInstitucional").value =
-      m.correo_institucional ?? "";
-    document.getElementById("correoPersonal").value = m.correo_personal ?? "";
-    document.getElementById("telCelular").value = m.tel_celular ?? "";
-    document.getElementById("telOficina").value = m.tel_oficina ?? "";
-    document.getElementById("direccion").value = m.direccion ?? "";
-    document.getElementById("tipoContrato").value = m.tipo_contrato ?? "";
-    document.getElementById("estatus").value = m.estatus ?? "Activo";
-    document.getElementById("fechaIngreso").value = m.fecha_ingreso
-      ? m.fecha_ingreso.substring(0, 10)
-      : "";
-    document.getElementById("gradoAcademico").value = m.grado_academico ?? "";
-    document.getElementById("especialidad").value = m.especialidad ?? "";
-    document.getElementById("departamento").value = m.departamento ?? "";
-
-    // Oculta la sección de acceso al editar
-    const seccionAcceso = document.getElementById("seccionAccesoMaestro");
-    if (seccionAcceso) seccionAcceso.style.display = "none";
-
-    document.getElementById("tituloFormMaestro").textContent = "Editar maestro";
-    document.querySelector("#formMaestro .btn-guardar").textContent =
-      "Actualizar";
-    document
-      .getElementById("cardRegistroMaestro")
-      .scrollIntoView({ behavior: "smooth" });
-  } catch {
-    alert("Error de conexión al cargar datos del maestro.");
+    if (!r.ok) throw new Error("No se pudo eliminar");
+    toast("Maestro eliminado");
+    await cargarMaestros();
+  } catch (e) {
+    toast(e.message, "error");
   }
 }
 
-// ─── CANCELAR ──────────────────────────────────────────────────────────────
-
-function cancelarEdicionMaestro() {
-  maestroEditando = null;
-  document.getElementById("formMaestro").reset();
-  document.getElementById("idMaestro").disabled = false;
-
-  const seccionAcceso = document.getElementById("seccionAccesoMaestro");
-  if (seccionAcceso) seccionAcceso.style.display = "";
-
-  document.getElementById("tituloFormMaestro").textContent =
-    "Registrar Maestro";
-  document.querySelector("#formMaestro .btn-guardar").textContent = "Guardar";
-}
-
-// ─── ELIMINAR ──────────────────────────────────────────────────────────────
-
-async function eliminarMaestro(id) {
-  if (!confirm(`¿Eliminar al maestro ${id}? Esta acción no se puede deshacer.`))
-    return;
-
-  const res = await fetch(`${BASE_URL}/api/maestros/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+function limpiarForm() {
+  [
+    "f_num_emp",
+    "f_correo",
+    "f_nombre",
+    "f_ap_pat",
+    "f_ap_mat",
+    "f_curp",
+    "f_rfc",
+    "f_fnac",
+    "f_genero",
+    "f_celular",
+    "f_grado",
+    "f_contrato",
+    "f_departamento",
+    "f_especialidad",
+    "f_direccion",
+    "f_ingreso",
+    "f_username",
+    "f_password",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
   });
-  const data = await res.json();
+  const errEl = document.getElementById("modalError");
+  if (errEl) errEl.style.display = "none";
+  const estEl = document.getElementById("f_estatus");
+  if (estEl) estEl.value = "Activo";
+}
 
-  if (data.success) {
-    cargarMaestros();
-  } else {
-    alert(data.error || "Error al eliminar.");
+function exportarCSVMaestros() {
+  if (!maestrosGlobal.length) {
+    toast("No hay datos para exportar", "info");
+    return;
   }
+  const cols = [
+    "numero_empleado",
+    "nombre",
+    "apellido_paterno",
+    "apellido_materno",
+    "correo_institucional",
+    "departamento",
+    "tipo_contrato",
+    "estatus",
+    "grado_academico",
+  ];
+  const rows = [
+    cols.join(","),
+    ...maestrosGlobal.map((m) =>
+      cols
+        .map((c) => `"${(m[c] ?? "").toString().replace(/"/g, '""')}"`)
+        .join(","),
+    ),
+  ];
+  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "maestros_RCA.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("CSV exportado correctamente");
 }
-
-function cerrarSesion() {
-  localStorage.clear();
-  window.location.href = "login.html";
-}
-
-cargarMaestros();

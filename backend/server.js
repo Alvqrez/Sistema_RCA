@@ -117,6 +117,7 @@ app.use("/api/periodos", require("./src/routes/periodos"));
 // FIX 5 & 6: nuevas rutas
 app.use("/api/bonus", require("./src/routes/bonus"));
 app.use("/api/modificacion-final", require("./src/routes/modificacion_final"));
+app.use("/api/reportes", require("./src/routes/reportes"));
 
 app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),
