@@ -19,12 +19,182 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Estilos propios del formulario ── */
+      .config-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .config-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .badge-peso {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: var(--surface-2, #1e293b);
+        color: #94a3b8;
+        margin-left: 12px;
+      }
+
+      .tabla-calificaciones {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .tabla-calificaciones th,
+      .tabla-calificaciones td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border, #1e293b);
+      }
+      .tabla-calificaciones th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--surface-2, #0f172a);
+      }
+      .tabla-calificaciones tr:hover td {
+        background: var(--surface-hover, #1e293b22);
+      }
+
+      .cal-input {
+        width: 72px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border, #334155);
+        background: var(--surface-2, #1e293b);
+        color: var(--text, #e2e8f0);
+        font-size: 0.85rem;
+        text-align: center;
+      }
+      .cal-input:focus {
+        outline: 2px solid var(--primary, #3b82f6);
+        border-color: transparent;
+      }
+
+      .acciones-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border, #1e293b);
+      }
+
+      /* CSV drop zone */
+      .csv-drop-zone {
+        border: 2px dashed var(--border, #334155);
+        border-radius: 10px;
+        padding: 28px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .csv-drop-zone:hover,
+      .csv-drop-zone.drag-over {
+        border-color: var(--primary, #3b82f6);
+        background: #3b82f610;
+      }
+      .csv-drop-zone p {
+        color: var(--text-muted, #64748b);
+        margin: 8px 0;
+        font-size: 0.85rem;
+      }
+
+      .csv-format-example {
+        background: var(--surface-2, #0f172a);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin: 8px 0;
+        line-height: 1.8;
+      }
+
+      /* Toast */
+      .rca-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #fff;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s;
+        pointer-events: none;
+      }
+      .rca-toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .rca-toast-success {
+        background: #16a34a;
+      }
+      .rca-toast-error {
+        background: #dc2626;
+      }
+
+      /* Estado badge */
+      .estado-badge {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .estado-badge.sin-config {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .estado-badge.configurado {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .dot-live {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+
+      .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary, #3b82f6);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-right: 8px;
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
 
       <main class="content">
+        <!-- ENCABEZADO -->
         <div class="page-header">
           <h1>
             <iconify-icon icon="mdi:file-document-edit-outline"></iconify-icon>
@@ -44,353 +214,105 @@
             <span class="estado-badge sin-config" id="estadoBadge">
               <span class="dot-live"></span>Sin configurar
             </span>
-            <!-- ENGRANAJE DE CONFIGURACIÓN AVANZADA -->
-            <button
-              class="btn-gear"
-              id="btnGear"
-              onclick="abrirModalGear()"
-              style="display: none"
-              title="Configuración avanzada del grupo"
-            >
-              <iconify-icon icon="mdi:cog-outline"></iconify-icon>
-              Configurar grupo
-            </button>
           </div>
         </div>
 
-        <!-- PASO 1 — CONFIGURACIÓN -->
-        <div class="card" id="cardConfig">
+        <!-- PASO 1 — SELECCIÓN DE GRUPO -->
+        <div class="card">
           <div class="card-title">
             <span class="step-number">1</span>
-            Configuración de evaluación
+            Selecciona un grupo
           </div>
-          <div class="config-grid">
-            <div class="field-group">
-              <label>Grupo</label>
-              <select id="selGrupo" onchange="cargarGrupo()">
-                <option value="">Selecciona un grupo</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Número de unidades</label>
-              <input
-                type="number"
-                id="numUnidades"
-                value="3"
-                min="1"
-                max="6"
-                onchange="generarPonderaciones()"
-              />
-            </div>
+          <div class="field-group">
+            <label>Grupo</label>
+            <select
+              id="selGrupo"
+              onchange="cargarGrupo()"
+              style="max-width: 480px"
+            >
+              <option value="">-- Selecciona un grupo --</option>
+            </select>
           </div>
-          <div id="emptyConfig" class="empty-state">
+          <div id="emptyConfig" class="empty-state" style="margin-top: 16px">
             <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
             <p>Selecciona un grupo para comenzar</p>
           </div>
         </div>
 
-        <!-- PASO 2 — PONDERACIONES -->
-        <div id="seccionPonderaciones" class="card" style="display: none">
+        <!-- PASO 2 — SELECCIÓN DE UNIDAD -->
+        <div class="card" id="seccionUnidades" style="display: none">
           <div class="card-title">
             <span class="step-number">2</span>
-            Configurar ponderaciones
-            <button
-              class="btn-gear-small"
-              onclick="abrirModalGear()"
-              title="Opciones avanzadas"
-              style="margin-left: auto"
-            >
-              <iconify-icon icon="mdi:cog-outline"></iconify-icon>
-            </button>
+            Selecciona una unidad
+            <span class="badge-peso" id="badgePesoTotal"></span>
           </div>
-          <div id="tabsConfig" class="unidades-tabs"></div>
-          <div id="panelesConfig"></div>
-          <div class="acciones-row">
-            <button class="btn btn-primary" onclick="pedirGuardarConfig()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              Guardar configuración
-            </button>
+          <div class="field-group">
+            <label>Unidad</label>
+            <select
+              id="selUnidad"
+              onchange="cargarUnidad()"
+              style="max-width: 480px"
+            >
+              <option value="">-- Selecciona una unidad --</option>
+            </select>
           </div>
         </div>
 
-        <!-- PASO 3 — CALIFICACIONES -->
-        <div id="seccionCalificaciones" class="card" style="display: none">
+        <!-- PASO 3 — ACTIVIDADES Y CALIFICACIONES -->
+        <div class="card" id="seccionActividades" style="display: none">
           <div class="card-title">
             <span class="step-number">3</span>
             Captura de calificaciones
-            <button
-              class="btn-gear-small"
-              onclick="abrirModalGear()"
-              title="Opciones avanzadas"
-              style="margin-left: auto"
-            >
-              <iconify-icon icon="mdi:cog-outline"></iconify-icon>
-            </button>
           </div>
+
+          <!-- Resumen de actividades de la unidad -->
           <div
-            id="tabsTabla"
-            class="selector-unidad-tabla"
-            style="margin-bottom: 16px"
+            id="resumenActividades"
+            style="margin-bottom: 14px; font-size: 0.85rem; color: #94a3b8"
           ></div>
-          <div
-            id="resumenPond"
-            style="margin: 0 0 14px; display: flex; gap: 6px; flex-wrap: wrap"
-          ></div>
-          <div class="tabla-wrapper">
-            <table class="tabla-calificaciones">
-              <thead id="theadCalificaciones"></thead>
-              <tbody id="tbodyCalificaciones"></tbody>
-            </table>
-          </div>
-          <div
-            id="bannerBloqueado"
-            class="banner-bloqueado"
-            style="display: none"
-          >
-            <iconify-icon icon="mdi:lock-outline"></iconify-icon>
-            Esta unidad ya fue guardada. Usa <strong>Desbloquear</strong> para
-            editarla.
-            <button
-              class="btn btn-sm btn-warning-outline"
-              onclick="pedirDesbloquear()"
-            >
-              <iconify-icon icon="mdi:lock-open-outline"></iconify-icon>
-              Desbloquear unidad
-            </button>
-          </div>
+
+          <!-- Tabla generada dinámicamente por formulario.js -->
+          <div id="tablaCalWrap"></div>
+
           <div class="acciones-row">
-            <button
-              class="btn btn-success"
-              id="btnGuardarCal"
-              onclick="pedirGuardarCalificaciones()"
-            >
-              <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
-              Guardar y cerrar unidad
+            <button class="btn btn-primary" onclick="guardarCalificaciones()">
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Guardar calificaciones
             </button>
-            <button class="btn btn-outline" onclick="pedirSalir()">
-              <iconify-icon icon="mdi:exit-to-app"></iconify-icon>
-              Salir
+            <button class="btn btn-success" onclick="calcularUnidad()">
+              <iconify-icon
+                icon="mdi:calculator-variant-outline"
+              ></iconify-icon>
+              Calcular y cerrar unidad
             </button>
           </div>
         </div>
-      </main>
-    </div>
 
-    <!-- ═══ MODALES ESTÁNDAR ═══════════════════════════════════════════ -->
-    <div class="modal-overlay" id="modalGuardarConfig">
-      <div class="modal">
-        <div class="modal-icon save">
-          <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-        </div>
-        <h3>¿Guardar configuración?</h3>
-        <p>Una vez guardada podrás capturar calificaciones.</p>
-        <div class="modal-buttons">
-          <button class="btn btn-primary" onclick="confirmarGuardarConfig()">
-            Sí, guardar
-          </button>
-          <button
-            class="btn btn-outline"
-            onclick="cerrarModal('modalGuardarConfig')"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="modalModificarConfig">
-      <div class="modal">
-        <div class="modal-icon save">
-          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
-        </div>
-        <h3>Modificar configuración</h3>
-        <p>Esto puede afectar las calificaciones existentes.</p>
-        <div class="modal-buttons">
-          <button class="btn btn-primary" onclick="activarModoEdicionConfig()">
-            Modificar
-          </button>
-          <button
-            class="btn btn-outline"
-            onclick="cerrarModal('modalModificarConfig')"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="modalGuardarCal">
-      <div class="modal">
-        <div class="modal-icon save">
-          <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
-        </div>
-        <h3>Guardar calificaciones</h3>
-        <p>
-          Las calificaciones de
-          <strong id="nombreUnidadGuardar"></strong> quedarán bloqueadas. Podrás
-          desbloquearlas manualmente si necesitas corregir.
-        </p>
-        <div class="modal-buttons">
-          <button
-            class="btn btn-success"
-            onclick="confirmarGuardarCalificaciones()"
-          >
-            Guardar y bloquear
-          </button>
-          <button
-            class="btn btn-outline"
-            onclick="cerrarModal('modalGuardarCal')"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="modalDesbloquear">
-      <div class="modal">
-        <div class="modal-icon exit">
-          <iconify-icon icon="mdi:lock-open-outline"></iconify-icon>
-        </div>
-        <h3>Desbloquear unidad</h3>
-        <p>
-          ¿Seguro que deseas editar las calificaciones de
-          <strong id="nombreUnidadDesbloquear"></strong>? Se registrará el
-          cambio.
-        </p>
-        <div class="modal-buttons">
-          <button class="btn btn-warning" onclick="confirmarDesbloquear()">
-            Sí, desbloquear
-          </button>
-          <button
-            class="btn btn-outline"
-            onclick="cerrarModal('modalDesbloquear')"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="modalSalir">
-      <div class="modal">
-        <div class="modal-icon exit">
-          <iconify-icon icon="mdi:exit-to-app"></iconify-icon>
-        </div>
-        <h3>Salir</h3>
-        <p>Tienes cambios sin guardar. ¿Salir de todas formas?</p>
-        <div class="modal-buttons">
-          <button class="btn btn-danger" onclick="confirmarSalir()">
-            Salir sin guardar
-          </button>
-          <button class="btn btn-outline" onclick="cerrarModal('modalSalir')">
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ MODAL GEAR (CONFIGURACIÓN AVANZADA) ═══════════════════════ -->
-    <div class="modal-overlay" id="modalGear">
-      <div class="modal modal-gear">
-        <div class="modal-gear-header">
-          <iconify-icon
-            icon="mdi:cog-outline"
-            style="font-size: 1.5rem; color: var(--primary)"
-          ></iconify-icon>
-          <h3 style="margin: 0">Configuración avanzada</h3>
-          <button class="btn-close-gear" onclick="cerrarModal('modalGear')">
-            <iconify-icon icon="mdi:close"></iconify-icon>
-          </button>
-        </div>
-
-        <!-- Tabs del modal gear -->
-        <div class="gear-tabs">
-          <button
-            class="gear-tab active"
-            onclick="cambiarTabGear('dividir', this)"
-          >
-            <iconify-icon icon="mdi:scissors-cutting"></iconify-icon> Dividir
-            unidad
-          </button>
-          <button class="gear-tab" onclick="cambiarTabGear('unir', this)">
-            <iconify-icon icon="mdi:merge"></iconify-icon> Unir unidades
-          </button>
-          <button class="gear-tab" onclick="cambiarTabGear('csv', this)">
-            <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
-            Importar CSV
-          </button>
-          <button class="gear-tab" onclick="cambiarTabGear('reset', this)">
-            <iconify-icon icon="mdi:restart"></iconify-icon> Restablecer
-          </button>
-        </div>
-
-        <!-- Contenido: Dividir -->
-        <div class="gear-panel active" id="gearPanel-dividir">
-          <p class="gear-desc">
-            Divide una unidad en dos. La nueva unidad heredará las mismas
-            ponderaciones.<br />
-            <strong>Nota:</strong> Solo disponible si el total de unidades es
-            menor a 6.
-          </p>
-          <div class="field-group">
-            <label>Unidad a dividir</label>
-            <select id="selDividirUnidad"></select>
+        <!-- PASO 4 — IMPORTAR CSV -->
+        <div class="card" id="seccionCSV" style="display: none">
+          <div class="card-title">
+            <span class="step-number">4</span>
+            Importar calificaciones desde CSV
           </div>
-          <button
-            class="btn btn-primary"
-            style="margin-top: 14px; width: 100%"
-            onclick="ejecutarDividir()"
-          >
-            <iconify-icon icon="mdi:scissors-cutting"></iconify-icon> Dividir
-            unidad
-          </button>
-        </div>
-
-        <!-- Contenido: Unir -->
-        <div class="gear-panel" id="gearPanel-unir">
-          <p class="gear-desc">
-            Une dos unidades consecutivas en una sola. Las ponderaciones se
-            promedian.
-            <strong>Nota:</strong> Solo disponible si hay más de 1 unidad.
-          </p>
-          <div class="field-group">
-            <label>Primera unidad a unir</label>
-            <select
-              id="selUnirUnidad1"
-              onchange="actualizarSelUnir2()"
-            ></select>
-          </div>
-          <div class="field-group" style="margin-top: 10px">
-            <label>Segunda unidad (consecutiva)</label>
-            <select id="selUnirUnidad2"></select>
-          </div>
-          <button
-            class="btn btn-primary"
-            style="margin-top: 14px; width: 100%"
-            onclick="ejecutarUnir()"
-          >
-            <iconify-icon icon="mdi:merge"></iconify-icon> Unir unidades
-          </button>
-        </div>
-
-        <!-- Contenido: CSV -->
-        <div class="gear-panel" id="gearPanel-csv">
-          <p class="gear-desc">
-            Importa calificaciones desde un archivo CSV. El formato requerido
-            es:
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px">
+            El archivo CSV debe tener el formato:
+            <code>matricula,calificacion</code><br />
+            Ejemplo:
           </p>
           <div class="csv-format-example">
-            <code
-              >matricula,actividad,examen,asistencia,participacion,bonus</code
-            ><br />
-            <code>20231001,85,90,100,80,5</code><br />
-            <code>20231002,70,65,95,70,0</code>
+            matricula,calificacion<br />
+            2023001,85<br />
+            2023002,70<br />
+            2023003,NP
           </div>
-          <div class="field-group" style="margin-top: 12px">
-            <label>Aplicar a la unidad</label>
-            <select id="selCSVUnidad"></select>
+
+          <div class="field-group" style="margin: 14px 0 10px">
+            <label>Aplicar a la actividad</label>
+            <select id="selCSVActividad" style="max-width: 400px">
+              <option value="">-- Selecciona primero una unidad --</option>
+            </select>
           </div>
+
           <div
             class="csv-drop-zone"
             id="csvDropZone"
@@ -403,10 +325,18 @@
           >
             <iconify-icon
               icon="mdi:file-upload-outline"
-              style="font-size: 2rem; color: var(--text-muted)"
+              style="font-size: 2rem; color: #64748b"
             ></iconify-icon>
             <p>Arrastra tu archivo CSV aquí o</p>
-            <label class="btn btn-outline" style="cursor: pointer">
+            <label
+              class="btn btn-outline"
+              style="
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+              "
+            >
               <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
               Seleccionar archivo
               <input
@@ -414,39 +344,33 @@
                 id="inputCSV"
                 accept=".csv"
                 style="display: none"
-                onchange="procesarCSV(this.files[0])"
+                onchange="manejarDropCSV({ dataTransfer: null, target: this })"
               />
             </label>
           </div>
           <div id="csvPreview" style="margin-top: 12px"></div>
         </div>
-
-        <!-- Contenido: Reset -->
-        <div class="gear-panel" id="gearPanel-reset">
-          <p class="gear-desc">
-            Restablece las ponderaciones de una unidad a la distribución
-            estándar (25% cada rubro) o en partes iguales según cuántos rubros
-            uses.
-          </p>
-          <div class="field-group">
-            <label>Unidad a restablecer</label>
-            <select id="selResetUnidad">
-              <option value="todas">Todas las unidades</option>
-            </select>
-          </div>
-          <button
-            class="btn btn-warning"
-            style="margin-top: 14px; width: 100%"
-            onclick="ejecutarReset()"
-          >
-            <iconify-icon icon="mdi:restart"></iconify-icon> Restablecer
-            ponderaciones
-          </button>
-        </div>
-      </div>
+      </main>
     </div>
 
     <script src="../js/sidebar.js"></script>
     <script src="../js/formulario.js"></script>
+
+    <!-- Mostrar sección CSV cuando se cargue una unidad -->
+    <script>
+      // Extender cargarUnidad para mostrar sección CSV
+      const _origCargarUnidad = cargarUnidad;
+      cargarUnidad = async function () {
+        await _origCargarUnidad();
+        const id = document.getElementById("selUnidad").value;
+        document.getElementById("seccionCSV").style.display = id
+          ? "block"
+          : "none";
+        // Actualizar badge de estado
+        const badge = document.getElementById("estadoBadge");
+        badge.className = "estado-badge " + (id ? "configurado" : "sin-config");
+        badge.innerHTML = `<span class="dot-live"></span>${id ? "Configurado" : "Sin configurar"}`;
+      };
+    </script>
   </body>
 </html>
