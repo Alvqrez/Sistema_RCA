@@ -112,6 +112,7 @@ app.use(
   "/api/resultado-actividad",
   require("./src/routes/resultado_actividad"),
 );
+
 app.use("/api/inscripciones", require("./src/routes/inscripciones"));
 app.use("/api/periodos", require("./src/routes/periodos"));
 // FIX 5 & 6: nuevas rutas
