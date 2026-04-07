@@ -4,16 +4,35 @@ const router = express.Router();
 const db = require("../db");
 const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 
-// GET — todas las actividades
+// GET — actividades filtradas por rol
 router.get("/", verificarToken, (req, res) => {
-  db.query(
-    "SELECT * FROM actividad ORDER BY id_grupo, id_unidad, id_actividad",
-    (err, r) => {
+  const { id_referencia, rol } = req.usuario;
+
+  // Maestro solo ve actividades de SUS grupos
+  if (rol === "maestro") {
+    const sql = `
+            SELECT a.*
+            FROM actividad a
+            JOIN grupo g ON a.id_grupo = g.id_grupo
+            WHERE g.numero_empleado = ?
+            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
+        `;
+    db.query(sql, [id_referencia], (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       res.json(r);
-    },
-  );
+    });
+  } else {
+    // Admin y otros ven todo
+    db.query(
+      "SELECT * FROM actividad ORDER BY id_grupo, id_unidad, id_actividad",
+      (err, r) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        res.json(r);
+      },
+    );
+  }
 });
 
 // POST — crear actividad con validación de suma de ponderaciones (FIX 4)
