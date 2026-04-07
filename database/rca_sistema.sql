@@ -554,3 +554,8 @@ ALTER TABLE alumno DROP COLUMN password;
 ALTER TABLE `rca_sistema`.`maestro`
   DROP COLUMN `usuario`,
   DROP COLUMN `password`;
+
+-- correccion 3: --
+ALTER TABLE grupo
+    ADD CONSTRAINT uq_grupo_maestro_periodo
+    UNIQUE (clave_materia, numero_empleado, id_periodo);
