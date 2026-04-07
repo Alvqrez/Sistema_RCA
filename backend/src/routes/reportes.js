@@ -6,8 +6,8 @@ const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 
 // GET /api/reportes/grupos — lista de grupos con info para el filtro
 router.get("/grupos", verificarToken, (req, res) => {
-  const rol = req.user.rol;
-  const id_ref = req.user.id_referencia;
+  const rol = req.usuario.rol;
+  const id_ref = req.usuario.id_referencia;
 
   let sql = `
     SELECT g.id_grupo, m.nombre_materia, m.clave_materia,

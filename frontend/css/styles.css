@@ -3382,3 +3382,52 @@ th.col-final {
     transform: rotate(360deg);
   }
 }
+
+/* ── Quick Links (admin dashboard) ──────────────────────────────── */
+.quick-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  color: var(--text-main);
+  text-decoration: none;
+  transition: all 0.15s;
+  background: var(--card-bg);
+}
+.quick-link:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.quick-link > iconify-icon:first-child {
+  font-size: 22px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.quick-link div {
+  flex: 1;
+}
+.quick-link div strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.quick-link div p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.quick-link:hover div p {
+  color: var(--primary);
+  opacity: 0.8;
+}
+.ql-arrow {
+  font-size: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.quick-link:hover .ql-arrow {
+  color: var(--primary);
+}

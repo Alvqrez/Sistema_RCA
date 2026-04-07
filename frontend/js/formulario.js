@@ -12,20 +12,38 @@ let estado = {
   unidadesGrupo: [],
 };
 
-document.addEventListener("DOMContentLoaded", cargarGruposSelect);
+document.addEventListener("DOMContentLoaded", async () => {
+  await cargarGruposSelect();
+  // Si viene de mis_grupos con ?grupo=X, pre-seleccionar y cargar
+  const params = new URLSearchParams(window.location.search);
+  const grupoParam = params.get("grupo");
+  if (grupoParam) {
+    const sel = document.getElementById("selGrupo");
+    if (sel) {
+      sel.value = grupoParam;
+      // Disparar carga solo si el option existe
+      if (sel.value === grupoParam) {
+        await cargarGrupo();
+      }
+    }
+  }
+});
 
-// FIX: /api/grupos/mis-grupos — solo grupos del maestro logueado
+// Solo grupos del maestro logueado via /api/grupos/mis-grupos
 async function cargarGruposSelect() {
   const sel = document.getElementById("selGrupo");
   try {
     const res = await fetch(`${BASE_URL_FORM}/api/grupos/mis-grupos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const grupos = await res.json();
     if (!Array.isArray(grupos) || grupos.length === 0) {
       sel.innerHTML = `<option value="">-- Sin grupos asignados --</option>`;
       return;
     }
+    // Opción vacía inicial
+    sel.innerHTML = `<option value="">-- Selecciona un grupo --</option>`;
     grupos.forEach((g) => {
       const opt = document.createElement("option");
       opt.value = g.id_grupo;
@@ -34,7 +52,7 @@ async function cargarGruposSelect() {
     });
   } catch (e) {
     console.error("No se pudo cargar grupos:", e);
-    mostrarToast("Error al cargar grupos", "error");
+    mostrarToast("Error al cargar grupos: " + e.message, "error");
   }
 }
 

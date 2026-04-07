@@ -77,21 +77,11 @@
         ],
       },
       {
-        texto: "Académico",
-        icono: "lucide:book-open",
+        texto: "Catálogos",
+        icono: "lucide:folder-open",
         hijos: [
           { href: "materias.html", texto: "Materias", icono: "lucide:book" },
           { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
-          {
-            href: "unidades.html",
-            texto: "Unidades",
-            icono: "lucide:list-checks",
-          },
-          {
-            href: "actividades.html",
-            texto: "Actividades",
-            icono: "lucide:clipboard-pen",
-          },
           {
             href: "periodos.html",
             texto: "Periodos",

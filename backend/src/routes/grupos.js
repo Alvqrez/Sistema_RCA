@@ -8,22 +8,16 @@ const {
   maestroOAdmin,
 } = require("../middleware/auth");
 
-// FIX 7: GET todos los grupos con descripción del periodo
+// GET — todos los grupos
 router.get("/", verificarToken, (req, res) => {
   const query = `
     SELECT
-      g.id_grupo,
-      g.clave_materia,
-      m.nombre_materia,
+      g.id_grupo, g.clave_materia, m.nombre_materia,
       g.numero_empleado,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
-      pe.descripcion AS descripcion_periodo,
-      pe.anio,
-      g.limite_alumnos,
-      g.horario,
-      g.aula,
-      g.estatus
+      pe.descripcion AS descripcion_periodo, pe.anio,
+      g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
@@ -36,6 +30,39 @@ router.get("/", verificarToken, (req, res) => {
     res.json(results);
   });
 });
+
+// ─── IMPORTANTE: rutas estáticas ANTES que /:id ──────────────────────────────
+
+// GET — grupos del maestro autenticado (para formulario y mis_grupos)
+// DEBE estar antes de /:id o Express lo captura como id="mis-grupos"
+router.get("/mis-grupos", verificarToken, (req, res) => {
+  if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
+    return res.status(403).json({ error: "Solo para maestros" });
+  }
+  const numero_empleado = req.usuario.id_referencia;
+  const query = `
+    SELECT
+      g.id_grupo, g.clave_materia, m.nombre_materia,
+      g.numero_empleado,
+      CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
+      g.id_periodo,
+      pe.descripcion AS descripcion_periodo, pe.anio,
+      g.limite_alumnos, g.horario, g.aula, g.estatus
+    FROM grupo g
+    JOIN materia  m   ON g.clave_materia   = m.clave_materia
+    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
+    WHERE g.numero_empleado = ?
+    ORDER BY g.id_grupo DESC
+  `;
+  db.query(query, [numero_empleado], (err, results) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(results);
+  });
+});
+
+// ─── Rutas dinámicas con :id ──────────────────────────────────────────────────
 
 // GET — un grupo por id
 router.get("/:id", verificarToken, (req, res) => {
@@ -89,9 +116,11 @@ router.post("/", soloAdmin, (req, res) => {
     aula,
   } = req.body;
   if (!clave_materia || !numero_empleado || !id_periodo) {
-    return res.status(400).json({
-      error: "Clave de materia, número de empleado y periodo son requeridos",
-    });
+    return res
+      .status(400)
+      .json({
+        error: "Clave de materia, número de empleado y periodo son requeridos",
+      });
   }
   db.query(
     `INSERT INTO grupo (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
@@ -107,11 +136,13 @@ router.post("/", soloAdmin, (req, res) => {
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      res.status(201).json({
-        success: true,
-        mensaje: "Grupo creado",
-        id_grupo: result.insertId,
-      });
+      res
+        .status(201)
+        .json({
+          success: true,
+          mensaje: "Grupo creado",
+          id_grupo: result.insertId,
+        });
     },
   );
 });
@@ -129,7 +160,6 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
       .status(400)
       .json({ error: "La ponderación debe estar entre 0 y 100" });
   }
-
   const sqlSuma = `
     SELECT COALESCE(SUM(ponderacion), 0) AS total
     FROM grupo_unidad
@@ -140,9 +170,11 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
       return res.status(500).json({ error: "Error interno del servidor" });
     const totalActual = parseFloat(result[0].total);
     if (totalActual + parseFloat(ponderacion) > 100) {
-      return res.status(400).json({
-        error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
-      });
+      return res
+        .status(400)
+        .json({
+          error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
+        });
     }
     db.query(
       `INSERT INTO grupo_unidad (id_grupo, id_unidad, ponderacion)
@@ -213,31 +245,3 @@ router.delete("/:id", soloAdmin, (req, res) => {
 });
 
 module.exports = router;
-
-// GET — grupos del maestro autenticado (para formulario y mis_grupos)
-router.get("/mis-grupos", verificarToken, (req, res) => {
-  if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
-    return res.status(403).json({ error: "Solo para maestros" });
-  }
-  const numero_empleado = req.usuario.id_referencia;
-  const query = `
-    SELECT
-      g.id_grupo, g.clave_materia, m.nombre_materia,
-      g.numero_empleado,
-      CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
-      g.id_periodo,
-      pe.descripcion AS descripcion_periodo, pe.anio,
-      g.limite_alumnos, g.horario, g.aula, g.estatus
-    FROM grupo g
-    JOIN materia  m   ON g.clave_materia   = m.clave_materia
-    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
-    LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
-    WHERE g.numero_empleado = ?
-    ORDER BY g.id_grupo DESC
-  `;
-  db.query(query, [numero_empleado], (err, results) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(results);
-  });
-});
