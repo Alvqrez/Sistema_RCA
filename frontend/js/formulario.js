@@ -40,18 +40,46 @@ document.addEventListener("DOMContentLoaded", cargarGruposSelect);
 
 async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
+  const rol = localStorage.getItem("rol");
   const sel = document.getElementById("selGrupo");
+
+  // Decodifica el token para saber quién es el maestro
+  let id_referencia = null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    id_referencia = payload.id_referencia;
+  } catch (_) {}
+
   try {
     const res = await fetch(`${BASE_URL_FORM}/api/grupos`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const grupos = await res.json();
+    let grupos = await res.json();
+
+    // Si es maestro, solo sus grupos
+    if (rol === "maestro" && id_referencia) {
+      grupos = grupos.filter((g) => g.numero_empleado === id_referencia);
+    }
+
+    if (!grupos.length) {
+      sel.innerHTML += `<option value="" disabled>Sin grupos asignados</option>`;
+      return;
+    }
+
     grupos.forEach((g) => {
       const opt = document.createElement("option");
       opt.value = g.id_grupo;
       opt.textContent = `${g.nombre_materia} — ${g.nombre_maestro}`;
       sel.appendChild(opt);
     });
+
+    // Si viene con ?grupo= en la URL, selecciónalo automáticamente
+    const params = new URLSearchParams(window.location.search);
+    const grupoParam = params.get("grupo");
+    if (grupoParam) {
+      sel.value = grupoParam;
+      cargarGrupo();
+    }
   } catch (e) {
     console.error("No se pudo cargar grupos:", e);
   }
