@@ -14,17 +14,29 @@ let gruposMap = {}; // id_grupo → { nombre_materia, nombre_maestro }
   await cargarActividades();
 })();
 
-// ── Carga grupos en ambos selects (crear + filtro) ───────────────────
+// Carga grupos: maestro ve solo los suyos, admin ve todos
 async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
+  const rol = localStorage.getItem("rol");
+
+  // Ruta correcta según el rol
+  const url =
+    rol === "maestro"
+      ? `${BASE_URL}/api/grupos/mis-grupos`
+      : `${BASE_URL}/api/grupos`;
+
   try {
-    const res = await fetch(`${BASE_URL}/api/grupos`, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const grupos = await res.json();
 
     const selCrear = document.getElementById("grupoActividad");
     const selFiltro = document.getElementById("filtroGrupo");
+
+    // Limpia opciones previas (conserva la primera vacía)
+    selCrear.innerHTML = `<option value="">-- Selecciona grupo --</option>`;
+    selFiltro.innerHTML = `<option value="">Todos los grupos</option>`;
 
     grupos.forEach((g) => {
       gruposMap[g.id_grupo] = g;
