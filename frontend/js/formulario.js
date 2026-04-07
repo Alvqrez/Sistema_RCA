@@ -32,17 +32,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Solo grupos del maestro logueado via /api/grupos/mis-grupos
 async function cargarGruposSelect() {
   const sel = document.getElementById("selGrupo");
+  const rol = localStorage.getItem("rol");
+
+  // Maestro ve sus grupos, admin ve todos
+  const url =
+    rol === "maestro"
+      ? `${BASE_URL_FORM}/api/grupos/mis-grupos`
+      : `${BASE_URL_FORM}/api/grupos`;
+
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/grupos/mis-grupos`, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token()}` },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    if (!res.ok) {
+      // Si /mis-grupos falla (servidor sin reiniciar), intenta con /api/grupos
+      // y filtra en cliente
+      if (url.includes("mis-grupos")) {
+        console.warn(
+          "Fallback: /mis-grupos no disponible, usando /api/grupos con filtro local",
+        );
+        await cargarGruposSelectFallback(sel);
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
+
     const grupos = await res.json();
+
     if (!Array.isArray(grupos) || grupos.length === 0) {
       sel.innerHTML = `<option value="">-- Sin grupos asignados --</option>`;
       return;
     }
-    // Opción vacía inicial
+
     sel.innerHTML = `<option value="">-- Selecciona un grupo --</option>`;
     grupos.forEach((g) => {
       const opt = document.createElement("option");
@@ -54,6 +76,37 @@ async function cargarGruposSelect() {
     console.error("No se pudo cargar grupos:", e);
     mostrarToast("Error al cargar grupos: " + e.message, "error");
   }
+}
+
+// Fallback por si /mis-grupos no está disponible aún
+async function cargarGruposSelectFallback(sel) {
+  const res = await fetch(`${BASE_URL_FORM}/api/grupos`, {
+    headers: { Authorization: `Bearer ${token()}` },
+  });
+  const todos = await res.json();
+
+  // Decodifica el token para filtrar manualmente
+  let id_referencia = null;
+  try {
+    id_referencia = JSON.parse(atob(token().split(".")[1])).id_referencia;
+  } catch (_) {}
+
+  const grupos = id_referencia
+    ? todos.filter((g) => g.numero_empleado === id_referencia)
+    : todos;
+
+  if (!grupos.length) {
+    sel.innerHTML = `<option value="">-- Sin grupos asignados --</option>`;
+    return;
+  }
+
+  sel.innerHTML = `<option value="">-- Selecciona un grupo --</option>`;
+  grupos.forEach((g) => {
+    const opt = document.createElement("option");
+    opt.value = g.id_grupo;
+    opt.textContent = `${g.nombre_materia} (${g.descripcion_periodo || "Periodo " + g.id_periodo})`;
+    sel.appendChild(opt);
+  });
 }
 
 async function cargarGrupo() {
