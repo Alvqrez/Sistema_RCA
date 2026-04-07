@@ -552,5 +552,5 @@ ALTER TABLE alumno DROP COLUMN password;
 -- FIX 9: Eliminar columnas legadas de autenticación en maestro
 -- (la auth ahora se maneja exclusivamente por la tabla usuario)
 ALTER TABLE `rca_sistema`.`maestro`
-  DROP COLUMN IF EXISTS `usuario`,
-  DROP COLUMN IF EXISTS `password`;
+  DROP COLUMN `usuario`,
+  DROP COLUMN `password`;
