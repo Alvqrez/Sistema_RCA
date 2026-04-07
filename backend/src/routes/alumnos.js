@@ -173,6 +173,73 @@ router.put("/:matricula", soloAdmin, (req, res) => {
   );
 });
 
+// POST — importar alumnos desde CSV (bulk)
+router.post("/csv", soloAdmin, async (req, res) => {
+  const { alumnos } = req.body;
+  if (!Array.isArray(alumnos) || alumnos.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const bcrypt = require("bcrypt");
+  const errores = [];
+  let insertados = 0;
+
+  for (const alumno of alumnos) {
+    const {
+      matricula,
+      nombre,
+      apellido_paterno,
+      apellido_materno,
+      id_carrera,
+      correo_institucional,
+      username,
+      password,
+    } = alumno;
+    if (!matricula || !nombre || !id_carrera || !username || !password) {
+      errores.push({
+        matricula: matricula || "?",
+        motivo: "Campos requeridos faltantes",
+      });
+      continue;
+    }
+    try {
+      const hash = await bcrypt.hash(password, 10);
+      await new Promise((ok, fail) => {
+        db.query(
+          `INSERT INTO alumno (matricula, id_carrera, nombre, apellido_paterno, apellido_materno, correo_institucional)
+           VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)`,
+          [
+            matricula,
+            id_carrera,
+            nombre,
+            apellido_paterno || "",
+            apellido_materno || "",
+            correo_institucional || "",
+          ],
+          (err) => {
+            if (err) fail(err);
+            else ok();
+          },
+        );
+      });
+      await new Promise((ok, fail) => {
+        db.query(
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?,?,'alumno',?,1)
+           ON DUPLICATE KEY UPDATE pwd=VALUES(pwd)`,
+          [username, hash, matricula],
+          (err) => {
+            if (err) fail(err);
+            else ok();
+          },
+        );
+      });
+      insertados++;
+    } catch (e) {
+      errores.push({ matricula, motivo: e.message });
+    }
+  }
+  res.json({ success: true, insertados, errores });
+});
+
 // DELETE — eliminar alumno (solo maestro)
 router.delete("/:matricula", soloAdmin, (req, res) => {
   db.query(
