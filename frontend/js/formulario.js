@@ -502,22 +502,95 @@ function pedirGuardarCalificaciones() {
   abrirModal("modalGuardarCal");
 }
 
-function confirmarGuardarCalificaciones() {
+// formulario.js — reemplaza confirmarGuardarCalificaciones completo
+async function confirmarGuardarCalificaciones() {
   cerrarModal("modalGuardarCal");
   const u = estado.unidadActiva;
 
-  // Marcar unidad como guardada
-  estado.unidadesGuardadas.add(u);
-  estado.cambiosPendientes = false;
+  // Recoger calificaciones de la tabla actual antes de guardar
+  guardarDatosTablaActual();
 
-  mostrarToast(`Unidad ${u + 1} guardada y bloqueada ✓`, "success");
+  const token = localStorage.getItem("token");
 
-  // Actualizar tabs y re-renderizar
-  renderTabsTabla();
-  cambiarUnidadTabla(u);
+  // Construir payload para el API bulk
+  const resultados = estado.alumnos.map((a) => {
+    const cal = estado.calificaciones[u][a.matricula];
 
-  // TODO en producción: enviar al API
-  console.log("Guardando calificaciones unidad", u, estado.calificaciones[u]);
+    // Calcular la calificación final de la unidad con ponderaciones
+    const pond = estado.ponderaciones[u];
+    let total = 0;
+    let todosVacios = true;
+
+    RUBROS.forEach((r) => {
+      const v = parseFloat(cal[r]);
+      if (!isNaN(v)) {
+        total += v * (parseFloat(pond[r]) / 100);
+        todosVacios = false;
+      }
+    });
+
+    const bonus = parseFloat(cal.bonus) || 0;
+    if (cal.bonus !== "") todosVacios = false;
+    const calFinal = todosVacios
+      ? null
+      : Math.min(100, Math.round((total + bonus) * 100) / 100);
+
+    return {
+      matricula: a.matricula,
+      calificacion_obtenida: calFinal,
+      estatus: calFinal === null ? "Pendiente" : "Validada",
+    };
+  });
+
+  // Necesitamos una actividad de referencia para la unidad.
+  // Usamos la primera actividad de la unidad activa.
+  // Como el formulario usa rubros propios (no actividades individuales de la BD),
+  // guardamos la calificación de unidad directamente.
+  try {
+    // 1. Guardar calificacion_unidad por alumno
+    const promesas = estado.alumnos.map(async (a) => {
+      const cal = estado.calificaciones[u][a.matricula];
+      const pond = estado.ponderaciones[u];
+      let total = 0;
+      RUBROS.forEach((r) => {
+        const v = parseFloat(cal[r]);
+        if (!isNaN(v)) total += v * (parseFloat(pond[r]) / 100);
+      });
+      const bonus = parseFloat(cal.bonus) || 0;
+      const calFinal = Math.min(100, Math.round((total + bonus) * 100) / 100);
+
+      // id_unidad = u+1 es un índice. En producción debería mapear al id real.
+      // Usamos el índice como aproximación — ajusta si tienes los ids de unidad reales.
+      const payload = {
+        matricula: a.matricula,
+        id_grupo: estado.grupoId,
+        id_unidad: u + 1,
+        calificacion_unidad_final: calFinal,
+      };
+
+      return fetch(`${BASE_URL_FORM}/api/calificaciones`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    });
+
+    await Promise.all(promesas);
+
+    // 2. Marcar unidad como guardada/bloqueada
+    estado.unidadesGuardadas.add(u);
+    estado.cambiosPendientes = false;
+
+    mostrarToast(`✓ Unidad ${u + 1} guardada correctamente`, "success");
+    renderTabsTabla();
+    cambiarUnidadTabla(u);
+  } catch (err) {
+    console.error("Error guardando:", err);
+    mostrarToast("Error al guardar — revisa la conexión", "error");
+  }
 }
 
 function pedirDesbloquear() {
