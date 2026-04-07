@@ -105,7 +105,7 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
   });
 });
 
-// POST — crear grupo
+// POST — crear grupo con validación de unicidad
 router.post("/", soloAdmin, (req, res) => {
   const {
     clave_materia,
@@ -115,34 +115,65 @@ router.post("/", soloAdmin, (req, res) => {
     horario,
     aula,
   } = req.body;
+
   if (!clave_materia || !numero_empleado || !id_periodo) {
-    return res
-      .status(400)
-      .json({
-        error: "Clave de materia, número de empleado y periodo son requeridos",
-      });
+    return res.status(400).json({
+      error: "Clave de materia, número de empleado y periodo son requeridos",
+    });
   }
+
+  // Verificar que este maestro no ya tenga este materia+periodo
+  const sqlVerificar = `
+        SELECT id_grupo FROM grupo
+        WHERE clave_materia = ? AND numero_empleado = ? AND id_periodo = ?
+    `;
+
   db.query(
-    `INSERT INTO grupo (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      clave_materia,
-      numero_empleado,
-      id_periodo,
-      limite_alumnos ?? 30,
-      horario ?? null,
-      aula ?? null,
-    ],
-    (err, result) => {
+    sqlVerificar,
+    [clave_materia, numero_empleado, id_periodo],
+    (err, existentes) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      res
-        .status(201)
-        .json({
-          success: true,
-          mensaje: "Grupo creado",
-          id_grupo: result.insertId,
+
+      if (existentes.length > 0) {
+        return res.status(409).json({
+          error:
+            "Este maestro ya tiene un grupo asignado para esta materia en este periodo. Un grupo solo puede ser impartido por un docente.",
         });
+      }
+
+      // Insertar el nuevo grupo
+      db.query(
+        `INSERT INTO grupo (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          clave_materia,
+          numero_empleado,
+          id_periodo,
+          limite_alumnos ?? 30,
+          horario ?? null,
+          aula ?? null,
+        ],
+        (err2, result) => {
+          if (err2) {
+            // Captura también el error de la BD si el UNIQUE constraint ya existe
+            if (err2.code === "ER_DUP_ENTRY") {
+              return res.status(409).json({
+                error:
+                  "Este maestro ya tiene un grupo asignado para esta materia en este periodo.",
+              });
+            }
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          }
+          res.status(201).json({
+            success: true,
+            mensaje: "Grupo creado",
+            id_grupo: result.insertId,
+          });
+        },
+      );
     },
   );
 });
@@ -170,11 +201,9 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
       return res.status(500).json({ error: "Error interno del servidor" });
     const totalActual = parseFloat(result[0].total);
     if (totalActual + parseFloat(ponderacion) > 100) {
-      return res
-        .status(400)
-        .json({
-          error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
-        });
+      return res.status(400).json({
+        error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
+      });
     }
     db.query(
       `INSERT INTO grupo_unidad (id_grupo, id_unidad, ponderacion)
