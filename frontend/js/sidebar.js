@@ -34,6 +34,11 @@
         icono: "lucide:users-round",
       },
       {
+        href: "actividades.html",
+        texto: "Actividades",
+        icono: "lucide:clipboard-pen",
+      },
+      {
         href: "calificaciones.html",
         texto: "Calificaciones",
         icono: "lucide:bar-chart-3",
@@ -42,11 +47,6 @@
         href: "unidades.html",
         texto: "Unidades",
         icono: "lucide:clipboard-list",
-      },
-      {
-        href: "actividades.html",
-        texto: "Actividades",
-        icono: "lucide:clipboard-pen",
       },
       {
         href: "formulario.html",
@@ -96,6 +96,12 @@
       { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
       { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
       { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
+      // FIX 10: Actividades ahora visible para admin también
+      {
+        href: "actividades.html",
+        texto: "Actividades",
+        icono: "lucide:clipboard-pen",
+      },
       {
         href: "periodos.html",
         texto: "Periodos",
@@ -121,8 +127,7 @@
         .map((h) => {
           const pg = h.href.split("#")[0];
           return `<a href="${h.href}" class="submenu-item ${pg === paginaActual ? "active" : ""}">
-          <iconify-icon icon="${h.icono}"></iconify-icon>
-          <span>${h.texto}</span>
+          <iconify-icon icon="${h.icono}"></iconify-icon><span>${h.texto}</span>
         </a>`;
         })
         .join("");
@@ -136,8 +141,7 @@
       </div>`;
     }
     return `<a href="${link.href}" class="${link.href === paginaActual ? "active" : ""}">
-      <iconify-icon icon="${link.icono}"></iconify-icon>
-      <span>${link.texto}</span>
+      <iconify-icon icon="${link.icono}"></iconify-icon><span>${link.texto}</span>
     </a>`;
   }
 
@@ -158,8 +162,7 @@
       <span id="themeLabel">${isDark ? "Modo claro" : "Modo oscuro"}</span>
     </button>
     <button class="logout-btn" onclick="cerrarSesion()">
-      <iconify-icon icon="lucide:log-out"></iconify-icon>
-      <span>Cerrar sesión</span>
+      <iconify-icon icon="lucide:log-out"></iconify-icon><span>Cerrar sesión</span>
     </button>
   `;
 })();

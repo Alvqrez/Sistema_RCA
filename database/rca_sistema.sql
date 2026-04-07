@@ -549,3 +549,8 @@ CREATE TABLE IF NOT EXISTS `rca_sistema`.`grupo_unidad` (
 ALTER TABLE alumno DROP COLUMN usuario;
 
 ALTER TABLE alumno DROP COLUMN password;
+-- FIX 9: Eliminar columnas legadas de autenticación en maestro
+-- (la auth ahora se maneja exclusivamente por la tabla usuario)
+ALTER TABLE `rca_sistema`.`maestro`
+  DROP COLUMN IF EXISTS `usuario`,
+  DROP COLUMN IF EXISTS `password`;

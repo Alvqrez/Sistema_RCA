@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require("../db");
 const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 
-// GET — todos los resultados de una actividad (para llenar la tabla en actividades.html)
+// GET — resultados de una actividad con alumnos inscritos en el grupo (FIX 2)
 router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
   const sql = `
     SELECT
@@ -14,28 +14,24 @@ router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
       ra.estatus,
       ra.fecha_registro,
       ra.numero_empleado
-    FROM inscripcion i
+    FROM actividad act
+    JOIN inscripcion i ON i.id_grupo = act.id_grupo AND i.estatus = 'Cursando'
     JOIN alumno a ON i.matricula = a.matricula
-    JOIN actividad act ON act.id_actividad = ?
     LEFT JOIN resultado_actividad ra
-      ON ra.matricula = a.matricula AND ra.id_actividad = ?
-    WHERE i.id_grupo = act.id_grupo AND i.estatus = 'Cursando'
+      ON ra.matricula = a.matricula AND ra.id_actividad = act.id_actividad
+    WHERE act.id_actividad = ?
     ORDER BY a.apellido_paterno, a.nombre
   `;
-  db.query(
-    sql,
-    [req.params.id_actividad, req.params.id_actividad],
-    (err, results) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Error interno del servidor" });
-      }
-      res.json(results);
-    },
-  );
+  db.query(sql, [req.params.id_actividad], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+    res.json(results);
+  });
 });
 
-// GET — promedio de actividades de un alumno en una unidad/grupo (para auto-llenar formulario)
+// GET — promedio ponderado de un alumno en una unidad/grupo
 router.get(
   "/promedio/:matricula/:id_grupo/:id_unidad",
   verificarToken,
@@ -65,7 +61,7 @@ router.get(
   },
 );
 
-// POST — registrar / actualizar resultado de una actividad para un alumno
+// POST — registrar / actualizar resultado (FIX 13: verifica bloqueado)
 router.post("/", maestroOAdmin, (req, res) => {
   const { matricula, id_actividad, calificacion_obtenida, estatus } = req.body;
   const numero_empleado = req.usuario.id_referencia;
@@ -74,65 +70,114 @@ router.post("/", maestroOAdmin, (req, res) => {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
-  const cal =
-    calificacion_obtenida === undefined
-      ? null
-      : parseFloat(calificacion_obtenida);
-  const est = estatus || (cal === null ? "NP" : "Validada");
+  // Verificar si la actividad existe y si ya está bloqueada
+  db.query(
+    "SELECT bloqueado FROM actividad WHERE id_actividad = ?",
+    [id_actividad],
+    (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (rows.length === 0)
+        return res.status(404).json({ error: "Actividad no encontrada" });
 
-  const sql = `
-    INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
-    VALUES (?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      calificacion_anterior   = calificacion_obtenida,
-      calificacion_obtenida   = VALUES(calificacion_obtenida),
-      estatus                 = VALUES(estatus),
-      numero_empleado         = VALUES(numero_empleado),
-      fecha_registro          = NOW()
-  `;
-  db.query(sql, [matricula, id_actividad, cal, est, numero_empleado], (err) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json({ success: true });
-  });
+      const cal =
+        calificacion_obtenida === undefined
+          ? null
+          : parseFloat(calificacion_obtenida);
+      const est = estatus || (cal === null ? "NP" : "Validada");
+
+      const sql = `
+      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        calificacion_anterior = calificacion_obtenida,
+        calificacion_obtenida = VALUES(calificacion_obtenida),
+        estatus               = VALUES(estatus),
+        numero_empleado       = VALUES(numero_empleado),
+        fecha_registro        = NOW()
+    `;
+      db.query(
+        sql,
+        [matricula, id_actividad, cal, est, numero_empleado],
+        (err2) => {
+          if (err2)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+
+          // FIX 13: bloquear la actividad si no estaba bloqueada ya
+          if (!rows[0].bloqueado) {
+            db.query(
+              "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
+              [id_actividad],
+            );
+          }
+
+          res.json({ success: true });
+        },
+      );
+    },
+  );
 });
 
-// POST — guardar múltiples resultados de una actividad en una sola llamada
+// POST — guardar múltiples resultados en una sola llamada (FIX 13)
 router.post("/bulk", maestroOAdmin, (req, res) => {
-  const { id_actividad, resultados } = req.body; // resultados = [{matricula, calificacion_obtenida, estatus}]
+  const { id_actividad, resultados } = req.body;
   const numero_empleado = req.usuario.id_referencia;
 
   if (!id_actividad || !Array.isArray(resultados) || resultados.length === 0) {
     return res.status(400).json({ error: "Faltan datos" });
   }
 
-  const values = resultados.map((r) => [
-    r.matricula,
-    id_actividad,
-    r.calificacion_obtenida === undefined
-      ? null
-      : parseFloat(r.calificacion_obtenida),
-    r.estatus || (r.calificacion_obtenida === undefined ? "NP" : "Validada"),
-    numero_empleado,
-  ]);
+  // Verificar si la actividad existe
+  db.query(
+    "SELECT bloqueado FROM actividad WHERE id_actividad = ?",
+    [id_actividad],
+    (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (rows.length === 0)
+        return res.status(404).json({ error: "Actividad no encontrada" });
 
-  const sql = `
-    INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
-    VALUES ?
-    ON DUPLICATE KEY UPDATE
-      calificacion_anterior = calificacion_obtenida,
-      calificacion_obtenida = VALUES(calificacion_obtenida),
-      estatus               = VALUES(estatus),
-      numero_empleado       = VALUES(numero_empleado),
-      fecha_registro        = NOW()
-  `;
-  db.query(sql, [values], (err) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: "Error interno del servidor" });
-    }
-    res.json({ success: true, guardados: values.length });
-  });
+      const values = resultados.map((r) => [
+        r.matricula,
+        id_actividad,
+        r.calificacion_obtenida === undefined
+          ? null
+          : parseFloat(r.calificacion_obtenida),
+        r.estatus ||
+          (r.calificacion_obtenida === undefined ? "NP" : "Validada"),
+        numero_empleado,
+      ]);
+
+      const sql = `
+      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        calificacion_anterior = calificacion_obtenida,
+        calificacion_obtenida = VALUES(calificacion_obtenida),
+        estatus               = VALUES(estatus),
+        numero_empleado       = VALUES(numero_empleado),
+        fecha_registro        = NOW()
+    `;
+      db.query(sql, [values], (err2) => {
+        if (err2) {
+          console.error(err2);
+          return res.status(500).json({ error: "Error interno del servidor" });
+        }
+
+        // FIX 13: bloquear la actividad
+        if (!rows[0].bloqueado) {
+          db.query(
+            "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
+            [id_actividad],
+          );
+        }
+
+        res.json({ success: true, guardados: values.length });
+      });
+    },
+  );
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-// backend/src/routes/grupos.js — COMPLETO
+// backend/src/routes/grupos.js
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
@@ -8,25 +8,28 @@ const {
   maestroOAdmin,
 } = require("../middleware/auth");
 
-// GET — todos los grupos
+// FIX 7: GET todos los grupos con descripción del periodo
 router.get("/", verificarToken, (req, res) => {
   const query = `
-        SELECT 
-            g.id_grupo,
-            g.clave_materia,
-            m.nombre_materia,
-            g.numero_empleado,
-            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
-            g.id_periodo,
-            g.limite_alumnos,
-            g.horario,
-            g.aula,
-            g.estatus
-        FROM grupo g
-        JOIN materia  m   ON g.clave_materia  = m.clave_materia
-        JOIN maestro  mae ON g.numero_empleado = mae.numero_empleado
-    `;
-
+    SELECT
+      g.id_grupo,
+      g.clave_materia,
+      m.nombre_materia,
+      g.numero_empleado,
+      CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
+      g.id_periodo,
+      pe.descripcion AS descripcion_periodo,
+      pe.anio,
+      g.limite_alumnos,
+      g.horario,
+      g.aula,
+      g.estatus
+    FROM grupo g
+    JOIN materia  m   ON g.clave_materia   = m.clave_materia
+    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
+    ORDER BY g.id_grupo DESC
+  `;
   db.query(query, (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
@@ -37,17 +40,19 @@ router.get("/", verificarToken, (req, res) => {
 // GET — un grupo por id
 router.get("/:id", verificarToken, (req, res) => {
   const query = `
-        SELECT 
-            g.id_grupo, g.clave_materia, m.nombre_materia,
-            g.numero_empleado,
-            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
-            g.id_periodo, g.limite_alumnos, g.horario, g.aula, g.estatus
-        FROM grupo g
-        JOIN materia  m   ON g.clave_materia  = m.clave_materia
-        JOIN maestro  mae ON g.numero_empleado = mae.numero_empleado
-        WHERE g.id_grupo = ?
-    `;
-
+    SELECT
+      g.id_grupo, g.clave_materia, m.nombre_materia,
+      g.numero_empleado,
+      CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
+      g.id_periodo,
+      pe.descripcion AS descripcion_periodo,
+      g.limite_alumnos, g.horario, g.aula, g.estatus
+    FROM grupo g
+    JOIN materia  m   ON g.clave_materia   = m.clave_materia
+    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
+    WHERE g.id_grupo = ?
+  `;
   db.query(query, [req.params.id], (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
@@ -60,13 +65,12 @@ router.get("/:id", verificarToken, (req, res) => {
 // GET — unidades de un grupo con su ponderación
 router.get("/:id/unidades", verificarToken, (req, res) => {
   const sql = `
-        SELECT gu.id_unidad, u.nombre_unidad, u.estatus, gu.ponderacion
-        FROM grupo_unidad gu
-        JOIN unidad u ON gu.id_unidad = u.id_unidad
-        WHERE gu.id_grupo = ?
-        ORDER BY gu.id_unidad
-    `;
-
+    SELECT gu.id_unidad, u.nombre_unidad, u.estatus, gu.ponderacion
+    FROM grupo_unidad gu
+    JOIN unidad u ON gu.id_unidad = u.id_unidad
+    WHERE gu.id_grupo = ?
+    ORDER BY gu.id_unidad
+  `;
   db.query(sql, [req.params.id], (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
@@ -74,7 +78,7 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
   });
 });
 
-// POST — crear grupo (solo admin)
+// POST — crear grupo
 router.post("/", soloAdmin, (req, res) => {
   const {
     clave_materia,
@@ -84,16 +88,14 @@ router.post("/", soloAdmin, (req, res) => {
     horario,
     aula,
   } = req.body;
-
   if (!clave_materia || !numero_empleado || !id_periodo) {
     return res.status(400).json({
       error: "Clave de materia, número de empleado y periodo son requeridos",
     });
   }
-
   db.query(
     `INSERT INTO grupo (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [
       clave_materia,
       numero_empleado,
@@ -117,13 +119,11 @@ router.post("/", soloAdmin, (req, res) => {
 // POST — asignar unidad a grupo con ponderación
 router.post("/:id/unidades", maestroOAdmin, (req, res) => {
   const { id_unidad, ponderacion } = req.body;
-
   if (!id_unidad || ponderacion === undefined) {
     return res
       .status(400)
       .json({ error: "id_unidad y ponderacion son requeridos" });
   }
-
   if (ponderacion < 0 || ponderacion > 100) {
     return res
       .status(400)
@@ -131,27 +131,23 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
   }
 
   const sqlSuma = `
-        SELECT COALESCE(SUM(ponderacion), 0) AS total 
-        FROM grupo_unidad 
-        WHERE id_grupo = ? AND id_unidad != ?
-    `;
-
+    SELECT COALESCE(SUM(ponderacion), 0) AS total
+    FROM grupo_unidad
+    WHERE id_grupo = ? AND id_unidad != ?
+  `;
   db.query(sqlSuma, [req.params.id, id_unidad], (err, result) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
-
     const totalActual = parseFloat(result[0].total);
-
     if (totalActual + parseFloat(ponderacion) > 100) {
       return res.status(400).json({
         error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
       });
     }
-
     db.query(
       `INSERT INTO grupo_unidad (id_grupo, id_unidad, ponderacion)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE ponderacion = VALUES(ponderacion)`,
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE ponderacion = VALUES(ponderacion)`,
       [req.params.id, id_unidad, ponderacion],
       (err2) => {
         if (err2)
@@ -167,7 +163,6 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
 // PUT — editar grupo
 router.put("/:id", soloAdmin, (req, res) => {
   const { limite_alumnos, horario, aula, estatus } = req.body;
-
   db.query(
     `UPDATE grupo SET limite_alumnos = ?, horario = ?, aula = ?, estatus = ? WHERE id_grupo = ?`,
     [
@@ -187,7 +182,7 @@ router.put("/:id", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar unidad de grupo
+// DELETE — quitar unidad de grupo
 router.delete("/:id/unidades/:id_unidad", maestroOAdmin, (req, res) => {
   db.query(
     "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
@@ -202,7 +197,7 @@ router.delete("/:id/unidades/:id_unidad", maestroOAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar grupo completo
+// DELETE — eliminar grupo
 router.delete("/:id", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM grupo WHERE id_grupo = ?",
@@ -217,4 +212,4 @@ router.delete("/:id", soloAdmin, (req, res) => {
   );
 });
 
-module.exports = router; // ← ESTA LÍNEA ERA LA QUE FALTABA
+module.exports = router;

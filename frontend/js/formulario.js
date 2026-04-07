@@ -1,992 +1,470 @@
-// =====================================================================
-//  formulario.js — Formulario de Evaluación con bloqueo + gear modal
-// =====================================================================
-
+// frontend/js/formulario.js — CORREGIDO (FIX 3)
+// Usa las actividades REALES de la BD en lugar de rubros fijos hardcoded.
+// El CSV importa directamente a /api/resultado-actividad/bulk.
 const BASE_URL_FORM = "http://localhost:3000";
+const token = () => localStorage.getItem("token");
 
-const RUBROS = ["actividad", "examen", "asistencia", "participacion"];
-const LABELS = {
-  actividad: "Actividades",
-  examen: "Examen",
-  asistencia: "Asistencia",
-  participacion: "Participación",
-};
-const COLORES = {
-  actividad: "#3b82f6",
-  examen: "#f59e0b",
-  asistencia: "#10b981",
-  participacion: "#8b5cf6",
-};
-
-// ── ESTADO GLOBAL ─────────────────────────────────────────────────────
+// ── Estado ────────────────────────────────────────────────────────────
 let estado = {
   grupoId: null,
-  nombreGrupo: "",
-  numUnidades: 3,
-  configurado: false,
-  modoEdicion: false,
-  cambiosPendientes: false,
-  unidadActiva: 0,
-  ponderaciones: [], // ponderaciones[u] = { actividad, examen, asistencia, participacion }
-  alumnos: [], // [{ matricula, nombre }]
-  calificaciones: [], // calificaciones[u][matricula] = { actividad, examen, asistencia, participacion, bonus }
-  unidadesGuardadas: new Set(), // índices de unidades ya guardadas (bloqueadas)
+  unidadId: null,
+  actividades: [], // actividades reales de la BD para (grupo, unidad)
+  alumnos: [], // alumnos inscritos en el grupo
+  resultados: {}, // { matricula: { id_actividad: calificacion } }
+  unidadesGrupo: [], // unidades vinculadas al grupo con ponderación
 };
 
-// ═══════════════════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════════════════
+// ── INIT ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", cargarGruposSelect);
 
 async function cargarGruposSelect() {
-  const token = localStorage.getItem("token");
-  const rol = localStorage.getItem("rol");
   const sel = document.getElementById("selGrupo");
-
-  // Decodifica el token para saber quién es el maestro
-  let id_referencia = null;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    id_referencia = payload.id_referencia;
-  } catch (_) {}
-
   try {
     const res = await fetch(`${BASE_URL_FORM}/api/grupos`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token()}` },
     });
-    let grupos = await res.json();
-
-    // Si es maestro, solo sus grupos
-    if (rol === "maestro" && id_referencia) {
-      grupos = grupos.filter((g) => g.numero_empleado === id_referencia);
-    }
-
-    if (!grupos.length) {
-      sel.innerHTML += `<option value="" disabled>Sin grupos asignados</option>`;
-      return;
-    }
-
+    const grupos = await res.json();
     grupos.forEach((g) => {
       const opt = document.createElement("option");
       opt.value = g.id_grupo;
-      opt.textContent = `${g.nombre_materia} — ${g.nombre_maestro}`;
+      opt.textContent = `${g.nombre_materia} — ${g.nombre_maestro} (${g.descripcion_periodo || ""})`;
       sel.appendChild(opt);
     });
-
-    // Si viene con ?grupo= en la URL, selecciónalo automáticamente
-    const params = new URLSearchParams(window.location.search);
-    const grupoParam = params.get("grupo");
-    if (grupoParam) {
-      sel.value = grupoParam;
-      cargarGrupo();
-    }
   } catch (e) {
     console.error("No se pudo cargar grupos:", e);
   }
 }
 
-// ── Selección de grupo ────────────────────────────────────────────────
-function cargarGrupo() {
+// ── Selección de grupo ─────────────────────────────────────────────────
+async function cargarGrupo() {
   const sel = document.getElementById("selGrupo");
-  const id = sel.value;
+  const id = parseInt(sel.value);
+  if (!id) return resetVista();
 
-  if (!id) {
-    document.getElementById("emptyConfig").style.display = "block";
-    document.getElementById("seccionPonderaciones").style.display = "none";
-    document.getElementById("seccionCalificaciones").style.display = "none";
-    document.getElementById("badgeGrupo").textContent =
-      "Sin grupo seleccionado";
-    document.getElementById("btnGear").style.display = "none";
-    actualizarEstadoBadge("sin-config", "Sin configurar");
+  estado.grupoId = id;
+  document.getElementById("badgeGrupo").textContent =
+    sel.options[sel.selectedIndex].text;
+  document.getElementById("emptyConfig").style.display = "none";
+
+  await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
+
+  document.getElementById("seccionUnidades").style.display = "block";
+}
+
+function resetVista() {
+  estado = {
+    grupoId: null,
+    unidadId: null,
+    actividades: [],
+    alumnos: [],
+    resultados: {},
+    unidadesGrupo: [],
+  };
+  document.getElementById("emptyConfig").style.display = "block";
+  document.getElementById("seccionUnidades").style.display = "none";
+  document.getElementById("seccionActividades").style.display = "none";
+  document.getElementById("badgeGrupo").textContent = "Sin grupo seleccionado";
+}
+
+// ── Cargar unidades del grupo ──────────────────────────────────────────
+async function cargarUnidadesGrupo() {
+  const res = await fetch(
+    `${BASE_URL_FORM}/api/grupos/${estado.grupoId}/unidades`,
+    {
+      headers: { Authorization: `Bearer ${token()}` },
+    },
+  );
+  estado.unidadesGrupo = await res.json();
+
+  const sel = document.getElementById("selUnidad");
+  sel.innerHTML = `<option value="">-- Selecciona una unidad --</option>`;
+  estado.unidadesGrupo.forEach((u) => {
+    const label = `${u.nombre_unidad}  (Peso: ${u.ponderacion}%)`;
+    sel.innerHTML += `<option value="${u.id_unidad}">${label}</option>`;
+  });
+
+  // Mostrar resumen de pesos
+  const total = estado.unidadesGrupo.reduce(
+    (s, u) => s + parseFloat(u.ponderacion),
+    0,
+  );
+  const badge = document.getElementById("badgePesoTotal");
+  if (badge) {
+    badge.textContent = `${total}% asignado`;
+    badge.style.color = Math.abs(total - 100) < 0.01 ? "#22c55e" : "#f59e0b";
+  }
+}
+
+// ── Cargar alumnos inscritos en el grupo ──────────────────────────────
+async function cargarAlumnos() {
+  const res = await fetch(
+    `${BASE_URL_FORM}/api/inscripciones/grupo/${estado.grupoId}`,
+    {
+      headers: { Authorization: `Bearer ${token()}` },
+    },
+  );
+  const data = await res.json();
+  estado.alumnos = data.map((a) => ({
+    matricula: a.matricula,
+    nombre:
+      `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
+  }));
+}
+
+// ── Selección de unidad ────────────────────────────────────────────────
+async function cargarUnidad() {
+  const idUnidad = parseInt(document.getElementById("selUnidad").value);
+  if (!idUnidad) {
+    document.getElementById("seccionActividades").style.display = "none";
+    return;
+  }
+  estado.unidadId = idUnidad;
+
+  await cargarActividades();
+  await cargarResultadosExistentes();
+
+  document.getElementById("seccionActividades").style.display = "block";
+  document
+    .getElementById("seccionActividades")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// ── Actividades reales de la BD ────────────────────────────────────────
+async function cargarActividades() {
+  const res = await fetch(`${BASE_URL_FORM}/api/actividades`, {
+    headers: { Authorization: `Bearer ${token()}` },
+  });
+  const todas = await res.json();
+  estado.actividades = todas.filter(
+    (a) => a.id_grupo === estado.grupoId && a.id_unidad === estado.unidadId,
+  );
+
+  // Calcular suma de ponderaciones
+  const sumaP = estado.actividades.reduce(
+    (s, a) => s + parseFloat(a.ponderacion),
+    0,
+  );
+  const colorSuma = Math.abs(sumaP - 100) < 0.01 ? "#22c55e" : "#f59e0b";
+
+  const resumen = document.getElementById("resumenActividades");
+  if (resumen) {
+    resumen.innerHTML =
+      estado.actividades.length === 0
+        ? `<span style="color:#94a3b8">No hay actividades definidas para esta unidad. Agrégalas en la sección Actividades.</span>`
+        : `<span style="color:${colorSuma}">${estado.actividades.length} actividades — suma ponderaciones: <strong>${sumaP}%</strong></span>`;
+  }
+
+  renderTablaCalificaciones();
+}
+
+// ── Resultados ya guardados ────────────────────────────────────────────
+async function cargarResultadosExistentes() {
+  estado.resultados = {};
+  for (const act of estado.actividades) {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/resultado-actividad/actividad/${act.id_actividad}`,
+      { headers: { Authorization: `Bearer ${token()}` } },
+    );
+    const filas = await res.json();
+    filas.forEach((f) => {
+      if (!estado.resultados[f.matricula]) estado.resultados[f.matricula] = {};
+      estado.resultados[f.matricula][act.id_actividad] = {
+        cal: f.calificacion_obtenida,
+        estatus: f.estatus,
+      };
+    });
+  }
+  renderTablaCalificaciones();
+}
+
+// ── Render tabla principal ─────────────────────────────────────────────
+function renderTablaCalificaciones() {
+  const wrap = document.getElementById("tablaCalWrap");
+  if (!wrap) return;
+
+  if (estado.actividades.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8">No hay actividades para esta unidad. Créalas primero en "Actividades".</div>`;
+    return;
+  }
+  if (estado.alumnos.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8">No hay alumnos inscritos en este grupo.</div>`;
     return;
   }
 
-  estado.grupoId = parseInt(id);
-  estado.nombreGrupo = sel.options[sel.selectedIndex].text;
-  estado.unidadesGuardadas = new Set();
+  // Encabezado
+  let html = `<div class="tabla-wrapper"><table class="tabla-calificaciones">
+    <thead><tr>
+      <th>Alumno</th>
+      <th>Matrícula</th>`;
+  estado.actividades.forEach((a) => {
+    html += `<th title="${a.tipo_evaluacion}">${a.nombre_actividad}<br><small style="color:#94a3b8">${a.ponderacion}%</small></th>`;
+  });
+  html += `<th>Promedio</th></tr></thead><tbody>`;
 
-  document.getElementById("badgeGrupo").textContent = estado.nombreGrupo;
-  document.getElementById("emptyConfig").style.display = "none";
-  document.getElementById("seccionPonderaciones").style.display = "block";
-  document.getElementById("btnGear").style.display = "inline-flex";
+  // Filas
+  estado.alumnos.forEach((al) => {
+    html += `<tr data-matricula="${al.matricula}">
+      <td>${al.nombre}</td>
+      <td style="font-size:0.78rem;color:#94a3b8">${al.matricula}</td>`;
 
-  cargarAlumnos();
-  generarPonderaciones();
+    let promedioNum = 0;
+    estado.actividades.forEach((a) => {
+      const r = estado.resultados[al.matricula]?.[a.id_actividad];
+      const val = r?.cal ?? "";
+      const esNP = r?.estatus === "NP";
+      html += `<td>
+        <input class="cal-input" type="number" min="0" max="100"
+               data-matricula="${al.matricula}"
+               data-actividad="${a.id_actividad}"
+               data-ponderacion="${a.ponderacion}"
+               value="${val}"
+               placeholder="${esNP ? "NP" : "0–100"}"
+               oninput="recalcularFila('${al.matricula}')" />
+      </td>`;
+      const contrib = esNP
+        ? 0
+        : (parseFloat(val) || 0) * (parseFloat(a.ponderacion) / 100);
+      promedioNum += contrib;
+    });
+
+    const color =
+      promedioNum >= 70 ? "#22c55e" : promedioNum > 0 ? "#f59e0b" : "#94a3b8";
+    html += `<td id="prom-${al.matricula}" style="font-weight:700;color:${color}">${promedioNum.toFixed(1)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  wrap.innerHTML = html;
 }
 
-// ── Cargar alumnos del grupo ──────────────────────────────────────────
-async function cargarAlumnos() {
-  const token = localStorage.getItem("token");
-  try {
-    const res = await fetch(
-      `${BASE_URL_FORM}/api/alumnos/grupo/${estado.grupoId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    const alumnos = await res.json();
-    estado.alumnos = alumnos.map((a) => ({
-      matricula: a.matricula,
-      nombre:
-        `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
-    }));
-  } catch (e) {
-    console.error("Error cargando alumnos:", e);
-    estado.alumnos = [];
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  PONDERACIONES
-// ═══════════════════════════════════════════════════════════════════════
-function generarPonderaciones() {
-  const n = parseInt(document.getElementById("numUnidades").value) || 3;
-  estado.numUnidades = n;
-
-  if (!estado.configurado) {
-    estado.ponderaciones = Array.from({ length: n }, () => ({
-      actividad: 25,
-      examen: 50,
-      asistencia: 15,
-      participacion: 10,
-    }));
-  }
-
-  renderTabsConfig(n);
-  renderPanelesConfig(n);
-  activarTabConfig(0);
-}
-
-function renderTabsConfig(n) {
-  const cont = document.getElementById("tabsConfig");
-  cont.innerHTML = "";
-  for (let u = 0; u < n; u++) {
-    const btn = document.createElement("button");
-    btn.className = "tab-btn";
-    btn.textContent = `Unidad ${u + 1}`;
-    btn.id = `tabCfg_${u}`;
-    btn.onclick = () => activarTabConfig(u);
-    cont.appendChild(btn);
-  }
-}
-
-function renderPanelesConfig(n) {
-  const cont = document.getElementById("panelesConfig");
-  cont.innerHTML = "";
-
-  for (let u = 0; u < n; u++) {
-    const pond = estado.ponderaciones[u] || {
-      actividad: 25,
-      examen: 50,
-      asistencia: 15,
-      participacion: 10,
-    };
-    const panel = document.createElement("div");
-    panel.className = "ponderacion-panel";
-    panel.id = `panelCfg_${u}`;
-
-    panel.innerHTML = `
-      <div class="ponderacion-grid">
-        ${RUBROS.map(
-          (r) => `
-          <div class="pond-item">
-            <div class="pond-item-label">
-              <span class="pond-dot" style="background:${COLORES[r]}"></span>
-              ${LABELS[r]}
-            </div>
-            <div style="display:flex;align-items:baseline;gap:4px">
-              <input type="number" class="pond-input" min="0" max="100"
-                     value="${pond[r]}" data-unidad="${u}" data-rubro="${r}"
-                     oninput="actualizarSuma(${u})" />
-              <span class="pond-suffix">%</span>
-            </div>
-          </div>
-        `,
-        ).join("")}
-      </div>
-      <div class="suma-bar warn" id="sumaBar_${u}">
-        <iconify-icon icon="mdi:sigma"></iconify-icon>
-        <span>Total: <strong id="sumaVal_${u}">100</strong>%</span>
-        <span id="sumaMensaje_${u}" style="margin-left:auto;font-size:0.82rem"></span>
-      </div>
-    `;
-    cont.appendChild(panel);
-    actualizarSuma(u);
-  }
-}
-
-function activarTabConfig(idx) {
-  estado.unidadActiva = idx;
-  document
-    .querySelectorAll(".tab-btn")
-    .forEach((b, i) => b.classList.toggle("active", i === idx));
-  document
-    .querySelectorAll(".ponderacion-panel")
-    .forEach((p, i) => p.classList.toggle("active", i === idx));
-}
-
-function actualizarSuma(u) {
+// ── Recalcular promedio de fila en tiempo real ─────────────────────────
+function recalcularFila(matricula) {
   let suma = 0;
   document
-    .querySelectorAll(`.pond-input[data-unidad="${u}"]`)
+    .querySelectorAll(`input[data-matricula="${matricula}"]`)
     .forEach((inp) => {
-      const val = parseFloat(inp.value) || 0;
-      estado.ponderaciones[u][inp.dataset.rubro] = val;
-      suma += val;
+      suma +=
+        (parseFloat(inp.value) || 0) *
+        (parseFloat(inp.dataset.ponderacion) / 100);
     });
-
-  const bar = document.getElementById(`sumaBar_${u}`);
-  const val = document.getElementById(`sumaVal_${u}`);
-  const msg = document.getElementById(`sumaMensaje_${u}`);
-  val.textContent = suma.toFixed(1);
-
-  if (Math.abs(suma - 100) < 0.01) {
-    bar.className = "suma-bar ok";
-    bar.querySelector("iconify-icon").setAttribute("icon", "mdi:check-circle");
-    msg.textContent = "✓ Correcto";
-  } else if (suma < 100) {
-    bar.className = "suma-bar warn";
-    bar.querySelector("iconify-icon").setAttribute("icon", "mdi:alert");
-    msg.textContent = `Faltan ${(100 - suma).toFixed(1)}%`;
-  } else {
-    bar.className = "suma-bar error";
-    bar.querySelector("iconify-icon").setAttribute("icon", "mdi:close-circle");
-    msg.textContent = `Excede ${(suma - 100).toFixed(1)}%`;
-  }
-  estado.cambiosPendientes = true;
-}
-
-function validarTodasPonderaciones() {
-  for (let u = 0; u < estado.numUnidades; u++) {
-    const suma = RUBROS.reduce(
-      (s, r) => s + (estado.ponderaciones[u][r] || 0),
-      0,
-    );
-    if (Math.abs(suma - 100) > 0.01) return false;
-  }
-  return true;
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  TABLA DE CALIFICACIONES
-// ═══════════════════════════════════════════════════════════════════════
-function inicializarCalificaciones() {
-  estado.calificaciones = [];
-  for (let u = 0; u < estado.numUnidades; u++) {
-    const mapa = {};
-    estado.alumnos.forEach((a) => {
-      mapa[a.matricula] = {
-        actividad: "",
-        examen: "",
-        asistencia: "",
-        participacion: "",
-        bonus: "",
-      };
-    });
-    estado.calificaciones.push(mapa);
+  const el = document.getElementById(`prom-${matricula}`);
+  if (el) {
+    el.textContent = suma.toFixed(1);
+    el.style.color = suma >= 70 ? "#22c55e" : suma > 0 ? "#f59e0b" : "#94a3b8";
   }
 }
 
-function renderTabsTabla() {
-  const cont = document.getElementById("tabsTabla");
-  cont.innerHTML = "";
-  for (let u = 0; u < estado.numUnidades; u++) {
-    const btn = document.createElement("button");
-    const locked = estado.unidadesGuardadas.has(u);
-    btn.className = `tab-unidad ${locked ? "locked" : ""}`;
-    btn.id = `tabTabla_${u}`;
-    btn.onclick = () => cambiarUnidadTabla(u);
-    btn.innerHTML = `
-      ${locked ? '<iconify-icon icon="mdi:lock" style="font-size:0.85rem"></iconify-icon>' : ""}
-      Unidad ${u + 1}
-      ${locked ? '<iconify-icon icon="mdi:check-circle" style="color:#10b981;font-size:0.85rem"></iconify-icon>' : ""}
-    `;
-    cont.appendChild(btn);
-  }
-}
-
-function cambiarUnidadTabla(u) {
-  guardarDatosTablaActual();
-  estado.unidadActiva = u;
-  document
-    .querySelectorAll(".tab-unidad")
-    .forEach((b, i) => b.classList.toggle("active", i === u));
-  renderTabla(u);
-  actualizarResumenPond(u);
-  actualizarBannerBloqueo(u);
-}
-
-function actualizarBannerBloqueo(u) {
-  const banner = document.getElementById("bannerBloqueado");
-  const btnGuardar = document.getElementById("btnGuardarCal");
-  const locked = estado.unidadesGuardadas.has(u);
-  banner.style.display = locked ? "flex" : "none";
-  btnGuardar.style.display = locked ? "none" : "inline-flex";
-}
-
-function guardarDatosTablaActual() {
-  const u = estado.unidadActiva;
-  const tbody = document.getElementById("tbodyCalificaciones");
-  if (!tbody) return;
-
-  tbody.querySelectorAll("tr").forEach((tr) => {
-    const mat = tr.dataset.matricula;
-    if (!mat) return;
-    RUBROS.forEach((r) => {
-      const inp = tr.querySelector(`.cal-input[data-rubro="${r}"]`);
-      if (inp) estado.calificaciones[u][mat][r] = inp.value;
-    });
-    const bonusInp = tr.querySelector(".bonus-input");
-    if (bonusInp) estado.calificaciones[u][mat].bonus = bonusInp.value;
-  });
-}
-
-function renderTabla(u) {
-  const pond = estado.ponderaciones[u];
-  const locked = estado.unidadesGuardadas.has(u);
-  const thead = document.getElementById("theadCalificaciones");
-  const tbody = document.getElementById("tbodyCalificaciones");
-
-  thead.innerHTML = `
-    <tr>
-      <th class="col-alumno">Alumno / Matrícula</th>
-      ${RUBROS.map(
-        (r) => `
-        <th class="col-${r}">
-          ${LABELS[r]}
-          <span class="th-pond">${pond[r]}%</span>
-        </th>
-      `,
-      ).join("")}
-      <th class="col-bonus">Bonus<span class="th-pond">pts extra</span></th>
-      <th class="col-final">Cal. Final<span class="th-pond">calculada</span></th>
-      ${locked ? "<th>Estado</th>" : ""}
-    </tr>
-  `;
-
-  tbody.innerHTML = "";
-  estado.alumnos.forEach((a) => {
-    const cal = estado.calificaciones[u]?.[a.matricula] || {
-      actividad: "",
-      examen: "",
-      asistencia: "",
-      participacion: "",
-      bonus: "",
-    };
-    const tr = document.createElement("tr");
-    tr.dataset.matricula = a.matricula;
-
-    tr.innerHTML = `
-      <td class="td-alumno">
-        <div style="font-weight:600">${a.nombre}</div>
-        <div style="font-size:0.75rem;color:var(--text-muted)">${a.matricula}</div>
-      </td>
-      ${RUBROS.map(
-        (r) => `
-        <td>
-          <input class="cal-input ${locked ? "cal-locked" : ""}" type="number"
-                 min="0" max="100" placeholder="—"
-                 data-rubro="${r}" value="${cal[r]}"
-                 ${locked ? "disabled" : 'oninput="calcularFila(this)"'}
-                 ${r === "actividad" && !locked ? 'title="También puedes registrar esto desde Actividades"' : ""} />
-        </td>
-      `,
-      ).join("")}
-      <td>
-        <input class="bonus-input ${locked ? "cal-locked" : ""}" type="number"
-               min="0" max="30" placeholder="0"
-               value="${cal.bonus}"
-               ${locked ? "disabled" : 'oninput="calcularFila(this)"'} />
-      </td>
-      <td>
-        <div class="cal-final pendiente" id="final_${a.matricula}_${u}">—</div>
-      </td>
-      ${locked ? `<td><span class="badge-estatus badge-guardado"><iconify-icon icon="mdi:lock"></iconify-icon> Guardado</span></td>` : ""}
-    `;
-    tbody.appendChild(tr);
-
-    if (RUBROS.some((r) => cal[r] !== ""))
-      calcularFilaPorMatricula(a.matricula, u);
-  });
-}
-
-// ── Cálculo en tiempo real ────────────────────────────────────────────
-function calcularFila(inputEl) {
-  const mat = inputEl.closest("tr").dataset.matricula;
-  estado.cambiosPendientes = true;
-  if (inputEl.classList.contains("cal-input")) {
-    const v = parseFloat(inputEl.value);
-    inputEl.classList.toggle("invalid", !isNaN(v) && (v < 0 || v > 100));
-  }
-  calcularFilaPorMatricula(mat, estado.unidadActiva);
-}
-
-function calcularFilaPorMatricula(mat, u) {
-  const tr = document.querySelector(`tr[data-matricula="${mat}"]`);
-  if (!tr) return;
-  const pond = estado.ponderaciones[u];
-  let allEmpty = true;
-  let calFinal = 0;
-
-  RUBROS.forEach((r) => {
-    const inp = tr.querySelector(`.cal-input[data-rubro="${r}"]`);
-    const v = parseFloat(inp?.value) || 0;
-    if (inp?.value !== "") allEmpty = false;
-    calFinal += v * (pond[r] / 100);
-  });
-
-  const bonusInp = tr.querySelector(".bonus-input");
-  const bonus = parseFloat(bonusInp?.value) || 0;
-  if (bonusInp?.value !== "") allEmpty = false;
-  calFinal = Math.min(100, Math.round((calFinal + bonus) * 100) / 100);
-
-  const celda = document.getElementById(`final_${mat}_${u}`);
-  if (!celda) return;
-
-  if (allEmpty) {
-    celda.className = "cal-final pendiente";
-    celda.textContent = "—";
-  } else {
-    celda.className = `cal-final ${calFinal >= 60 ? "aprobado" : "reprobado"}`;
-    celda.textContent = calFinal.toFixed(1);
-  }
-}
-
-// ── Auto-cargar calificaciones de actividades desde la API ────────────
-async function autoCargarActividades(u) {
-  if (!estado.grupoId) return;
-  const token = localStorage.getItem("token");
-
-  for (const a of estado.alumnos) {
-    try {
-      const res = await fetch(
-        `${BASE_URL_FORM}/api/resultado-actividad/promedio/${a.matricula}/${estado.grupoId}/${u + 1}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.promedio !== undefined && data.promedio !== null) {
-        estado.calificaciones[u][a.matricula].actividad =
-          data.promedio.toFixed(1);
-      }
-    } catch (_) {}
-  }
-  renderTabla(u);
-}
-
-function actualizarResumenPond(u) {
-  const pond = estado.ponderaciones[u];
-  const cont = document.getElementById("resumenPond");
-  cont.innerHTML = `
-    <span class="info-chip">
-      <iconify-icon icon="mdi:school-outline"></iconify-icon>Unidad ${u + 1}
-    </span>
-    ${RUBROS.map(
-      (r) =>
-        `<span class="pond-chip chip-${r.substring(0, 3)}">${LABELS[r]} ${pond[r]}%</span>`,
-    ).join("")}
-    <span class="pond-chip chip-bon">
-      <iconify-icon icon="mdi:star-outline"></iconify-icon>Bonus +pts
-    </span>
-    <button class="btn btn-sm btn-outline" style="margin-left:auto;font-size:0.75rem" onclick="autoCargarActividades(${u})" title="Recalcular actividades desde calificaciones registradas">
-      <iconify-icon icon="mdi:sync"></iconify-icon> Actualizar actividades
-    </button>
-  `;
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  MODALES PRINCIPALES
-// ═══════════════════════════════════════════════════════════════════════
-function pedirGuardarConfig() {
-  if (!validarTodasPonderaciones()) {
-    mostrarToast(
-      "Todas las unidades deben sumar 100% antes de guardar.",
-      "error",
-    );
+// ── Guardar calificaciones (POST real a la API) ────────────────────────
+async function guardarCalificaciones() {
+  if (!estado.grupoId || !estado.unidadId) {
+    mostrarToast("Selecciona grupo y unidad primero", "error");
     return;
   }
-  abrirModal(
-    estado.configurado ? "modalModificarConfig" : "modalGuardarConfig",
-  );
-}
 
-function confirmarGuardarConfig() {
-  cerrarModal("modalGuardarConfig");
-  guardarConfiguracion();
-}
-
-function activarModoEdicionConfig() {
-  cerrarModal("modalModificarConfig");
-  document.getElementById("cardConfig").style.display = "block";
-  document.getElementById("seccionPonderaciones").style.display = "block";
-  estado.modoEdicion = true;
-}
-
-function pedirGuardarCalificaciones() {
-  guardarDatosTablaActual();
-  const u = estado.unidadActiva;
-  document.getElementById("nombreUnidadGuardar").textContent =
-    `Unidad ${u + 1}`;
-  abrirModal("modalGuardarCal");
-}
-
-// formulario.js — reemplaza confirmarGuardarCalificaciones completo
-async function confirmarGuardarCalificaciones() {
-  cerrarModal("modalGuardarCal");
-  const u = estado.unidadActiva;
-
-  // Recoger calificaciones de la tabla actual antes de guardar
-  guardarDatosTablaActual();
-
-  const token = localStorage.getItem("token");
-
-  // Construir payload para el API bulk
-  const resultados = estado.alumnos.map((a) => {
-    const cal = estado.calificaciones[u][a.matricula];
-
-    // Calcular la calificación final de la unidad con ponderaciones
-    const pond = estado.ponderaciones[u];
-    let total = 0;
-    let todosVacios = true;
-
-    RUBROS.forEach((r) => {
-      const v = parseFloat(cal[r]);
-      if (!isNaN(v)) {
-        total += v * (parseFloat(pond[r]) / 100);
-        todosVacios = false;
-      }
-    });
-
-    const bonus = parseFloat(cal.bonus) || 0;
-    if (cal.bonus !== "") todosVacios = false;
-    const calFinal = todosVacios
-      ? null
-      : Math.min(100, Math.round((total + bonus) * 100) / 100);
-
-    return {
-      matricula: a.matricula,
-      calificacion_obtenida: calFinal,
-      estatus: calFinal === null ? "Pendiente" : "Validada",
-    };
-  });
-
-  // Necesitamos una actividad de referencia para la unidad.
-  // Usamos la primera actividad de la unidad activa.
-  // Como el formulario usa rubros propios (no actividades individuales de la BD),
-  // guardamos la calificación de unidad directamente.
-  try {
-    // 1. Guardar calificacion_unidad por alumno
-    const promesas = estado.alumnos.map(async (a) => {
-      const cal = estado.calificaciones[u][a.matricula];
-      const pond = estado.ponderaciones[u];
-      let total = 0;
-      RUBROS.forEach((r) => {
-        const v = parseFloat(cal[r]);
-        if (!isNaN(v)) total += v * (parseFloat(pond[r]) / 100);
+  // Agrupar por actividad para usar el endpoint bulk
+  for (const act of estado.actividades) {
+    const resultados = [];
+    document
+      .querySelectorAll(`input[data-actividad="${act.id_actividad}"]`)
+      .forEach((inp) => {
+        const mat = inp.dataset.matricula;
+        const val = inp.value.trim();
+        const cal = val === "" ? null : parseFloat(val);
+        resultados.push({
+          matricula: mat,
+          calificacion_obtenida: cal,
+          estatus: cal === null ? "NP" : "Validada",
+        });
       });
-      const bonus = parseFloat(cal.bonus) || 0;
-      const calFinal = Math.min(100, Math.round((total + bonus) * 100) / 100);
 
-      // id_unidad = u+1 es un índice. En producción debería mapear al id real.
-      // Usamos el índice como aproximación — ajusta si tienes los ids de unidad reales.
-      const payload = {
-        matricula: a.matricula,
-        id_grupo: estado.grupoId,
-        id_unidad: u + 1,
-        calificacion_unidad_final: calFinal,
-      };
+    if (resultados.length === 0) continue;
 
-      return fetch(`${BASE_URL_FORM}/api/calificaciones`, {
+    const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({ id_actividad: act.id_actividad, resultados }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      mostrarToast(
+        `Error en actividad "${act.nombre_actividad}": ${data.error}`,
+        "error",
+      );
+      return;
+    }
+  }
+
+  mostrarToast(`Calificaciones guardadas correctamente`, "success");
+  await cargarResultadosExistentes();
+}
+
+// ── Calcular y cerrar unidad ───────────────────────────────────────────
+async function calcularUnidad() {
+  if (!estado.grupoId || !estado.unidadId) {
+    mostrarToast("Selecciona grupo y unidad", "error");
+    return;
+  }
+  if (
+    !confirm(
+      `¿Calcular y cerrar la unidad para todos los alumnos del grupo? Esta acción guardará los promedios finales.`,
+    )
+  )
+    return;
+
+  let errores = 0;
+  for (const al of estado.alumnos) {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/calificaciones/calcular-unidad`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify(payload),
-      });
-    });
-
-    await Promise.all(promesas);
-
-    // 2. Marcar unidad como guardada/bloqueada
-    estado.unidadesGuardadas.add(u);
-    estado.cambiosPendientes = false;
-
-    mostrarToast(`✓ Unidad ${u + 1} guardada correctamente`, "success");
-    renderTabsTabla();
-    cambiarUnidadTabla(u);
-  } catch (err) {
-    console.error("Error guardando:", err);
-    mostrarToast("Error al guardar — revisa la conexión", "error");
-  }
-}
-
-function pedirDesbloquear() {
-  const u = estado.unidadActiva;
-  document.getElementById("nombreUnidadDesbloquear").textContent =
-    `Unidad ${u + 1}`;
-  abrirModal("modalDesbloquear");
-}
-
-function confirmarDesbloquear() {
-  cerrarModal("modalDesbloquear");
-  const u = estado.unidadActiva;
-  estado.unidadesGuardadas.delete(u);
-  mostrarToast(`Unidad ${u + 1} desbloqueada`, "success");
-  renderTabsTabla();
-  cambiarUnidadTabla(u);
-}
-
-function pedirSalir() {
-  if (estado.cambiosPendientes) abrirModal("modalSalir");
-  else confirmarSalir();
-}
-
-function confirmarSalir() {
-  cerrarModal("modalSalir");
-  window.location.href = "grupos.html";
-}
-
-function abrirModal(id) {
-  document.getElementById(id).classList.add("visible");
-}
-function cerrarModal(id) {
-  document.getElementById(id).classList.remove("visible");
-}
-
-document.querySelectorAll(".modal-overlay").forEach((o) => {
-  o.addEventListener("click", (e) => {
-    if (e.target === o) o.classList.remove("visible");
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════
-//  GUARDAR CONFIGURACIÓN → ACTIVAR TABLA
-// ═══════════════════════════════════════════════════════════════════════
-function guardarConfiguracion() {
-  estado.configurado = true;
-  estado.cambiosPendientes = false;
-  estado.modoEdicion = false;
-
-  actualizarEstadoBadge("configurado", "Configurado");
-  inicializarCalificaciones();
-
-  document.getElementById("seccionPonderaciones").style.display = "none";
-  document.getElementById("emptyConfig").style.display = "none";
-  document.getElementById("seccionCalificaciones").style.display = "block";
-  document.getElementById("selGrupo").disabled = true;
-  document.getElementById("numUnidades").disabled = true;
-
-  renderTabsTabla();
-  cambiarUnidadTabla(0);
-}
-
-function actualizarEstadoBadge(cls, texto) {
-  const badge = document.getElementById("estadoBadge");
-  badge.className = `estado-badge ${cls}`;
-  badge.innerHTML = `<span class="dot-live"></span>${texto}`;
-}
-
-window.addEventListener("beforeunload", (e) => {
-  if (estado.cambiosPendientes) {
-    e.preventDefault();
-    e.returnValue = "";
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════════════
-//  MODAL GEAR — CONFIGURACIÓN AVANZADA
-// ═══════════════════════════════════════════════════════════════════════
-function abrirModalGear() {
-  if (!estado.grupoId) {
-    mostrarToast("Primero selecciona un grupo", "error");
-    return;
-  }
-  poblarSelectoresGear();
-  abrirModal("modalGear");
-}
-
-function poblarSelectoresGear() {
-  const n = estado.numUnidades;
-
-  // Dividir
-  const selDiv = document.getElementById("selDividirUnidad");
-  selDiv.innerHTML = "";
-  for (let u = 0; u < n; u++)
-    selDiv.innerHTML += `<option value="${u}">Unidad ${u + 1}</option>`;
-
-  // Unir
-  const sel1 = document.getElementById("selUnirUnidad1");
-  sel1.innerHTML = "";
-  for (let u = 0; u < n - 1; u++)
-    sel1.innerHTML += `<option value="${u}">Unidad ${u + 1}</option>`;
-  actualizarSelUnir2();
-
-  // CSV
-  const selCSV = document.getElementById("selCSVUnidad");
-  selCSV.innerHTML = "";
-  for (let u = 0; u < n; u++)
-    selCSV.innerHTML += `<option value="${u}">Unidad ${u + 1}</option>`;
-
-  // Reset
-  const selReset = document.getElementById("selResetUnidad");
-  selReset.innerHTML = `<option value="todas">Todas las unidades</option>`;
-  for (let u = 0; u < n; u++)
-    selReset.innerHTML += `<option value="${u}">Unidad ${u + 1}</option>`;
-}
-
-function actualizarSelUnir2() {
-  const u1 = parseInt(document.getElementById("selUnirUnidad1").value);
-  const sel2 = document.getElementById("selUnirUnidad2");
-  sel2.innerHTML = `<option value="${u1 + 1}">Unidad ${u1 + 2}</option>`;
-}
-
-function cambiarTabGear(tab, btn) {
-  document
-    .querySelectorAll(".gear-tab")
-    .forEach((b) => b.classList.remove("active"));
-  document
-    .querySelectorAll(".gear-panel")
-    .forEach((p) => p.classList.remove("active"));
-  btn.classList.add("active");
-  document.getElementById(`gearPanel-${tab}`).classList.add("active");
-}
-
-// ── DIVIDIR ───────────────────────────────────────────────────────────
-function ejecutarDividir() {
-  if (estado.numUnidades >= 6) {
-    mostrarToast("Máximo 6 unidades permitidas", "error");
-    return;
-  }
-  const u = parseInt(document.getElementById("selDividirUnidad").value);
-  const pondOr = { ...estado.ponderaciones[u] };
-
-  // Insertar copia después de u
-  estado.ponderaciones.splice(u + 1, 0, { ...pondOr });
-  estado.numUnidades++;
-  document.getElementById("numUnidades").value = estado.numUnidades;
-
-  if (estado.configurado) {
-    // Insertar calificaciones vacías para la nueva unidad
-    const mapa = {};
-    estado.alumnos.forEach((a) => {
-      mapa[a.matricula] = {
-        actividad: "",
-        examen: "",
-        asistencia: "",
-        participacion: "",
-        bonus: "",
-      };
-    });
-    estado.calificaciones.splice(u + 1, 0, mapa);
-    renderTabsTabla();
-    cambiarUnidadTabla(u + 1);
-  } else {
-    renderTabsConfig(estado.numUnidades);
-    renderPanelesConfig(estado.numUnidades);
-    activarTabConfig(u + 1);
-  }
-
-  cerrarModal("modalGear");
-  mostrarToast(
-    `Unidad ${u + 1} dividida. Ajusta las ponderaciones.`,
-    "success",
-  );
-}
-
-// ── UNIR ──────────────────────────────────────────────────────────────
-function ejecutarUnir() {
-  if (estado.numUnidades <= 1) {
-    mostrarToast("Se necesitan al menos 2 unidades para unir", "error");
-    return;
-  }
-  const u1 = parseInt(document.getElementById("selUnirUnidad1").value);
-  const u2 = u1 + 1;
-  const p1 = estado.ponderaciones[u1];
-  const p2 = estado.ponderaciones[u2];
-
-  // Promedio de ponderaciones
-  const merged = {};
-  RUBROS.forEach((r) => {
-    merged[r] = Math.round((p1[r] + p2[r]) / 2);
-  });
-
-  // Ajustar para que sume 100
-  const sumMerged = RUBROS.reduce((s, r) => s + merged[r], 0);
-  merged.examen += 100 - sumMerged; // ajustar examen
-
-  estado.ponderaciones.splice(u1, 2, merged);
-  estado.numUnidades--;
-  document.getElementById("numUnidades").value = estado.numUnidades;
-
-  if (estado.configurado) {
-    // Merge calificaciones (mantiene las de u1)
-    estado.calificaciones.splice(u2, 1);
-    estado.unidadesGuardadas = new Set(
-      [...estado.unidadesGuardadas]
-        .map((u) => (u > u2 ? u - 1 : u))
-        .filter((u) => u !== u2),
+        body: JSON.stringify({
+          matricula: al.matricula,
+          id_unidad: estado.unidadId,
+          id_grupo: estado.grupoId,
+        }),
+      },
     );
-    renderTabsTabla();
-    cambiarUnidadTabla(u1);
-  } else {
-    renderTabsConfig(estado.numUnidades);
-    renderPanelesConfig(estado.numUnidades);
-    activarTabConfig(u1);
+    const data = await res.json();
+    if (!data.success) errores++;
   }
 
-  cerrarModal("modalGear");
-  mostrarToast(`Unidades ${u1 + 1} y ${u2 + 1} unidas.`, "success");
+  if (errores === 0) {
+    mostrarToast(
+      "Unidad calculada y cerrada para todos los alumnos",
+      "success",
+    );
+  } else {
+    mostrarToast(`${errores} alumnos tuvieron errores al calcular`, "error");
+  }
 }
 
-// ── CSV ───────────────────────────────────────────────────────────────
+// ── CSV Import (FIX 3: ahora llama a la API real) ─────────────────────
 function manejarDropCSV(e) {
   e.preventDefault();
   document.getElementById("csvDropZone").classList.remove("drag-over");
-  const file = e.dataTransfer.files[0];
+  const file = e.dataTransfer?.files[0] || e.target?.files[0];
   if (file) procesarCSV(file);
 }
 
 function procesarCSV(file) {
-  if (!file) return;
+  const selAct = document.getElementById("selCSVActividad");
+  if (!selAct || !selAct.value) {
+    mostrarToast(
+      "Selecciona la actividad a la que corresponde el CSV",
+      "error",
+    );
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
-    const texto = e.target.result;
-    const lineas = texto.trim().split("\n");
-    const header = lineas[0]
-      .toLowerCase()
-      .split(",")
-      .map((h) => h.trim());
+    const lineas = e.target.result.split("\n").filter(Boolean);
     const datos = [];
-
-    for (let i = 1; i < lineas.length; i++) {
-      const vals = lineas[i].split(",").map((v) => v.trim());
-      const row = {};
-      header.forEach((h, idx) => {
-        row[h] = vals[idx] || "";
+    lineas.forEach((linea, i) => {
+      if (i === 0 && linea.toLowerCase().includes("matricula")) return; // saltar header
+      const [matricula, calStr] = linea.split(",").map((s) => s.trim());
+      if (!matricula) return;
+      const cal = parseFloat(calStr);
+      datos.push({
+        matricula,
+        calificacion_obtenida: isNaN(cal) ? null : cal,
+        estatus: isNaN(cal) ? "NP" : "Validada",
       });
-      if (row.matricula) datos.push(row);
+    });
+    if (datos.length === 0) {
+      mostrarToast("CSV vacío o sin datos válidos", "error");
+      return;
     }
-
-    mostrarPreviewCSV(datos, file.name);
+    mostrarPreviewCSV(datos, file.name, parseInt(selAct.value));
   };
   reader.readAsText(file);
 }
 
-function mostrarPreviewCSV(datos, nombre) {
+function mostrarPreviewCSV(datos, nombre, id_actividad) {
   const preview = document.getElementById("csvPreview");
-  if (datos.length === 0) {
-    preview.innerHTML = `<p style="color:var(--danger);font-size:0.85rem">No se encontraron datos válidos en ${nombre}</p>`;
-    return;
-  }
-
-  const filas = datos
-    .map(
-      (d) => `
-    <tr>
-      <td>${d.matricula}</td>
-      <td>${d.actividad || "—"}</td>
-      <td>${d.examen || "—"}</td>
-      <td>${d.asistencia || "—"}</td>
-      <td>${d.participacion || "—"}</td>
-      <td>${d.bonus || "0"}</td>
-    </tr>
-  `,
-    )
-    .join("");
-
+  if (!preview) return;
+  const act = estado.actividades.find((a) => a.id_actividad === id_actividad);
   preview.innerHTML = `
-    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:8px">
-      Vista previa: ${datos.length} alumnos encontrados en <em>${nombre}</em>
-    </div>
-    <div style="overflow-x:auto;max-height:180px">
-      <table style="font-size:0.8rem">
-        <thead><tr>
-          <th>Matrícula</th><th>Actividad</th><th>Examen</th>
-          <th>Asistencia</th><th>Participación</th><th>Bonus</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
+    <div style="background:#1e293b;border-radius:8px;padding:16px;margin-top:12px;">
+      <p style="color:#94a3b8;margin:0 0 8px">📄 <strong>${nombre}</strong> — ${datos.length} registros detectados</p>
+      <p style="color:#94a3b8;margin:0 0 12px;font-size:0.82rem">Actividad: <strong style="color:#60a5fa">${act?.nombre_actividad ?? id_actividad}</strong></p>
+      <table style="width:100%;font-size:0.82rem;border-collapse:collapse">
+        <thead><tr><th style="text-align:left;color:#64748b;padding:4px">Matrícula</th><th style="text-align:left;color:#64748b;padding:4px">Calificación</th></tr></thead>
+        <tbody>
+          ${datos
+            .slice(0, 8)
+            .map(
+              (d) =>
+                `<tr><td style="padding:4px">${d.matricula}</td><td style="padding:4px">${d.calificacion_obtenida ?? "NP"}</td></tr>`,
+            )
+            .join("")}
+          ${datos.length > 8 ? `<tr><td colspan="2" style="padding:4px;color:#64748b">... y ${datos.length - 8} más</td></tr>` : ""}
+        </tbody>
       </table>
-    </div>
-    <button class="btn btn-primary" style="margin-top:10px;width:100%" onclick="aplicarCSV(window._csvDatos)">
-      <iconify-icon icon="mdi:check"></iconify-icon> Aplicar al formulario
-    </button>
-  `;
-  window._csvDatos = datos;
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="aplicarCSV(${JSON.stringify(datos).replace(/'/g, "&#39;")}, ${id_actividad})">
+        ✅ Importar ${datos.length} calificaciones
+      </button>
+    </div>`;
+  window._csvDatos = { datos, id_actividad };
 }
 
-function aplicarCSV(datos) {
-  if (!datos || !estado.configurado) {
-    mostrarToast("Primero guarda la configuración antes de importar", "error");
-    return;
-  }
-  const u = parseInt(document.getElementById("selCSVUnidad").value);
-
-  let aplicados = 0;
-  datos.forEach((d) => {
-    const mat = d.matricula;
-    if (!estado.calificaciones[u][mat]) return;
-    RUBROS.forEach((r) => {
-      if (d[r] !== undefined && d[r] !== "") {
-        estado.calificaciones[u][mat][r] = d[r];
-      }
-    });
-    if (d.bonus !== undefined && d.bonus !== "") {
-      estado.calificaciones[u][mat].bonus = d.bonus;
-    }
-    aplicados++;
+async function aplicarCSV(datos, id_actividad) {
+  const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token()}`,
+    },
+    body: JSON.stringify({ id_actividad, resultados: datos }),
   });
-
-  cerrarModal("modalGear");
-  cambiarUnidadTabla(u);
-  mostrarToast(
-    `${aplicados} calificaciones importadas para Unidad ${u + 1}`,
-    "success",
-  );
+  const data = await res.json();
+  if (data.success) {
+    mostrarToast(
+      `${data.guardados} calificaciones importadas desde CSV`,
+      "success",
+    );
+    document.getElementById("csvPreview").innerHTML = "";
+    await cargarResultadosExistentes();
+  } else {
+    mostrarToast(data.error || "Error al importar CSV", "error");
+  }
   window._csvDatos = null;
 }
 
-// ── RESET ─────────────────────────────────────────────────────────────
-function ejecutarReset() {
-  const val = document.getElementById("selResetUnidad").value;
-  const defaultPond = {
-    actividad: 25,
-    examen: 50,
-    asistencia: 15,
-    participacion: 10,
-  };
-
-  if (val === "todas") {
-    for (let u = 0; u < estado.numUnidades; u++) {
-      estado.ponderaciones[u] = { ...defaultPond };
-    }
-    if (!estado.configurado) renderPanelesConfig(estado.numUnidades);
-    mostrarToast(
-      "Ponderaciones restablecidas para todas las unidades",
-      "success",
-    );
-  } else {
-    const u = parseInt(val);
-    estado.ponderaciones[u] = { ...defaultPond };
-    if (!estado.configurado) {
-      renderPanelesConfig(estado.numUnidades);
-      activarTabConfig(u);
-    }
-    mostrarToast(`Ponderaciones de Unidad ${u + 1} restablecidas`, "success");
-  }
-  cerrarModal("modalGear");
+// Poblar select de actividades para CSV cuando se carga la unidad
+function actualizarSelectCSVActividad() {
+  const sel = document.getElementById("selCSVActividad");
+  if (!sel) return;
+  sel.innerHTML = `<option value="">-- Selecciona actividad --</option>`;
+  estado.actividades.forEach((a) => {
+    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_actividad} (${a.ponderacion}%)</option>`;
+  });
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────
+// Llamar al cargar unidad
+const _origCargarActividades = cargarActividades;
+// eslint-disable-next-line no-global-assign
+cargarActividades = async function () {
+  await _origCargarActividades();
+  actualizarSelectCSVActividad();
+};
+
+// ── Toast ──────────────────────────────────────────────────────────────
 function mostrarToast(msg, tipo = "success") {
-  let t = document.getElementById("rca-toast");
-  if (!t) {
-    t = document.createElement("div");
-    t.id = "rca-toast";
-    document.body.appendChild(t);
+  let toast = document.getElementById("rca-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "rca-toast";
+    document.body.appendChild(toast);
   }
-  t.textContent = msg;
-  t.className = `rca-toast rca-toast-${tipo} visible`;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove("visible"), 3200);
+  toast.textContent = msg;
+  toast.className = `rca-toast rca-toast-${tipo} visible`;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove("visible"), 3500);
 }

@@ -15,106 +15,87 @@ app.use(express.json());
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/login", (req, res) => {
   const { username, password, rol } = req.body;
-
   if (!username || !password) {
     return res
       .status(400)
       .json({ success: false, message: "Faltan campos requeridos" });
   }
 
-  // Busca en la tabla centralizada
-  const sql = "SELECT * FROM usuario WHERE username = ? AND activo = 1";
-
-  db.query(sql, [username], async (err, results) => {
-    if (err) {
-      console.error(err);
-      return res
-        .status(500)
-        .json({ success: false, message: "Error interno del servidor" });
-    }
-
-    if (results.length === 0) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Credenciales incorrectas" });
-    }
-
-    const userRow = results[0];
-
-    // Comparar contra el campo pwd (no password)
-    const passwordValida = await bcrypt.compare(password, userRow.pwd);
-
-    if (!passwordValida) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Credenciales incorrectas" });
-    }
-
-    if (rol && userRow.rol !== rol) {
-      return res.status(401).json({
-        success: false,
-        message: `Esta cuenta no es de tipo "${rol}"`,
-      });
-    }
-
-    // Actualizar último acceso
-    db.query("UPDATE usuario SET ultimo_acceso = NOW() WHERE id_usuario = ?", [
-      userRow.id_usuario,
-    ]);
-
-    // Obtener el nombre según el rol
-    let sqlNombre;
-    if (userRow.rol === "alumno") {
-      sqlNombre =
-        "SELECT nombre, apellido_paterno FROM alumno WHERE matricula = ?";
-    } else if (userRow.rol === "maestro") {
-      sqlNombre =
-        "SELECT nombre, apellido_paterno FROM maestro WHERE numero_empleado = ?";
-    } else if (userRow.rol === "administrador") {
-      sqlNombre =
-        "SELECT nombre, apellido_paterno FROM administrador WHERE id_admin = ?";
-    }
-
-    // server.js — bloque del login, solo la parte del nombre (reemplaza la que tienes)
-    db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
-      if (err2) {
-        console.error("Error en DB:", err2);
+  db.query(
+    "SELECT * FROM usuario WHERE username = ? AND activo = 1",
+    [username],
+    async (err, results) => {
+      if (err)
         return res
           .status(500)
-          .json({ success: false, message: "Error de conexión" });
-      }
+          .json({ success: false, message: "Error interno del servidor" });
+      if (results.length === 0)
+        return res
+          .status(401)
+          .json({ success: false, message: "Credenciales incorrectas" });
 
-      // Si no encuentra al alumno/maestro/admin referenciado — problema de datos
-      if (!persona || persona.length === 0) {
-        console.error(
-          `Inconsistencia: El usuario ${userRow.username} existe pero no tiene datos en la tabla ${userRow.rol}`,
-        );
+      const userRow = results[0];
+      const passwordValida = await bcrypt.compare(password, userRow.pwd);
+      if (!passwordValida)
+        return res
+          .status(401)
+          .json({ success: false, message: "Credenciales incorrectas" });
+
+      if (rol && userRow.rol !== rol) {
         return res.status(401).json({
           success: false,
-          message:
-            "Error de perfil: No se encontró información del alumno/maestro.",
+          message: `Esta cuenta no es de tipo "${rol}"`,
         });
       }
 
-      const token = jwt.sign(
-        {
-          id_usuario: userRow.id_usuario,
-          id_referencia: userRow.id_referencia,
-          username: userRow.username,
-          rol: userRow.rol,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "8h" },
+      db.query(
+        "UPDATE usuario SET ultimo_acceso = NOW() WHERE id_usuario = ?",
+        [userRow.id_usuario],
       );
 
-      res.json({
-        success: true,
-        token,
-        rol: userRow.rol,
-        nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`,
+      let sqlNombre;
+      if (userRow.rol === "alumno")
+        sqlNombre =
+          "SELECT nombre, apellido_paterno FROM alumno WHERE matricula = ?";
+      else if (userRow.rol === "maestro")
+        sqlNombre =
+          "SELECT nombre, apellido_paterno FROM maestro WHERE numero_empleado = ?";
+      else if (userRow.rol === "administrador")
+        sqlNombre =
+          "SELECT nombre, apellido_paterno FROM administrador WHERE id_admin = ?";
+
+      db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
+        if (err2)
+          return res
+            .status(500)
+            .json({ success: false, message: "Error de conexión" });
+        if (!persona || persona.length === 0) {
+          return res.status(401).json({
+            success: false,
+            message: "Error de perfil: no se encontró información del usuario.",
+          });
+        }
+
+        const token = jwt.sign(
+          {
+            id_usuario: userRow.id_usuario,
+            id_referencia: userRow.id_referencia,
+            username: userRow.username,
+            rol: userRow.rol,
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: "8h" },
+        );
+
+        res.json({
+          success: true,
+          token,
+          rol: userRow.rol,
+          nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`,
+        });
       });
-    });
-  });
+    },
+  );
 });
 
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
@@ -133,11 +114,12 @@ app.use(
 );
 app.use("/api/inscripciones", require("./src/routes/inscripciones"));
 app.use("/api/periodos", require("./src/routes/periodos"));
+// FIX 5 & 6: nuevas rutas
+app.use("/api/bonus", require("./src/routes/bonus"));
+app.use("/api/modificacion-final", require("./src/routes/modificacion_final"));
 
-app.get("/", (req, res) => {
-  res.json({ mensaje: "API RCA activa", version: "1.0" });
-});
+app.get("/", (req, res) =>
+  res.json({ mensaje: "API RCA activa", version: "1.1" }),
+);
 
-app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto " + PORT);
-});
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
