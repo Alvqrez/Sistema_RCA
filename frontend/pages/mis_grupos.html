@@ -69,7 +69,9 @@
         tabla.innerHTML = "";
 
         // Filtra solo los del maestro logueado
-        const misg = grupos.filter((g) => g.numero_empleado === id_referencia);
+        const misg = grupos.filter(
+          (g) => String(g.numero_empleado) === String(id_referencia),
+        );
 
         misg.forEach((g) => {
           tabla.innerHTML += `
