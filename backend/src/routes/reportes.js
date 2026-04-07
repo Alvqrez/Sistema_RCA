@@ -1,0 +1,177 @@
+// src/routes/reportes.js
+const express = require("express");
+const router = express.Router();
+const db = require("../db");
+const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+
+// GET /api/reportes/grupos — lista de grupos con info para el filtro
+router.get("/grupos", verificarToken, (req, res) => {
+  const rol = req.user.rol;
+  const id_ref = req.user.id_referencia;
+
+  let sql = `
+    SELECT g.id_grupo, m.nombre_materia, m.clave_materia,
+           CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
+           p.descripcion AS periodo, p.anio, g.estatus
+    FROM grupo g
+    JOIN materia m ON g.clave_materia = m.clave_materia
+    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
+  `;
+  const params = [];
+  if (rol === "maestro") {
+    sql += " WHERE g.numero_empleado = ?";
+    params.push(id_ref);
+  }
+  sql += " ORDER BY p.fecha_inicio DESC, m.nombre_materia ASC";
+
+  db.query(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: "Error interno" });
+    res.json(rows);
+  });
+});
+
+// GET /api/reportes/grupo/:id_grupo — reporte completo de un grupo
+router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+  const { id_grupo } = req.params;
+
+  // 1) Info del grupo
+  const sqlGrupo = `
+    SELECT g.id_grupo, m.nombre_materia, m.clave_materia, m.no_unidades,
+           CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
+           p.descripcion AS periodo, p.anio, g.estatus
+    FROM grupo g
+    JOIN materia m ON g.clave_materia = m.clave_materia
+    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
+    WHERE g.id_grupo = ?
+  `;
+
+  // 2) Alumnos inscritos con sus calificaciones de unidad y final
+  const sqlAlumnos = `
+    SELECT
+      a.matricula,
+      CONCAT(a.apellido_paterno,' ',COALESCE(a.apellido_materno,''),', ',a.nombre) AS nombre_completo,
+      i.estatus AS estatus_inscripcion,
+      i.tipo_curso,
+      cf.promedio_unidades,
+      cf.calificacion_oficial,
+      cf.estatus_final
+    FROM inscripcion i
+    JOIN alumno a ON i.matricula = a.matricula
+    LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+    WHERE i.id_grupo = ?
+    ORDER BY a.apellido_paterno ASC
+  `;
+
+  // 3) Unidades del grupo (a través de la materia)
+  const sqlUnidades = `
+    SELECT u.id_unidad, u.nombre_unidad
+    FROM unidad u
+    JOIN grupo g ON u.id_materia = g.clave_materia
+    WHERE g.id_grupo = ?
+    ORDER BY u.id_unidad ASC
+  `;
+
+  // 4) Calificaciones por unidad de todos los alumnos del grupo
+  const sqlUnidadCalif = `
+    SELECT cu.matricula, cu.id_unidad, cu.calificacion_unidad_final, cu.estatus_unidad
+    FROM calificacion_unidad cu
+    WHERE cu.id_grupo = ?
+  `;
+
+  db.query(sqlGrupo, [id_grupo], (err, grupoRows) => {
+    if (err) return res.status(500).json({ error: "Error interno" });
+    if (!grupoRows.length)
+      return res.status(404).json({ error: "Grupo no encontrado" });
+
+    const grupo = grupoRows[0];
+
+    db.query(sqlAlumnos, [id_grupo], (err2, alumnos) => {
+      if (err2) return res.status(500).json({ error: "Error interno" });
+
+      db.query(sqlUnidades, [id_grupo], (err3, unidades) => {
+        if (err3) return res.status(500).json({ error: "Error interno" });
+
+        db.query(sqlUnidadCalif, [id_grupo], (err4, califUnidad) => {
+          if (err4) return res.status(500).json({ error: "Error interno" });
+
+          // Mapear califs de unidad por alumno
+          const califMap = {};
+          califUnidad.forEach((c) => {
+            if (!califMap[c.matricula]) califMap[c.matricula] = {};
+            califMap[c.matricula][c.id_unidad] = {
+              calificacion: c.calificacion_unidad_final,
+              estatus: c.estatus_unidad,
+            };
+          });
+
+          const alumnosConCalif = alumnos.map((a) => ({
+            ...a,
+            unidades: califMap[a.matricula] || {},
+          }));
+
+          // Stats resumen
+          const total = alumnosConCalif.length;
+          const aprobados = alumnosConCalif.filter(
+            (a) => a.estatus_final === "Aprobado",
+          ).length;
+          const reprobados = alumnosConCalif.filter(
+            (a) => a.estatus_final === "Reprobado",
+          ).length;
+          const pendientes = total - aprobados - reprobados;
+          const promGrupo =
+            total > 0
+              ? (
+                  alumnosConCalif
+                    .filter((a) => a.calificacion_oficial != null)
+                    .reduce(
+                      (s, a) => s + parseFloat(a.calificacion_oficial || 0),
+                      0,
+                    ) /
+                  Math.max(
+                    alumnosConCalif.filter(
+                      (a) => a.calificacion_oficial != null,
+                    ).length,
+                    1,
+                  )
+                ).toFixed(1)
+              : null;
+
+          res.json({
+            grupo,
+            unidades,
+            alumnos: alumnosConCalif,
+            stats: { total, aprobados, reprobados, pendientes, promGrupo },
+          });
+        });
+      });
+    });
+  });
+});
+
+// GET /api/reportes/alumno/:matricula — historial académico del alumno
+router.get("/alumno/:matricula", verificarToken, (req, res) => {
+  const sql = `
+    SELECT
+      i.id_grupo, i.tipo_curso, i.estatus AS estatus_inscripcion,
+      m.nombre_materia, m.clave_materia,
+      CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
+      p.descripcion AS periodo, p.anio,
+      cf.calificacion_oficial, cf.estatus_final
+    FROM inscripcion i
+    JOIN grupo g ON i.id_grupo = g.id_grupo
+    JOIN materia m ON g.clave_materia = m.clave_materia
+    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
+    LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+    WHERE i.matricula = ?
+    ORDER BY p.fecha_inicio DESC
+  `;
+  db.query(sql, [req.params.matricula], (err, rows) => {
+    if (err) return res.status(500).json({ error: "Error interno" });
+    res.json(rows);
+  });
+});
+
+module.exports = router;

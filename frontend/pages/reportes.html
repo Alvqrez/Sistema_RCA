@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reportes — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Reportes académicos</h1>
+            <p class="page-subtitle">
+              Resultados por grupo, unidad y calificación final
+            </p>
+          </div>
+          <div class="header-actions" id="exportActions" style="display: none">
+            <button class="btn btn-outline" onclick="exportarReporteCSV()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Selector de grupo -->
+        <div class="card" id="selectorCard">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 16px;
+              flex-wrap: wrap;
+              gap: 10px;
+            "
+          >
+            <div>
+              <h2 style="margin: 0 0 4px; font-size: 1rem; font-weight: 600">
+                Selecciona un grupo
+              </h2>
+              <p
+                style="margin: 0; font-size: 0.83rem; color: var(--text-muted)"
+              >
+                Haz clic en un grupo para ver su reporte completo
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <input
+                type="text"
+                id="filtroGrupo"
+                placeholder="🔍 Buscar materia o maestro…"
+                oninput="filtrarGrupos()"
+                style="
+                  padding: 8px 12px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 0.875rem;
+                  background: var(--bg-app);
+                  color: var(--text-main);
+                  font-family: inherit;
+                "
+              />
+              <select
+                id="filtroPeriodo"
+                onchange="filtrarGrupos()"
+                style="
+                  padding: 8px 12px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 0.875rem;
+                  background: var(--bg-app);
+                  color: var(--text-main);
+                  font-family: inherit;
+                "
+              >
+                <option value="">Todos los periodos</option>
+              </select>
+            </div>
+          </div>
+          <div id="gruposGrid" class="group-selector-grid">
+            <div class="empty-state">
+              <iconify-icon icon="lucide:loader-2"></iconify-icon>
+              <p>Cargando grupos…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reporte del grupo seleccionado -->
+        <div id="reporteContainer" style="display: none">
+          <!-- Botón volver -->
+          <div style="margin-bottom: 16px">
+            <button class="btn btn-outline btn-sm" onclick="volverSelector()">
+              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Cambiar
+              grupo
+            </button>
+          </div>
+
+          <!-- Info del grupo -->
+          <div class="card" id="cardInfoGrupo" style="margin-bottom: 20px">
+            <div
+              style="
+                display: flex;
+                gap: 24px;
+                flex-wrap: wrap;
+                align-items: center;
+              "
+            >
+              <div>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  "
+                >
+                  Materia
+                </p>
+                <p
+                  id="infoMateria"
+                  style="
+                    margin: 4px 0 0;
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: var(--text-main);
+                  "
+                >
+                  —
+                </p>
+              </div>
+              <div>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  "
+                >
+                  Maestro
+                </p>
+                <p
+                  id="infoMaestro"
+                  style="
+                    margin: 4px 0 0;
+                    font-size: 0.95rem;
+                    color: var(--text-main);
+                  "
+                >
+                  —
+                </p>
+              </div>
+              <div>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  "
+                >
+                  Periodo
+                </p>
+                <p
+                  id="infoPeriodo"
+                  style="
+                    margin: 4px 0 0;
+                    font-size: 0.95rem;
+                    color: var(--text-main);
+                  "
+                >
+                  —
+                </p>
+              </div>
+              <div style="margin-left: auto">
+                <span id="infoEstatus" class="badge"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats del grupo -->
+          <div class="stats-row" style="margin-bottom: 20px">
+            <div class="stat-card">
+              <iconify-icon icon="lucide:users"></iconify-icon>
+              <div>
+                <p id="sTotal">0</p>
+                <span>Alumnos</span>
+              </div>
+            </div>
+            <div class="stat-card stat-success">
+              <iconify-icon icon="lucide:check-circle-2"></iconify-icon>
+              <div>
+                <p id="sAprobados">0</p>
+                <span>Aprobados</span>
+              </div>
+            </div>
+            <div class="stat-card stat-danger">
+              <iconify-icon icon="lucide:x-circle"></iconify-icon>
+              <div>
+                <p id="sReprobados">0</p>
+                <span>Reprobados</span>
+              </div>
+            </div>
+            <div class="stat-card stat-warning">
+              <iconify-icon icon="lucide:clock"></iconify-icon>
+              <div>
+                <p id="sPendientes">0</p>
+                <span>Pendientes</span>
+              </div>
+            </div>
+            <div class="stat-card stat-purple">
+              <iconify-icon icon="lucide:trending-up"></iconify-icon>
+              <div>
+                <p id="sPromedio">—</p>
+                <span>Prom. grupo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla principal -->
+          <div class="card">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+                flex-wrap: wrap;
+                gap: 8px;
+              "
+            >
+              <h2 style="margin: 0; font-size: 1rem; font-weight: 600">
+                Calificaciones por alumno
+              </h2>
+              <input
+                type="text"
+                id="filtroAlumnoReporte"
+                placeholder="🔍 Buscar alumno…"
+                oninput="filtrarTablaReporte()"
+                style="
+                  padding: 7px 12px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 0.85rem;
+                  background: var(--bg-app);
+                  color: var(--text-main);
+                  font-family: inherit;
+                  width: 220px;
+                "
+              />
+            </div>
+            <div style="overflow-x: auto">
+              <table id="tablaReporte">
+                <thead id="headReporte"></thead>
+                <tbody id="bodyReporte"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- /reporteContainer -->
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/reportes.js"></script>
+  </body>
+</html>
