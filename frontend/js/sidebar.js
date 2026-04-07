@@ -1,4 +1,4 @@
-// frontend/js/sidebar.js
+// frontend/js/sidebar.js — v2 reorganizado
 (function () {
   const rol = localStorage.getItem("rol");
   const nombre = localStorage.getItem("nombre");
@@ -27,6 +27,7 @@
         icono: "lucide:layout-dashboard",
       },
     ],
+
     maestro: [
       {
         href: "mis_grupos.html",
@@ -39,40 +40,27 @@
         icono: "lucide:clipboard-pen",
       },
       {
-        href: "calificaciones.html",
-        texto: "Calificaciones",
-        icono: "lucide:bar-chart-3",
-      },
-      {
-        href: "unidades.html",
-        texto: "Unidades",
-        icono: "lucide:clipboard-list",
-      },
-      {
         href: "formulario.html",
-        texto: "Formulario de evaluación",
+        texto: "Evaluación",
         icono: "mdi:file-document-edit-outline",
       },
+      { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
     ],
+
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
       {
         texto: "Alumnos",
-        icono: "lucide:user",
+        icono: "lucide:users",
         hijos: [
           {
             href: "alumnos.html",
             texto: "Lista de alumnos",
-            icono: "lucide:users",
-          },
-          {
-            href: "alumnos.html#registro",
-            texto: "Registrar alumno",
-            icono: "lucide:user-plus",
+            icono: "lucide:list",
           },
           {
             href: "inscripcion.html",
-            texto: "Inscripción a grupos",
+            texto: "Inscripciones",
             icono: "mdi:account-plus-outline",
           },
         ],
@@ -83,30 +71,35 @@
         hijos: [
           {
             href: "maestros.html",
-            texto: "Ver maestros",
-            icono: "lucide:users",
-          },
-          {
-            href: "maestros.html#registro",
-            texto: "Registrar maestro",
-            icono: "lucide:user-plus",
+            texto: "Lista de maestros",
+            icono: "lucide:list",
           },
         ],
       },
-      { href: "materias.html", texto: "Materias", icono: "lucide:book-open" },
-      { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
-      { href: "unidades.html", texto: "Unidades", icono: "lucide:list-checks" },
-      // FIX 10: Actividades ahora visible para admin también
       {
-        href: "actividades.html",
-        texto: "Actividades",
-        icono: "lucide:clipboard-pen",
+        texto: "Académico",
+        icono: "lucide:book-open",
+        hijos: [
+          { href: "materias.html", texto: "Materias", icono: "lucide:book" },
+          { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
+          {
+            href: "unidades.html",
+            texto: "Unidades",
+            icono: "lucide:list-checks",
+          },
+          {
+            href: "actividades.html",
+            texto: "Actividades",
+            icono: "lucide:clipboard-pen",
+          },
+          {
+            href: "periodos.html",
+            texto: "Periodos",
+            icono: "mdi:calendar-range-outline",
+          },
+        ],
       },
-      {
-        href: "periodos.html",
-        texto: "Periodos",
-        icono: "mdi:calendar-range-outline",
-      },
+      { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
     ],
   };
 
@@ -199,4 +192,24 @@ function soloPermitido(...roles) {
 function cerrarSesion() {
   localStorage.clear();
   window.location.href = "login.html";
+}
+
+// ── Toast global (disponible en todas las páginas) ─────────────────
+function showToast(msg, tipo = "success") {
+  let c = document.getElementById("toast-container");
+  if (!c) {
+    c = document.createElement("div");
+    c.id = "toast-container";
+    document.body.appendChild(c);
+  }
+  const t = document.createElement("div");
+  t.className = `toast toast-${tipo}`;
+  const icons = {
+    success: "lucide:check-circle",
+    error: "lucide:x-circle",
+    info: "lucide:info",
+  };
+  t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
 }
