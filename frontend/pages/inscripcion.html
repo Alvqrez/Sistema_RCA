@@ -23,18 +23,27 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <div class="page-header">
-          <h1>
-            <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
-            Inscripción de Alumnos
-          </h1>
-          <button
-            class="btn btn-outline btn-sm"
-            onclick="window.location.href = 'alumnos.html'"
-          >
-            <iconify-icon icon="lucide:arrow-left"></iconify-icon> Volver a
-            alumnos
-          </button>
+        <div class="page-header-v2">
+          <div>
+            <h1>Inscripción de Alumnos</h1>
+            <p class="page-subtitle">
+              Asigna alumnos a grupos por periodo escolar
+            </p>
+          </div>
+          <div class="header-actions">
+            <button
+              class="btn btn-outline btn-sm"
+              onclick="abrirModalCSVInscripcion()"
+            >
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
+            <button
+              class="btn btn-outline btn-sm"
+              onclick="window.location.href = 'alumnos.html'"
+            >
+              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Volver
+            </button>
+          </div>
         </div>
 
         <!-- PASOS VISUALES -->
@@ -329,7 +338,79 @@
       </div>
     </div>
 
+    <!-- MODAL CSV INSCRIPCIONES -->
+    <div id="modalCSVInscripcion" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Importar inscripciones CSV</h2>
+          <button
+            class="modal-close"
+            onclick="
+              document
+                .getElementById('modalCSVInscripcion')
+                .classList.remove('visible')
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="csv-drop-zone"
+            onclick="document.getElementById('inputCSVInsc').click()"
+            ondragover="
+              event.preventDefault();
+              this.classList.add('drag-over');
+            "
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="soltarInsc(event)"
+          >
+            <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
+            <p>Haz clic o arrastra tu archivo CSV</p>
+            <small>Columnas: matricula, id_grupo, tipo_curso</small>
+            <input
+              type="file"
+              id="inputCSVInsc"
+              accept=".csv"
+              style="display: none"
+              onchange="leerCSVInsc(event)"
+            />
+          </div>
+          <div class="csv-format-hint">
+            Columnas requeridas: matricula, id_grupo, tipo_curso Ejemplo:
+            21VE0001,3,Ordinario 21VE0002,3,Recursado
+          </div>
+          <div id="csvPreviewInsc"></div>
+          <p
+            id="csvInscMsg"
+            style="font-size: 0.85rem; margin: 8px 0 0; display: none"
+          ></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="
+              document
+                .getElementById('modalCSVInscripcion')
+                .classList.remove('visible')
+            "
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnImportarInsc"
+            onclick="importarCSVInsc()"
+            disabled
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/sidebar.js"></script>
     <script src="../js/inscripcion.js"></script>
+    <div id="toast-container"></div>
   </body>
 </html>

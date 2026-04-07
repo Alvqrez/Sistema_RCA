@@ -471,3 +471,119 @@ function mostrarToast(msg, tipo = "success") {
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove("visible"), 3200);
 }
+
+// ── CSV Inscripciones ─────────────────────────────────────────────
+let csvInscData = [];
+
+function abrirModalCSVInscripcion() {
+  csvInscData = [];
+  document.getElementById("csvPreviewInsc").innerHTML = "";
+  document.getElementById("btnImportarInsc").disabled = true;
+  document.getElementById("inputCSVInsc").value = "";
+  const msg = document.getElementById("csvInscMsg");
+  if (msg) {
+    msg.style.display = "none";
+    msg.textContent = "";
+  }
+  document.getElementById("modalCSVInscripcion").classList.add("visible");
+}
+
+function soltarInsc(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCSVInsc(file);
+}
+
+function leerCSVInsc(e) {
+  const file = e.target.files[0];
+  if (file) procesarCSVInsc(file);
+}
+
+function procesarCSVInsc(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.trim().split("\n").filter(Boolean);
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    csvInscData = lines
+      .slice(1)
+      .map((line) => {
+        const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+        const obj = {};
+        headers.forEach((h, i) => {
+          obj[h] = vals[i] ?? "";
+        });
+        return obj;
+      })
+      .filter((r) => r.matricula && r.id_grupo);
+    // Preview
+    const preview = document.getElementById("csvPreviewInsc");
+    if (!csvInscData.length) {
+      preview.innerHTML = `<p style="color:var(--danger);font-size:0.85rem;margin-top:8px">Sin datos válidos — revisa las columnas: matricula, id_grupo, tipo_curso.</p>`;
+      document.getElementById("btnImportarInsc").disabled = true;
+      return;
+    }
+    const muestra = csvInscData.slice(0, 5);
+    preview.innerHTML = `
+      <p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">${csvInscData.length} inscripciones detectadas (primeros 5):</p>
+      <div class="csv-preview"><table>
+        <thead><tr><th>Matrícula</th><th>ID Grupo</th><th>Tipo curso</th></tr></thead>
+        <tbody>${muestra.map((r) => `<tr><td>${r.matricula}</td><td>${r.id_grupo}</td><td>${r.tipo_curso || "Ordinario"}</td></tr>`).join("")}</tbody>
+      </table></div>`;
+    document.getElementById("btnImportarInsc").disabled = false;
+  };
+  reader.readAsText(file);
+}
+
+async function importarCSVInsc() {
+  if (!csvInscData.length) return;
+  const btn = document.getElementById("btnImportarInsc");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Importando…`;
+  const msg = document.getElementById("csvInscMsg");
+  let insertados = 0,
+    errores = [];
+  const tk = localStorage.getItem("token");
+
+  for (const row of csvInscData) {
+    try {
+      const r = await fetch(`${BASE}/api/inscripciones`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tk}`,
+        },
+        body: JSON.stringify({
+          matricula: row.matricula,
+          id_grupo: row.id_grupo,
+          tipo_curso: row.tipo_curso || "Ordinario",
+        }),
+      });
+      if (r.ok) insertados++;
+      else {
+        const d = await r.json();
+        errores.push({ matricula: row.matricula, motivo: d.error || "Error" });
+      }
+    } catch (e) {
+      errores.push({ matricula: row.matricula, motivo: e.message });
+    }
+  }
+
+  msg.style.display = "block";
+  if (errores.length === 0) {
+    msg.style.color = "var(--success)";
+    msg.textContent = `✓ ${insertados} inscripción(es) importadas correctamente.`;
+  } else {
+    msg.style.color = "var(--warning)";
+    msg.textContent = `${insertados} importadas, ${errores.length} con errores. Revisa la consola.`;
+    console.table(errores);
+  }
+  btn.disabled = false;
+  btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+  if (insertados > 0) {
+    await cargarInscripciones();
+    await cargarAlumnosLista();
+  }
+}
