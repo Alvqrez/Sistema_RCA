@@ -213,3 +213,31 @@ router.delete("/:id", soloAdmin, (req, res) => {
 });
 
 module.exports = router;
+
+// GET — grupos del maestro autenticado (para formulario y mis_grupos)
+router.get("/mis-grupos", verificarToken, (req, res) => {
+  if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
+    return res.status(403).json({ error: "Solo para maestros" });
+  }
+  const numero_empleado = req.usuario.id_referencia;
+  const query = `
+    SELECT
+      g.id_grupo, g.clave_materia, m.nombre_materia,
+      g.numero_empleado,
+      CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
+      g.id_periodo,
+      pe.descripcion AS descripcion_periodo, pe.anio,
+      g.limite_alumnos, g.horario, g.aula, g.estatus
+    FROM grupo g
+    JOIN materia  m   ON g.clave_materia   = m.clave_materia
+    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
+    WHERE g.numero_empleado = ?
+    ORDER BY g.id_grupo DESC
+  `;
+  db.query(query, [numero_empleado], (err, results) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(results);
+  });
+});

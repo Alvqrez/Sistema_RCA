@@ -1,53 +1,52 @@
-// frontend/js/formulario.js — CORREGIDO (FIX 3)
-// Usa las actividades REALES de la BD en lugar de rubros fijos hardcoded.
-// El CSV importa directamente a /api/resultado-actividad/bulk.
+// frontend/js/formulario.js
+// FIX: solo muestra grupos del maestro logueado | CSV como modal
 const BASE_URL_FORM = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
-// ── Estado ────────────────────────────────────────────────────────────
 let estado = {
   grupoId: null,
   unidadId: null,
-  actividades: [], // actividades reales de la BD para (grupo, unidad)
-  alumnos: [], // alumnos inscritos en el grupo
-  resultados: {}, // { matricula: { id_actividad: calificacion } }
-  unidadesGrupo: [], // unidades vinculadas al grupo con ponderación
+  actividades: [],
+  alumnos: [],
+  resultados: {},
+  unidadesGrupo: [],
 };
 
-// ── INIT ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", cargarGruposSelect);
 
+// FIX: /api/grupos/mis-grupos — solo grupos del maestro logueado
 async function cargarGruposSelect() {
   const sel = document.getElementById("selGrupo");
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/grupos`, {
+    const res = await fetch(`${BASE_URL_FORM}/api/grupos/mis-grupos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     const grupos = await res.json();
+    if (!Array.isArray(grupos) || grupos.length === 0) {
+      sel.innerHTML = `<option value="">-- Sin grupos asignados --</option>`;
+      return;
+    }
     grupos.forEach((g) => {
       const opt = document.createElement("option");
       opt.value = g.id_grupo;
-      opt.textContent = `${g.nombre_materia} — ${g.nombre_maestro} (${g.descripcion_periodo || ""})`;
+      opt.textContent = `${g.nombre_materia} (${g.descripcion_periodo || "Periodo " + g.id_periodo})`;
       sel.appendChild(opt);
     });
   } catch (e) {
     console.error("No se pudo cargar grupos:", e);
+    mostrarToast("Error al cargar grupos", "error");
   }
 }
 
-// ── Selección de grupo ─────────────────────────────────────────────────
 async function cargarGrupo() {
   const sel = document.getElementById("selGrupo");
   const id = parseInt(sel.value);
   if (!id) return resetVista();
-
   estado.grupoId = id;
   document.getElementById("badgeGrupo").textContent =
     sel.options[sel.selectedIndex].text;
   document.getElementById("emptyConfig").style.display = "none";
-
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
-
   document.getElementById("seccionUnidades").style.display = "block";
 }
 
@@ -64,9 +63,9 @@ function resetVista() {
   document.getElementById("seccionUnidades").style.display = "none";
   document.getElementById("seccionActividades").style.display = "none";
   document.getElementById("badgeGrupo").textContent = "Sin grupo seleccionado";
+  actualizarEstadoBadge(false);
 }
 
-// ── Cargar unidades del grupo ──────────────────────────────────────────
 async function cargarUnidadesGrupo() {
   const res = await fetch(
     `${BASE_URL_FORM}/api/grupos/${estado.grupoId}/unidades`,
@@ -75,27 +74,22 @@ async function cargarUnidadesGrupo() {
     },
   );
   estado.unidadesGrupo = await res.json();
-
   const sel = document.getElementById("selUnidad");
   sel.innerHTML = `<option value="">-- Selecciona una unidad --</option>`;
   estado.unidadesGrupo.forEach((u) => {
-    const label = `${u.nombre_unidad}  (Peso: ${u.ponderacion}%)`;
-    sel.innerHTML += `<option value="${u.id_unidad}">${label}</option>`;
+    sel.innerHTML += `<option value="${u.id_unidad}">${u.nombre_unidad}  (Peso: ${u.ponderacion}%)</option>`;
   });
-
-  // Mostrar resumen de pesos
   const total = estado.unidadesGrupo.reduce(
     (s, u) => s + parseFloat(u.ponderacion),
     0,
   );
   const badge = document.getElementById("badgePesoTotal");
   if (badge) {
-    badge.textContent = `${total}% asignado`;
+    badge.textContent = `${total}% total`;
     badge.style.color = Math.abs(total - 100) < 0.01 ? "#22c55e" : "#f59e0b";
   }
 }
 
-// ── Cargar alumnos inscritos en el grupo ──────────────────────────────
 async function cargarAlumnos() {
   const res = await fetch(
     `${BASE_URL_FORM}/api/inscripciones/grupo/${estado.grupoId}`,
@@ -111,25 +105,24 @@ async function cargarAlumnos() {
   }));
 }
 
-// ── Selección de unidad ────────────────────────────────────────────────
 async function cargarUnidad() {
   const idUnidad = parseInt(document.getElementById("selUnidad").value);
   if (!idUnidad) {
     document.getElementById("seccionActividades").style.display = "none";
+    actualizarEstadoBadge(false);
     return;
   }
   estado.unidadId = idUnidad;
-
   await cargarActividades();
   await cargarResultadosExistentes();
-
   document.getElementById("seccionActividades").style.display = "block";
   document
     .getElementById("seccionActividades")
     .scrollIntoView({ behavior: "smooth" });
+  actualizarEstadoBadge(true);
+  actualizarSelectCSVActividad();
 }
 
-// ── Actividades reales de la BD ────────────────────────────────────────
 async function cargarActividades() {
   const res = await fetch(`${BASE_URL_FORM}/api/actividades`, {
     headers: { Authorization: `Bearer ${token()}` },
@@ -138,26 +131,21 @@ async function cargarActividades() {
   estado.actividades = todas.filter(
     (a) => a.id_grupo === estado.grupoId && a.id_unidad === estado.unidadId,
   );
-
-  // Calcular suma de ponderaciones
   const sumaP = estado.actividades.reduce(
     (s, a) => s + parseFloat(a.ponderacion),
     0,
   );
   const colorSuma = Math.abs(sumaP - 100) < 0.01 ? "#22c55e" : "#f59e0b";
-
   const resumen = document.getElementById("resumenActividades");
   if (resumen) {
     resumen.innerHTML =
       estado.actividades.length === 0
-        ? `<span style="color:#94a3b8">No hay actividades definidas para esta unidad. Agrégalas en la sección Actividades.</span>`
+        ? `<span style="color:#94a3b8">No hay actividades definidas. Agrégalas en la sección <strong>Actividades</strong>.</span>`
         : `<span style="color:${colorSuma}">${estado.actividades.length} actividades — suma ponderaciones: <strong>${sumaP}%</strong></span>`;
   }
-
   renderTablaCalificaciones();
 }
 
-// ── Resultados ya guardados ────────────────────────────────────────────
 async function cargarResultadosExistentes() {
   estado.resultados = {};
   for (const act of estado.actividades) {
@@ -177,67 +165,41 @@ async function cargarResultadosExistentes() {
   renderTablaCalificaciones();
 }
 
-// ── Render tabla principal ─────────────────────────────────────────────
 function renderTablaCalificaciones() {
   const wrap = document.getElementById("tablaCalWrap");
   if (!wrap) return;
-
   if (estado.actividades.length === 0) {
-    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8">No hay actividades para esta unidad. Créalas primero en "Actividades".</div>`;
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8"><iconify-icon icon="mdi:clipboard-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>No hay actividades para esta unidad.</div>`;
     return;
   }
   if (estado.alumnos.length === 0) {
-    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8">No hay alumnos inscritos en este grupo.</div>`;
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:#94a3b8"><iconify-icon icon="mdi:account-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>No hay alumnos inscritos.</div>`;
     return;
   }
-
-  // Encabezado
-  let html = `<div class="tabla-wrapper"><table class="tabla-calificaciones">
-    <thead><tr>
-      <th>Alumno</th>
-      <th>Matrícula</th>`;
+  let html = `<div class="tabla-wrapper"><table class="tabla-calificaciones"><thead><tr><th>Alumno</th><th>Matrícula</th>`;
   estado.actividades.forEach((a) => {
-    html += `<th title="${a.tipo_evaluacion}">${a.nombre_actividad}<br><small style="color:#94a3b8">${a.ponderacion}%</small></th>`;
+    const lock = a.bloqueado
+      ? `<iconify-icon icon="mdi:lock-outline" style="font-size:0.7rem;color:#f59e0b;margin-left:4px"></iconify-icon>`
+      : "";
+    html += `<th>${a.nombre_actividad}${lock}<br><small style="color:#94a3b8;font-weight:400">${a.ponderacion}%</small></th>`;
   });
   html += `<th>Promedio</th></tr></thead><tbody>`;
-
-  // Filas
   estado.alumnos.forEach((al) => {
-    html += `<tr data-matricula="${al.matricula}">
-      <td>${al.nombre}</td>
-      <td style="font-size:0.78rem;color:#94a3b8">${al.matricula}</td>`;
-
-    let promedioNum = 0;
+    let prom = 0;
+    html += `<tr data-matricula="${al.matricula}"><td style="font-weight:500">${al.nombre}</td><td style="font-size:0.78rem;color:#94a3b8">${al.matricula}</td>`;
     estado.actividades.forEach((a) => {
       const r = estado.resultados[al.matricula]?.[a.id_actividad];
       const val = r?.cal ?? "";
-      const esNP = r?.estatus === "NP";
-      html += `<td>
-        <input class="cal-input" type="number" min="0" max="100"
-               data-matricula="${al.matricula}"
-               data-actividad="${a.id_actividad}"
-               data-ponderacion="${a.ponderacion}"
-               value="${val}"
-               placeholder="${esNP ? "NP" : "0–100"}"
-               oninput="recalcularFila('${al.matricula}')" />
-      </td>`;
-      const contrib = esNP
-        ? 0
-        : (parseFloat(val) || 0) * (parseFloat(a.ponderacion) / 100);
-      promedioNum += contrib;
+      prom += (parseFloat(val) || 0) * (parseFloat(a.ponderacion) / 100);
+      html += `<td><input class="cal-input" type="number" min="0" max="100" data-matricula="${al.matricula}" data-actividad="${a.id_actividad}" data-ponderacion="${a.ponderacion}" value="${val}" placeholder="${r?.estatus === "NP" ? "NP" : "—"}" oninput="recalcularFila('${al.matricula}')" /></td>`;
     });
-
-    const color =
-      promedioNum >= 70 ? "#22c55e" : promedioNum > 0 ? "#f59e0b" : "#94a3b8";
-    html += `<td id="prom-${al.matricula}" style="font-weight:700;color:${color}">${promedioNum.toFixed(1)}</td>
-    </tr>`;
+    const color = prom >= 70 ? "#22c55e" : prom > 0 ? "#f59e0b" : "#94a3b8";
+    html += `<td id="prom-${al.matricula}" style="font-weight:700;color:${color}">${prom.toFixed(1)}</td></tr>`;
   });
-
   html += `</tbody></table></div>`;
   wrap.innerHTML = html;
 }
 
-// ── Recalcular promedio de fila en tiempo real ─────────────────────────
 function recalcularFila(matricula) {
   let suma = 0;
   document
@@ -254,31 +216,25 @@ function recalcularFila(matricula) {
   }
 }
 
-// ── Guardar calificaciones (POST real a la API) ────────────────────────
 async function guardarCalificaciones() {
   if (!estado.grupoId || !estado.unidadId) {
     mostrarToast("Selecciona grupo y unidad primero", "error");
     return;
   }
-
-  // Agrupar por actividad para usar el endpoint bulk
+  let totalGuardados = 0;
   for (const act of estado.actividades) {
     const resultados = [];
     document
       .querySelectorAll(`input[data-actividad="${act.id_actividad}"]`)
       .forEach((inp) => {
-        const mat = inp.dataset.matricula;
-        const val = inp.value.trim();
-        const cal = val === "" ? null : parseFloat(val);
+        const cal = inp.value.trim() === "" ? null : parseFloat(inp.value);
         resultados.push({
-          matricula: mat,
+          matricula: inp.dataset.matricula,
           calificacion_obtenida: cal,
           estatus: cal === null ? "NP" : "Validada",
         });
       });
-
-    if (resultados.length === 0) continue;
-
+    if (!resultados.length) continue;
     const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
       method: "POST",
       headers: {
@@ -290,30 +246,26 @@ async function guardarCalificaciones() {
     const data = await res.json();
     if (!data.success) {
       mostrarToast(
-        `Error en actividad "${act.nombre_actividad}": ${data.error}`,
+        `Error en "${act.nombre_actividad}": ${data.error}`,
         "error",
       );
       return;
     }
+    totalGuardados += data.guardados;
   }
-
-  mostrarToast(`Calificaciones guardadas correctamente`, "success");
+  mostrarToast(`${totalGuardados} calificaciones guardadas`, "success");
   await cargarResultadosExistentes();
 }
 
-// ── Calcular y cerrar unidad ───────────────────────────────────────────
 async function calcularUnidad() {
   if (!estado.grupoId || !estado.unidadId) {
     mostrarToast("Selecciona grupo y unidad", "error");
     return;
   }
   if (
-    !confirm(
-      `¿Calcular y cerrar la unidad para todos los alumnos del grupo? Esta acción guardará los promedios finales.`,
-    )
+    !confirm("¿Calcular y cerrar la unidad para todos los alumnos del grupo?")
   )
     return;
-
   let errores = 0;
   for (const al of estado.alumnos) {
     const res = await fetch(
@@ -334,40 +286,57 @@ async function calcularUnidad() {
     const data = await res.json();
     if (!data.success) errores++;
   }
-
-  if (errores === 0) {
-    mostrarToast(
-      "Unidad calculada y cerrada para todos los alumnos",
-      "success",
-    );
-  } else {
-    mostrarToast(`${errores} alumnos tuvieron errores al calcular`, "error");
-  }
+  mostrarToast(
+    errores === 0
+      ? "Unidad calculada y cerrada"
+      : `${errores} errores al calcular`,
+    errores === 0 ? "success" : "error",
+  );
 }
 
-// ── CSV Import (FIX 3: ahora llama a la API real) ─────────────────────
-function manejarDropCSV(e) {
+// ── CSV Modal ──────────────────────────────────────────────────────────
+function abrirModalCSV() {
+  if (!estado.unidadId) {
+    mostrarToast("Selecciona una unidad primero", "error");
+    return;
+  }
+  actualizarSelectCSVActividad();
+  document.getElementById("modalCSV").classList.add("visible");
+}
+function cerrarModalCSV() {
+  document.getElementById("modalCSV").classList.remove("visible");
+  document.getElementById("csvPreview").innerHTML = "";
+  const inp = document.getElementById("inputCSV");
+  if (inp) inp.value = "";
+  window._csvDatos = null;
+}
+function actualizarSelectCSVActividad() {
+  const sel = document.getElementById("selCSVActividad");
+  if (!sel) return;
+  sel.innerHTML = `<option value="">-- Selecciona la actividad --</option>`;
+  estado.actividades.forEach((a) => {
+    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_actividad} (${a.ponderacion}%)</option>`;
+  });
+}
+function manejarArchivoCSV(e) {
   e.preventDefault();
-  document.getElementById("csvDropZone").classList.remove("drag-over");
-  const file = e.dataTransfer?.files[0] || e.target?.files[0];
+  const dropZone = document.getElementById("csvDropZone");
+  if (dropZone) dropZone.classList.remove("drag-over");
+  const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
   if (file) procesarCSV(file);
 }
-
 function procesarCSV(file) {
-  const selAct = document.getElementById("selCSVActividad");
-  if (!selAct || !selAct.value) {
-    mostrarToast(
-      "Selecciona la actividad a la que corresponde el CSV",
-      "error",
-    );
+  const idAct = parseInt(document.getElementById("selCSVActividad").value);
+  if (!idAct) {
+    mostrarToast("Selecciona la actividad primero", "error");
     return;
   }
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const lineas = e.target.result.split("\n").filter(Boolean);
+  reader.onload = (ev) => {
+    const lineas = ev.target.result.split("\n").filter(Boolean);
     const datos = [];
     lineas.forEach((linea, i) => {
-      if (i === 0 && linea.toLowerCase().includes("matricula")) return; // saltar header
+      if (i === 0 && linea.toLowerCase().includes("matricula")) return;
       const [matricula, calStr] = linea.split(",").map((s) => s.trim());
       if (!matricula) return;
       const cal = parseFloat(calStr);
@@ -377,85 +346,64 @@ function procesarCSV(file) {
         estatus: isNaN(cal) ? "NP" : "Validada",
       });
     });
-    if (datos.length === 0) {
-      mostrarToast("CSV vacío o sin datos válidos", "error");
+    if (!datos.length) {
+      mostrarToast("El CSV no tiene datos válidos", "error");
       return;
     }
-    mostrarPreviewCSV(datos, file.name, parseInt(selAct.value));
+    const act = estado.actividades.find((a) => a.id_actividad === idAct);
+    document.getElementById("csvPreview").innerHTML = `
+      <div style="margin-top:12px;background:var(--surface-2,#1e293b);border-radius:8px;padding:14px">
+        <p style="color:#94a3b8;margin:0 0 8px;font-size:0.82rem">
+          <strong style="color:#e2e8f0">${datos.length}</strong> registros para
+          <strong style="color:#60a5fa">${act?.nombre_actividad ?? ""}</strong>
+        </p>
+        <table style="width:100%;font-size:0.8rem;border-collapse:collapse">
+          <thead><tr><th style="text-align:left;color:#64748b;padding:3px 6px">Matrícula</th><th style="text-align:left;color:#64748b;padding:3px 6px">Calificación</th></tr></thead>
+          <tbody>${datos
+            .slice(0, 5)
+            .map(
+              (d) =>
+                `<tr><td style="padding:3px 6px">${d.matricula}</td><td style="padding:3px 6px">${d.calificacion_obtenida ?? '<span style="color:#f59e0b">NP</span>'}</td></tr>`,
+            )
+            .join("")}
+          ${datos.length > 5 ? `<tr><td colspan="2" style="padding:3px 6px;color:#64748b">... y ${datos.length - 5} más</td></tr>` : ""}</tbody>
+        </table>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="aplicarCSV(${idAct})">
+          <iconify-icon icon="mdi:check-circle-outline"></iconify-icon> Confirmar importación
+        </button>
+      </div>`;
+    window._csvDatos = datos;
   };
   reader.readAsText(file);
 }
-
-function mostrarPreviewCSV(datos, nombre, id_actividad) {
-  const preview = document.getElementById("csvPreview");
-  if (!preview) return;
-  const act = estado.actividades.find((a) => a.id_actividad === id_actividad);
-  preview.innerHTML = `
-    <div style="background:#1e293b;border-radius:8px;padding:16px;margin-top:12px;">
-      <p style="color:#94a3b8;margin:0 0 8px">📄 <strong>${nombre}</strong> — ${datos.length} registros detectados</p>
-      <p style="color:#94a3b8;margin:0 0 12px;font-size:0.82rem">Actividad: <strong style="color:#60a5fa">${act?.nombre_actividad ?? id_actividad}</strong></p>
-      <table style="width:100%;font-size:0.82rem;border-collapse:collapse">
-        <thead><tr><th style="text-align:left;color:#64748b;padding:4px">Matrícula</th><th style="text-align:left;color:#64748b;padding:4px">Calificación</th></tr></thead>
-        <tbody>
-          ${datos
-            .slice(0, 8)
-            .map(
-              (d) =>
-                `<tr><td style="padding:4px">${d.matricula}</td><td style="padding:4px">${d.calificacion_obtenida ?? "NP"}</td></tr>`,
-            )
-            .join("")}
-          ${datos.length > 8 ? `<tr><td colspan="2" style="padding:4px;color:#64748b">... y ${datos.length - 8} más</td></tr>` : ""}
-        </tbody>
-      </table>
-      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="aplicarCSV(${JSON.stringify(datos).replace(/'/g, "&#39;")}, ${id_actividad})">
-        ✅ Importar ${datos.length} calificaciones
-      </button>
-    </div>`;
-  window._csvDatos = { datos, id_actividad };
-}
-
-async function aplicarCSV(datos, id_actividad) {
+async function aplicarCSV(id_actividad) {
+  if (!window._csvDatos?.length) return;
   const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token()}`,
     },
-    body: JSON.stringify({ id_actividad, resultados: datos }),
+    body: JSON.stringify({ id_actividad, resultados: window._csvDatos }),
   });
   const data = await res.json();
   if (data.success) {
-    mostrarToast(
-      `${data.guardados} calificaciones importadas desde CSV`,
-      "success",
-    );
-    document.getElementById("csvPreview").innerHTML = "";
+    mostrarToast(`${data.guardados} calificaciones importadas`, "success");
+    cerrarModalCSV();
     await cargarResultadosExistentes();
   } else {
-    mostrarToast(data.error || "Error al importar CSV", "error");
+    mostrarToast(data.error || "Error al importar", "error");
   }
   window._csvDatos = null;
 }
 
-// Poblar select de actividades para CSV cuando se carga la unidad
-function actualizarSelectCSVActividad() {
-  const sel = document.getElementById("selCSVActividad");
-  if (!sel) return;
-  sel.innerHTML = `<option value="">-- Selecciona actividad --</option>`;
-  estado.actividades.forEach((a) => {
-    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_actividad} (${a.ponderacion}%)</option>`;
-  });
+function actualizarEstadoBadge(activo) {
+  const badge = document.getElementById("estadoBadge");
+  if (!badge) return;
+  badge.className = "estado-badge " + (activo ? "configurado" : "sin-config");
+  badge.innerHTML = `<span class="dot-live"></span>${activo ? "Configurado" : "Sin configurar"}`;
 }
 
-// Llamar al cargar unidad
-const _origCargarActividades = cargarActividades;
-// eslint-disable-next-line no-global-assign
-cargarActividades = async function () {
-  await _origCargarActividades();
-  actualizarSelectCSVActividad();
-};
-
-// ── Toast ──────────────────────────────────────────────────────────────
 function mostrarToast(msg, tipo = "success") {
   let toast = document.getElementById("rca-toast");
   if (!toast) {

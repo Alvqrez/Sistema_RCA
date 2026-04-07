@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <title>Formulario de Evaluación - RCA</title>
     <script>
-      if (localStorage.getItem("tema") === "oscuro") {
+      if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      }
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
@@ -20,18 +19,42 @@
     />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
-      /* ── Estilos propios del formulario ── */
-      .config-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+      .estado-badge {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-weight: 600;
       }
-      @media (max-width: 640px) {
-        .config-grid {
-          grid-template-columns: 1fr;
-        }
+      .estado-badge.sin-config {
+        background: #fef3c7;
+        color: #92400e;
       }
-
+      .estado-badge.configurado {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .dot-live {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+      .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary, #3b82f6);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-right: 8px;
+      }
       .badge-peso {
         display: inline-block;
         font-size: 0.78rem;
@@ -39,10 +62,8 @@
         padding: 2px 10px;
         border-radius: 999px;
         background: var(--surface-2, #1e293b);
-        color: #94a3b8;
         margin-left: 12px;
       }
-
       .tabla-calificaciones {
         width: 100%;
         border-collapse: collapse;
@@ -62,10 +83,6 @@
         letter-spacing: 0.04em;
         background: var(--surface-2, #0f172a);
       }
-      .tabla-calificaciones tr:hover td {
-        background: var(--surface-hover, #1e293b22);
-      }
-
       .cal-input {
         width: 72px;
         padding: 4px 8px;
@@ -80,7 +97,6 @@
         outline: 2px solid var(--primary, #3b82f6);
         border-color: transparent;
       }
-
       .acciones-row {
         display: flex;
         gap: 10px;
@@ -89,12 +105,56 @@
         padding-top: 16px;
         border-top: 1px solid var(--border, #1e293b);
       }
-
-      /* CSV drop zone */
+      /* Modal CSV */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #00000080;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-overlay.visible {
+        display: flex;
+      }
+      .modal-csv {
+        background: var(--surface, #1e293b);
+        border-radius: 14px;
+        padding: 28px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px #0009;
+      }
+      .modal-csv-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .modal-csv-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted, #64748b);
+        font-size: 1.2rem;
+        padding: 4px;
+        border-radius: 6px;
+      }
+      .btn-close:hover {
+        background: var(--surface-2, #0f172a);
+      }
       .csv-drop-zone {
         border: 2px dashed var(--border, #334155);
         border-radius: 10px;
-        padding: 28px 20px;
+        padding: 24px 20px;
         text-align: center;
         cursor: pointer;
         transition:
@@ -111,8 +171,7 @@
         margin: 8px 0;
         font-size: 0.85rem;
       }
-
-      .csv-format-example {
+      .csv-format {
         background: var(--surface-2, #0f172a);
         border-radius: 6px;
         padding: 10px 14px;
@@ -120,9 +179,8 @@
         color: #94a3b8;
         margin: 8px 0;
         line-height: 1.8;
+        font-family: monospace;
       }
-
-      /* Toast */
       .rca-toast {
         position: fixed;
         bottom: 24px;
@@ -148,51 +206,11 @@
       .rca-toast-error {
         background: #dc2626;
       }
-
-      /* Estado badge */
-      .estado-badge {
-        font-size: 0.75rem;
-        padding: 3px 10px;
-        border-radius: 999px;
-        font-weight: 600;
-      }
-      .estado-badge.sin-config {
-        background: #fef3c7;
-        color: #92400e;
-      }
-      .estado-badge.configurado {
-        background: #dcfce7;
-        color: #166534;
-      }
-      .dot-live {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: currentColor;
-        margin-right: 5px;
-        vertical-align: middle;
-      }
-
-      .step-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--primary, #3b82f6);
-        color: #fff;
-        font-size: 0.78rem;
-        font-weight: 700;
-        margin-right: 8px;
-      }
     </style>
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
-
       <main class="content">
         <!-- ENCABEZADO -->
         <div class="page-header">
@@ -217,11 +235,10 @@
           </div>
         </div>
 
-        <!-- PASO 1 — SELECCIÓN DE GRUPO -->
+        <!-- PASO 1: GRUPO -->
         <div class="card">
           <div class="card-title">
-            <span class="step-number">1</span>
-            Selecciona un grupo
+            <span class="step-number">1</span>Selecciona un grupo
           </div>
           <div class="field-group">
             <label>Grupo</label>
@@ -239,11 +256,10 @@
           </div>
         </div>
 
-        <!-- PASO 2 — SELECCIÓN DE UNIDAD -->
+        <!-- PASO 2: UNIDAD -->
         <div class="card" id="seccionUnidades" style="display: none">
           <div class="card-title">
-            <span class="step-number">2</span>
-            Selecciona una unidad
+            <span class="step-number">2</span>Selecciona una unidad
             <span class="badge-peso" id="badgePesoTotal"></span>
           </div>
           <div class="field-group">
@@ -258,20 +274,37 @@
           </div>
         </div>
 
-        <!-- PASO 3 — ACTIVIDADES Y CALIFICACIONES -->
+        <!-- PASO 3: CALIFICACIONES -->
         <div class="card" id="seccionActividades" style="display: none">
-          <div class="card-title">
-            <span class="step-number">3</span>
-            Captura de calificaciones
+          <div
+            class="card-title"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 10px;
+            "
+          >
+            <span>
+              <span class="step-number">3</span>Captura de calificaciones
+            </span>
+            <!-- Botón CSV — abre modal en lugar de sección expandida -->
+            <button
+              class="btn btn-outline"
+              onclick="abrirModalCSV()"
+              title="Importar calificaciones desde archivo CSV"
+              style="font-size: 0.82rem"
+            >
+              <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
+              Importar CSV
+            </button>
           </div>
 
-          <!-- Resumen de actividades de la unidad -->
           <div
             id="resumenActividades"
             style="margin-bottom: 14px; font-size: 0.85rem; color: #94a3b8"
           ></div>
-
-          <!-- Tabla generada dinámicamente por formulario.js -->
           <div id="tablaCalWrap"></div>
 
           <div class="acciones-row">
@@ -287,90 +320,88 @@
             </button>
           </div>
         </div>
-
-        <!-- PASO 4 — IMPORTAR CSV -->
-        <div class="card" id="seccionCSV" style="display: none">
-          <div class="card-title">
-            <span class="step-number">4</span>
-            Importar calificaciones desde CSV
-          </div>
-          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 12px">
-            El archivo CSV debe tener el formato:
-            <code>matricula,calificacion</code><br />
-            Ejemplo:
-          </p>
-          <div class="csv-format-example">
-            matricula,calificacion<br />
-            2023001,85<br />
-            2023002,70<br />
-            2023003,NP
-          </div>
-
-          <div class="field-group" style="margin: 14px 0 10px">
-            <label>Aplicar a la actividad</label>
-            <select id="selCSVActividad" style="max-width: 400px">
-              <option value="">-- Selecciona primero una unidad --</option>
-            </select>
-          </div>
-
-          <div
-            class="csv-drop-zone"
-            id="csvDropZone"
-            ondragover="
-              event.preventDefault();
-              this.classList.add('drag-over');
-            "
-            ondragleave="this.classList.remove('drag-over')"
-            ondrop="manejarDropCSV(event)"
-          >
-            <iconify-icon
-              icon="mdi:file-upload-outline"
-              style="font-size: 2rem; color: #64748b"
-            ></iconify-icon>
-            <p>Arrastra tu archivo CSV aquí o</p>
-            <label
-              class="btn btn-outline"
-              style="
-                cursor: pointer;
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-              "
-            >
-              <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
-              Seleccionar archivo
-              <input
-                type="file"
-                id="inputCSV"
-                accept=".csv"
-                style="display: none"
-                onchange="manejarDropCSV({ dataTransfer: null, target: this })"
-              />
-            </label>
-          </div>
-          <div id="csvPreview" style="margin-top: 12px"></div>
-        </div>
       </main>
+    </div>
+
+    <!-- MODAL CSV -->
+    <div
+      class="modal-overlay"
+      id="modalCSV"
+      onclick="if (event.target === this) cerrarModalCSV();"
+    >
+      <div class="modal-csv">
+        <div class="modal-csv-header">
+          <h3>
+            <iconify-icon
+              icon="mdi:file-delimited-outline"
+              style="color: var(--primary, #3b82f6)"
+            ></iconify-icon>
+            Importar calificaciones desde CSV
+          </h3>
+          <button class="btn-close" onclick="cerrarModalCSV()">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+
+        <p style="font-size: 0.82rem; color: #94a3b8; margin: 0 0 8px">
+          Formato requerido: <code>matricula,calificacion</code>
+        </p>
+        <div class="csv-format">
+          matricula,calificacion<br />
+          2023001,85<br />
+          2023002,70<br />
+          2023003,NP
+        </div>
+
+        <div class="field-group" style="margin: 14px 0 12px">
+          <label>Aplicar a la actividad</label>
+          <select id="selCSVActividad">
+            <option value="">-- Selecciona la actividad --</option>
+          </select>
+        </div>
+
+        <div
+          class="csv-drop-zone"
+          id="csvDropZone"
+          ondragover="
+            event.preventDefault();
+            this.classList.add('drag-over');
+          "
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="manejarArchivoCSV(event)"
+        >
+          <iconify-icon
+            icon="mdi:file-upload-outline"
+            style="font-size: 2.2rem; color: #64748b"
+          ></iconify-icon>
+          <p>Arrastra tu archivo CSV aquí o</p>
+          <label
+            class="btn btn-outline"
+            style="
+              cursor: pointer;
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              margin-top: 4px;
+            "
+          >
+            <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
+            Seleccionar archivo
+            <input
+              type="file"
+              id="inputCSV"
+              accept=".csv"
+              style="display: none"
+              onchange="manejarArchivoCSV(event)"
+            />
+          </label>
+        </div>
+
+        <div id="csvPreview"></div>
+      </div>
     </div>
 
     <script src="../js/sidebar.js"></script>
     <script src="../js/formulario.js"></script>
-
-    <!-- Mostrar sección CSV cuando se cargue una unidad -->
-    <script>
-      // Extender cargarUnidad para mostrar sección CSV
-      const _origCargarUnidad = cargarUnidad;
-      cargarUnidad = async function () {
-        await _origCargarUnidad();
-        const id = document.getElementById("selUnidad").value;
-        document.getElementById("seccionCSV").style.display = id
-          ? "block"
-          : "none";
-        // Actualizar badge de estado
-        const badge = document.getElementById("estadoBadge");
-        badge.className = "estado-badge " + (id ? "configurado" : "sin-config");
-        badge.innerHTML = `<span class="dot-live"></span>${id ? "Configurado" : "Sin configurar"}`;
-      };
-    </script>
   </body>
 </html>
