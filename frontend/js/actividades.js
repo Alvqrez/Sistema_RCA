@@ -11,15 +11,19 @@ let unidadesGrupoMap = {}; // id_grupo → [{ id_unidad, nombre_unidad, numero_u
 //  INIT
 // ─────────────────────────────────────────────────────────────────────
 (async function init() {
+  // Issue 2: fecha_entrega no puede ser en el pasado
+  const hoy = new Date().toISOString().split("T")[0];
+  const fechaInput = document.getElementById("fechaEntrega");
+  if (fechaInput) fechaInput.min = hoy;
+
   await cargarGruposSelect();
   await cargarActividades();
 })();
 
-// Carga grupos: maestro ve solo los suyos, admin ve todos
+// ── Carga grupos ──────────────────────────────────────────────────────
 async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
   const rol = localStorage.getItem("rol");
-
   const url =
     rol === "maestro"
       ? `${BASE_URL}/api/grupos/mis-grupos`
@@ -38,7 +42,6 @@ async function cargarGruposSelect() {
 
     const selCrear = document.getElementById("grupoActividad");
     const selFiltro = document.getElementById("filtroGrupo");
-
     selCrear.innerHTML = `<option value="">-- Selecciona grupo --</option>`;
     selFiltro.innerHTML = `<option value="">Todos los grupos</option>`;
 
@@ -53,14 +56,12 @@ async function cargarGruposSelect() {
   }
 }
 
-// ── Cargar unidades para un grupo (intenta grupo_unidad, luego materia) ─
+// ── Cargar unidades para un grupo (grupo_unidad → fallback materia) ───
 async function cargarUnidadesParaGrupo(idGrupo) {
   const token = localStorage.getItem("token");
-
-  // Si ya tenemos las unidades cacheadas, retornarlas
   if (unidadesGrupoMap[idGrupo]) return unidadesGrupoMap[idGrupo];
 
-  // 1) Intentar desde grupo_unidad
+  // 1) desde grupo_unidad
   try {
     const res = await fetch(`${BASE_URL}/api/grupos/${idGrupo}/unidades`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -68,17 +69,17 @@ async function cargarUnidadesParaGrupo(idGrupo) {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        // Asignar numero_unidad secuencial (1, 2, 3...)
-        const unidades = data.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+        const unidades = data.map((u, i) => ({
+          ...u,
+          numero_unidad: u.numero_unidad ?? i + 1,
+        }));
         unidadesGrupoMap[idGrupo] = unidades;
         return unidades;
       }
     }
-  } catch (_) {
-    /* fallback abajo */
-  }
+  } catch (_) {}
 
-  // 2) Fallback: unidades de la materia del grupo
+  // 2) fallback: unidades de la materia
   const g = gruposMap[idGrupo];
   if (g?.clave_materia) {
     try {
@@ -94,25 +95,38 @@ async function cargarUnidadesParaGrupo(idGrupo) {
           return unidades;
         }
       }
-    } catch (_) {
-      /* sin unidades */
-    }
+    } catch (_) {}
   }
-
   return [];
 }
 
-// ── Cuando cambia el grupo en el formulario de creación ──────────────
+// ── Issue 1 FIX: filtroGrupo usa la misma función de carga con fallback
+async function onFiltroGrupoChange() {
+  const idGrupo = document.getElementById("filtroGrupo").value;
+  const selUni = document.getElementById("filtroUnidad");
+  selUni.innerHTML = `<option value="">Todas las unidades</option>`;
+
+  if (idGrupo) {
+    const unidades = await cargarUnidadesParaGrupo(idGrupo);
+    unidades.forEach((u) => {
+      selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
+    });
+  }
+  filtrarActividades();
+}
+
+// ── grupoActividad change: carga unidades en el formulario de creación ─
 document
   .getElementById("grupoActividad")
   .addEventListener("change", async function () {
     const selUni = document.getElementById("unidadActividad");
-    selUni.innerHTML = `<option value="">Cargando unidades…</option>`;
+    selUni.innerHTML = `<option value="">Cargando…</option>`;
     selUni.disabled = true;
 
     if (!this.value) {
       selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
       selUni.disabled = false;
+      actualizarIndicadorPonderacion();
       return;
     }
 
@@ -122,34 +136,84 @@ document
     if (unidades.length === 0) {
       selUni.innerHTML = `<option value="">⚠ Sin unidades — créalas primero</option>`;
       mostrarToast(
-        "Este grupo no tiene unidades registradas. Ve a Unidades y crea las unidades para esta materia.",
+        "Este grupo no tiene unidades. Ve a la sección Unidades y créalas para esta materia.",
         "error",
       );
+      actualizarIndicadorPonderacion();
       return;
     }
 
     selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
     unidades.forEach((u) => {
-      // Bug 2 fix: muestra "(Unidad X) Nombre"
+      // Issue 6 (formulario) / Issue 2 en actividades: mostrar "(Unidad X) nombre"
       selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
     });
+    actualizarIndicadorPonderacion();
   });
 
-// ── Cambio en filtro de grupo ─────────────────────────────────────────
+// ── unidadActividad change: actualiza el indicador ────────────────────
 document
-  .getElementById("filtroGrupo")
-  .addEventListener("change", async function () {
-    const selUni = document.getElementById("filtroUnidad");
-    selUni.innerHTML = `<option value="">Todas las unidades</option>`;
-
-    if (this.value) {
-      const unidades = await cargarUnidadesParaGrupo(this.value);
-      unidades.forEach((u) => {
-        selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
-      });
-    }
-    filtrarActividades();
+  .getElementById("unidadActividad")
+  .addEventListener("change", function () {
+    actualizarIndicadorPonderacion();
   });
+
+// ─────────────────────────────────────────────────────────────────────
+//  Issue 3: INDICADOR DE PONDERACIÓN DISPONIBLE
+// ─────────────────────────────────────────────────────────────────────
+function actualizarIndicadorPonderacion() {
+  const idGrupo = document.getElementById("grupoActividad").value;
+  const idUnidad = document.getElementById("unidadActividad").value;
+  const pondNueva =
+    parseFloat(document.getElementById("ponderacion").value) || 0;
+
+  const bigEl = document.querySelector("#indicadorPonderacion .pond-big");
+  const label = document.querySelector("#indicadorPonderacion .pond-label");
+  const barFill = document.getElementById("pondBarFill");
+
+  if (!bigEl) return;
+
+  if (!idGrupo || !idUnidad) {
+    bigEl.textContent = "—";
+    bigEl.style.color = "var(--text-muted)";
+    label.textContent = "Selecciona grupo y unidad";
+    barFill.style.width = "0%";
+    barFill.style.background = "var(--primary)";
+    return;
+  }
+
+  const usado = todasActividades
+    .filter(
+      (a) =>
+        String(a.id_grupo) === String(idGrupo) &&
+        String(a.id_unidad) === String(idUnidad),
+    )
+    .reduce((s, a) => s + parseFloat(a.ponderacion), 0);
+
+  const disponible = Math.max(0, 100 - usado);
+  const conNueva = usado + pondNueva;
+  const excede = conNueva > 100;
+  const color = excede
+    ? "var(--danger)"
+    : disponible === 0
+      ? "var(--danger)"
+      : disponible < 20
+        ? "var(--warning, #f59e0b)"
+        : "var(--success)";
+  const barColor = conNueva > 100 ? "var(--danger)" : "var(--primary)";
+  const barWidth = Math.min(100, conNueva || usado);
+
+  bigEl.textContent = excede ? "¡Excede!" : `${disponible}%`;
+  bigEl.style.color = color;
+  label.textContent = `${usado}% usado${pondNueva > 0 ? ` + ${pondNueva}% nueva = ${conNueva}%` : ""} · ${disponible}% disponible`;
+  barFill.style.width = barWidth + "%";
+  barFill.style.background = barColor;
+}
+
+// Llama también cuando cambia la ponderacion input (ya conectado con oninput en HTML)
+function actualizarIndicadorEnTiempoReal() {
+  actualizarIndicadorPonderacion();
+}
 
 // ─────────────────────────────────────────────────────────────────────
 //  CARGAR Y RENDERIZAR ACTIVIDADES
@@ -170,6 +234,7 @@ async function cargarActividades() {
     }
     todasActividades = await res.json();
     filtrarActividades();
+    actualizarIndicadorPonderacion(); // actualiza indicador con datos frescos
   } catch (e) {
     console.error("No se pudo cargar actividades:", e);
     mostrarToast("Error de conexión al cargar actividades", "error");
@@ -199,7 +264,7 @@ function renderTablaActividades(actividades) {
   if (actividades.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">
+        <td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">
           <iconify-icon icon="mdi:clipboard-text-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
           Sin actividades registradas
         </td>
@@ -213,10 +278,8 @@ function renderTablaActividades(actividades) {
       ? `<span style="font-weight:600">${grupo.nombre_materia}</span><br><span style="font-size:0.75rem;color:var(--text-muted)">${grupo.nombre_maestro}</span>`
       : `Grupo ${a.id_grupo}`;
 
-    // Bug 2 fix: usar numero_unidad del backend; fallback al id si no viene
     const numUnidad = a.numero_unidad ?? a.id_unidad;
     const nombreUnidad = a.nombre_unidad ? ` — ${a.nombre_unidad}` : "";
-
     const esActiva =
       actividadActiva && actividadActiva.id_actividad === a.id_actividad;
 
@@ -225,17 +288,14 @@ function renderTablaActividades(actividades) {
     if (esActiva) tr.classList.add("fila-activa");
 
     tr.innerHTML = `
-      <td>
-        <span style="font-weight:600">${a.nombre_actividad}</span>
-      </td>
+      <td><span style="font-weight:600">${a.nombre_actividad}</span></td>
       <td>${grupoLabel}</td>
       <td>
-        <span class="badge-unidad" title="${a.nombre_unidad ?? ""}">Unidad ${numUnidad}${nombreUnidad}</span>
+        <span class="badge-unidad" title="${a.nombre_unidad ?? ""}">
+          Unidad ${numUnidad}${nombreUnidad}
+        </span>
       </td>
-      <td>
-        <span class="pond-chip chip-act">${a.ponderacion}%</span>
-      </td>
-      <td><span class="tipo-badge tipo-${(a.tipo_evaluacion || "").toLowerCase().substring(0, 3)}">${a.tipo_evaluacion || "—"}</span></td>
+      <td><span class="pond-chip chip-act">${a.ponderacion}%</span></td>
       <td style="font-size:0.82rem;color:var(--text-muted)">${a.fecha_entrega ? formatFecha(a.fecha_entrega) : "—"}</td>
       <td id="conteo-${a.id_actividad}">
         <span style="font-size:0.8rem;color:var(--text-muted)">—</span>
@@ -266,32 +326,48 @@ function renderTablaActividades(actividades) {
 async function registrarActividad() {
   const token = localStorage.getItem("token");
 
-  const actividad = {
-    id_grupo: document.getElementById("grupoActividad").value,
-    id_unidad: document.getElementById("unidadActividad").value,
-    nombre_actividad: document.getElementById("nombreActividad").value.trim(),
-    ponderacion: document.getElementById("ponderacion").value,
-    tipo_evaluacion:
-      document.getElementById("tipoEvaluacion").value || "Sumativa",
-    fecha_entrega: document.getElementById("fechaEntrega").value || null,
-  };
+  const id_grupo = document.getElementById("grupoActividad").value;
+  const id_unidad = document.getElementById("unidadActividad").value;
+  const nombre_actividad = document
+    .getElementById("nombreActividad")
+    .value.trim();
+  const ponderacion = document.getElementById("ponderacion").value;
+  const fecha_entrega = document.getElementById("fechaEntrega").value || null;
 
-  if (!actividad.id_grupo) {
+  if (!id_grupo) {
     mostrarToast("Selecciona un grupo", "error");
     return;
   }
-  if (!actividad.id_unidad) {
+  if (!id_unidad) {
     mostrarToast("Selecciona una unidad", "error");
     return;
   }
-  if (!actividad.nombre_actividad) {
+  if (!nombre_actividad) {
     mostrarToast("Escribe el nombre de la actividad", "error");
     return;
   }
-  if (!actividad.ponderacion || parseFloat(actividad.ponderacion) <= 0) {
+  if (!ponderacion || parseFloat(ponderacion) <= 0) {
     mostrarToast("Ingresa una ponderación válida (mayor a 0)", "error");
     return;
   }
+
+  // Issue 2: validar que la fecha no sea en el pasado
+  if (fecha_entrega) {
+    const hoy = new Date().toISOString().split("T")[0];
+    if (fecha_entrega < hoy) {
+      mostrarToast("La fecha de entrega no puede ser en el pasado", "error");
+      return;
+    }
+  }
+
+  const actividad = {
+    id_grupo,
+    id_unidad,
+    nombre_actividad,
+    ponderacion,
+    tipo_evaluacion: "Sumativa",
+    fecha_entrega,
+  };
 
   try {
     const res = await fetch(`${BASE_URL}/api/actividades`, {
@@ -302,8 +378,6 @@ async function registrarActividad() {
       },
       body: JSON.stringify(actividad),
     });
-
-    // Parsear JSON independientemente del status code
     let data;
     try {
       data = await res.json();
@@ -312,12 +386,12 @@ async function registrarActividad() {
     }
 
     if (res.ok && data.success) {
-      const porcRestante = 100 - (data.total_ponderacion ?? 0);
+      const restante = 100 - (data.total_ponderacion ?? 0);
       mostrarToast(
-        `Actividad registrada. Ponderación acumulada: ${data.total_ponderacion}%` +
-          (porcRestante > 0
-            ? ` (falta ${porcRestante.toFixed(0)}%)`
-            : " ✓ Completa"),
+        `Actividad registrada. Acumulado: ${data.total_ponderacion}%` +
+          (restante > 0
+            ? ` · Disponible: ${restante.toFixed(0)}%`
+            : " ✓ Unidad completa"),
         "success",
       );
       limpiarFormActividad();
@@ -326,7 +400,6 @@ async function registrarActividad() {
       mostrarToast(data.error || "Error al registrar la actividad", "error");
     }
   } catch (e) {
-    console.error(e);
     mostrarToast("Error de conexión con el servidor", "error");
   }
 }
@@ -337,8 +410,8 @@ function limpiarFormActividad() {
     `<option value="">-- Selecciona unidad --</option>`;
   document.getElementById("nombreActividad").value = "";
   document.getElementById("ponderacion").value = "";
-  document.getElementById("tipoEvaluacion").value = "";
   document.getElementById("fechaEntrega").value = "";
+  actualizarIndicadorPonderacion();
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -364,13 +437,13 @@ async function abrirPanelCalificaciones(id_actividad) {
 
   const grupo = gruposMap[act.id_grupo];
   const numUnidad = act.numero_unidad ?? act.id_unidad;
+
   document.getElementById("tituloPanelCal").textContent =
     `Calificaciones — ${act.nombre_actividad}`;
   document.getElementById("infoPanelCal").innerHTML = `
     <span class="info-chip"><iconify-icon icon="mdi:school-outline"></iconify-icon>${grupo?.nombre_materia || "Grupo " + act.id_grupo}</span>
     <span class="badge-unidad" style="margin-left:8px">Unidad ${numUnidad}</span>
     <span class="pond-chip chip-act" style="margin-left:8px">${act.ponderacion}% de la unidad</span>
-    <span class="tipo-badge tipo-${(act.tipo_evaluacion || "").toLowerCase().substring(0, 3)}" style="margin-left:8px">${act.tipo_evaluacion || ""}</span>
   `;
 
   const panel = document.getElementById("panelCalActividad");
@@ -378,12 +451,14 @@ async function abrirPanelCalificaciones(id_actividad) {
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const tbody = document.getElementById("tbodyCal");
-  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Cargando alumnos...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Cargando…</td></tr>`;
 
   try {
     const res = await fetch(
       `${BASE_URL}/api/resultado-actividad/actividad/${id_actividad}`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
     );
     const alumnos = await res.json();
 
@@ -398,11 +473,9 @@ async function abrirPanelCalificaciones(id_actividad) {
       : 0;
     const total = Array.isArray(alumnos) ? alumnos.length : 0;
     const conteo = document.getElementById(`conteo-${id_actividad}`);
-    if (conteo) {
+    if (conteo)
       conteo.innerHTML = `<span style="font-size:0.8rem">${entregados}/${total} <span style="color:var(--text-muted)">entregaron</span></span>`;
-    }
   } catch (e) {
-    console.error(e);
     await cargarAlumnosSinInscripcion(act);
   }
 }
@@ -414,14 +487,16 @@ async function cargarAlumnosSinInscripcion(act) {
       headers: { Authorization: `Bearer ${token}` },
     });
     const alumnos = await res.json();
-    const datos = alumnos.map((a) => ({
-      matricula: a.matricula,
-      nombre_alumno: `${a.nombre} ${a.apellido_paterno}`,
-      calificacion_obtenida: null,
-      estatus: null,
-    }));
-    renderTablaCal(datos, act);
-  } catch (e) {
+    renderTablaCal(
+      alumnos.map((a) => ({
+        matricula: a.matricula,
+        nombre_alumno: `${a.nombre} ${a.apellido_paterno}`,
+        calificacion_obtenida: null,
+        estatus: null,
+      })),
+      act,
+    );
+  } catch {
     document.getElementById("tbodyCal").innerHTML =
       `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No se pudo cargar la lista de alumnos.</td></tr>`;
   }
@@ -432,7 +507,7 @@ function renderTablaCal(alumnos, act) {
   const grupo = gruposMap[act.id_grupo];
 
   if (alumnos.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No hay alumnos en este grupo. Inscríbelos primero.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No hay alumnos en este grupo.</td></tr>`;
     return;
   }
 
@@ -441,46 +516,37 @@ function renderTablaCal(alumnos, act) {
     const entrego = a.estatus === "Validada";
     const esNP = a.estatus === "NP";
     const calVal = a.calificacion_obtenida ?? "";
-
     const tr = document.createElement("tr");
     tr.dataset.matricula = a.matricula;
-
     tr.innerHTML = `
       <td class="td-alumno">${a.nombre_alumno}</td>
       <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
       <td style="font-size:0.82rem">${grupo?.nombre_materia || "—"}</td>
       <td style="text-align:center">
-        <label class="toggle-entrego" title="${entrego ? "Entregado" : "No entregado"}">
+        <label class="toggle-entrego">
           <input type="checkbox" class="chk-entrego" data-matricula="${a.matricula}"
                  ${entrego ? "checked" : ""} onchange="toggleEntrego(this)" />
           <span class="toggle-track-cal"></span>
         </label>
       </td>
       <td>
-        <input class="cal-input" type="number" min="0" max="100"
-               placeholder="0"
-               value="${calVal}"
-               data-matricula="${a.matricula}"
+        <input class="cal-input" type="number" min="0" max="100" placeholder="0"
+               value="${calVal}" data-matricula="${a.matricula}"
                ${esNP ? 'disabled title="Marcado como NP"' : ""}
                oninput="actualizarEstatusFila(this)" />
       </td>
-      <td id="estatus-${a.matricula}">
-        ${renderEstatusBadge(a.estatus, a.calificacion_obtenida)}
-      </td>
+      <td id="estatus-${a.matricula}">${renderEstatusBadge(a.estatus, a.calificacion_obtenida)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function renderEstatusBadge(estatus, calificacion) {
-  if (
-    estatus === "NP" ||
-    (!estatus && calificacion === null && calificacion !== 0)
-  )
+function renderEstatusBadge(estatus, cal) {
+  if (estatus === "NP" || (!estatus && cal === null && cal !== 0))
     return `<span class="badge-estatus badge-np">NP</span>`;
   if (estatus === "Validada") {
-    const aprobado = parseFloat(calificacion) >= 60;
-    return `<span class="badge-estatus ${aprobado ? "badge-aprobado" : "badge-reprobado"}">${aprobado ? "Aprobado" : "Reprobado"}</span>`;
+    const ap = parseFloat(cal) >= 60;
+    return `<span class="badge-estatus ${ap ? "badge-aprobado" : "badge-reprobado"}">${ap ? "Aprobado" : "Reprobado"}</span>`;
   }
   return `<span class="badge-estatus badge-pendiente">Pendiente</span>`;
 }
@@ -488,69 +554,50 @@ function renderEstatusBadge(estatus, calificacion) {
 function toggleEntrego(chk) {
   const mat = chk.dataset.matricula;
   const tr = document.querySelector(`tr[data-matricula="${mat}"]`);
-  const calInput = tr.querySelector(".cal-input");
-  const entrego = chk.checked;
-
-  if (!entrego) {
-    calInput.disabled = true;
-    calInput.value = "";
-  } else {
-    calInput.disabled = false;
-    if (!calInput.value) calInput.value = "0";
-  }
+  const inp = tr.querySelector(".cal-input");
+  chk.checked
+    ? ((inp.disabled = false), !inp.value && (inp.value = "0"))
+    : ((inp.disabled = true), (inp.value = ""));
   actualizarEstatusFilaPorMatricula(mat);
 }
-
 function actualizarEstatusFila(inp) {
   actualizarEstatusFilaPorMatricula(inp.dataset.matricula);
 }
-
 function actualizarEstatusFilaPorMatricula(mat) {
   const tr = document.querySelector(`tr[data-matricula="${mat}"]`);
   if (!tr) return;
   const chk = tr.querySelector(".chk-entrego");
-  const calInput = tr.querySelector(".cal-input");
-  const estatusEl = document.getElementById(`estatus-${mat}`);
-  if (!estatusEl) return;
-
-  const entrego = chk.checked;
-  const cal = parseFloat(calInput.value);
-
-  let badge;
-  if (!entrego) {
-    badge = `<span class="badge-estatus badge-np">NP</span>`;
-  } else if (isNaN(cal)) {
-    badge = `<span class="badge-estatus badge-pendiente">Pendiente</span>`;
-  } else {
-    const aprobado = cal >= 60;
-    badge = `<span class="badge-estatus ${aprobado ? "badge-aprobado" : "badge-reprobado"}">${aprobado ? "Aprobado" : "Reprobado"}</span>`;
-  }
-  estatusEl.innerHTML = badge;
+  const inp = tr.querySelector(".cal-input");
+  const el = document.getElementById(`estatus-${mat}`);
+  if (!el) return;
+  const cal = parseFloat(inp.value);
+  el.innerHTML = !chk.checked
+    ? `<span class="badge-estatus badge-np">NP</span>`
+    : isNaN(cal)
+      ? `<span class="badge-estatus badge-pendiente">Pendiente</span>`
+      : `<span class="badge-estatus ${cal >= 60 ? "badge-aprobado" : "badge-reprobado"}">${cal >= 60 ? "Aprobado" : "Reprobado"}</span>`;
 }
 
 function marcarTodosNP() {
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
-    const mat = tr.dataset.matricula;
     const chk = tr.querySelector(".chk-entrego");
-    const calInput = tr.querySelector(".cal-input");
+    const inp = tr.querySelector(".cal-input");
     if (!chk) return;
     chk.checked = false;
-    calInput.disabled = true;
-    calInput.value = "";
-    actualizarEstatusFilaPorMatricula(mat);
+    inp.disabled = true;
+    inp.value = "";
+    actualizarEstatusFilaPorMatricula(tr.dataset.matricula);
   });
 }
-
 function marcarTodosEntregados() {
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
-    const mat = tr.dataset.matricula;
     const chk = tr.querySelector(".chk-entrego");
-    const calInput = tr.querySelector(".cal-input");
+    const inp = tr.querySelector(".cal-input");
     if (!chk) return;
     chk.checked = true;
-    calInput.disabled = false;
-    if (!calInput.value) calInput.value = "0";
-    actualizarEstatusFilaPorMatricula(mat);
+    inp.disabled = false;
+    if (!inp.value) inp.value = "0";
+    actualizarEstatusFilaPorMatricula(tr.dataset.matricula);
   });
 }
 
@@ -562,20 +609,19 @@ async function guardarCalificacionesActividad() {
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
     const mat = tr.dataset.matricula;
     const chk = tr.querySelector(".chk-entrego");
-    const calInput = tr.querySelector(".cal-input");
+    const inp = tr.querySelector(".cal-input");
     if (!mat) return;
-
-    const entrego = chk?.checked;
-    const cal = parseFloat(calInput?.value);
-
     resultados.push({
       matricula: mat,
-      calificacion_obtenida: entrego && !isNaN(cal) ? cal : null,
-      estatus: entrego ? "Validada" : "NP",
+      calificacion_obtenida:
+        chk?.checked && !isNaN(parseFloat(inp?.value))
+          ? parseFloat(inp.value)
+          : null,
+      estatus: chk?.checked ? "Validada" : "NP",
     });
   });
 
-  if (resultados.length === 0) {
+  if (!resultados.length) {
     mostrarToast("No hay alumnos para guardar", "error");
     return;
   }
@@ -598,13 +644,10 @@ async function guardarCalificacionesActividad() {
     } catch {
       data = { error: "Error del servidor" };
     }
-
-    if (res.ok && data.success) {
-      mostrarToast(`${data.guardados} calificaciones guardadas`, "success");
-    } else {
-      mostrarToast(data.error || "Error al guardar", "error");
-    }
-  } catch (e) {
+    res.ok && data.success
+      ? mostrarToast(`${data.guardados} calificaciones guardadas`, "success")
+      : mostrarToast(data.error || "Error al guardar", "error");
+  } catch {
     mostrarToast("Error de conexión", "error");
   }
 }
@@ -618,15 +661,11 @@ function cerrarPanelCal() {
 // ─────────────────────────────────────────────────────────────────────
 //  ELIMINAR ACTIVIDAD
 // ─────────────────────────────────────────────────────────────────────
-let idEliminarPendiente = null;
-
 function pedirEliminar(id) {
-  idEliminarPendiente = id;
   document.getElementById("modalEliminar").classList.add("visible");
   document.getElementById("btnConfirmarEliminar").onclick = () =>
     confirmarEliminar(id);
 }
-
 async function confirmarEliminar(id) {
   cerrarModal("modalEliminar");
   const token = localStorage.getItem("token");
@@ -641,7 +680,6 @@ async function confirmarEliminar(id) {
     } catch {
       data = { error: "Error del servidor" };
     }
-
     if (res.ok && data.success) {
       mostrarToast("Actividad eliminada", "success");
       if (actividadActiva?.id_actividad === id) cerrarPanelCal();
@@ -649,7 +687,7 @@ async function confirmarEliminar(id) {
     } else {
       mostrarToast(data.error || "Error al eliminar", "error");
     }
-  } catch (e) {
+  } catch {
     mostrarToast("Error de conexión", "error");
   }
 }
@@ -659,36 +697,33 @@ async function confirmarEliminar(id) {
 // ─────────────────────────────────────────────────────────────────────
 function formatFecha(f) {
   if (!f) return "—";
-  const d = new Date(f);
-  return d.toLocaleDateString("es-MX", {
+  return new Date(f).toLocaleDateString("es-MX", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 }
-
 function abrirModal(id) {
   document.getElementById(id).classList.add("visible");
 }
 function cerrarModal(id) {
   document.getElementById(id).classList.remove("visible");
 }
-
-document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.classList.remove("visible");
-  });
-});
+document.querySelectorAll(".modal-overlay").forEach((o) =>
+  o.addEventListener("click", (e) => {
+    if (e.target === o) o.classList.remove("visible");
+  }),
+);
 
 function mostrarToast(msg, tipo = "success") {
-  let toast = document.getElementById("rca-toast");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "rca-toast";
-    document.body.appendChild(toast);
+  let t = document.getElementById("rca-toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "rca-toast";
+    document.body.appendChild(t);
   }
-  toast.textContent = msg;
-  toast.className = `rca-toast rca-toast-${tipo} visible`;
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove("visible"), 4000);
+  t.textContent = msg;
+  t.className = `rca-toast rca-toast-${tipo} visible`;
+  clearTimeout(t._x);
+  t._x = setTimeout(() => t.classList.remove("visible"), 4000);
 }

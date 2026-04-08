@@ -61,7 +61,9 @@
         font-weight: 600;
         padding: 2px 10px;
         border-radius: 999px;
-        background: var(--surface-2, #1e293b);
+        background: var(--bg-app);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
         margin-left: 12px;
       }
       .tabla-calificaciones {
@@ -73,38 +75,130 @@
       .tabla-calificaciones td {
         padding: 8px 10px;
         text-align: left;
-        border-bottom: 1px solid var(--border, #1e293b);
+        border-bottom: 1px solid var(--border);
       }
       .tabla-calificaciones th {
         font-size: 0.75rem;
         font-weight: 600;
-        color: var(--text-muted, #64748b);
+        color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        background: var(--surface-2, #0f172a);
+        background: var(--bg-app);
       }
+
+      /* ── Issue 4 FIX: cal-input visible en ambos modos ──────────────── */
       .cal-input {
         width: 72px;
-        padding: 4px 8px;
+        padding: 5px 8px;
         border-radius: 6px;
-        border: 1px solid var(--border, #334155);
-        background: var(--surface-2, #1e293b);
-        color: var(--text, #e2e8f0);
+        border: 1.5px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-main);
         font-size: 0.85rem;
         text-align: center;
+        font-family: inherit;
+        transition: border-color 0.15s;
       }
       .cal-input:focus {
-        outline: 2px solid var(--primary, #3b82f6);
-        border-color: transparent;
+        outline: none;
+        border-color: var(--primary, #3b82f6);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
       }
+      .cal-input:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* ── Input genérico inline (bonus justificación) ─────────────────── */
+      .inline-input {
+        width: 100%;
+        padding: 5px 8px;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-main);
+        font-size: 0.82rem;
+        font-family: inherit;
+        transition: border-color 0.15s;
+      }
+      .inline-input:focus {
+        outline: none;
+        border-color: var(--primary, #3b82f6);
+      }
+
       .acciones-row {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
         margin-top: 16px;
         padding-top: 16px;
-        border-top: 1px solid var(--border, #1e293b);
+        border-top: 1px solid var(--border);
       }
+
+      /* ── Sección de bonus ─────────────────────────────────────────────── */
+      .bonus-section {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 2px dashed var(--border);
+      }
+      .bonus-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .bonus-header iconify-icon {
+        font-size: 1.25rem;
+        color: var(--warning, #f59e0b);
+      }
+      .bonus-header h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .bonus-header .hint {
+        margin-left: auto;
+        font-size: 0.77rem;
+        color: var(--text-muted);
+      }
+
+      /* ── Configurar pesos de unidades ────────────────────────────────── */
+      .config-unidades {
+        margin-top: 16px;
+        padding: 14px 16px;
+        background: var(--bg-app);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      .config-unidades-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .unidad-peso-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+      }
+      .unidad-peso-row label {
+        flex: 1;
+        color: var(--text-main);
+      }
+      .unidad-peso-row .pond-sum-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+
       /* Modal CSV */
       .modal-overlay {
         display: none;
@@ -119,12 +213,13 @@
         display: flex;
       }
       .modal-csv {
-        background: var(--surface, #1e293b);
+        background: var(--bg-card);
         border-radius: 14px;
         padding: 28px;
         width: 100%;
         max-width: 500px;
-        box-shadow: 0 20px 60px #0009;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border);
       }
       .modal-csv-header {
         display: flex;
@@ -143,16 +238,16 @@
         background: none;
         border: none;
         cursor: pointer;
-        color: var(--text-muted, #64748b);
+        color: var(--text-muted);
         font-size: 1.2rem;
         padding: 4px;
         border-radius: 6px;
       }
       .btn-close:hover {
-        background: var(--surface-2, #0f172a);
+        background: var(--bg-app);
       }
       .csv-drop-zone {
-        border: 2px dashed var(--border, #334155);
+        border: 2px dashed var(--border);
         border-radius: 10px;
         padding: 24px 20px;
         text-align: center;
@@ -164,19 +259,19 @@
       .csv-drop-zone:hover,
       .csv-drop-zone.drag-over {
         border-color: var(--primary, #3b82f6);
-        background: #3b82f610;
+        background: rgba(59, 130, 246, 0.06);
       }
       .csv-drop-zone p {
-        color: var(--text-muted, #64748b);
+        color: var(--text-muted);
         margin: 8px 0;
         font-size: 0.85rem;
       }
       .csv-format {
-        background: var(--surface-2, #0f172a);
+        background: var(--bg-app);
         border-radius: 6px;
         padding: 10px 14px;
         font-size: 0.78rem;
-        color: #94a3b8;
+        color: var(--text-muted);
         margin: 8px 0;
         line-height: 1.8;
         font-family: monospace;
@@ -205,6 +300,9 @@
       }
       .rca-toast-error {
         background: #dc2626;
+      }
+      .rca-toast-info {
+        background: #2563eb;
       }
     </style>
   </head>
@@ -254,6 +352,35 @@
             <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
             <p>Selecciona un grupo para comenzar</p>
           </div>
+
+          <!-- Configurar pesos de unidades (visible cuando hay grupo seleccionado) -->
+          <div
+            id="configUnidades"
+            class="config-unidades"
+            style="display: none"
+          >
+            <div class="config-unidades-title">
+              <iconify-icon
+                icon="mdi:tune-variant"
+                style="font-size: 1rem"
+              ></iconify-icon>
+              Pesos de unidades en la calificación final
+              <span
+                id="sumaPesosUnidades"
+                class="pond-sum-badge"
+                style="margin-left: auto"
+              ></span>
+            </div>
+            <div id="listaUnidadesPesos"></div>
+            <button
+              class="btn btn-outline btn-sm"
+              style="margin-top: 8px"
+              onclick="guardarPesosUnidades()"
+            >
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Guardar pesos
+            </button>
+          </div>
         </div>
 
         <!-- PASO 2: UNIDAD -->
@@ -264,6 +391,7 @@
           </div>
           <div class="field-group">
             <label>Unidad</label>
+            <!-- Issue 6: opciones con "(Unidad X)" agregadas por JS -->
             <select
               id="selUnidad"
               onchange="cargarUnidad()"
@@ -289,11 +417,9 @@
             <span>
               <span class="step-number">3</span>Captura de calificaciones
             </span>
-            <!-- Botón CSV — abre modal en lugar de sección expandida -->
             <button
               class="btn btn-outline"
               onclick="abrirModalCSV()"
-              title="Importar calificaciones desde archivo CSV"
               style="font-size: 0.82rem"
             >
               <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
@@ -303,9 +429,34 @@
 
           <div
             id="resumenActividades"
-            style="margin-bottom: 14px; font-size: 0.85rem; color: #94a3b8"
+            style="
+              margin-bottom: 14px;
+              font-size: 0.85rem;
+              color: var(--text-muted);
+            "
           ></div>
           <div id="tablaCalWrap"></div>
+
+          <!-- ── Puntos extra / Bonus por unidad ──────────────────────── -->
+          <div class="bonus-section" id="seccionBonus" style="display: none">
+            <div class="bonus-header">
+              <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
+              <h3>Puntos extra (Bonus de unidad)</h3>
+              <span class="hint"
+                >Opcional · tope automático en 100 · requiere
+                justificación</span
+              >
+            </div>
+            <div id="bonusWrap"></div>
+            <button
+              class="btn btn-outline btn-sm"
+              style="margin-top: 10px"
+              onclick="guardarBonusUnidad()"
+            >
+              <iconify-icon icon="mdi:star-check-outline"></iconify-icon>
+              Guardar puntos extra
+            </button>
+          </div>
 
           <div class="acciones-row">
             <button class="btn btn-primary" onclick="guardarCalificaciones()">
@@ -342,8 +493,9 @@
             <iconify-icon icon="mdi:close"></iconify-icon>
           </button>
         </div>
-
-        <p style="font-size: 0.82rem; color: #94a3b8; margin: 0 0 8px">
+        <p
+          style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 8px"
+        >
           Formato requerido: <code>matricula,calificacion</code>
         </p>
         <div class="csv-format">
@@ -352,14 +504,12 @@
           2023002,70<br />
           2023003,NP
         </div>
-
         <div class="field-group" style="margin: 14px 0 12px">
           <label>Aplicar a la actividad</label>
           <select id="selCSVActividad">
             <option value="">-- Selecciona la actividad --</option>
           </select>
         </div>
-
         <div
           class="csv-drop-zone"
           id="csvDropZone"
@@ -372,7 +522,7 @@
         >
           <iconify-icon
             icon="mdi:file-upload-outline"
-            style="font-size: 2.2rem; color: #64748b"
+            style="font-size: 2.2rem; color: var(--text-muted)"
           ></iconify-icon>
           <p>Arrastra tu archivo CSV aquí o</p>
           <label
@@ -396,7 +546,6 @@
             />
           </label>
         </div>
-
         <div id="csvPreview"></div>
       </div>
     </div>

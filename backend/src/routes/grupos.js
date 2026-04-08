@@ -91,12 +91,14 @@ router.get("/:id", verificarToken, (req, res) => {
 
 // GET — unidades de un grupo con su ponderación
 router.get("/:id/unidades", verificarToken, (req, res) => {
+  // numero_unidad: número secuencial de la unidad dentro de su materia (Unidad 1, 2, 3…)
   const sql = `
-    SELECT gu.id_unidad, u.nombre_unidad, u.estatus, gu.ponderacion
+    SELECT gu.id_unidad, u.nombre_unidad, u.estatus, gu.ponderacion,
+           ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
     FROM grupo_unidad gu
     JOIN unidad u ON gu.id_unidad = u.id_unidad
     WHERE gu.id_grupo = ?
-    ORDER BY gu.id_unidad
+    ORDER BY u.id_unidad
   `;
   db.query(sql, [req.params.id], (err, results) => {
     if (err)

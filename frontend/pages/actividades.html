@@ -19,6 +19,44 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Indicador de ponderación disponible ───────────────────────── */
+      .pond-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--bg-app);
+        border-radius: 8px;
+        border: 1.5px solid var(--border);
+        min-height: 44px;
+      }
+      .pond-indicator .pond-big {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        min-width: 52px;
+      }
+      .pond-indicator .pond-track {
+        flex: 1;
+      }
+      .pond-indicator .pond-label {
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+      }
+      .pond-bar-bg {
+        height: 6px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .pond-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.35s ease;
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
@@ -67,17 +105,31 @@
                 min="1"
                 max="100"
                 placeholder="0–100"
+                oninput="actualizarIndicadorEnTiempoReal()"
               />
             </div>
+
+            <!-- Issue 3: Reemplaza "Tipo de evaluación" con el indicador de ponderación -->
             <div class="field-group">
-              <label>Tipo de evaluación</label>
-              <select id="tipoEvaluacion">
-                <option value="">Seleccione</option>
-                <option value="Sumativa">Sumativa</option>
-                <option value="Formativa">Formativa</option>
-                <option value="Diagnóstica">Diagnóstica</option>
-              </select>
+              <label>Disponible en esta unidad</label>
+              <div class="pond-indicator" id="indicadorPonderacion">
+                <span class="pond-big" style="color: var(--text-muted)">—</span>
+                <div class="pond-track">
+                  <div class="pond-label">Selecciona grupo y unidad</div>
+                  <div class="pond-bar-bg">
+                    <div
+                      class="pond-bar-fill"
+                      id="pondBarFill"
+                      style="width: 0%; background: var(--primary)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Campo oculto — el backend sigue recibiendo el tipo por defecto -->
+              <input type="hidden" id="tipoEvaluacion" value="Sumativa" />
             </div>
+
+            <!-- Issue 2: fecha_entrega con min = hoy (lo establece JS en init) -->
             <div class="field-group">
               <label>Fecha de entrega</label>
               <input type="date" id="fechaEntrega" />
@@ -116,7 +168,7 @@
             <div style="display: flex; gap: 12px; flex-wrap: wrap">
               <div class="field-group" style="flex: 1; min-width: 160px">
                 <label>Filtrar por grupo</label>
-                <select id="filtroGrupo" onchange="filtrarActividades()">
+                <select id="filtroGrupo" onchange="onFiltroGrupoChange()">
                   <option value="">Todos los grupos</option>
                 </select>
               </div>
@@ -146,7 +198,6 @@
                   <th>Grupo / Materia</th>
                   <th>Unidad</th>
                   <th>Ponderación</th>
-                  <th>Tipo</th>
                   <th>Entrega</th>
                   <th>Alumnos calificados</th>
                   <th>Acciones</th>
