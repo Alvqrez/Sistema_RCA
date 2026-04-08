@@ -1,101 +1,137 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Materias - RCA</title>
-    <script>
-      if (localStorage.getItem("tema") === "oscuro") {
-        document.documentElement.classList.add("dark-mode");
-      }
-    </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../css/styles.css" />
-  </head>
-  <body>
-    <div class="layout">
-      <aside class="sidebar"></aside>
-      <main class="content">
-        <h1>Materias</h1>
 
-        <!-- FORMULARIO -->
-        <div class="card" id="cardFormMateria">
-          <h2 id="tituloFormMateria">Registrar materia</h2>
-          <form id="formMateria" class="form-grid">
-            <div>
-              <label>Clave <span style="color: red">*</span></label>
-              <input
-                type="text"
-                id="claveMateria"
-                placeholder="Ej: ISC-101"
-                required
-              />
-            </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Materias - RCA</title>
 
-            <div>
-              <label
-                >Nombre de la materia <span style="color: red">*</span></label
-              >
-              <input type="text" id="nombreMateria" required />
-            </div>
+  <script>
+    if (localStorage.getItem("tema") === "oscuro") {
+      document.documentElement.classList.add("dark-mode");
+    }
+  </script>
 
-            <div>
-              <label>Créditos totales</label>
-              <input type="number" id="creditos" min="0" value="0" />
-            </div>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
 
-            <div>
-              <label>Horas teóricas</label>
-              <input type="number" id="horasTeoricas" min="0" value="0" />
-            </div>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
-            <div>
-              <label>Horas prácticas</label>
-              <input type="number" id="horasPracticas" min="0" value="0" />
-            </div>
+  <link rel="stylesheet" href="../css/styles.css" />
 
-            <div>
-              <label>Número de unidades</label>
-              <input type="number" id="noUnidades" min="1" value="3" />
-            </div>
+</head>
 
-            <div class="botones">
-              <button type="submit" class="btn-guardar">Guardar</button>
-              <button
-                type="button"
-                class="btn-cancelar"
-                onclick="cancelarEdicion()"
-              >
-                Cancelar
-              </button>
-            </div>
+<body>
 
-            <p id="mensajeMateria"></p>
-          </form>
-        </div>
+  <div class="layout">
 
-        <!-- TABLA -->
-        <div class="card">
-          <h2>Lista de materias</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Clave</th>
-                <th>Nombre</th>
-                <th>Créditos</th>
-                <th>Unidades</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaMaterias"></tbody>
-          </table>
-        </div>
-      </main>
+    <aside class="sidebar"></aside>
+
+    <main class="content">
+
+      <h1>Materias</h1>
+
+      <!-- BOTON NUEVA MATERIA -->
+
+      <div style="margin-bottom:20px">
+        <button class="btn-guardar" onclick="abrirModalMateria()">
+          Nueva materia
+        </button>
+      </div>
+
+      <!-- TABLA -->
+
+      <div class="card">
+
+        <h2>Lista de materias</h2>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Clave</th>
+              <th>Nombre</th>
+              <th>Créditos</th>
+              <th>Unidades</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody id="tablaMaterias"></tbody>
+
+        </table>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- MODAL FORMULARIO  -->
+
+  <div id="modalMateria" class="modal-overlay">
+
+    <div class="modal-panel">
+
+      <div class="card" id="cardFormMateria">
+
+        <h2 id="tituloFormMateria">Registrar materia</h2>
+
+        <form id="formMateria" class="form-grid">
+
+          <div>
+            <label>Clave <span style="color:red">*</span></label>
+            <input type="text" id="claveMateria" placeholder="Ej: ISC-101" required />
+          </div>
+
+          <div>
+            <label>Nombre de la materia <span style="color:red">*</span></label>
+            <input type="text" id="nombreMateria" required />
+          </div>
+
+          <div>
+            <label>Créditos totales</label>
+            <input type="number" id="creditos" min="0" value="0" />
+          </div>
+
+          <div>
+            <label>Horas teóricas</label>
+            <input type="number" id="horasTeoricas" min="0" value="0" />
+          </div>
+
+          <div>
+            <label>Horas prácticas</label>
+            <input type="number" id="horasPracticas" min="0" value="0" />
+          </div>
+
+          <div>
+            <label>Número de unidades</label>
+            <input type="number" id="noUnidades" min="1" value="3" />
+          </div>
+
+          <div class="botones">
+
+            <button type="submit" class="btn-guardar">
+              Guardar
+            </button>
+
+            <button type="button" class="btn-cancelar" onclick="cerrarModalMateria()">
+              Cancelar
+            </button>
+
+          </div>
+
+          <p id="mensajeMateria"></p>
+
+        </form>
+
+      </div>
+
     </div>
-    <script src="../js/sidebar.js"></script>
-    <script src="../js/materias.js"></script>
-  </body>
+
+  </div>
+
+  <script src="../js/sidebar.js"></script>
+  <script src="../js/materias.js"></script>
+
+</body>
+
 </html>

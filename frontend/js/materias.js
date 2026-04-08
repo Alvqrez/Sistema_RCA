@@ -7,6 +7,14 @@ let materiaEditando = null; // null = modo registro, string = clave en edición
 
 const form = document.getElementById("formMateria");
 const tabla = document.getElementById("tablaMaterias");
+//_____________________________
+function abrirModalMateria() {
+  document.getElementById("modalMateria").classList.add("visible");
+}
+
+function cerrarModalMateria() {
+  document.getElementById("modalMateria").classList.remove("visible");
+}
 
 // ─── CARGAR ────────────────────────────────────────────────────────────────
 
@@ -40,12 +48,11 @@ async function cargarMaterias() {
         <td>${m.creditos_totales}</td>
         <td>${m.no_unidades}</td>
         <td>
-          ${
-            rol === "administrador"
-              ? `<button class="btn-editar" onclick="editarMateria('${m.clave_materia}')">Editar</button>
+          ${rol === "administrador"
+        ? `<button class="btn-editar" onclick="editarMateria('${m.clave_materia}')">Editar</button>
                  <button class="btn-eliminar" onclick="eliminarMateria('${m.clave_materia}')">Eliminar</button>`
-              : "—"
-          }
+        : "—"
+      }
         </td>
       </tr>
     `;
@@ -103,6 +110,7 @@ form.addEventListener("submit", async function (e) {
 
     if (data.success) {
       mostrarMensaje(data.mensaje || "Guardado correctamente.", "ok");
+      cerrarModalMateria();
       cancelarEdicion();
       cargarMaterias();
     } else {
@@ -137,9 +145,7 @@ async function editarMateria(clave) {
     document.getElementById("tituloFormMateria").textContent = "Editar materia";
     document.querySelector("#formMateria .btn-guardar").textContent =
       "Actualizar";
-    document
-      .getElementById("cardFormMateria")
-      .scrollIntoView({ behavior: "smooth" });
+    abrirModalMateria();
   } catch {
     alert("Error al cargar datos de la materia.");
   }
