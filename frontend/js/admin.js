@@ -193,7 +193,7 @@ function renderUsuarios(datos) {
 async function crearUsuario() {
   const username = document.getElementById("uUsername").value.trim();
   const password = document.getElementById("uPassword").value;
-  const rol = document.getElementById("uRol").value;
+  const rol = "administrador";
   const id_referencia = document.getElementById("uReferencia").value.trim();
   const errEl = document.getElementById("modalUserError");
   errEl.style.display = "none";
@@ -238,7 +238,7 @@ function limpiarModalUser() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  document.getElementById("uRol").value = "alumno";
+  document.getElementById("uRol").value = "administrador";
   const e = document.getElementById("modalUserError");
   if (e) e.style.display = "none";
 }
