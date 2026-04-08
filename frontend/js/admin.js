@@ -85,24 +85,9 @@ function renderStats(s) {
       label: "Inscripciones activas",
       cls: "stat-success",
     },
-    {
-      icon: "lucide:shield-check",
-      val: s.usuarios_activos,
-      label: "Usuarios del sistema",
-      cls: "stat-purple",
-    },
-    {
-      icon: "lucide:calendar-check",
-      val: s.periodos_vigentes,
-      label: "Periodos vigentes",
-      cls: "stat-warning",
-    },
-    {
-      icon: "lucide:clock",
-      val: s.calificaciones_pendientes,
-      label: "Calificaciones pendientes",
-      cls: "stat-danger",
-    },
+    
+    
+    
   ];
   statsRow.innerHTML = items
     .map(
