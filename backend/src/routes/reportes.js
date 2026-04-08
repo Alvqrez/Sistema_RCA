@@ -2,20 +2,22 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+const { verificarToken } = require("../middleware/auth");
 
-// GET /api/reportes/grupos — lista de grupos con info para el filtro
+// GET /api/reportes/grupos — lista de grupos para el filtro
 router.get("/grupos", verificarToken, (req, res) => {
   const rol = req.usuario.rol;
   const id_ref = req.usuario.id_referencia;
 
+  // ── FIX: se agrega g.id_periodo al SELECT para que el filtro de periodo funcione
   let sql = `
-    SELECT g.id_grupo, m.nombre_materia, m.clave_materia,
+    SELECT g.id_grupo, g.id_periodo,
+           m.nombre_materia, m.clave_materia,
            CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, p.anio, g.estatus
     FROM grupo g
-    JOIN materia m ON g.clave_materia = m.clave_materia
-    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    JOIN materia m      ON g.clave_materia   = m.clave_materia
+    JOIN maestro mae    ON g.numero_empleado  = mae.numero_empleado
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
   `;
   const params = [];
@@ -41,13 +43,13 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
            CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, p.anio, g.estatus
     FROM grupo g
-    JOIN materia m ON g.clave_materia = m.clave_materia
-    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    JOIN materia m      ON g.clave_materia   = m.clave_materia
+    JOIN maestro mae    ON g.numero_empleado  = mae.numero_empleado
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     WHERE g.id_grupo = ?
   `;
 
-  // 2) Alumnos inscritos con sus calificaciones de unidad y final
+  // 2) Alumnos inscritos con calificaciones de unidad y final
   const sqlAlumnos = `
     SELECT
       a.matricula,
@@ -59,16 +61,19 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
       cf.estatus_final
     FROM inscripcion i
     JOIN alumno a ON i.matricula = a.matricula
-    LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+    LEFT JOIN calificacion_final cf
+           ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
     WHERE i.id_grupo = ?
     ORDER BY a.apellido_paterno ASC
   `;
 
   // 3) Unidades del grupo (a través de la materia)
+  // ── FIX PRINCIPAL: era u.id_materia, la columna correcta es u.clave_materia
   const sqlUnidades = `
-    SELECT u.id_unidad, u.nombre_unidad
+    SELECT u.id_unidad, u.nombre_unidad,
+           ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
     FROM unidad u
-    JOIN grupo g ON u.id_materia = g.clave_materia
+    JOIN grupo g ON u.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
     ORDER BY u.id_unidad ASC
   `;
@@ -111,7 +116,6 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
             unidades: califMap[a.matricula] || {},
           }));
 
-          // Stats resumen
           const total = alumnosConCalif.length;
           const aprobados = alumnosConCalif.filter(
             (a) => a.estatus_final === "Aprobado",
@@ -120,21 +124,16 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
             (a) => a.estatus_final === "Reprobado",
           ).length;
           const pendientes = total - aprobados - reprobados;
+          const conCalif = alumnosConCalif.filter(
+            (a) => a.calificacion_oficial != null,
+          );
           const promGrupo =
-            total > 0
+            conCalif.length > 0
               ? (
-                  alumnosConCalif
-                    .filter((a) => a.calificacion_oficial != null)
-                    .reduce(
-                      (s, a) => s + parseFloat(a.calificacion_oficial || 0),
-                      0,
-                    ) /
-                  Math.max(
-                    alumnosConCalif.filter(
-                      (a) => a.calificacion_oficial != null,
-                    ).length,
-                    1,
-                  )
+                  conCalif.reduce(
+                    (s, a) => s + parseFloat(a.calificacion_oficial || 0),
+                    0,
+                  ) / conCalif.length
                 ).toFixed(1)
               : null;
 
@@ -160,11 +159,12 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
       p.descripcion AS periodo, p.anio,
       cf.calificacion_oficial, cf.estatus_final
     FROM inscripcion i
-    JOIN grupo g ON i.id_grupo = g.id_grupo
-    JOIN materia m ON g.clave_materia = m.clave_materia
-    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    JOIN grupo g         ON i.id_grupo         = g.id_grupo
+    JOIN materia m       ON g.clave_materia     = m.clave_materia
+    JOIN maestro mae     ON g.numero_empleado   = mae.numero_empleado
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
-    LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+    LEFT JOIN calificacion_final cf
+           ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
     WHERE i.matricula = ?
     ORDER BY p.fecha_inicio DESC
   `;

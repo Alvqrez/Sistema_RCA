@@ -4,38 +4,46 @@ const router = express.Router();
 const db = require("../db");
 const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 
-// GET — actividades filtradas por rol
+// GET — actividades filtradas por rol (incluye nombre_unidad y numero_unidad)
 router.get("/", verificarToken, (req, res) => {
   const { id_referencia, rol } = req.usuario;
 
-  // Maestro solo ve actividades de SUS grupos
+  const camposBase = `
+    a.*,
+    u.nombre_unidad,
+    ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
+  `;
+
   if (rol === "maestro") {
     const sql = `
-            SELECT a.*
-            FROM actividad a
-            JOIN grupo g ON a.id_grupo = g.id_grupo
-            WHERE g.numero_empleado = ?
-            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
-        `;
+      SELECT ${camposBase}
+      FROM actividad a
+      JOIN grupo g  ON a.id_grupo  = g.id_grupo
+      JOIN unidad u ON a.id_unidad = u.id_unidad
+      WHERE g.numero_empleado = ?
+      ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
+    `;
     db.query(sql, [id_referencia], (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       res.json(r);
     });
   } else {
-    // Admin y otros ven todo
-    db.query(
-      "SELECT * FROM actividad ORDER BY id_grupo, id_unidad, id_actividad",
-      (err, r) => {
-        if (err)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        res.json(r);
-      },
-    );
+    const sql = `
+      SELECT ${camposBase}
+      FROM actividad a
+      JOIN unidad u ON a.id_unidad = u.id_unidad
+      ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
+    `;
+    db.query(sql, (err, r) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(r);
+    });
   }
 });
 
-// POST — crear actividad con validación de suma de ponderaciones (FIX 4)
+// POST — crear actividad con validación de suma de ponderaciones
 router.post("/", maestroOAdmin, (req, res) => {
   const {
     id_grupo,
@@ -50,7 +58,8 @@ router.post("/", maestroOAdmin, (req, res) => {
     !id_grupo ||
     !id_unidad ||
     !nombre_actividad ||
-    ponderacion === undefined
+    ponderacion === undefined ||
+    ponderacion === ""
   ) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
@@ -62,55 +71,73 @@ router.post("/", maestroOAdmin, (req, res) => {
       .json({ error: "La ponderación debe ser un valor entre 1 y 100" });
   }
 
-  // FIX 4: verificar que la suma no supere 100%
-  const sqlSuma = `
-    SELECT COALESCE(SUM(ponderacion), 0) AS total
-    FROM actividad
-    WHERE id_grupo = ? AND id_unidad = ?
+  // Verificar que la unidad pertenece a la materia del grupo
+  const sqlVerifica = `
+    SELECT g.clave_materia, u.clave_materia AS clave_unidad
+    FROM grupo g, unidad u
+    WHERE g.id_grupo = ? AND u.id_unidad = ?
   `;
-  db.query(sqlSuma, [id_grupo, id_unidad], (err, result) => {
-    if (err)
+  db.query(sqlVerifica, [id_grupo, id_unidad], (errV, rowsV) => {
+    if (errV)
       return res.status(500).json({ error: "Error interno del servidor" });
-
-    const totalActual = parseFloat(result[0].total);
-    if (totalActual + pond > 100) {
+    if (rowsV.length === 0)
+      return res.status(400).json({ error: "Grupo o unidad no encontrados" });
+    if (rowsV[0].clave_materia !== rowsV[0].clave_unidad)
       return res.status(400).json({
-        error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad.`,
-        total_actual: totalActual,
-        disponible: Math.round((100 - totalActual) * 100) / 100,
+        error: "La unidad seleccionada no pertenece a la materia de este grupo",
       });
-    }
 
-    db.query(
-      `INSERT INTO actividad (id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        id_grupo,
-        id_unidad,
-        nombre_actividad,
-        pond,
-        tipo_evaluacion ?? "Sumativa",
-        fecha_entrega ?? null,
-      ],
-      (err2, result2) => {
-        if (err2)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        res.status(201).json({
-          success: true,
-          id_actividad: result2.insertId,
-          total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+    // Verificar que la suma no supere 100%
+    const sqlSuma = `
+      SELECT COALESCE(SUM(ponderacion), 0) AS total
+      FROM actividad
+      WHERE id_grupo = ? AND id_unidad = ?
+    `;
+    db.query(sqlSuma, [id_grupo, id_unidad], (err, result) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+
+      const totalActual = parseFloat(result[0].total);
+      if (totalActual + pond > 100) {
+        return res.status(400).json({
+          error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad. Disponible: ${Math.round((100 - totalActual) * 100) / 100}%`,
+          total_actual: totalActual,
+          disponible: Math.round((100 - totalActual) * 100) / 100,
         });
-      },
-    );
+      }
+
+      db.query(
+        `INSERT INTO actividad (id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          id_grupo,
+          id_unidad,
+          nombre_actividad,
+          pond,
+          tipo_evaluacion ?? "Sumativa",
+          fecha_entrega ?? null,
+        ],
+        (err2, result2) => {
+          if (err2)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          res.status(201).json({
+            success: true,
+            id_actividad: result2.insertId,
+            total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+          });
+        },
+      );
+    });
   });
 });
 
-// PUT — editar actividad (solo si no está bloqueada) (FIX 13)
+// PUT — editar actividad (solo si no está bloqueada)
 router.put("/:id", maestroOAdmin, (req, res) => {
   const { nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega } =
     req.body;
 
-  // Verificar si está bloqueada antes de permitir edición
   db.query(
     "SELECT bloqueado, id_grupo, id_unidad FROM actividad WHERE id_actividad = ?",
     [req.params.id],
@@ -127,7 +154,6 @@ router.put("/:id", maestroOAdmin, (req, res) => {
         });
       }
 
-      // Si se cambia la ponderación, validar suma
       if (ponderacion !== undefined) {
         const pond = parseFloat(ponderacion);
         const sqlSuma = `

@@ -18,6 +18,122 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Tabs del modal ─────────────────────────────────────────────── */
+      .modal-tabs {
+        display: flex;
+        gap: 2px;
+        background: var(--bg-app);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 20px;
+      }
+      .modal-tab {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-family: inherit;
+      }
+      .modal-tab.active {
+        background: var(--bg-card);
+        color: var(--text-main);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .modal-tab:hover:not(.active) {
+        background: var(--bg-card);
+        color: var(--text-main);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ── Info chips de ayuda ────────────────────────────────────────── */
+      .required-hint {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin: -12px 0 14px;
+      }
+      .required-hint strong {
+        color: var(--danger);
+      }
+
+      /* ── Avatar grande en la cabecera del modal ─────────────────────── */
+      .modal-avatar-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 20px;
+        background: var(--bg-app);
+        border-radius: 10px;
+        margin-bottom: 18px;
+      }
+      .modal-avatar-big {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--success-light);
+        color: var(--success);
+        font-size: 1.4rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .modal-avatar-info p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .modal-avatar-info strong {
+        font-size: 1rem;
+        color: var(--text-main);
+      }
+
+      /* ── Sección dentro del tab ─────────────────────────────────────── */
+      .form-section-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--text-muted);
+        margin: 0 0 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      /* ── Panel más ancho para acomodar tabs ─────────────────────────── */
+      #modalMaestro .modal-panel {
+        max-width: 680px;
+        width: 95vw;
+      }
+
+      /* ── Badge de estatus inline ───────────────────────────────────── */
+      .estatus-select-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .estatus-select-wrap select {
+        flex: 1;
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
@@ -39,6 +155,7 @@
           </div>
         </div>
 
+        <!-- Stats -->
         <div class="stats-row">
           <div class="stat-card">
             <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
@@ -63,6 +180,7 @@
           </div>
         </div>
 
+        <!-- Tabla -->
         <div class="card">
           <div class="card-filter-bar">
             <input
@@ -103,7 +221,9 @@
       </main>
     </div>
 
-    <!-- MODAL MAESTRO -->
+    <!-- ═══════════════════════════════════════════════════════════════
+         MODAL MAESTRO — diseño con tabs
+    ════════════════════════════════════════════════════════════════════ -->
     <div id="modalMaestro" class="modal-overlay">
       <div class="modal-panel">
         <div class="modal-header">
@@ -113,122 +233,256 @@
           </button>
         </div>
         <div class="modal-body">
-          <p class="form-section-title">Datos de acceso</p>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label>No. de Empleado *</label>
-              <input type="text" id="f_num_emp" placeholder="Ej: E001" />
-            </div>
-            <div class="form-group">
-              <label>Correo institucional *</label>
-              <input
-                type="email"
-                id="f_correo"
-                placeholder="maestro@itver.edu.mx"
-              />
-            </div>
-            <div class="form-group">
-              <label>Usuario (login) *</label>
-              <input type="text" id="f_username" />
-            </div>
-            <div class="form-group" id="grupoPassword">
-              <label>Contraseña inicial *</label>
-              <input type="password" id="f_password" />
+          <!-- Avatar dinámico (visible en modo edición) -->
+          <div
+            id="modalAvatarHeader"
+            class="modal-avatar-header"
+            style="display: none"
+          >
+            <div class="modal-avatar-big" id="modalAvatarBig">??</div>
+            <div class="modal-avatar-info">
+              <p>Editando perfil</p>
+              <strong id="modalAvatarNombre">—</strong>
             </div>
           </div>
-          <p class="form-section-title">Datos personales</p>
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label>Nombre(s) *</label>
-              <input type="text" id="f_nombre" />
+
+          <!-- Tabs de navegación -->
+          <div class="modal-tabs" role="tablist">
+            <button
+              class="modal-tab active"
+              onclick="cambiarTab('esencial')"
+              id="tab-btn-esencial"
+              role="tab"
+            >
+              <iconify-icon icon="lucide:user"></iconify-icon>
+              Esencial
+            </button>
+            <button
+              class="modal-tab"
+              onclick="cambiarTab('personal')"
+              id="tab-btn-personal"
+              role="tab"
+            >
+              <iconify-icon icon="lucide:id-card"></iconify-icon>
+              Personal
+            </button>
+            <button
+              class="modal-tab"
+              onclick="cambiarTab('laboral')"
+              id="tab-btn-laboral"
+              role="tab"
+            >
+              <iconify-icon icon="lucide:briefcase"></iconify-icon>
+              Laboral
+            </button>
+          </div>
+
+          <!-- ── Tab 1: Esencial ────────────────────────────────────── -->
+          <div class="tab-panel active" id="tab-esencial">
+            <p class="required-hint">
+              Los campos marcados con <strong>*</strong> son obligatorios.
+            </p>
+
+            <p class="form-section-label">Identificación</p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>No. de Empleado *</label>
+                <input type="text" id="f_num_emp" placeholder="Ej: E001" />
+              </div>
+              <div class="form-group">
+                <label>Correo institucional *</label>
+                <input
+                  type="email"
+                  id="f_correo"
+                  placeholder="maestro@itver.edu.mx"
+                />
+              </div>
             </div>
-            <div class="form-group">
-              <label>Apellido paterno *</label>
-              <input type="text" id="f_ap_pat" />
+
+            <p class="form-section-label" style="margin-top: 16px">
+              Nombre completo
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Nombre(s) *</label>
+                <input
+                  type="text"
+                  id="f_nombre"
+                  placeholder="Ej: Juan Carlos"
+                />
+              </div>
+              <div class="form-group">
+                <label>Apellido paterno *</label>
+                <input type="text" id="f_ap_pat" placeholder="Ej: García" />
+              </div>
+              <div class="form-group">
+                <label>Apellido materno</label>
+                <input type="text" id="f_ap_mat" placeholder="Ej: López" />
+              </div>
+              <div class="form-group">
+                <label>Estatus</label>
+                <select id="f_estatus">
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                  <option value="Licencia">Licencia</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Apellido materno</label>
-              <input type="text" id="f_ap_mat" />
-            </div>
-            <div class="form-group">
-              <label>CURP</label>
-              <input type="text" id="f_curp" maxlength="18" />
-            </div>
-            <div class="form-group">
-              <label>RFC</label>
-              <input type="text" id="f_rfc" maxlength="13" />
-            </div>
-            <div class="form-group">
-              <label>Fecha de nacimiento</label>
-              <input type="date" id="f_fnac" />
-            </div>
-            <div class="form-group">
-              <label>Género</label>
-              <select id="f_genero">
-                <option value="">— Selecciona —</option>
-                <option>Masculino</option>
-                <option>Femenino</option>
-                <option>Otro</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tel. celular</label>
-              <input type="text" id="f_celular" />
-            </div>
-            <div class="form-group">
-              <label>Grado académico</label>
-              <select id="f_grado">
-                <option value="">— Selecciona —</option>
-                <option>Licenciatura</option>
-                <option>Especialidad</option>
-                <option>Maestría</option>
-                <option>Doctorado</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tipo de contrato</label>
-              <select id="f_contrato">
-                <option value="">— Selecciona —</option>
-                <option>Tiempo completo</option>
-                <option>Medio tiempo</option>
-                <option>Asignatura</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Departamento</label>
-              <input type="text" id="f_departamento" />
-            </div>
-            <div class="form-group">
-              <label>Especialidad</label>
-              <input type="text" id="f_especialidad" />
-            </div>
-            <div class="form-group span-2">
-              <label>Dirección</label>
-              <input type="text" id="f_direccion" />
-            </div>
-            <div class="form-group">
-              <label>Estatus</label>
-              <select id="f_estatus">
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-                <option value="Licencia">Licencia</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Fecha de ingreso</label>
-              <input type="date" id="f_ingreso" />
+
+            <p class="form-section-label" style="margin-top: 16px">
+              Acceso al sistema
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Usuario (login) *</label>
+                <input
+                  type="text"
+                  id="f_username"
+                  placeholder="Ej: jgarcia"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="form-group" id="grupoPassword">
+                <label>Contraseña inicial *</label>
+                <input
+                  type="password"
+                  id="f_password"
+                  placeholder="Mínimo 6 caracteres"
+                  autocomplete="new-password"
+                />
+              </div>
             </div>
           </div>
+
+          <!-- ── Tab 2: Personal ───────────────────────────────────── -->
+          <div class="tab-panel" id="tab-personal">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>CURP</label>
+                <input
+                  type="text"
+                  id="f_curp"
+                  maxlength="18"
+                  placeholder="18 caracteres"
+                  style="text-transform: uppercase"
+                />
+              </div>
+              <div class="form-group">
+                <label>RFC</label>
+                <input
+                  type="text"
+                  id="f_rfc"
+                  maxlength="13"
+                  placeholder="13 caracteres"
+                  style="text-transform: uppercase"
+                />
+              </div>
+              <div class="form-group">
+                <label>Fecha de nacimiento</label>
+                <input type="date" id="f_fnac" />
+              </div>
+              <div class="form-group">
+                <label>Género</label>
+                <select id="f_genero">
+                  <option value="">— Selecciona —</option>
+                  <option>Masculino</option>
+                  <option>Femenino</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tel. celular</label>
+                <input
+                  type="text"
+                  id="f_celular"
+                  placeholder="10 dígitos"
+                  maxlength="15"
+                />
+              </div>
+              <div class="form-group">
+                <label>Correo personal</label>
+                <input
+                  type="email"
+                  id="f_correo_personal"
+                  placeholder="correo@gmail.com"
+                />
+              </div>
+              <div class="form-group span-2">
+                <label>Dirección</label>
+                <input
+                  type="text"
+                  id="f_direccion"
+                  placeholder="Calle, número, colonia…"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Tab 3: Laboral ────────────────────────────────────── -->
+          <div class="tab-panel" id="tab-laboral">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Departamento</label>
+                <input
+                  type="text"
+                  id="f_departamento"
+                  placeholder="Ej: Sistemas y Computación"
+                />
+              </div>
+              <div class="form-group">
+                <label>Especialidad</label>
+                <input
+                  type="text"
+                  id="f_especialidad"
+                  placeholder="Ej: Bases de Datos"
+                />
+              </div>
+              <div class="form-group">
+                <label>Grado académico</label>
+                <select id="f_grado">
+                  <option value="">— Selecciona —</option>
+                  <option>Licenciatura</option>
+                  <option>Especialidad</option>
+                  <option>Maestría</option>
+                  <option>Doctorado</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo de contrato</label>
+                <select id="f_contrato">
+                  <option value="">— Selecciona —</option>
+                  <option>Tiempo completo</option>
+                  <option>Medio tiempo</option>
+                  <option>Asignatura</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Fecha de ingreso</label>
+                <input type="date" id="f_ingreso" />
+              </div>
+              <div class="form-group">
+                <label>Tel. oficina / extensión</label>
+                <input type="text" id="f_tel_oficina" placeholder="Ext. 1234" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Error message -->
           <p
             id="modalError"
             style="
               color: var(--danger);
               font-size: 0.85rem;
-              margin: 10px 0 0;
+              margin: 12px 0 0;
               display: none;
+              background: var(--danger-bg, #fff0f0);
+              padding: 8px 12px;
+              border-radius: 8px;
+              border-left: 3px solid var(--danger);
             "
           ></p>
         </div>
+        <!-- /modal-body -->
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="cerrarModal('modalMaestro')">
             Cancelar

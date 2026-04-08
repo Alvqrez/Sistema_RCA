@@ -1,10 +1,11 @@
-// frontend/js/actividades.js — versión completa con tabla de alumnos
+// frontend/js/actividades.js
 const BASE_URL = "http://localhost:3000";
 
 // ── ESTADO ────────────────────────────────────────────────────────────
 let todasActividades = [];
-let actividadActiva = null; // { id_actividad, nombre_actividad, id_grupo, id_unidad, ... }
-let gruposMap = {}; // id_grupo → { nombre_materia, nombre_maestro }
+let actividadActiva = null;
+let gruposMap = {}; // id_grupo → grupo completo
+let unidadesGrupoMap = {}; // id_grupo → [{ id_unidad, nombre_unidad, numero_unidad }]
 
 // ─────────────────────────────────────────────────────────────────────
 //  INIT
@@ -19,7 +20,6 @@ async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
   const rol = localStorage.getItem("rol");
 
-  // Ruta correcta según el rol
   const url =
     rol === "maestro"
       ? `${BASE_URL}/api/grupos/mis-grupos`
@@ -29,12 +29,16 @@ async function cargarGruposSelect() {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403)
+        window.location.href = "login.html";
+      return;
+    }
     const grupos = await res.json();
 
     const selCrear = document.getElementById("grupoActividad");
     const selFiltro = document.getElementById("filtroGrupo");
 
-    // Limpia opciones previas (conserva la primera vacía)
     selCrear.innerHTML = `<option value="">-- Selecciona grupo --</option>`;
     selFiltro.innerHTML = `<option value="">Todos los grupos</option>`;
 
@@ -49,67 +53,101 @@ async function cargarGruposSelect() {
   }
 }
 
+// ── Cargar unidades para un grupo (intenta grupo_unidad, luego materia) ─
+async function cargarUnidadesParaGrupo(idGrupo) {
+  const token = localStorage.getItem("token");
+
+  // Si ya tenemos las unidades cacheadas, retornarlas
+  if (unidadesGrupoMap[idGrupo]) return unidadesGrupoMap[idGrupo];
+
+  // 1) Intentar desde grupo_unidad
+  try {
+    const res = await fetch(`${BASE_URL}/api/grupos/${idGrupo}/unidades`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        // Asignar numero_unidad secuencial (1, 2, 3...)
+        const unidades = data.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+        unidadesGrupoMap[idGrupo] = unidades;
+        return unidades;
+      }
+    }
+  } catch (_) {
+    /* fallback abajo */
+  }
+
+  // 2) Fallback: unidades de la materia del grupo
+  const g = gruposMap[idGrupo];
+  if (g?.clave_materia) {
+    try {
+      const res2 = await fetch(
+        `${BASE_URL}/api/unidades/materia/${encodeURIComponent(g.clave_materia)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res2.ok) {
+        const unis = await res2.json();
+        if (Array.isArray(unis) && unis.length > 0) {
+          const unidades = unis.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+          unidadesGrupoMap[idGrupo] = unidades;
+          return unidades;
+        }
+      }
+    } catch (_) {
+      /* sin unidades */
+    }
+  }
+
+  return [];
+}
+
 // ── Cuando cambia el grupo en el formulario de creación ──────────────
 document
   .getElementById("grupoActividad")
   .addEventListener("change", async function () {
-    const token = localStorage.getItem("token");
     const selUni = document.getElementById("unidadActividad");
-    selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
-    if (!this.value) return;
+    selUni.innerHTML = `<option value="">Cargando unidades…</option>`;
+    selUni.disabled = true;
 
-    try {
-      // Primero intenta traer unidades vinculadas al grupo (grupo_unidad)
-      const res = await fetch(`${BASE_URL}/api/grupos/${this.value}/unidades`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const unidades = await res.json();
-      if (unidades.length > 0) {
-        unidades.forEach((u) => {
-          selUni.innerHTML += `<option value="${u.id_unidad}">${u.nombre_unidad}</option>`;
-        });
-      } else {
-        // Fallback: unidades de la materia del grupo
-        const g = gruposMap[this.value];
-        if (g) {
-          const res2 = await fetch(
-            `${BASE_URL}/api/unidades/materia/${g.clave_materia}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
-          );
-          const unis = await res2.json();
-          unis.forEach((u) => {
-            selUni.innerHTML += `<option value="${u.id_unidad}">${u.nombre_unidad}</option>`;
-          });
-        }
-      }
-    } catch (e) {
-      console.error("No se pudieron cargar unidades:", e);
-    }
-  });
-
-// ── Cambio en filtro de unidad ────────────────────────────────────────
-document
-  .getElementById("filtroGrupo")
-  .addEventListener("change", async function () {
-    const token = localStorage.getItem("token");
-    const selUni = document.getElementById("filtroUnidad");
-    selUni.innerHTML = `<option value="">Todas las unidades</option>`;
     if (!this.value) {
-      filtrarActividades();
+      selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
+      selUni.disabled = false;
       return;
     }
 
-    try {
-      const res = await fetch(`${BASE_URL}/api/grupos/${this.value}/unidades`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const unidades = await res.json();
+    const unidades = await cargarUnidadesParaGrupo(this.value);
+    selUni.disabled = false;
+
+    if (unidades.length === 0) {
+      selUni.innerHTML = `<option value="">⚠ Sin unidades — créalas primero</option>`;
+      mostrarToast(
+        "Este grupo no tiene unidades registradas. Ve a Unidades y crea las unidades para esta materia.",
+        "error",
+      );
+      return;
+    }
+
+    selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
+    unidades.forEach((u) => {
+      // Bug 2 fix: muestra "(Unidad X) Nombre"
+      selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
+    });
+  });
+
+// ── Cambio en filtro de grupo ─────────────────────────────────────────
+document
+  .getElementById("filtroGrupo")
+  .addEventListener("change", async function () {
+    const selUni = document.getElementById("filtroUnidad");
+    selUni.innerHTML = `<option value="">Todas las unidades</option>`;
+
+    if (this.value) {
+      const unidades = await cargarUnidadesParaGrupo(this.value);
       unidades.forEach((u) => {
-        selUni.innerHTML += `<option value="${u.id_unidad}">${u.nombre_unidad}</option>`;
+        selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
       });
-    } catch (e) {}
+    }
     filtrarActividades();
   });
 
@@ -126,10 +164,15 @@ async function cargarActividades() {
       window.location.href = "login.html";
       return;
     }
+    if (!res.ok) {
+      mostrarToast("No se pudieron cargar las actividades", "error");
+      return;
+    }
     todasActividades = await res.json();
     filtrarActividades();
   } catch (e) {
     console.error("No se pudo cargar actividades:", e);
+    mostrarToast("Error de conexión al cargar actividades", "error");
   }
 }
 
@@ -170,6 +213,10 @@ function renderTablaActividades(actividades) {
       ? `<span style="font-weight:600">${grupo.nombre_materia}</span><br><span style="font-size:0.75rem;color:var(--text-muted)">${grupo.nombre_maestro}</span>`
       : `Grupo ${a.id_grupo}`;
 
+    // Bug 2 fix: usar numero_unidad del backend; fallback al id si no viene
+    const numUnidad = a.numero_unidad ?? a.id_unidad;
+    const nombreUnidad = a.nombre_unidad ? ` — ${a.nombre_unidad}` : "";
+
     const esActiva =
       actividadActiva && actividadActiva.id_actividad === a.id_actividad;
 
@@ -182,7 +229,9 @@ function renderTablaActividades(actividades) {
         <span style="font-weight:600">${a.nombre_actividad}</span>
       </td>
       <td>${grupoLabel}</td>
-      <td><span class="badge-unidad">Unidad ${a.id_unidad}</span></td>
+      <td>
+        <span class="badge-unidad" title="${a.nombre_unidad ?? ""}">Unidad ${numUnidad}${nombreUnidad}</span>
+      </td>
       <td>
         <span class="pond-chip chip-act">${a.ponderacion}%</span>
       </td>
@@ -227,13 +276,20 @@ async function registrarActividad() {
     fecha_entrega: document.getElementById("fechaEntrega").value || null,
   };
 
-  if (
-    !actividad.id_grupo ||
-    !actividad.id_unidad ||
-    !actividad.nombre_actividad ||
-    !actividad.ponderacion
-  ) {
-    mostrarToast("Completa todos los campos requeridos", "error");
+  if (!actividad.id_grupo) {
+    mostrarToast("Selecciona un grupo", "error");
+    return;
+  }
+  if (!actividad.id_unidad) {
+    mostrarToast("Selecciona una unidad", "error");
+    return;
+  }
+  if (!actividad.nombre_actividad) {
+    mostrarToast("Escribe el nombre de la actividad", "error");
+    return;
+  }
+  if (!actividad.ponderacion || parseFloat(actividad.ponderacion) <= 0) {
+    mostrarToast("Ingresa una ponderación válida (mayor a 0)", "error");
     return;
   }
 
@@ -246,17 +302,32 @@ async function registrarActividad() {
       },
       body: JSON.stringify(actividad),
     });
-    const data = await res.json();
 
-    if (data.success) {
-      mostrarToast("Actividad registrada correctamente", "success");
+    // Parsear JSON independientemente del status code
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: `Error del servidor (${res.status})` };
+    }
+
+    if (res.ok && data.success) {
+      const porcRestante = 100 - (data.total_ponderacion ?? 0);
+      mostrarToast(
+        `Actividad registrada. Ponderación acumulada: ${data.total_ponderacion}%` +
+          (porcRestante > 0
+            ? ` (falta ${porcRestante.toFixed(0)}%)`
+            : " ✓ Completa"),
+        "success",
+      );
       limpiarFormActividad();
       await cargarActividades();
     } else {
-      mostrarToast(data.error || "Error al registrar", "error");
+      mostrarToast(data.error || "Error al registrar la actividad", "error");
     }
   } catch (e) {
-    mostrarToast("Error de conexión", "error");
+    console.error(e);
+    mostrarToast("Error de conexión con el servidor", "error");
   }
 }
 
@@ -292,40 +363,36 @@ async function abrirPanelCalificaciones(id_actividad) {
   );
 
   const grupo = gruposMap[act.id_grupo];
+  const numUnidad = act.numero_unidad ?? act.id_unidad;
   document.getElementById("tituloPanelCal").textContent =
     `Calificaciones — ${act.nombre_actividad}`;
   document.getElementById("infoPanelCal").innerHTML = `
     <span class="info-chip"><iconify-icon icon="mdi:school-outline"></iconify-icon>${grupo?.nombre_materia || "Grupo " + act.id_grupo}</span>
+    <span class="badge-unidad" style="margin-left:8px">Unidad ${numUnidad}</span>
     <span class="pond-chip chip-act" style="margin-left:8px">${act.ponderacion}% de la unidad</span>
     <span class="tipo-badge tipo-${(act.tipo_evaluacion || "").toLowerCase().substring(0, 3)}" style="margin-left:8px">${act.tipo_evaluacion || ""}</span>
   `;
 
-  // Mostrar panel y hacer scroll
   const panel = document.getElementById("panelCalActividad");
   panel.style.display = "block";
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // Cargar alumnos con sus resultados
   const tbody = document.getElementById("tbodyCal");
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Cargando alumnos...</td></tr>`;
 
   try {
     const res = await fetch(
       `${BASE_URL}/api/resultado-actividad/actividad/${id_actividad}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     const alumnos = await res.json();
 
-    // Si no hay inscripciones aún, intentar traer alumnos del grupo directo
     if (!Array.isArray(alumnos) || alumnos.length === 0) {
       await cargarAlumnosSinInscripcion(act);
     } else {
       renderTablaCal(alumnos, act);
     }
 
-    // Actualizar contador en la tabla de actividades
     const entregados = Array.isArray(alumnos)
       ? alumnos.filter((a) => a.estatus === "Validada").length
       : 0;
@@ -340,7 +407,6 @@ async function abrirPanelCalificaciones(id_actividad) {
   }
 }
 
-// Fallback: carga alumnos directamente (para cuando inscripcion aún no está poblada)
 async function cargarAlumnosSinInscripcion(act) {
   const token = localStorage.getItem("token");
   try {
@@ -450,22 +516,18 @@ function actualizarEstatusFilaPorMatricula(mat) {
   const entrego = chk.checked;
   const cal = parseFloat(calInput.value);
 
-  let est, badge;
+  let badge;
   if (!entrego) {
-    est = "NP";
     badge = `<span class="badge-estatus badge-np">NP</span>`;
   } else if (isNaN(cal)) {
-    est = "Pendiente";
     badge = `<span class="badge-estatus badge-pendiente">Pendiente</span>`;
   } else {
-    est = "Validada";
     const aprobado = cal >= 60;
     badge = `<span class="badge-estatus ${aprobado ? "badge-aprobado" : "badge-reprobado"}">${aprobado ? "Aprobado" : "Reprobado"}</span>`;
   }
   estatusEl.innerHTML = badge;
 }
 
-// Marcar todos NP
 function marcarTodosNP() {
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
     const mat = tr.dataset.matricula;
@@ -479,7 +541,6 @@ function marcarTodosNP() {
   });
 }
 
-// Marcar todos como entregados con calificación 0
 function marcarTodosEntregados() {
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
     const mat = tr.dataset.matricula;
@@ -493,7 +554,6 @@ function marcarTodosEntregados() {
   });
 }
 
-// Guardar todas las calificaciones de la actividad activa
 async function guardarCalificacionesActividad() {
   if (!actividadActiva) return;
   const token = localStorage.getItem("token");
@@ -532,8 +592,14 @@ async function guardarCalificacionesActividad() {
         resultados,
       }),
     });
-    const data = await res.json();
-    if (data.success) {
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: "Error del servidor" };
+    }
+
+    if (res.ok && data.success) {
       mostrarToast(`${data.guardados} calificaciones guardadas`, "success");
     } else {
       mostrarToast(data.error || "Error al guardar", "error");
@@ -569,8 +635,14 @@ async function confirmarEliminar(id) {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json();
-    if (data.success) {
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: "Error del servidor" };
+    }
+
+    if (res.ok && data.success) {
       mostrarToast("Actividad eliminada", "success");
       if (actividadActiva?.id_actividad === id) cerrarPanelCal();
       await cargarActividades();
@@ -608,7 +680,6 @@ document.querySelectorAll(".modal-overlay").forEach((overlay) => {
   });
 });
 
-// Toast de notificación
 function mostrarToast(msg, tipo = "success") {
   let toast = document.getElementById("rca-toast");
   if (!toast) {
@@ -619,5 +690,5 @@ function mostrarToast(msg, tipo = "success") {
   toast.textContent = msg;
   toast.className = `rca-toast rca-toast-${tipo} visible`;
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove("visible"), 3000);
+  toast._t = setTimeout(() => toast.classList.remove("visible"), 4000);
 }
