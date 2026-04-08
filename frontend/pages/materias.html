@@ -27,15 +27,15 @@
 
     <main class="content">
 
-      <h1>Materias</h1>
+      <div class="header-materias">
+        <h1>Materias</h1>
 
-      <!-- BOTON NUEVA MATERIA -->
-
-      <div style="margin-bottom:20px">
         <button class="btn-guardar" onclick="abrirModalMateria()">
+          <iconify-icon icon="mdi:plus"></iconify-icon>
           Nueva materia
         </button>
       </div>
+
 
       <!-- TABLA -->
 
@@ -78,12 +78,12 @@
         <form id="formMateria" class="form-grid">
 
           <div>
-            <label>Clave <span style="color:red">*</span></label>
+            <label>Clave *
             <input type="text" id="claveMateria" placeholder="Ej: ISC-101" required />
           </div>
 
           <div>
-            <label>Nombre de la materia <span style="color:red">*</span></label>
+            <label>Nombre de la materia *
             <input type="text" id="nombreMateria" required />
           </div>
 
