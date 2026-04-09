@@ -55,6 +55,31 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
   });
 });
 
+// GET — calificaciones de unidad de todos los alumnos de un grupo
+router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+  const query = `
+    SELECT
+      cu.matricula,
+      CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
+      cu.id_unidad,
+      u.nombre_unidad,
+      cu.id_grupo,
+      cu.promedio_ponderado,
+      cu.calificacion_unidad_final,
+      cu.estatus_unidad
+    FROM calificacion_unidad cu
+    JOIN alumno a  ON cu.matricula   = a.matricula
+    JOIN unidad u  ON cu.id_unidad   = u.id_unidad
+    WHERE cu.id_grupo = ?
+    ORDER BY a.apellido_paterno, cu.id_unidad
+  `;
+  db.query(query, [req.params.id_grupo], (err, results) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(results);
+  });
+});
+
 // POST — registrar calificación de unidad manualmente y recalcular final (FIX 14)
 router.post("/", maestroOAdmin, async (req, res) => {
   const { matricula, id_grupo, id_unidad, calificacion_unidad_final } =
