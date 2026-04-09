@@ -529,15 +529,14 @@
       <!-- Drop zone -->
       <div
         id="dropZoneMaestros"
-        class="drop-zone"
+        class="csv-drop-zone"
         ondragover="dragOverMaestros(event)"
         ondrop="soltarCSVMaestros(event)"
         onclick="document.getElementById('inputCSVMaestros').click()"
       >
-        <iconify-icon icon="lucide:file-up" style="font-size:2rem;color:var(--primary,#6366f1)"></iconify-icon>
-        <p style="margin:6px 0 0;font-size:0.88rem">
-          Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
-        </p>
+        <iconify-icon icon="lucide:file-up"></iconify-icon>
+        <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+        <small>Columnas: numero_empleado, nombre, apellido_paterno, correo_institucional, username, password</small>
       </div>
       <input
         type="file"

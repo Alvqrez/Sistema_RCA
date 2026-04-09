@@ -3,13 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Materias - RCA</title>
-
     <script>
       if (localStorage.getItem("tema") === "oscuro") {
         document.documentElement.classList.add("dark-mode");
       }
     </script>
-
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
@@ -22,46 +20,26 @@
     />
     <link rel="stylesheet" href="../css/styles.css" />
   </head>
-
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
-
       <main class="content">
-        <!-- Header con botones CSV -->
-        <div
-          class="header-materias"
-          style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 16px;
-          "
-        >
-          <h1 style="margin: 0">Materias</h1>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap">
-            <button class="btn-secundario" onclick="abrirModalCSVMaterias()">
-              <iconify-icon
-                icon="lucide:upload"
-                style="margin-right: 4px"
-              ></iconify-icon>
-              Importar CSV
+        <!-- HEADER (mismo patrón que maestros.html) -->
+        <div class="page-header-v2">
+          <div>
+            <h1>Materias</h1>
+            <p class="page-subtitle">Catálogo de asignaturas</p>
+          </div>
+          <!-- FIX: era "btn-secundario" (no existe en CSS), debe ser "btn btn-outline" -->
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="abrirModalCSVMaterias()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
             </button>
-            <button class="btn-secundario" onclick="exportarCSVMaterias()">
-              <iconify-icon
-                icon="lucide:download"
-                style="margin-right: 4px"
-              ></iconify-icon>
-              Exportar CSV
+            <button class="btn btn-outline" onclick="exportarCSVMaterias()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
             </button>
-            <button class="btn-guardar" onclick="abrirModalMateria()">
-              <iconify-icon
-                icon="mdi:plus"
-                style="margin-right: 4px"
-              ></iconify-icon>
-              Nueva materia
+            <button class="btn btn-primary" onclick="abrirModalMateria()">
+              <iconify-icon icon="mdi:plus"></iconify-icon> Nueva materia
             </button>
           </div>
         </div>
@@ -85,11 +63,14 @@
       </main>
     </div>
 
-    <!-- Modal formulario materia (igual al original) -->
+    <!-- Modal formulario materia -->
     <div id="modalMateria" class="modal-overlay">
       <div class="modal-panel">
-        <div class="card" id="cardFormMateria">
+        <div class="modal-header">
           <h2 id="tituloFormMateria">Registrar materia</h2>
+          <button class="modal-close" onclick="cerrarModalMateria()">✕</button>
+        </div>
+        <div class="modal-body">
           <form id="formMateria" class="form-grid">
             <div>
               <label>Clave *</label>
@@ -146,10 +127,9 @@
           </button>
         </div>
         <div class="modal-body">
-          <!-- Formato -->
           <div
             style="
-              background: var(--bg-app, #f1f5f9);
+              background: var(--bg-app);
               border-radius: 8px;
               padding: 10px 14px;
               margin-bottom: 14px;
@@ -173,22 +153,19 @@
               >FBD001,Fundamentos de Bases de Datos,5,3,2,3</code
             >
           </div>
-
-          <!-- Drop zone -->
+          <!-- FIX: era "drop-zone", CSS define "csv-drop-zone" -->
           <div
             id="dropZoneMaterias"
-            class="drop-zone"
+            class="csv-drop-zone"
             ondragover="dragOverMaterias(event)"
             ondrop="soltarCSVMaterias(event)"
             onclick="document.getElementById('inputCSVMaterias').click()"
           >
-            <iconify-icon
-              icon="lucide:file-up"
-              style="font-size: 2rem; color: var(--primary, #6366f1)"
-            ></iconify-icon>
-            <p style="margin: 6px 0 0; font-size: 0.88rem">
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>
               Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
             </p>
+            <small>clave_materia, nombre_materia</small>
           </div>
           <input
             type="file"
@@ -197,20 +174,18 @@
             style="display: none"
             onchange="leerCSVMaterias(event)"
           />
-
           <div
             id="csvMateriasPreview"
             style="overflow-x: auto; margin-top: 6px"
           ></div>
         </div>
-
         <div class="modal-footer">
-          <button class="btn-cancelar" onclick="cerrarModalCSVMaterias()">
+          <button class="btn btn-outline" onclick="cerrarModalCSVMaterias()">
             Cancelar
           </button>
           <button
             id="btnImportarMaterias"
-            class="btn-guardar"
+            class="btn btn-primary"
             disabled
             onclick="importarCSVMaterias()"
           >
@@ -220,19 +195,7 @@
       </div>
     </div>
 
-    <div
-      id="toast-container"
-      style="
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      "
-    ></div>
-
+    <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/materias.js"></script>
   </body>
