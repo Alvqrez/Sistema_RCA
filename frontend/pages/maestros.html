@@ -145,16 +145,18 @@
             <p class="page-subtitle">Gestión del personal docente</p>
           </div>
           <div class="header-actions" id="headerActions" style="display: none">
-      <button class="btn btn-outline" onclick="abrirModalCSVMaestros()">
-        <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
-      </button>
-      <button class="btn btn-outline" onclick="exportarCSVMaestros()">
-        <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
-      </button>
-      <button class="btn btn-primary" onclick="abrirModalNuevo()">
-        <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo maestro
-      </button>
-    </div>
+            <button class="btn btn-outline" onclick="abrirModalCSVMaestros()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
+            <button class="btn btn-outline" onclick="exportarCSVMaestros()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">
+              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo
+              maestro
+            </button>
+          </div>
+        </div>
 
         <!-- Stats -->
         <div class="stats-row">
@@ -500,69 +502,93 @@
     </div>
 
     <div id="toast-container"></div>
-    
+
     <!-- Modal Importar CSV Maestros -->
-<div class="modal-overlay" id="modalImportMaestros">
-  <div class="modal-panel" style="max-width:580px">
-    <div class="modal-header">
-      <h2>Importar Maestros desde CSV</h2>
-      <button class="modal-close" onclick="cerrarModalCSVMaestros()">✕</button>
-    </div>
-    <div class="modal-body">
+    <div class="modal-overlay" id="modalImportMaestros">
+      <div class="modal-panel" style="max-width: 580px">
+        <div class="modal-header">
+          <h2>Importar Maestros desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModalCSVMaestros()">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Formato esperado -->
+          <div
+            style="
+              background: var(--bg-app);
+              border-radius: 8px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
+              font-size: 0.82rem;
+              color: var(--text-muted);
+            "
+          >
+            <strong>Columnas requeridas:</strong>
+            <code style="display: block; margin-top: 4px">
+              numero_empleado, nombre, apellido_paterno, correo_institucional,
+              username, password
+            </code>
+            <strong style="margin-top: 8px; display: block"
+              >Columnas opcionales:</strong
+            >
+            <code style="display: block; margin-top: 4px">
+              apellido_materno, departamento, especialidad, grado_academico,
+              tipo_contrato, tel_celular
+            </code>
+            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
+            <code style="display: block; margin-top: 4px">
+              EMP003,Carlos,Ramírez,Soto,cramírez@itver.edu.mx,prof03,pass123,Sistemas,Redes,Maestría,Asignatura,2281000000
+            </code>
+          </div>
 
-      <!-- Formato esperado -->
-      <div style="background:var(--bg-app);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:var(--text-muted);">
-        <strong>Columnas requeridas:</strong>
-        <code style="display:block;margin-top:4px">
-          numero_empleado, nombre, apellido_paterno, correo_institucional, username, password
-        </code>
-        <strong style="margin-top:8px;display:block">Columnas opcionales:</strong>
-        <code style="display:block;margin-top:4px">
-          apellido_materno, departamento, especialidad, grado_academico, tipo_contrato, tel_celular
-        </code>
-        <strong style="margin-top:8px;display:block">Ejemplo:</strong>
-        <code style="display:block;margin-top:4px">
-          EMP003,Carlos,Ramírez,Soto,cramírez@itver.edu.mx,prof03,pass123,Sistemas,Redes,Maestría,Asignatura,2281000000
-        </code>
+          <!-- Drop zone -->
+          <div
+            id="dropZoneMaestros"
+            class="csv-drop-zone"
+            ondragover="dragOverMaestros(event)"
+            ondrop="soltarCSVMaestros(event)"
+            onclick="document.getElementById('inputCSVMaestros').click()"
+          >
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>
+              Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
+            </p>
+            <small
+              >Columnas: numero_empleado, nombre, apellido_paterno,
+              correo_institucional, username, password</small
+            >
+          </div>
+          <input
+            type="file"
+            id="inputCSVMaestros"
+            accept=".csv"
+            style="display: none"
+            onchange="leerCSVMaestros(event)"
+          />
+
+          <!-- Preview -->
+          <div
+            id="csvMaestrosPreview"
+            style="overflow-x: auto; margin-top: 6px"
+          ></div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalCSVMaestros()">
+            Cancelar
+          </button>
+          <button
+            id="btnImportarMaestros"
+            class="btn btn-primary"
+            disabled
+            onclick="importarCSVMaestros()"
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
       </div>
-
-      <!-- Drop zone -->
-      <div
-        id="dropZoneMaestros"
-        class="csv-drop-zone"
-        ondragover="dragOverMaestros(event)"
-        ondrop="soltarCSVMaestros(event)"
-        onclick="document.getElementById('inputCSVMaestros').click()"
-      >
-        <iconify-icon icon="lucide:file-up"></iconify-icon>
-        <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
-        <small>Columnas: numero_empleado, nombre, apellido_paterno, correo_institucional, username, password</small>
-      </div>
-      <input
-        type="file"
-        id="inputCSVMaestros"
-        accept=".csv"
-        style="display:none"
-        onchange="leerCSVMaestros(event)"
-      />
-
-      <!-- Preview -->
-      <div id="csvMaestrosPreview" style="overflow-x:auto;margin-top:6px"></div>
     </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="cerrarModalCSVMaestros()">Cancelar</button>
-      <button
-        id="btnImportarMaestros"
-        class="btn btn-primary"
-        disabled
-        onclick="importarCSVMaestros()"
-      >
-        <iconify-icon icon="lucide:upload"></iconify-icon> Importar
-      </button>
-    </div>
-  </div>
-</div>
 
     <script src="../js/sidebar.js"></script>
     <script src="../js/maestros.js"></script>

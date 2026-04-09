@@ -119,10 +119,125 @@
         left: -80px;
       }
 
+      /* ── Burbujas animadas ───────────────────────────────── */
+      .bubbles {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .bubble {
+        position: absolute;
+        bottom: -80px;
+        border-radius: 50%;
+        background: rgba(37, 99, 235, 0.18);
+        animation: rise linear infinite;
+      }
+      .bubble::after {
+        content: "";
+        position: absolute;
+        top: 15%;
+        left: 20%;
+        width: 30%;
+        height: 25%;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+      }
+      @keyframes rise {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateY(-110vh) scale(1.1);
+          opacity: 0;
+        }
+      }
+      /* 10 burbujas con tamaños, posiciones y tiempos distintos */
+      .bubble:nth-child(1) {
+        width: 28px;
+        height: 28px;
+        left: 8%;
+        animation-duration: 9s;
+        animation-delay: 0s;
+      }
+      .bubble:nth-child(2) {
+        width: 18px;
+        height: 18px;
+        left: 22%;
+        animation-duration: 12s;
+        animation-delay: 2s;
+      }
+      .bubble:nth-child(3) {
+        width: 40px;
+        height: 40px;
+        left: 38%;
+        animation-duration: 10s;
+        animation-delay: 1s;
+      }
+      .bubble:nth-child(4) {
+        width: 14px;
+        height: 14px;
+        left: 55%;
+        animation-duration: 8s;
+        animation-delay: 4s;
+      }
+      .bubble:nth-child(5) {
+        width: 32px;
+        height: 32px;
+        left: 70%;
+        animation-duration: 11s;
+        animation-delay: 0.5s;
+      }
+      .bubble:nth-child(6) {
+        width: 22px;
+        height: 22px;
+        left: 15%;
+        animation-duration: 13s;
+        animation-delay: 6s;
+      }
+      .bubble:nth-child(7) {
+        width: 50px;
+        height: 50px;
+        left: 45%;
+        animation-duration: 14s;
+        animation-delay: 3s;
+      }
+      .bubble:nth-child(8) {
+        width: 16px;
+        height: 16px;
+        left: 80%;
+        animation-duration: 9s;
+        animation-delay: 7s;
+      }
+      .bubble:nth-child(9) {
+        width: 36px;
+        height: 36px;
+        left: 28%;
+        animation-duration: 10s;
+        animation-delay: 5s;
+      }
+      .bubble:nth-child(10) {
+        width: 20px;
+        height: 20px;
+        left: 62%;
+        animation-duration: 12s;
+        animation-delay: 1.5s;
+      }
+
       .inst-logo {
         display: flex;
         align-items: center;
         gap: 14px;
+        position: relative;
+        z-index: 1;
       }
       .inst-icon {
         width: 52px;
@@ -403,6 +518,20 @@
     <div class="login-wrapper">
       <!-- Panel izquierdo -->
       <div class="panel-left">
+        <!-- Burbujas animadas -->
+        <div class="bubbles">
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+        </div>
+
         <div class="inst-logo">
           <div class="inst-icon">
             <iconify-icon icon="mdi:school"></iconify-icon>
