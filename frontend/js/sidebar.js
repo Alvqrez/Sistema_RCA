@@ -115,21 +115,25 @@
       },
 
       {
-        texto: "Materias",
-        icono: "lucide:book",
-        href: "materias.html",
-      },
-
-      {
-        texto: "Grupos",
-        icono: "lucide:library",
-        href: "grupos.html",
-      },
-
-      {
-        texto: "Periodos",
-        icono: "mdi:calendar-range-outline",
-        href: "periodos.html",
+        texto: "Catálogo",
+        icono: "lucide:folder-open",
+        hijos: [
+          {
+            href: "materias.html",
+            texto: "Materias",
+            icono: "lucide:book",
+          },
+          {
+            href: "grupos.html",
+            texto: "Grupos",
+            icono: "lucide:library",
+          },
+          {
+            href: "periodos.html",
+            texto: "Periodos",
+            icono: "mdi:calendar-range-outline",
+          },
+        ],
       },
 
       { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },

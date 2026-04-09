@@ -456,6 +456,52 @@
         </div>
       </main>
     </div>
+    <div
+      id="modalUnidades"
+      class="modal-overlay"
+      onclick="if (event.target === this) cerrarModalUnidades();"
+    >
+      <div class="modal-panel" style="max-width: 560px; width: 95vw">
+        <div class="modal-header">
+          <h2 style="display: flex; align-items: center; gap: 10px">
+            <iconify-icon icon="lucide:layout-list"></iconify-icon>
+            Gestionar unidades
+          </h2>
+          <button class="modal-close" onclick="cerrarModalUnidades()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 0.83rem;
+              color: var(--text-muted);
+              margin: 0 0 16px;
+            "
+          >
+            Puedes <strong>dividir</strong> una unidad en dos partes, o
+            <strong>fusionar</strong> dos unidades consecutivas en una sola. Los
+            cambios son exclusivos para este grupo.
+          </p>
+          <div
+            id="modalUnidadesLista"
+            style="display: flex; flex-direction: column; gap: 8px"
+          ></div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between">
+          <button class="btn btn-outline" onclick="restaurarUnidadesOriginal()">
+            <iconify-icon icon="lucide:rotate-ccw"></iconify-icon> Restaurar
+            original
+          </button>
+          <div style="display: flex; gap: 8px">
+            <button class="btn btn-outline" onclick="cerrarModalUnidades()">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" onclick="guardarUnidadesModal()">
+              <iconify-icon icon="lucide:save"></iconify-icon> Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>

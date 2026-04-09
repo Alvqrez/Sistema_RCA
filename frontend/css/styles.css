@@ -32,6 +32,7 @@
 .dark-mode {
   --bg-app: #0f172a;
   --card-bg: #1e293b;
+  --primary-light: rgba(59, 130, 246, 0.15);
 
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
@@ -1658,6 +1659,16 @@ th.col-final {
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .dark-mode .card {
   border-color: var(--border);
+}
+
+.dark-mode .group-card:hover,
+.dark-mode .group-card.selected {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+}
+
+.dark-mode .group-card.selected h3 {
+  color: #93c5fd;
 }
 
 /* ── Table filters ──────────────────────────────────────────────────── */

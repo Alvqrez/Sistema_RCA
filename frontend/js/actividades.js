@@ -702,3 +702,8 @@ async function confirmarEliminar(id) {
 
 // Llamar al init para poblar los selects de config
 poblarSelectsConfig();
+
+// ── Toast alias (usa showToast global de sidebar.js) ─────────────────
+function mostrarToast(msg, tipo = "success") {
+  if (typeof showToast === "function") showToast(msg, tipo);
+}

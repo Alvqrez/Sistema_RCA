@@ -50,6 +50,24 @@ function getPcts(id_grupo, id_unidad) {
   return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
 }
 
+// ── localStorage helpers para unidades personalizadas por grupo ───────
+function getUnidadesCustom(id_grupo) {
+  try {
+    return (
+      JSON.parse(localStorage.getItem(`unidades_custom_${id_grupo}`)) || null
+    );
+  } catch {
+    return null;
+  }
+}
+function setUnidadesCustom(id_grupo, arr) {
+  localStorage.setItem(`unidades_custom_${id_grupo}`, JSON.stringify(arr));
+}
+function getUnidadesEfectivas(id_grupo) {
+  // Returns custom config if exists, otherwise the original from cache
+  return getUnidadesCustom(id_grupo) || unidadesPorGrupo[id_grupo] || [];
+}
+
 // ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   soloPermitido("maestro", "administrador");
@@ -256,12 +274,18 @@ function buildGrupoBody(grupo, unidades) {
         <span>Rubros del grupo: <strong id="rubros-count-${grupo.id_grupo}">${getRubrosGrupo(grupo.id_grupo).length}</strong></span>
         ${extras.map((r) => `<span class="rubro-chip">${r.nombre} <button onclick="eliminarRubroGrupo(${grupo.id_grupo},'${r.key}')" title="Eliminar">×</button></span>`).join("")}
       </div>
-      <button class="btn btn-outline btn-sm" onclick="agregarRubroGrupo(${grupo.id_grupo})">
+       <button class="btn btn-outline btn-sm" onclick="agregarRubroGrupo(${grupo.id_grupo})">
         <iconify-icon icon="lucide:plus"></iconify-icon> Agregar rubro
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="abrirModalUnidades(${grupo.id_grupo})" style="border-color:var(--bonus,#7c3aed);color:var(--bonus,#7c3aed)">
+        <iconify-icon icon="lucide:layout-list"></iconify-icon> Unidades
       </button>
     </div>`;
 
-  unidades.forEach((u) => {
+  const unidadesEfectivas = getUnidadesEfectivas(grupo.id_grupo).length
+    ? getUnidadesEfectivas(grupo.id_grupo)
+    : unidades;
+  unidadesEfectivas.forEach((u) => {
     html += buildUnidadConfig(grupo.id_grupo, u);
   });
 
@@ -561,4 +585,173 @@ function toggleGrupoCard(id_grupo) {
 }
 function toggleUnidadBlock(blockId) {
   document.getElementById(blockId)?.classList.toggle("open");
+}
+
+// ─────────────────────────────────────────────────────────────────────
+//  MODAL — GESTIONAR UNIDADES (dividir / fusionar)
+// ─────────────────────────────────────────────────────────────────────
+
+let _modalGrupoId = null;
+let _modalUnidades = []; // copia de trabajo durante edición
+
+function abrirModalUnidades(id_grupo) {
+  _modalGrupoId = id_grupo;
+  // Toma las unidades efectivas actuales como punto de partida
+  const base = getUnidadesEfectivas(id_grupo).length
+    ? getUnidadesEfectivas(id_grupo)
+    : unidadesPorGrupo[id_grupo] || [];
+  // Deep copy para no mutar el estado
+  _modalUnidades = base.map((u, i) => ({
+    id_unidad: u.id_unidad,
+    nombre_unidad: u.nombre_unidad,
+    numero_unidad: u.numero_unidad ?? i + 1,
+    _origen: u._origen || String(u.id_unidad), // rastrear origen
+  }));
+  renderModalUnidades();
+  document.getElementById("modalUnidades").classList.add("visible");
+}
+
+function cerrarModalUnidades() {
+  document.getElementById("modalUnidades").classList.remove("visible");
+  _modalGrupoId = null;
+  _modalUnidades = [];
+}
+
+function renderModalUnidades() {
+  const lista = document.getElementById("modalUnidadesLista");
+  if (!lista) return;
+
+  lista.innerHTML = _modalUnidades
+    .map((u, idx) => {
+      const esCustom = String(u.id_unidad).includes("_");
+      const colorBorde = esCustom ? "var(--bonus,#7c3aed)" : "var(--border)";
+
+      return `
+      <div class="rubro-row" style="border-color:${colorBorde};flex-direction:column;align-items:stretch;gap:8px" id="mu-row-${idx}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <iconify-icon icon="lucide:grip-vertical" style="color:var(--text-muted);flex-shrink:0"></iconify-icon>
+          <span style="font-size:0.75rem;color:var(--text-muted);flex-shrink:0;min-width:22px">U${u.numero_unidad}</span>
+          <input type="text"
+                 value="${u.nombre_unidad}"
+                 onchange="_modalUnidades[${idx}].nombre_unidad = this.value"
+                 style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;
+                        background:var(--bg-app);color:var(--text-main);font-size:0.85rem;font-family:inherit" />
+          ${
+            esCustom
+              ? `<button onclick="eliminarUnidadModal(${idx})" title="Eliminar esta división/fusión"
+                       style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:1rem;
+                              padding:4px;border-radius:6px;flex-shrink:0">
+                 <iconify-icon icon="lucide:x"></iconify-icon>
+               </button>`
+              : ""
+          }
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="dividirUnidad(${idx})"
+                  class="btn btn-sm"
+                  style="background:var(--primary-light);color:var(--primary);border:none;font-size:0.78rem">
+            <iconify-icon icon="lucide:scissors"></iconify-icon> Dividir en dos
+          </button>
+          ${
+            idx < _modalUnidades.length - 1
+              ? `<button onclick="fusionarUnidades(${idx})"
+                       class="btn btn-sm"
+                       style="background:var(--success-light);color:var(--success);border:none;font-size:0.78rem">
+                 <iconify-icon icon="lucide:link"></iconify-icon> Fusionar con siguiente
+               </button>`
+              : ""
+          }
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+function dividirUnidad(idx) {
+  const u = _modalUnidades[idx];
+  const keyA = `${u._origen}_a`;
+  const keyB = `${u._origen}_b`;
+  const numBase = u.numero_unidad;
+
+  const parteA = {
+    id_unidad: keyA,
+    nombre_unidad: `${u.nombre_unidad} — Parte A`,
+    numero_unidad: `${numBase}a`,
+    _origen: u._origen,
+  };
+  const parteB = {
+    id_unidad: keyB,
+    nombre_unidad: `${u.nombre_unidad} — Parte B`,
+    numero_unidad: `${numBase}b`,
+    _origen: u._origen,
+  };
+  _modalUnidades.splice(idx, 1, parteA, parteB);
+  renderModalUnidades();
+}
+
+function fusionarUnidades(idx) {
+  const a = _modalUnidades[idx];
+  const b = _modalUnidades[idx + 1];
+  const fusionada = {
+    id_unidad: `${a._origen}_${b._origen}`,
+    nombre_unidad: `${a.nombre_unidad} + ${b.nombre_unidad}`,
+    numero_unidad: `${a.numero_unidad}-${b.numero_unidad}`,
+    _origen: `${a._origen}_${b._origen}`,
+  };
+  _modalUnidades.splice(idx, 2, fusionada);
+  renderModalUnidades();
+}
+
+function eliminarUnidadModal(idx) {
+  // Restaura la unidad custom a la original más cercana
+  const u = _modalUnidades[idx];
+  const origenBase = String(u._origen).split("_")[0];
+  const original = (unidadesPorGrupo[_modalGrupoId] || []).find(
+    (o) => String(o.id_unidad) === origenBase,
+  );
+  if (original) {
+    _modalUnidades.splice(idx, 1, {
+      id_unidad: original.id_unidad,
+      nombre_unidad: original.nombre_unidad,
+      numero_unidad: original.numero_unidad,
+      _origen: String(original.id_unidad),
+    });
+  } else {
+    _modalUnidades.splice(idx, 1);
+  }
+  renderModalUnidades();
+}
+
+function restaurarUnidadesOriginal() {
+  if (
+    !confirm(
+      "¿Restaurar las unidades originales de la materia? Se perderán las divisiones y fusiones guardadas.",
+    )
+  )
+    return;
+  localStorage.removeItem(`unidades_custom_${_modalGrupoId}`);
+  const originales = (unidadesPorGrupo[_modalGrupoId] || []).map((u, i) => ({
+    id_unidad: u.id_unidad,
+    nombre_unidad: u.nombre_unidad,
+    numero_unidad: u.numero_unidad ?? i + 1,
+    _origen: String(u.id_unidad),
+  }));
+  _modalUnidades = originales;
+  renderModalUnidades();
+  showToast("Unidades restablecidas al original", "info");
+}
+
+async function guardarUnidadesModal() {
+  if (!_modalGrupoId || !_modalUnidades.length) return;
+  // Re-numerar secuencialmente para que quede limpio
+  const final = _modalUnidades.map((u, i) => ({
+    ...u,
+    numero_unidad: i + 1,
+  }));
+  setUnidadesCustom(_modalGrupoId, final);
+  cerrarModalUnidades();
+  // Rerender the group body with the new unit layout
+  await rerenderGrupoBody(_modalGrupoId);
+  actualizarBadgeGrupo(_modalGrupoId);
+  showToast("Configuración de unidades guardada", "success");
 }
