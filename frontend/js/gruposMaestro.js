@@ -40,6 +40,15 @@ function setRubrosExtra(id_grupo, arr) {
 function getRubrosGrupo(id_grupo) {
   return [...RUBROS_DEFAULT, ...getRubrosExtra(id_grupo)];
 }
+function getPcts(id_grupo, id_unidad) {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+    );
+    if (saved && Object.keys(saved).length) return saved;
+  } catch (_) {}
+  return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
+}
 async function getPctsFromBD(id_grupo, id_unidad) {
   try {
     const res = await fetch(
