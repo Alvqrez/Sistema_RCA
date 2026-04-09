@@ -559,3 +559,31 @@ ALTER TABLE `rca_sistema`.`maestro`
 ALTER TABLE grupo
     ADD CONSTRAINT uq_grupo_maestro_periodo
     UNIQUE (clave_materia, numero_empleado, id_periodo);
+
+-- Correccion 4
+
+ALTER TABLE grupo_unidad
+    ADD COLUMN agrupacion_id   TINYINT UNSIGNED NULL DEFAULT NULL
+        COMMENT 'NULL = unidad independiente. Mismo número = unidades fusionadas',
+    ADD COLUMN tipo_config     ENUM('original','fusionada','dividida') NOT NULL DEFAULT 'original';
+
+-- correccion 5
+
+-- Ejecuta en rca_sistema
+CREATE TABLE IF NOT EXISTS `rca_sistema`.`config_evaluacion_unidad` (
+    `id_grupo`        INT UNSIGNED  NOT NULL,
+    `id_unidad`       INT UNSIGNED  NOT NULL,
+    `pct_actividades` DECIMAL(5,2)  NOT NULL DEFAULT 60.00
+        COMMENT '% de la calificación que vienen de actividades registradas',
+    `pct_examen`      DECIMAL(5,2)  NOT NULL DEFAULT 30.00
+        COMMENT '% que corresponde al examen',
+    `pct_asistencia`  DECIMAL(5,2)  NOT NULL DEFAULT 10.00
+        COMMENT '% que corresponde a asistencia',
+    `cal_examen`      DECIMAL(5,2)  NULL DEFAULT NULL
+        COMMENT 'Calificación del examen — se llena por grupo (aplica a todos igual, o puede venir por alumno)',
+    `nota`            VARCHAR(255)  NULL DEFAULT NULL,
+    `fecha_config`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id_grupo`, `id_unidad`),
+    CONSTRAINT `fk_CEU_Grupo`  FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`(`id_grupo`)  ON DELETE CASCADE,
+    CONSTRAINT `fk_CEU_Unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidad`(`id_unidad`) ON DELETE CASCADE
+) COMMENT = 'Configuración de cómo califica el maestro cada unidad de cada grupo';

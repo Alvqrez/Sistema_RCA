@@ -91,19 +91,23 @@ router.get("/:id", verificarToken, (req, res) => {
 
 // GET — unidades de un grupo con su ponderación
 router.get("/:id/unidades", verificarToken, (req, res) => {
-  // numero_unidad: número secuencial de la unidad dentro de su materia (Unidad 1, 2, 3…)
   const sql = `
-    SELECT gu.id_unidad, u.nombre_unidad, u.estatus, gu.ponderacion,
-           ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
+    SELECT
+        gu.id_unidad, u.nombre_unidad, u.estatus,
+        gu.ponderacion, u.clave_materia,
+        gu.agrupacion_id, gu.tipo_config
     FROM grupo_unidad gu
     JOIN unidad u ON gu.id_unidad = u.id_unidad
     WHERE gu.id_grupo = ?
-    ORDER BY u.id_unidad
-  `;
+    ORDER BY gu.id_unidad
+`;
   db.query(sql, [req.params.id], (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(results);
+
+    // Agregar numero_unidad en JS (sin ROW_NUMBER)
+    const conNumero = results.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+    res.json(conNumero);
   });
 });
 
@@ -273,6 +277,36 @@ router.delete("/:id", soloAdmin, (req, res) => {
       res.json({ success: true, mensaje: "Grupo eliminado" });
     },
   );
+});
+
+router.put("/:id/unidades/agrupacion", maestroOAdmin, (req, res) => {
+  const { unidades } = req.body;
+  // unidades = [{ id_unidad, agrupacion_id, tipo_config }]
+  if (!Array.isArray(unidades) || !unidades.length) {
+    return res.status(400).json({ error: "Se requiere array de unidades" });
+  }
+
+  const updates = unidades.map(
+    (u) =>
+      new Promise((resolve, reject) => {
+        db.query(
+          `UPDATE grupo_unidad
+             SET agrupacion_id = ?, tipo_config = ?
+             WHERE id_grupo = ? AND id_unidad = ?`,
+          [
+            u.agrupacion_id ?? null,
+            u.tipo_config ?? "original",
+            req.params.id,
+            u.id_unidad,
+          ],
+          (err) => (err ? reject(err) : resolve()),
+        );
+      }),
+  );
+
+  Promise.all(updates)
+    .then(() => res.json({ success: true }))
+    .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
 });
 
 module.exports = router;

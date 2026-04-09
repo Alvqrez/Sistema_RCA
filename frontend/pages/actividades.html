@@ -71,79 +71,120 @@
         </div>
 
         <!-- Registrar actividad -->
-        <div class="card">
+        <div class="card card-collapsible" id="cardRegistrarActividad">
           <div class="card-title">
             <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
             Registrar actividad
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
           </div>
-          <div class="form-grid">
-            <div class="field-group">
-              <label>Grupo</label>
-              <select id="grupoActividad">
-                <option value="">-- Selecciona grupo --</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Unidad</label>
-              <select id="unidadActividad">
-                <option value="">-- Selecciona unidad --</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Nombre de la actividad</label>
-              <input
-                type="text"
-                id="nombreActividad"
-                placeholder="Ej. Práctica 1"
-              />
-            </div>
-            <div class="field-group">
-              <label>Ponderación dentro de la unidad (%)</label>
-              <input
-                type="number"
-                id="ponderacion"
-                min="1"
-                max="100"
-                placeholder="0–100"
-                oninput="actualizarIndicadorEnTiempoReal()"
-              />
-            </div>
 
-            <!-- Issue 3: Reemplaza "Tipo de evaluación" con el indicador de ponderación -->
-            <div class="field-group">
-              <label>Disponible en esta unidad</label>
-              <div class="pond-indicator" id="indicadorPonderacion">
-                <span class="pond-big" style="color: var(--text-muted)">—</span>
-                <div class="pond-track">
-                  <div class="pond-label">Selecciona grupo y unidad</div>
-                  <div class="pond-bar-bg">
-                    <div
-                      class="pond-bar-fill"
-                      id="pondBarFill"
-                      style="width: 0%; background: var(--primary)"
-                    ></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field-group">
+                <label>Grupo</label>
+                <select id="grupoActividad">
+                  <option value="">-- Selecciona grupo --</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label>Unidad</label>
+                <select id="unidadActividad">
+                  <option value="">-- Selecciona unidad --</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label>Nombre de la actividad</label>
+                <input
+                  type="text"
+                  id="nombreActividad"
+                  placeholder="Ej. Práctica 1"
+                />
+              </div>
+
+              <div class="field-group">
+                <label>Ponderación dentro de la unidad (%)</label>
+                <input
+                  type="number"
+                  id="ponderacion"
+                  min="1"
+                  max="100"
+                  placeholder="0–100"
+                  oninput="actualizarIndicadorEnTiempoReal()"
+                />
+              </div>
+
+              <div class="field-group">
+                <label>Disponible en esta unidad</label>
+                <div class="pond-indicator" id="indicadorPonderacion">
+                  <span class="pond-big" style="color: var(--text-muted)"
+                    >—</span
+                  >
+                  <div class="pond-track">
+                    <div class="pond-label">Selecciona grupo y unidad</div>
+                    <div class="pond-bar-bg">
+                      <div
+                        class="pond-bar-fill"
+                        id="pondBarFill"
+                        style="width: 0%; background: var(--primary)"
+                      ></div>
+                    </div>
                   </div>
                 </div>
+                <input type="hidden" id="tipoEvaluacion" value="Sumativa" />
               </div>
-              <!-- Campo oculto — el backend sigue recibiendo el tipo por defecto -->
-              <input type="hidden" id="tipoEvaluacion" value="Sumativa" />
+
+              <div class="field-group">
+                <label>Fecha de entrega</label>
+                <input type="date" id="fechaEntrega" />
+              </div>
             </div>
 
-            <!-- Issue 2: fecha_entrega con min = hoy (lo establece JS en init) -->
-            <div class="field-group">
-              <label>Fecha de entrega</label>
-              <input type="date" id="fechaEntrega" />
+            <div class="avisos-form" style="margin-top: 16px">
+              <div
+                id="avisoSinUnidades"
+                style="
+                  display: none;
+                  padding: 10px 14px;
+                  background: #fef3c7;
+                  border: 1px solid #f59e0b;
+                  border-radius: 8px;
+                  font-size: 0.83rem;
+                  color: #92400e;
+                "
+              >
+                <iconify-icon icon="mdi:alert-outline"></iconify-icon>
+                Este grupo no tiene unidades.
+                <a
+                  href="unidades.html"
+                  style="
+                    color: #b45309;
+                    font-weight: 600;
+                    text-decoration: underline;
+                  "
+                >
+                  Ir a crear unidades →
+                </a>
+              </div>
             </div>
-          </div>
-          <div class="acciones-row" style="margin-top: 16px">
-            <button class="btn btn-primary" onclick="registrarActividad()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              Guardar actividad
-            </button>
-            <button class="btn btn-outline" onclick="limpiarFormActividad()">
-              <iconify-icon icon="mdi:close"></iconify-icon>
-              Limpiar
-            </button>
+
+            <div class="acciones-row" style="margin-top: 16px">
+              <button class="btn btn-primary" onclick="registrarActividad()">
+                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                Guardar actividad
+              </button>
+              <button class="btn btn-outline" onclick="limpiarFormActividad()">
+                <iconify-icon icon="mdi:close"></iconify-icon>
+                Limpiar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -205,6 +246,152 @@
               </thead>
               <tbody id="tablaActividades"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Card plegable: Configuración de evaluación por unidad -->
+        <div class="card card-collapsible collapsed" id="cardConfigEval">
+          <div class="card-title">
+            <iconify-icon icon="mdi:cog-outline"></iconify-icon>
+            Configurar cómo calificar — Ponderaciones por rubro
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Expandir"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body">
+            <p
+              style="
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                margin: 0 0 16px;
+              "
+            >
+              Define cuánto vale cada rubro en la calificación final de cada
+              unidad. La suma de Actividades + Examen + Asistencia debe ser
+              100%.
+            </p>
+
+            <div class="config-grid">
+              <div class="field-group">
+                <label>Grupo</label>
+                <select id="configGrupo" onchange="cargarConfigEval()">
+                  <option value="">-- Selecciona grupo --</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label>Unidad</label>
+                <select id="configUnidad" onchange="cargarConfigEval()">
+                  <option value="">-- Selecciona unidad --</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="panelConfigRubros" style="display: none; margin-top: 16px">
+              <div class="ponderacion-grid" style="margin-bottom: 16px">
+                <div class="pond-item">
+                  <div class="pond-item-label">
+                    <span class="pond-dot" style="background: #3b82f6"></span>
+                    Actividades
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px">
+                    <input
+                      type="number"
+                      class="pond-input"
+                      id="cfgPctActividades"
+                      min="0"
+                      max="100"
+                      value="60"
+                      oninput="actualizarSumaConfig()"
+                    />
+                    <span class="pond-suffix">%</span>
+                  </div>
+                </div>
+                <div class="pond-item">
+                  <div class="pond-item-label">
+                    <span class="pond-dot" style="background: #f59e0b"></span>
+                    Examen
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px">
+                    <input
+                      type="number"
+                      class="pond-input"
+                      id="cfgPctExamen"
+                      min="0"
+                      max="100"
+                      value="30"
+                      oninput="actualizarSumaConfig()"
+                    />
+                    <span class="pond-suffix">%</span>
+                  </div>
+                </div>
+                <div class="pond-item">
+                  <div class="pond-item-label">
+                    <span class="pond-dot" style="background: #10b981"></span>
+                    Asistencia
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px">
+                    <input
+                      type="number"
+                      class="pond-input"
+                      id="cfgPctAsistencia"
+                      min="0"
+                      max="100"
+                      value="10"
+                      oninput="actualizarSumaConfig()"
+                    />
+                    <span class="pond-suffix">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Barra de suma -->
+              <div class="suma-bar" id="sumaBarConfig">
+                <iconify-icon icon="mdi:sigma"></iconify-icon>
+                <span>Total: <strong id="sumaValConfig">100</strong>%</span>
+                <span
+                  id="sumaMensajeConfig"
+                  style="margin-left: auto; font-size: 0.82rem"
+                ></span>
+              </div>
+
+              <div
+                class="field-group"
+                style="margin-top: 12px; max-width: 400px"
+              >
+                <label>Notas / instrucciones</label>
+                <input
+                  type="text"
+                  id="cfgNota"
+                  placeholder="Ej. El examen es global para toda la unidad"
+                />
+              </div>
+
+              <div class="acciones-row" style="margin-top: 16px">
+                <button class="btn btn-primary" onclick="guardarConfigEval()">
+                  <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                  Guardar configuración
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="vacioConfigEval"
+              style="
+                text-align: center;
+                padding: 24px;
+                color: var(--text-muted);
+              "
+            >
+              <iconify-icon
+                icon="mdi:tune-variant"
+                style="font-size: 2rem; display: block; margin: 0 auto 8px"
+              ></iconify-icon>
+              <p>Selecciona grupo y unidad para configurar los porcentajes</p>
+            </div>
           </div>
         </div>
 

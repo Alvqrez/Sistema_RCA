@@ -3434,9 +3434,54 @@ th.col-final {
 
 /* HEADER MATERIAS */
 
-.header-materias{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
+.header-materias {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* ── CARDS PLEGABLES ────────────────────────────────────────────── */
+.card-collapsible .card-body {
+  overflow: hidden;
+  transition:
+    max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease;
+  max-height: 1200px;
+  opacity: 1;
+}
+
+.card-collapsible.collapsed .card-body {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  transition:
+    background 0.15s,
+    transform 0.25s;
+}
+
+.card-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.card-collapsible.collapsed .card-toggle-btn iconify-icon {
+  transform: rotate(-90deg);
+}
+
+.card-toggle-btn iconify-icon {
+  display: block;
+  transition: transform 0.25s;
 }

@@ -134,14 +134,19 @@ document
     selUni.disabled = false;
 
     if (unidades.length === 0) {
-      selUni.innerHTML = `<option value="">⚠ Sin unidades — créalas primero</option>`;
-      mostrarToast(
-        "Este grupo no tiene unidades. Ve a la sección Unidades y créalas para esta materia.",
-        "error",
-      );
+      selUni.innerHTML = `<option value="">Sin unidades disponibles</option>`;
+      selUni.disabled = true;
+      // Mostrar aviso con link
+      const aviso = document.getElementById("avisoSinUnidades");
+      if (aviso) aviso.style.display = "block";
       actualizarIndicadorPonderacion();
       return;
     }
+
+    // Y cuando SÍ hay unidades, ocultar el aviso:
+    const aviso = document.getElementById("avisoSinUnidades");
+    if (aviso) aviso.style.display = "none";
+    selUni.disabled = false;
 
     selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
     unidades.forEach((u) => {
@@ -727,3 +732,156 @@ function mostrarToast(msg, tipo = "success") {
   clearTimeout(t._x);
   t._x = setTimeout(() => t.classList.remove("visible"), 4000);
 }
+
+// ── CARDS PLEGABLES ──────────────────────────────────────────────────
+function toggleCard(btn) {
+  const card = btn.closest(".card-collapsible");
+  card.classList.toggle("collapsed");
+  btn.title = card.classList.contains("collapsed") ? "Expandir" : "Contraer";
+}
+
+// ── CONFIG DE EVALUACIÓN ─────────────────────────────────────────────
+async function poblarSelectsConfig() {
+  const token = localStorage.getItem("token");
+  const rol = localStorage.getItem("rol");
+  const url =
+    rol === "maestro"
+      ? `${BASE_URL}/api/grupos/mis-grupos`
+      : `${BASE_URL}/api/grupos`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const grupos = await res.json();
+    const sel = document.getElementById("configGrupo");
+    if (!sel) return;
+    sel.innerHTML = `<option value="">-- Selecciona grupo --</option>`;
+    grupos.forEach((g) => {
+      sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} (${g.id_grupo})</option>`;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+document
+  .getElementById("configGrupo")
+  ?.addEventListener("change", async function () {
+    const token = localStorage.getItem("token");
+    const selUni = document.getElementById("configUnidad");
+    selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
+    document.getElementById("panelConfigRubros").style.display = "none";
+    document.getElementById("vacioConfigEval").style.display = "block";
+    if (!this.value) return;
+
+    const unidades = await cargarUnidadesParaGrupo(this.value);
+    unidades.forEach((u) => {
+      selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
+    });
+  });
+
+async function cargarConfigEval() {
+  const idGrupo = document.getElementById("configGrupo").value;
+  const idUnidad = document.getElementById("configUnidad").value;
+  const panel = document.getElementById("panelConfigRubros");
+  const vacio = document.getElementById("vacioConfigEval");
+
+  if (!idGrupo || !idUnidad) {
+    panel.style.display = "none";
+    vacio.style.display = "block";
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/config-evaluacion/${idGrupo}/${idUnidad}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const cfg = await res.json();
+
+    document.getElementById("cfgPctActividades").value =
+      cfg.pct_actividades ?? 60;
+    document.getElementById("cfgPctExamen").value = cfg.pct_examen ?? 30;
+    document.getElementById("cfgPctAsistencia").value =
+      cfg.pct_asistencia ?? 10;
+    document.getElementById("cfgNota").value = cfg.nota ?? "";
+
+    actualizarSumaConfig();
+    panel.style.display = "block";
+    vacio.style.display = "none";
+  } catch (e) {
+    mostrarToast("No se pudo cargar la configuración", "error");
+  }
+}
+
+function actualizarSumaConfig() {
+  const pA =
+    parseFloat(document.getElementById("cfgPctActividades").value) || 0;
+  const pE = parseFloat(document.getElementById("cfgPctExamen").value) || 0;
+  const pAs =
+    parseFloat(document.getElementById("cfgPctAsistencia").value) || 0;
+  const suma = pA + pE + pAs;
+
+  const bar = document.getElementById("sumaBarConfig");
+  const val = document.getElementById("sumaValConfig");
+  const msg = document.getElementById("sumaMensajeConfig");
+  if (!bar) return;
+
+  val.textContent = suma.toFixed(1);
+
+  if (Math.abs(suma - 100) < 0.01) {
+    bar.className = "suma-bar ok";
+    msg.textContent = "✓ Correcto";
+  } else if (suma < 100) {
+    bar.className = "suma-bar warn";
+    msg.textContent = `Faltan ${(100 - suma).toFixed(1)}%`;
+  } else {
+    bar.className = "suma-bar error";
+    msg.textContent = `Excede ${(suma - 100).toFixed(1)}%`;
+  }
+}
+
+async function guardarConfigEval() {
+  const idGrupo = document.getElementById("configGrupo").value;
+  const idUnidad = document.getElementById("configUnidad").value;
+  if (!idGrupo || !idUnidad) {
+    mostrarToast("Selecciona grupo y unidad", "error");
+    return;
+  }
+
+  const body = {
+    id_grupo: idGrupo,
+    id_unidad: idUnidad,
+    pct_actividades: document.getElementById("cfgPctActividades").value,
+    pct_examen: document.getElementById("cfgPctExamen").value,
+    pct_asistencia: document.getElementById("cfgPctAsistencia").value,
+    nota: document.getElementById("cfgNota").value || null,
+  };
+
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`${BASE_URL}/api/config-evaluacion`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.success) {
+      mostrarToast("Configuración guardada correctamente ✓", "success");
+    } else {
+      mostrarToast(data.error || "Error al guardar", "error");
+    }
+  } catch (e) {
+    mostrarToast("Error de conexión", "error");
+  }
+}
+
+// Llamar al init para poblar los selects de config
+poblarSelectsConfig();
