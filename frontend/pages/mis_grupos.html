@@ -2,11 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Mis Grupos - RCA</title>
+    <title>Mis Grupos — RCA</title>
     <script>
-      if (localStorage.getItem("tema") === "oscuro") {
+      if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      }
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
@@ -15,7 +14,7 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
@@ -24,30 +23,114 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <h1>Mis Grupos</h1>
-        <div class="card">
-          <h2>Grupos que imparto</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Materia</th>
-                <th>Aula</th>
-                <th>Horario</th>
-                <th>Estatus</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaGrupos"></tbody>
-          </table>
+        <div class="page-header-v2">
+          <div>
+            <h1>Mis Grupos</h1>
+            <p class="page-subtitle">Grupos asignados en el periodo actual</p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:library"></iconify-icon>
+            <div>
+              <p id="statTotal">—</p>
+              <span>Grupos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+            <div>
+              <p id="statActivos">—</p>
+              <span>Activos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+            <div>
+              <p id="statConfigurados">—</p>
+              <span>Configurados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions banner -->
+        <div
+          style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px"
+        >
+          <a
+            href="gruposMaestro.html"
+            class="btn btn-primary"
+            style="text-decoration: none"
+          >
+            <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+            Configurar evaluación
+          </a>
+          <a
+            href="actividades.html"
+            class="btn btn-outline"
+            style="text-decoration: none"
+          >
+            <iconify-icon icon="lucide:clipboard-pen"></iconify-icon> Gestionar
+            actividades
+          </a>
+          <a
+            href="reportes.html"
+            class="btn btn-outline"
+            style="text-decoration: none"
+          >
+            <iconify-icon icon="lucide:bar-chart-2"></iconify-icon> Ver reportes
+          </a>
+        </div>
+
+        <!-- Group cards grid -->
+        <div
+          id="loadingGrupos"
+          style="text-align: center; padding: 48px; color: var(--text-muted)"
+        >
+          <iconify-icon
+            icon="lucide:loader-2"
+            style="font-size: 2rem; display: block; margin: 0 auto 10px"
+          ></iconify-icon>
+          <p>Cargando grupos…</p>
+        </div>
+        <div
+          id="gruposGrid"
+          style="
+            display: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+          "
+        ></div>
+        <div
+          id="emptyGrupos"
+          style="
+            display: none;
+            text-align: center;
+            padding: 64px;
+            color: var(--text-muted);
+          "
+        >
+          <iconify-icon
+            icon="lucide:inbox"
+            style="font-size: 3rem; display: block; margin: 0 auto 12px"
+          ></iconify-icon>
+          <p style="font-size: 1rem; font-weight: 600; margin: 0 0 6px">
+            Sin grupos asignados
+          </p>
+          <p style="font-size: 0.85rem">
+            Cuando el administrador te asigne un grupo aparecerá aquí.
+          </p>
         </div>
       </main>
     </div>
+    <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script>
-      // Solo muestra los grupos del maestro logueado
       const BASE_URL = "http://localhost:3000";
-      const token = localStorage.getItem("token");
+      const tkn = () => localStorage.getItem("token");
 
       function parsearToken(t) {
         try {
@@ -57,42 +140,124 @@
         }
       }
 
-      const payload = parsearToken(token);
-      const id_referencia = payload?.id_referencia;
-
       async function cargarMisGrupos() {
-        const res = await fetch(`${BASE_URL}/api/grupos`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const grupos = await res.json();
-        const tabla = document.getElementById("tablaGrupos");
-        tabla.innerHTML = "";
+        const payload = parsearToken(tkn());
+        const id_ref = payload?.id_referencia;
 
-        // Filtra solo los del maestro logueado
-        const misg = grupos.filter(
-          (g) => String(g.numero_empleado) === String(id_referencia),
-        );
+        try {
+          // Try /mis-grupos, fallback to filtered /grupos
+          let grupos = [];
+          try {
+            const r = await fetch(`${BASE_URL}/api/grupos/mis-grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            if (r.ok) grupos = await r.json();
+          } catch (_) {}
 
-        misg.forEach((g) => {
-          tabla.innerHTML += `
-            <tr>
-                <td>${g.id_grupo}</td>
-                <td>${g.nombre_materia}</td>
-                <td>${g.aula ?? "—"}</td>
-                <td>${g.horario ?? "—"}</td>
-                <td><span class="badge ${g.estatus === "Activo" ? "badge-verde" : "badge-gris"}">${g.estatus}</span></td>
-                <td>
-                    <a href="formulario.html?grupo=${g.id_grupo}" class="btn-editar" style="text-decoration:none;display:inline-block;">
-                        Capturar calificaciones
-                    </a>
-                </td>
-            </tr>
-        `;
-        });
+          if (!Array.isArray(grupos) || !grupos.length) {
+            const r2 = await fetch(`${BASE_URL}/api/grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            const todos = await r2.json();
+            grupos = id_ref
+              ? todos.filter(
+                  (g) => String(g.numero_empleado) === String(id_ref),
+                )
+              : todos;
+          }
 
-        if (misg.length === 0) {
-          tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Sin grupos asignados</td></tr>`;
+          document.getElementById("loadingGrupos").style.display = "none";
+
+          if (!grupos.length) {
+            document.getElementById("emptyGrupos").style.display = "block";
+            document.getElementById("statTotal").textContent = 0;
+            document.getElementById("statActivos").textContent = 0;
+            document.getElementById("statConfigurados").textContent = 0;
+            return;
+          }
+
+          const activos = grupos.filter((g) => g.estatus === "Activo").length;
+          const cfgs = grupos.filter((g) => {
+            return (
+              !!localStorage.getItem(`pcts_${g.id_grupo}_`) ||
+              Object.keys(localStorage).some((k) =>
+                k.startsWith(`pcts_${g.id_grupo}_`),
+              )
+            );
+          }).length;
+
+          document.getElementById("statTotal").textContent = grupos.length;
+          document.getElementById("statActivos").textContent = activos;
+          document.getElementById("statConfigurados").textContent = cfgs;
+
+          const grid = document.getElementById("gruposGrid");
+          grid.style.display = "grid";
+          grid.innerHTML = grupos.map((g) => buildGrupoCard(g)).join("");
+        } catch (e) {
+          document.getElementById("loadingGrupos").innerHTML = `
+            <iconify-icon icon="lucide:wifi-off" style="font-size:2rem;color:var(--danger);display:block;margin:0 auto 8px"></iconify-icon>
+            <p style="color:var(--danger)">Error al cargar grupos</p>
+            <button class="btn btn-outline btn-sm" onclick="location.reload()" style="margin-top:10px">
+              <iconify-icon icon="lucide:refresh-cw"></iconify-icon> Reintentar
+            </button>`;
         }
+      }
+
+      function buildGrupoCard(g) {
+        const statusColor =
+          g.estatus === "Activo" ? "badge-success" : "badge-danger";
+        const hasConfig = Object.keys(localStorage).some((k) =>
+          k.startsWith(`pcts_${g.id_grupo}_`),
+        );
+        const cfgBadge = hasConfig
+          ? `<span class="badge badge-success" style="font-size:0.7rem">Configurado</span>`
+          : `<span class="badge badge-warning" style="font-size:0.7rem">Sin config</span>`;
+
+        return `
+          <div class="card" style="padding:0;overflow:hidden;transition:box-shadow 0.2s" onmouseenter="this.style.boxShadow='var(--shadow-lg)'" onmouseleave="this.style.boxShadow='var(--shadow)'">
+            <!-- Header colored strip -->
+            <div style="height:5px;background:var(--primary)"></div>
+            <div style="padding:18px 20px">
+              <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-light);
+                             display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <iconify-icon icon="lucide:book-open" style="color:var(--primary);font-size:1.2rem"></iconify-icon>
+                </div>
+                <div style="min-width:0;flex:1">
+                  <h3 style="margin:0 0 4px;font-size:0.95rem;font-weight:600;color:var(--text-main);
+                              white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                    ${g.nombre_materia || "—"}
+                  </h3>
+                  <p style="margin:0;font-size:0.78rem;color:var(--text-muted)">
+                    Grupo #${g.id_grupo} · ${g.descripcion_periodo || "Periodo " + g.id_periodo}
+                  </p>
+                </div>
+                <span class="badge ${statusColor}" style="flex-shrink:0">${g.estatus || "—"}</span>
+              </div>
+
+              <!-- Info rows -->
+              <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;font-size:0.82rem">
+                ${g.horario ? `<div style="display:flex;gap:8px;color:var(--text-muted)"><iconify-icon icon="lucide:clock"></iconify-icon><span>${g.horario}</span></div>` : ""}
+                ${g.aula ? `<div style="display:flex;gap:8px;color:var(--text-muted)"><iconify-icon icon="lucide:map-pin"></iconify-icon><span>${g.aula}</span></div>` : ""}
+                <div style="display:flex;gap:8px;align-items:center;color:var(--text-muted)">
+                  <iconify-icon icon="lucide:settings-2"></iconify-icon>
+                  <span>Evaluación: ${cfgBadge}</span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <a href="formulario.html?grupo=${g.id_grupo}"
+                   class="btn btn-primary btn-sm" style="text-decoration:none;flex:1;justify-content:center">
+                  <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
+                </a>
+                <a href="gruposMaestro.html"
+                   class="btn btn-outline btn-sm" style="text-decoration:none;flex:1;justify-content:center">
+                  <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon> Configurar
+                </a>
+              </div>
+            </div>
+          </div>`;
       }
 
       cargarMisGrupos();

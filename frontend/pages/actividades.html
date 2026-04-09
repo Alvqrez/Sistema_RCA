@@ -249,153 +249,58 @@
           </div>
         </div>
 
-        <!-- Card plegable: Configuración de evaluación por unidad -->
-        <div class="card card-collapsible collapsed" id="cardConfigEval">
-          <div class="card-title">
-            <iconify-icon icon="mdi:cog-outline"></iconify-icon>
-            Configurar cómo calificar — Ponderaciones por rubro
-            <button
-              class="card-toggle-btn"
-              onclick="toggleCard(this)"
-              title="Expandir"
-            >
-              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-            </button>
-          </div>
-          <div class="card-body">
+        <!-- Redirigir config de evaluación a gruposMaestro -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: var(--primary-light);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(30, 64, 175, 0.2);
+          "
+        >
+          <iconify-icon
+            icon="lucide:info"
+            style="color: var(--primary); font-size: 1.3rem; flex-shrink: 0"
+          ></iconify-icon>
+          <div style="flex: 1">
             <p
               style="
-                font-size: 0.85rem;
-                color: var(--text-muted);
-                margin: 0 0 16px;
+                margin: 0;
+                font-size: 0.88rem;
+                color: var(--primary);
+                font-weight: 600;
               "
             >
-              Define cuánto vale cada rubro en la calificación final de cada
-              unidad. La suma de Actividades + Examen + Asistencia debe ser
-              100%.
+              ¿Quieres configurar cómo se califica cada unidad?
             </p>
-
-            <div class="config-grid">
-              <div class="field-group">
-                <label>Grupo</label>
-                <select id="configGrupo" onchange="cargarConfigEval()">
-                  <option value="">-- Selecciona grupo --</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label>Unidad</label>
-                <select id="configUnidad" onchange="cargarConfigEval()">
-                  <option value="">-- Selecciona unidad --</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="panelConfigRubros" style="display: none; margin-top: 16px">
-              <div class="ponderacion-grid" style="margin-bottom: 16px">
-                <div class="pond-item">
-                  <div class="pond-item-label">
-                    <span class="pond-dot" style="background: #3b82f6"></span>
-                    Actividades
-                  </div>
-                  <div style="display: flex; align-items: baseline; gap: 4px">
-                    <input
-                      type="number"
-                      class="pond-input"
-                      id="cfgPctActividades"
-                      min="0"
-                      max="100"
-                      value="60"
-                      oninput="actualizarSumaConfig()"
-                    />
-                    <span class="pond-suffix">%</span>
-                  </div>
-                </div>
-                <div class="pond-item">
-                  <div class="pond-item-label">
-                    <span class="pond-dot" style="background: #f59e0b"></span>
-                    Examen
-                  </div>
-                  <div style="display: flex; align-items: baseline; gap: 4px">
-                    <input
-                      type="number"
-                      class="pond-input"
-                      id="cfgPctExamen"
-                      min="0"
-                      max="100"
-                      value="30"
-                      oninput="actualizarSumaConfig()"
-                    />
-                    <span class="pond-suffix">%</span>
-                  </div>
-                </div>
-                <div class="pond-item">
-                  <div class="pond-item-label">
-                    <span class="pond-dot" style="background: #10b981"></span>
-                    Asistencia
-                  </div>
-                  <div style="display: flex; align-items: baseline; gap: 4px">
-                    <input
-                      type="number"
-                      class="pond-input"
-                      id="cfgPctAsistencia"
-                      min="0"
-                      max="100"
-                      value="10"
-                      oninput="actualizarSumaConfig()"
-                    />
-                    <span class="pond-suffix">%</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Barra de suma -->
-              <div class="suma-bar" id="sumaBarConfig">
-                <iconify-icon icon="mdi:sigma"></iconify-icon>
-                <span>Total: <strong id="sumaValConfig">100</strong>%</span>
-                <span
-                  id="sumaMensajeConfig"
-                  style="margin-left: auto; font-size: 0.82rem"
-                ></span>
-              </div>
-
-              <div
-                class="field-group"
-                style="margin-top: 12px; max-width: 400px"
-              >
-                <label>Notas / instrucciones</label>
-                <input
-                  type="text"
-                  id="cfgNota"
-                  placeholder="Ej. El examen es global para toda la unidad"
-                />
-              </div>
-
-              <div class="acciones-row" style="margin-top: 16px">
-                <button class="btn btn-primary" onclick="guardarConfigEval()">
-                  <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-                  Guardar configuración
-                </button>
-              </div>
-            </div>
-
-            <div
-              id="vacioConfigEval"
+            <p
               style="
-                text-align: center;
-                padding: 24px;
-                color: var(--text-muted);
+                margin: 4px 0 0;
+                font-size: 0.8rem;
+                color: var(--primary);
+                opacity: 0.8;
               "
             >
-              <iconify-icon
-                icon="mdi:tune-variant"
-                style="font-size: 2rem; display: block; margin: 0 auto 8px"
-              ></iconify-icon>
-              <p>Selecciona grupo y unidad para configurar los porcentajes</p>
-            </div>
+              Administra los rubros y porcentajes (Actividades, Examen,
+              Asistencia…) desde la sección dedicada.
+            </p>
           </div>
+          <a
+            href="gruposMaestro.html"
+            class="btn btn-primary btn-sm"
+            style="text-decoration: none; flex-shrink: 0"
+          >
+            <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+            Configurar evaluación
+          </a>
         </div>
 
         <!-- Panel de calificaciones por actividad -->
+
         <div class="card" id="panelCalActividad" style="display: none">
           <div class="card-title">
             <iconify-icon icon="mdi:account-group-outline"></iconify-icon>

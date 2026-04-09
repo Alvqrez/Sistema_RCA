@@ -166,43 +166,6 @@
         color: var(--text-muted);
       }
 
-      /* ── Configurar pesos de unidades ────────────────────────────────── */
-      .config-unidades {
-        margin-top: 16px;
-        padding: 14px 16px;
-        background: var(--bg-app);
-        border-radius: 10px;
-        border: 1px solid var(--border);
-      }
-      .config-unidades-title {
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .unidad-peso-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
-        font-size: 0.85rem;
-      }
-      .unidad-peso-row label {
-        flex: 1;
-        color: var(--text-main);
-      }
-      .unidad-peso-row .pond-sum-badge {
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-weight: 600;
-      }
-
       /* Modal CSV */
       .modal-overlay {
         display: none;
@@ -357,34 +320,12 @@
             <p>Selecciona un grupo para comenzar</p>
           </div>
 
-          <!-- Configurar pesos de unidades (visible cuando hay grupo seleccionado) -->
-          <div
-            id="configUnidades"
-            class="config-unidades"
-            style="display: none"
-          >
-            <div class="config-unidades-title">
-              <iconify-icon
-                icon="mdi:tune-variant"
-                style="font-size: 1rem"
-              ></iconify-icon>
-              Pesos de unidades en la calificación final
-              <span
-                id="sumaPesosUnidades"
-                class="pond-sum-badge"
-                style="margin-left: auto"
-              ></span>
-            </div>
-            <div id="listaUnidadesPesos"></div>
-            <button
-              class="btn btn-outline btn-sm"
-              style="margin-top: 8px"
-              onclick="guardarPesosUnidades()"
-            >
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              Guardar pesos
-            </button>
-          </div>
+        <!-- Hint: configuración de rubros en gruposMaestro -->
+        <div id="hintConfigEval" style="display:none;margin-top:12px;padding:10px 14px;
+             background:var(--primary-light);border-radius:8px;font-size:0.82rem;color:var(--primary)">
+          <iconify-icon icon="lucide:info" style="margin-right:6px"></iconify-icon>
+          Configura los rubros de evaluación de este grupo en
+          <a href="gruposMaestro.html" style="font-weight:600;color:var(--primary)">Configurar Evaluación →</a>
         </div>
 
         <!-- PASO 2: UNIDAD -->
@@ -493,6 +434,34 @@
             </button>
           </div>
         </div>
+
+        <!-- PASO 4: CALIFICACIÓN FINAL DEL GRUPO -->
+        <div class="card" id="seccionFinal" style="display:none">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <span>
+              <span class="step-number" style="background:var(--success)">4</span>
+              Calificación final del grupo
+            </span>
+            <span id="badgeFinalGrupo" style="font-size:0.78rem;color:var(--text-muted)"></span>
+          </div>
+
+          <p style="font-size:0.83rem;color:var(--text-muted);margin:0 0 16px">
+            Calcula y guarda la calificación oficial de cada alumno con base en sus promedios de unidad.
+            Solo disponible cuando <strong>todas las unidades tienen calificaciones registradas</strong>.
+          </p>
+
+          <div id="tablaFinalWrap"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn btn-outline" onclick="calcularVistaFinal()">
+              <iconify-icon icon="mdi:calculator-variant-outline"></iconify-icon> Recalcular
+            </button>
+            <button class="btn btn-success" onclick="guardarCalificacionesFinal()">
+              <iconify-icon icon="mdi:check-decagram-outline"></iconify-icon> Guardar calificaciones finales
+            </button>
+          </div>
+        </div>
+
       </main>
     </div>
 

@@ -107,8 +107,11 @@ async function cargarGrupo() {
   document.getElementById("emptyConfig").style.display = "none";
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
+  // Show config hint
+  const hint = document.getElementById("hintConfigEval");
+  if (hint) hint.style.display = "block";
+
   document.getElementById("seccionUnidades").style.display = "block";
-  renderConfigUnidades();
 }
 
 function resetVista() {
@@ -121,10 +124,11 @@ function resetVista() {
     unidadesGrupo: [],
   };
   bonusUnidadActual = {};
+  const hintEl = document.getElementById("hintConfigEval");
+  if (hintEl) hintEl.style.display = "none";
   document.getElementById("emptyConfig").style.display = "block";
   document.getElementById("seccionUnidades").style.display = "none";
   document.getElementById("seccionActividades").style.display = "none";
-  document.getElementById("configUnidades").style.display = "none";
   document.getElementById("badgeGrupo").textContent = "Sin grupo seleccionado";
   actualizarEstadoBadge(false);
 }
@@ -496,85 +500,6 @@ async function guardarBonusUnidad() {
 
 // ─────────────────────────────────────────────────────────────────────
 //  CONFIGURAR PESOS DE UNIDADES (maestro puede editarlos)
-// ─────────────────────────────────────────────────────────────────────
-function renderConfigUnidades() {
-  const wrap = document.getElementById("configUnidades");
-  const lista = document.getElementById("listaUnidadesPesos");
-  if (!wrap || !lista || estado.unidadesGrupo.length === 0) {
-    if (wrap) wrap.style.display = "none";
-    return;
-  }
-
-  wrap.style.display = "block";
-  let html = "";
-  estado.unidadesGrupo.forEach((u) => {
-    html += `<div class="unidad-peso-row">
-      <label>(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</label>
-      <input class="cal-input peso-unidad-input" type="number" min="0" max="100"
-             data-id-unidad="${u.id_unidad}"
-             value="${u.ponderacion || ""}"
-             placeholder="%" style="width:68px"
-             oninput="actualizarSumaPesos()" />
-      <span style="font-size:0.78rem;color:var(--text-muted)">%</span>
-    </div>`;
-  });
-  lista.innerHTML = html;
-  actualizarSumaPesos();
-}
-
-function actualizarSumaPesos() {
-  let suma = 0;
-  document.querySelectorAll(".peso-unidad-input").forEach((inp) => {
-    suma += parseFloat(inp.value) || 0;
-  });
-  const badge = document.getElementById("sumaPesosUnidades");
-  if (!badge) return;
-  const ok = Math.abs(suma - 100) < 0.01;
-  badge.textContent = `${suma}% total`;
-  badge.style.background = ok
-    ? "var(--success-light, #dcfce7)"
-    : "var(--warning-light, #fef3c7)";
-  badge.style.color = ok ? "var(--success)" : "var(--warning, #92400e)";
-}
-
-async function guardarPesosUnidades() {
-  const inputs = document.querySelectorAll(".peso-unidad-input");
-  let guardados = 0,
-    errores = 0;
-
-  for (const inp of inputs) {
-    const idUnidad = inp.dataset.idUnidad;
-    const ponderacion = parseFloat(inp.value);
-    if (isNaN(ponderacion)) continue;
-
-    try {
-      const res = await fetch(
-        `${BASE_URL_FORM}/api/grupos/${estado.grupoId}/unidades`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token()}`,
-          },
-          body: JSON.stringify({ id_unidad: idUnidad, ponderacion }),
-        },
-      );
-      const data = await res.json();
-      data.success ? guardados++ : errores++;
-    } catch {
-      errores++;
-    }
-  }
-
-  if (guardados > 0) {
-    mostrarToast(
-      `Pesos actualizados (${guardados} unidad${guardados > 1 ? "es" : ""})`,
-      "success",
-    );
-    await cargarUnidadesGrupo(); // recarga el selector con los nuevos pesos
-  }
-  if (errores > 0) mostrarToast(`${errores} errores al guardar pesos`, "error");
-}
 
 // ─────────────────────────────────────────────────────────────────────
 //  GUARDAR CALIFICACIONES
@@ -656,6 +581,7 @@ async function calcularUnidad() {
       : `${errores} errores al calcular`,
     errores === 0 ? "success" : "error",
   );
+  if (errores === 0) intentarMostrarSeccionFinal();
 }
 
 // ── CSV Modal ──────────────────────────────────────────────────────────
@@ -778,4 +704,169 @@ function mostrarToast(msg, tipo = "success") {
   t.className = `rca-toast rca-toast-${tipo} visible`;
   clearTimeout(t._x);
   t._x = setTimeout(() => t.classList.remove("visible"), 3800);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+//  PASO 4 — Calificación Final del Grupo
+// ─────────────────────────────────────────────────────────────────────
+
+// Show/reveal the final section after any unit calc
+function intentarMostrarSeccionFinal() {
+  const sec = document.getElementById("seccionFinal");
+  if (!sec || !estado.grupoId) return;
+  if (estado.alumnos.length > 0 && estado.unidadesGrupo.length > 0) {
+    sec.style.display = "block";
+    calcularVistaFinal();
+  }
+}
+
+// Calculate final grades view
+async function calcularVistaFinal() {
+  const wrap = document.getElementById("tablaFinalWrap");
+  if (!wrap || !estado.grupoId) return;
+
+  // Fetch calificaciones_unidad for this group from backend
+  let califUnidades = [];
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/calificaciones/grupo/${estado.grupoId}`,
+      { headers: { Authorization: `Bearer ${token()}` } },
+    );
+    if (res.ok) califUnidades = await res.json();
+  } catch (_) {}
+
+  if (!Array.isArray(califUnidades) || !califUnidades.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.85rem">
+      <iconify-icon icon="mdi:clipboard-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
+      Aún no hay calificaciones de unidad calculadas.<br>
+      Usa <strong>Calcular y cerrar unidad</strong> en el Paso 3 para cada unidad.
+    </div>`;
+    return;
+  }
+
+  // Build map: matricula → { unidadId → calificacion_unidad_final }
+  const mapaCalifs = {};
+  califUnidades.forEach((c) => {
+    if (!mapaCalifs[c.matricula]) mapaCalifs[c.matricula] = {};
+    mapaCalifs[c.matricula][c.id_unidad] =
+      parseFloat(c.calificacion_unidad_final ?? c.promedio_ponderado) || 0;
+  });
+
+  const unidades = estado.unidadesGrupo;
+  const alumnos = estado.alumnos;
+
+  // Header
+  let html = `<div style="overflow-x:auto"><table class="tabla-calificaciones">
+    <thead><tr>
+      <th>Alumno</th>
+      <th>Matrícula</th>
+      ${unidades.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad ?? ""}</th>`).join("")}
+      <th style="text-align:center">Promedio Final</th>
+      <th style="text-align:center">Estado</th>
+    </tr></thead><tbody>`;
+
+  let cfgsOk = 0;
+  alumnos.forEach((al) => {
+    let suma = 0,
+      count = 0;
+    const celdas = unidades
+      .map((u) => {
+        const cal = mapaCalifs[al.matricula]?.[u.id_unidad];
+        if (cal !== undefined) {
+          suma += cal;
+          count++;
+        }
+        const color =
+          cal === undefined
+            ? "var(--text-muted)"
+            : cal >= 70
+              ? "var(--success)"
+              : "var(--danger)";
+        return `<td style="text-align:center;font-weight:500;color:${color}">${cal !== undefined ? cal.toFixed(1) : "—"}</td>`;
+      })
+      .join("");
+
+    const promedio = count > 0 ? suma / count : null;
+    const redondeado =
+      promedio !== null
+        ? promedio >= Math.floor(promedio) + 0.5
+          ? Math.ceil(promedio)
+          : Math.floor(promedio)
+        : null;
+    const aprobado = redondeado !== null && redondeado >= 70;
+    const promedioColor =
+      redondeado === null
+        ? "var(--text-muted)"
+        : aprobado
+          ? "var(--success)"
+          : "var(--danger)";
+
+    if (redondeado !== null) cfgsOk++;
+
+    html += `<tr data-matricula="${al.matricula}" data-final="${redondeado ?? ""}">
+      <td style="font-weight:500">${al.nombre}</td>
+      <td style="font-size:0.78rem;color:var(--text-muted)">${al.matricula}</td>
+      ${celdas}
+      <td style="text-align:center;font-weight:700;font-size:1rem;color:${promedioColor}">
+        ${redondeado !== null ? redondeado : "—"}
+      </td>
+      <td style="text-align:center">
+        ${
+          redondeado === null
+            ? `<span style="font-size:0.78rem;color:var(--text-muted)">Sin datos</span>`
+            : aprobado
+              ? `<span class="badge badge-success">Aprobado</span>`
+              : `<span class="badge badge-danger">Reprobado</span>`
+        }
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  wrap.innerHTML = html;
+
+  const badge = document.getElementById("badgeFinalGrupo");
+  if (badge)
+    badge.textContent = `${cfgsOk} de ${alumnos.length} alumnos con calificación calculada`;
+}
+
+async function guardarCalificacionesFinal() {
+  if (!estado.grupoId) return;
+  const filas = document.querySelectorAll("#tablaFinalWrap tr[data-matricula]");
+  if (!filas.length) {
+    mostrarToast("No hay datos para guardar", "error");
+    return;
+  }
+
+  let guardados = 0,
+    errores = 0;
+  for (const fila of filas) {
+    const matricula = fila.dataset.matricula;
+    const final = fila.dataset.final;
+    if (!final) continue;
+
+    try {
+      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/final`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify({
+          matricula,
+          id_grupo: estado.grupoId,
+          calificacion_oficial: parseFloat(final),
+          estatus_final: parseFloat(final) >= 70 ? "Aprobado" : "Reprobado",
+        }),
+      });
+      const data = await res.json();
+      data.success ? guardados++ : errores++;
+    } catch {
+      errores++;
+    }
+  }
+
+  if (guardados > 0)
+    mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
+  if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
 }
