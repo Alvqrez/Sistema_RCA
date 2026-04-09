@@ -1,137 +1,239 @@
 <!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Materias - RCA</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <title>Materias - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
 
-  <script>
-    if (localStorage.getItem("tema") === "oscuro") {
-      document.documentElement.classList.add("dark-mode");
-    }
-  </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
 
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="../css/styles.css" />
-
-</head>
-
-<body>
-
-  <div class="layout">
-
-    <aside class="sidebar"></aside>
-
-    <main class="content">
-
-      <div class="header-materias">
-        <h1>Materias</h1>
-
-        <button class="btn-guardar" onclick="abrirModalMateria()">
-          <iconify-icon icon="mdi:plus"></iconify-icon>
-          Nueva materia
-        </button>
-      </div>
-
-
-      <!-- TABLA -->
-
-      <div class="card">
-
-        <h2>Lista de materias</h2>
-
-        <table>
-
-          <thead>
-            <tr>
-              <th>Clave</th>
-              <th>Nombre</th>
-              <th>Créditos</th>
-              <th>Unidades</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody id="tablaMaterias"></tbody>
-
-        </table>
-
-      </div>
-
-    </main>
-
-  </div>
-
-  <!-- MODAL FORMULARIO  -->
-
-  <div id="modalMateria" class="modal-overlay">
-
-    <div class="modal-panel">
-
-      <div class="card" id="cardFormMateria">
-
-        <h2 id="tituloFormMateria">Registrar materia</h2>
-
-        <form id="formMateria" class="form-grid">
-
-          <div>
-            <label>Clave *
-            <input type="text" id="claveMateria" placeholder="Ej: ISC-101" required />
-          </div>
-
-          <div>
-            <label>Nombre de la materia *
-            <input type="text" id="nombreMateria" required />
-          </div>
-
-          <div>
-            <label>Créditos totales</label>
-            <input type="number" id="creditos" min="0" value="0" />
-          </div>
-
-          <div>
-            <label>Horas teóricas</label>
-            <input type="number" id="horasTeoricas" min="0" value="0" />
-          </div>
-
-          <div>
-            <label>Horas prácticas</label>
-            <input type="number" id="horasPracticas" min="0" value="0" />
-          </div>
-
-          <div>
-            <label>Número de unidades</label>
-            <input type="number" id="noUnidades" min="1" value="3" />
-          </div>
-
-          <div class="botones">
-
-            <button type="submit" class="btn-guardar">
-              Guardar
+      <main class="content">
+        <!-- Header con botones CSV -->
+        <div
+          class="header-materias"
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+          "
+        >
+          <h1 style="margin: 0">Materias</h1>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <button class="btn-secundario" onclick="abrirModalCSVMaterias()">
+              <iconify-icon
+                icon="lucide:upload"
+                style="margin-right: 4px"
+              ></iconify-icon>
+              Importar CSV
             </button>
-
-            <button type="button" class="btn-cancelar" onclick="cerrarModalMateria()">
-              Cancelar
+            <button class="btn-secundario" onclick="exportarCSVMaterias()">
+              <iconify-icon
+                icon="lucide:download"
+                style="margin-right: 4px"
+              ></iconify-icon>
+              Exportar CSV
             </button>
-
+            <button class="btn-guardar" onclick="abrirModalMateria()">
+              <iconify-icon
+                icon="mdi:plus"
+                style="margin-right: 4px"
+              ></iconify-icon>
+              Nueva materia
+            </button>
           </div>
+        </div>
 
-          <p id="mensajeMateria"></p>
-
-        </form>
-
-      </div>
-
+        <!-- Tabla -->
+        <div class="card">
+          <h2>Lista de materias</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Clave</th>
+                <th>Nombre</th>
+                <th>Créditos</th>
+                <th>Unidades</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMaterias"></tbody>
+          </table>
+        </div>
+      </main>
     </div>
 
-  </div>
+    <!-- Modal formulario materia (igual al original) -->
+    <div id="modalMateria" class="modal-overlay">
+      <div class="modal-panel">
+        <div class="card" id="cardFormMateria">
+          <h2 id="tituloFormMateria">Registrar materia</h2>
+          <form id="formMateria" class="form-grid">
+            <div>
+              <label>Clave *</label>
+              <input
+                type="text"
+                id="claveMateria"
+                placeholder="Ej: ISC-101"
+                required
+              />
+            </div>
+            <div>
+              <label>Nombre de la materia *</label>
+              <input type="text" id="nombreMateria" required />
+            </div>
+            <div>
+              <label>Créditos totales</label>
+              <input type="number" id="creditos" min="0" value="0" />
+            </div>
+            <div>
+              <label>Horas teóricas</label>
+              <input type="number" id="horasTeoricas" min="0" value="0" />
+            </div>
+            <div>
+              <label>Horas prácticas</label>
+              <input type="number" id="horasPracticas" min="0" value="0" />
+            </div>
+            <div>
+              <label>Número de unidades</label>
+              <input type="number" id="noUnidades" min="1" value="3" />
+            </div>
+            <div class="botones">
+              <button type="submit" class="btn-guardar">Guardar</button>
+              <button
+                type="button"
+                class="btn-cancelar"
+                onclick="cerrarModalMateria()"
+              >
+                Cancelar
+              </button>
+            </div>
+            <p id="mensajeMateria"></p>
+          </form>
+        </div>
+      </div>
+    </div>
 
-  <script src="../js/sidebar.js"></script>
-  <script src="../js/materias.js"></script>
+    <!-- Modal Importar CSV Materias -->
+    <div class="modal-overlay" id="modalImportMaterias">
+      <div class="modal-panel" style="max-width: 560px">
+        <div class="modal-header">
+          <h2>Importar Materias desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModalCSVMaterias()">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Formato -->
+          <div
+            style="
+              background: var(--bg-app, #f1f5f9);
+              border-radius: 8px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
+              font-size: 0.82rem;
+              color: var(--text-muted);
+            "
+          >
+            <strong>Columnas requeridas:</strong>
+            <code style="display: block; margin-top: 4px"
+              >clave_materia, nombre_materia</code
+            >
+            <strong style="margin-top: 8px; display: block"
+              >Columnas opcionales:</strong
+            >
+            <code style="display: block; margin-top: 4px"
+              >creditos_totales, horas_teoricas, horas_practicas,
+              no_unidades</code
+            >
+            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
+            <code style="display: block; margin-top: 4px"
+              >FBD001,Fundamentos de Bases de Datos,5,3,2,3</code
+            >
+          </div>
 
-</body>
+          <!-- Drop zone -->
+          <div
+            id="dropZoneMaterias"
+            class="drop-zone"
+            ondragover="dragOverMaterias(event)"
+            ondrop="soltarCSVMaterias(event)"
+            onclick="document.getElementById('inputCSVMaterias').click()"
+          >
+            <iconify-icon
+              icon="lucide:file-up"
+              style="font-size: 2rem; color: var(--primary, #6366f1)"
+            ></iconify-icon>
+            <p style="margin: 6px 0 0; font-size: 0.88rem">
+              Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
+            </p>
+          </div>
+          <input
+            type="file"
+            id="inputCSVMaterias"
+            accept=".csv"
+            style="display: none"
+            onchange="leerCSVMaterias(event)"
+          />
 
+          <div
+            id="csvMateriasPreview"
+            style="overflow-x: auto; margin-top: 6px"
+          ></div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancelar" onclick="cerrarModalCSVMaterias()">
+            Cancelar
+          </button>
+          <button
+            id="btnImportarMaterias"
+            class="btn-guardar"
+            disabled
+            onclick="importarCSVMaterias()"
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="toast-container"
+      style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      "
+    ></div>
+
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/materias.js"></script>
+  </body>
 </html>

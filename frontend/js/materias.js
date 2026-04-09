@@ -48,11 +48,12 @@ async function cargarMaterias() {
         <td>${m.creditos_totales}</td>
         <td>${m.no_unidades}</td>
         <td>
-          ${rol === "administrador"
-        ? `<button class="btn-editar" onclick="editarMateria('${m.clave_materia}')">Editar</button>
+          ${
+            rol === "administrador"
+              ? `<button class="btn-editar" onclick="editarMateria('${m.clave_materia}')">Editar</button>
                  <button class="btn-eliminar" onclick="eliminarMateria('${m.clave_materia}')">Eliminar</button>`
-        : "—"
-      }
+              : "—"
+          }
         </td>
       </tr>
     `;
@@ -204,5 +205,190 @@ function mostrarMensaje(texto, tipo) {
       el.textContent = "";
     }, 4000);
 }
+
+// ── Estado CSV ────────────────────────────────────────────────────────────────
+let csvMateriasData = [];
+let materiasGlobal = []; // se llena cuando cargarMaterias() carga la tabla
+
+// ── Guardar referencia global al cargar (para poder exportar después) ─────────
+// Si tu cargarMaterias() ya tiene una variable global, úsala en lugar de esta.
+// Si no, agrega al final de tu función cargarMaterias():
+//   materiasGlobal = materias;
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Abrir / cerrar modal ──────────────────────────────────────────────────────
+function abrirModalCSVMaterias() {
+  csvMateriasData = [];
+  document.getElementById("csvMateriasPreview").innerHTML = "";
+  document.getElementById("btnImportarMaterias").disabled = true;
+  document.getElementById("inputCSVMaterias").value = "";
+  document.getElementById("modalImportMaterias").classList.add("visible");
+}
+function cerrarModalCSVMaterias() {
+  document.getElementById("modalImportMaterias").classList.remove("visible");
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+function dragOverMaterias(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneMaterias").classList.add("drag-over");
+}
+function soltarCSVMaterias(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneMaterias").classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCSVMaterias(file);
+}
+function leerCSVMaterias(e) {
+  const file = e.target.files[0];
+  if (file) procesarCSVMaterias(file);
+}
+
+// ── Parsear archivo ───────────────────────────────────────────────────────────
+function procesarCSVMaterias(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.trim().split("\n").filter(Boolean);
+    if (lines.length < 2) {
+      document.getElementById("csvMateriasPreview").innerHTML =
+        "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+      return;
+    }
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    csvMateriasData = lines.slice(1).map((line) => {
+      const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const obj = {};
+      headers.forEach((h, i) => {
+        obj[h] = vals[i] ?? "";
+      });
+      return obj;
+    });
+    mostrarPreviewCSVMaterias(headers, csvMateriasData);
+    document.getElementById("btnImportarMaterias").disabled =
+      csvMateriasData.length === 0;
+  };
+  reader.readAsText(file);
+}
+
+function mostrarPreviewCSVMaterias(headers, data) {
+  const muestra = data.slice(0, 5);
+  const preview = document.getElementById("csvMateriasPreview");
+  if (!data.length) {
+    preview.innerHTML =
+      "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>Sin datos válidos.</p>";
+    return;
+  }
+  preview.innerHTML = `
+    <p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">
+      ${data.length} registros detectados — vista previa (primeros 5):
+    </p>
+    <div class="csv-preview">
+      <table>
+        <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+        <tbody>${muestra
+          .map(
+            (r) =>
+              `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`,
+          )
+          .join("")}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── Enviar al backend ─────────────────────────────────────────────────────────
+async function importarCSVMaterias() {
+  if (!csvMateriasData.length) return;
+
+  const token =
+    localStorage.getItem("token") || localStorage.getItem("authToken");
+  const btn = document.getElementById("btnImportarMaterias");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Importando…`;
+
+  try {
+    const r = await fetch(`${BASE_URL}/api/materias/csv`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ materias: csvMateriasData }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Error al importar");
+
+    // Toast (usa la función que ya existe en materias.js o crea una básica)
+    if (typeof toast === "function") {
+      toast(`${data.insertados} materia(s) importadas correctamente`);
+      if (data.errores?.length)
+        toast(`${data.errores.length} fila(s) con errores — consola`, "info");
+    } else {
+      alert(`${data.insertados} materia(s) importadas correctamente.`);
+    }
+
+    if (data.errores?.length) console.table(data.errores);
+    cerrarModalCSVMaterias();
+    cargarMaterias(); // recarga la tabla existente
+  } catch (err) {
+    if (typeof toast === "function") toast(err.message, "error");
+    else alert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+  }
+}
+
+// ── Exportar CSV ──────────────────────────────────────────────────────────────
+async function exportarCSVMaterias() {
+  const token =
+    localStorage.getItem("token") || localStorage.getItem("authToken");
+  try {
+    const r = await fetch(`${BASE_URL}/api/materias`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const materias = await r.json();
+    if (!materias.length) {
+      alert("No hay materias para exportar.");
+      return;
+    }
+
+    const cols = [
+      "clave_materia",
+      "nombre_materia",
+      "creditos_totales",
+      "horas_teoricas",
+      "horas_practicas",
+      "no_unidades",
+    ];
+    const rows = [cols.join(",")];
+    materias.forEach((m) => {
+      rows.push(
+        cols
+          .map((c) => `"${(m[c] ?? "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      );
+    });
+
+    const blob = new Blob([rows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "materias_RCA.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    if (typeof toast === "function") toast("CSV exportado correctamente");
+  } catch {
+    alert("Error al exportar materias.");
+  }
+}
+
+// ── Cerrar al hacer clic fuera ────────────────────────────────────────────────
+document.addEventListener("click", (e) => {
+  if (e.target.id === "modalImportMaterias") cerrarModalCSVMaterias();
+});
 
 cargarMaterias();

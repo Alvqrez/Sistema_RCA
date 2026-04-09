@@ -134,4 +134,62 @@ router.delete("/:clave", soloAdmin, (req, res) => {
   );
 });
 
+router.post("/csv", soloAdmin, (req, res) => {
+  const { materias } = req.body;
+
+  if (!Array.isArray(materias) || materias.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const errores = [];
+  let insertados = 0;
+  let pendientes = materias.length;
+
+  const finalizar = () => {
+    if (--pendientes === 0)
+      res.json({
+        success: true,
+        insertados,
+        errores,
+        mensaje: `${insertados} materia(s) importadas. ${errores.length} con errores.`,
+      });
+  };
+
+  for (const mat of materias) {
+    const { clave_materia, nombre_materia } = mat;
+
+    if (!clave_materia || !nombre_materia) {
+      errores.push({
+        clave: clave_materia || "?",
+        motivo: "clave_materia y nombre_materia son obligatorios",
+      });
+      finalizar();
+      continue;
+    }
+
+    db.query(
+      `INSERT INTO materia
+         (clave_materia, nombre_materia, creditos_totales,
+          horas_teoricas, horas_practicas, no_unidades)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         nombre_materia   = VALUES(nombre_materia),
+         creditos_totales = VALUES(creditos_totales),
+         no_unidades      = VALUES(no_unidades)`,
+      [
+        clave_materia.trim(),
+        nombre_materia.trim(),
+        parseInt(mat.creditos_totales) || 0,
+        parseInt(mat.horas_teoricas) || 0,
+        parseInt(mat.horas_practicas) || 0,
+        parseInt(mat.no_unidades) || 3,
+      ],
+      (err) => {
+        if (err) errores.push({ clave: clave_materia, motivo: err.message });
+        else insertados++;
+        finalizar();
+      },
+    );
+  }
+});
+
 module.exports = router;
