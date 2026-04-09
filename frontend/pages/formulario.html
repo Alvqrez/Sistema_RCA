@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Formulario de Evaluación - RCA</title>
+    <title>Formulario de Evaluación — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
@@ -14,235 +14,523 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
-      .estado-badge {
-        font-size: 0.75rem;
-        padding: 3px 10px;
+      /* ── Page header ─────────────────────────────────────────────────── */
+      .form-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .form-header-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+      }
+      .form-header-title h1 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .form-header-title iconify-icon {
+        font-size: 1.5rem;
+        color: var(--primary);
+      }
+      .form-header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .grupo-pill {
+        background: var(--bg-app);
+        border: 1px solid var(--border);
         border-radius: 999px;
+        padding: 5px 14px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--text-main);
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
         font-weight: 600;
       }
-      .estado-badge.sin-config {
-        background: #fef3c7;
-        color: #92400e;
-      }
-      .estado-badge.configurado {
+      .status-pill.ok {
         background: #dcfce7;
         color: #166534;
       }
-      .dot-live {
-        display: inline-block;
+      .status-pill.warn {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .dark-mode .status-pill.ok {
+        background: rgba(5, 150, 105, 0.2);
+        color: #6ee7b7;
+      }
+      .dark-mode .status-pill.warn {
+        background: rgba(217, 119, 6, 0.2);
+        color: #fcd34d;
+      }
+      .dot-pulse {
         width: 7px;
         height: 7px;
         border-radius: 50%;
         background: currentColor;
-        margin-right: 5px;
-        vertical-align: middle;
-      }
-      .step-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--primary, #3b82f6);
-        color: #fff;
-        font-size: 0.78rem;
-        font-weight: 700;
-        margin-right: 8px;
-      }
-      .badge-peso {
-        display: inline-block;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 999px;
-        background: var(--bg-app);
-        color: var(--text-muted);
-        border: 1px solid var(--border);
-        margin-left: 12px;
-      }
-      .tabla-calificaciones {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
-      }
-      .tabla-calificaciones th,
-      .tabla-calificaciones td {
-        padding: 8px 10px;
-        text-align: left;
-        border-bottom: 1px solid var(--border);
-      }
-      .tabla-calificaciones th {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        background: var(--bg-app);
+        flex-shrink: 0;
       }
 
-      /* ── Issue 4 FIX: cal-input visible en ambos modos ──────────────── */
-      .cal-input {
-        width: 72px;
-        padding: 5px 8px;
+      /* ── Step card ───────────────────────────────────────────────────── */
+      .step-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .step-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 22px;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid transparent;
+        transition:
+          background 0.15s,
+          border-color 0.2s;
+      }
+      .step-card.open .step-card-header {
+        border-bottom-color: var(--border);
+      }
+      .step-card-header:hover {
+        background: var(--bg-app);
+      }
+      .step-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .step-num.done {
+        background: var(--success);
+      }
+      .step-card-title {
+        font-size: 0.97rem;
+        font-weight: 600;
+        color: var(--text-main);
+        flex: 1;
+      }
+      .step-chevron {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        transition: transform 0.25s;
+        flex-shrink: 0;
+      }
+      .step-card.open .step-chevron {
+        transform: rotate(180deg);
+      }
+      .step-card-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .step-card.open .step-card-body {
+        max-height: 6000px;
+      }
+      .step-inner {
+        padding: 20px 22px;
+      }
+
+      /* ── Unit tabs ───────────────────────────────────────────────────── */
+      .unit-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .unit-tab {
+        padding: 6px 16px;
+        border-radius: 999px;
+        border: 1.5px solid var(--border);
+        background: var(--bg-app);
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+      }
+      .unit-tab:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+      .unit-tab.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      /* ── Rubro chips bar ─────────────────────────────────────────────── */
+      .rubros-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding: 9px 12px;
+        background: var(--bg-app);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+      .rchip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .rchip-label {
+        background: rgba(30, 64, 175, 0.1);
+        color: var(--primary);
+      }
+      .rchip-act {
+        background: rgba(59, 130, 246, 0.14);
+        color: #2563eb;
+      }
+      .rchip-exam {
+        background: rgba(245, 158, 11, 0.14);
+        color: #b45309;
+      }
+      .rchip-asist {
+        background: rgba(16, 185, 129, 0.14);
+        color: #065f46;
+      }
+      .rchip-custom {
+        background: rgba(124, 58, 237, 0.12);
+        color: #6d28d9;
+      }
+      .rchip-bonus {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .dark-mode .rchip-act {
+        color: #93c5fd;
+      }
+      .dark-mode .rchip-exam {
+        color: #fcd34d;
+      }
+      .dark-mode .rchip-asist {
+        color: #6ee7b7;
+      }
+      .dark-mode .rchip-custom {
+        color: #c4b5fd;
+      }
+      .chip-sep {
+        width: 1px;
+        height: 16px;
+        background: var(--border);
+        flex-shrink: 0;
+      }
+
+      /* ── Grade table ─────────────────────────────────────────────────── */
+      .grade-table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      .grade-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+      }
+      .grade-table th {
+        padding: 10px 12px;
+        text-align: center;
+        background: var(--bg-app);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+      }
+      .grade-table th:first-child,
+      .grade-table th:nth-child(2) {
+        text-align: left;
+      }
+      .grade-table th small {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        opacity: 0.8;
+        margin-top: 1px;
+      }
+      .grade-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+        vertical-align: middle;
+      }
+      .grade-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+        color: var(--text-main);
+      }
+      .grade-table td:nth-child(2) {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-align: left;
+      }
+      .grade-table tr:last-child td {
+        border-bottom: none;
+      }
+      .grade-table tr:hover td {
+        background: rgba(0, 0, 0, 0.015);
+      }
+      .dark-mode .grade-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      /* ── Inputs ──────────────────────────────────────────────────────── */
+      .grade-input {
+        width: 64px;
+        padding: 5px 6px;
         border-radius: 6px;
         border: 1.5px solid var(--border);
-        background: var(--bg-card);
+        background: var(--bg-app);
         color: var(--text-main);
         font-size: 0.85rem;
         text-align: center;
         font-family: inherit;
-        transition: border-color 0.15s;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
       }
-      .cal-input:focus {
+      .grade-input:focus {
         outline: none;
-        border-color: var(--primary, #3b82f6);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        border-color: var(--primary);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
       }
-      .cal-input:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-
-      /* ── Input genérico inline (bonus justificación) ─────────────────── */
-      .inline-input {
-        width: 100%;
-        padding: 5px 8px;
+      .bonus-input {
+        width: 52px;
+        padding: 4px 5px;
         border-radius: 6px;
-        border: 1.5px solid var(--border);
-        background: var(--bg-card);
+        border: 1.5px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.05);
         color: var(--text-main);
-        font-size: 0.82rem;
+        font-size: 0.83rem;
+        text-align: center;
         font-family: inherit;
         transition: border-color 0.15s;
       }
-      .inline-input:focus {
+      .bonus-input:focus {
         outline: none;
-        border-color: var(--primary, #3b82f6);
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
       }
 
-      .acciones-row {
+      /* ── Activity cell ───────────────────────────────────────────────── */
+      .act-cell {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid var(--border);
-      }
-
-      /* ── Sección de bonus ─────────────────────────────────────────────── */
-      .bonus-section {
-        margin-top: 24px;
-        padding-top: 20px;
-        border-top: 2px dashed var(--border);
-      }
-      .bonus-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 0;
-        padding-bottom: 12px;
-      }
-      .bonus-section.collapsed .bonus-header {
-        padding-bottom: 0;
-      }
-      .bonus-header iconify-icon {
-        font-size: 1.25rem;
-        color: var(--warning, #f59e0b);
-      }
-      .bonus-header h3 {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 600;
-      }
-      .bonus-header .hint {
-        margin-left: auto;
-        font-size: 0.77rem;
-        color: var(--text-muted);
-      }
-
-      /* Modal CSV */
-      .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: #00000080;
-        z-index: 1000;
         align-items: center;
         justify-content: center;
+        gap: 6px;
       }
-      .modal-overlay.visible {
+      .act-val {
+        font-weight: 600;
+        font-size: 0.9rem;
+        min-width: 32px;
+        text-align: center;
+      }
+      .btn-ver {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        border: 1.5px solid var(--border);
+        background: var(--bg-app);
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 0.8rem;
         display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        flex-shrink: 0;
       }
-      .modal-csv {
-        background: var(--bg-card);
-        border-radius: 14px;
-        padding: 28px;
-        width: 100%;
-        max-width: 500px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      .btn-ver:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      /* ── Cal Final cell ──────────────────────────────────────────────── */
+      td.td-final {
+        background: rgba(30, 64, 175, 0.04);
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .dark-mode td.td-final {
+        background: rgba(30, 64, 175, 0.09);
+      }
+      td.td-bonus {
+        background: rgba(245, 158, 11, 0.04);
+      }
+
+      /* ── Action buttons row ──────────────────────────────────────────── */
+      .actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      /* ── Final grades table ──────────────────────────────────────────── */
+      .final-table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
         border: 1px solid var(--border);
       }
-      .modal-csv-header {
+      .final-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+      }
+      .final-table th {
+        padding: 9px 12px;
+        background: var(--bg-app);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border);
+        text-align: center;
+      }
+      .final-table th:first-child {
+        text-align: left;
+      }
+      .final-table td {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+      }
+      .final-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+      }
+      .final-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* ── Modal activities ────────────────────────────────────────────── */
+      .act-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .act-table th {
+        padding: 8px 10px;
+        background: var(--bg-app);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border);
+        text-align: left;
+      }
+      .act-table th:last-child {
+        text-align: center;
+      }
+      .act-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .act-table td:last-child {
+        text-align: center;
+      }
+      .act-table tr:last-child td {
+        border-bottom: none;
+      }
+      .act-avg-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 18px;
-      }
-      .modal-csv-header h3 {
-        margin: 0;
-        font-size: 1.05rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .btn-close {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--text-muted);
-        font-size: 1.2rem;
-        padding: 4px;
-        border-radius: 6px;
-      }
-      .btn-close:hover {
+        padding: 11px 14px;
         background: var(--bg-app);
+        border-radius: 8px;
+        margin-top: 12px;
+        font-size: 0.88rem;
       }
-      .csv-drop-zone {
+
+      /* ── CSV ─────────────────────────────────────────────────────────── */
+      .csv-drop {
         border: 2px dashed var(--border);
         border-radius: 10px;
-        padding: 24px 20px;
+        padding: 22px;
         text-align: center;
         cursor: pointer;
         transition:
           border-color 0.2s,
           background 0.2s;
       }
-      .csv-drop-zone:hover,
-      .csv-drop-zone.drag-over {
-        border-color: var(--primary, #3b82f6);
-        background: rgba(59, 130, 246, 0.06);
+      .csv-drop:hover,
+      .csv-drop.drag-over {
+        border-color: var(--primary);
+        background: rgba(30, 64, 175, 0.04);
       }
-      .csv-drop-zone p {
-        color: var(--text-muted);
-        margin: 8px 0;
-        font-size: 0.85rem;
-      }
-      .csv-format {
-        background: var(--bg-app);
-        border-radius: 6px;
+
+      /* ── Hint banner ─────────────────────────────────────────────────── */
+      .hint-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         padding: 10px 14px;
-        font-size: 0.78rem;
-        color: var(--text-muted);
-        margin: 8px 0;
-        line-height: 1.8;
-        font-family: monospace;
+        background: var(--primary-light);
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: var(--primary);
+        margin-bottom: 14px;
       }
+      .hint-banner a {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      /* ── Toast ───────────────────────────────────────────────────────── */
       .rca-toast {
         position: fixed;
         bottom: 24px;
@@ -271,273 +559,405 @@
       .rca-toast-info {
         background: #2563eb;
       }
+
+      /* ── Misc ────────────────────────────────────────────────────────── */
+      .empty-wrap {
+        text-align: center;
+        padding: 36px 20px;
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+      .empty-wrap iconify-icon {
+        font-size: 2.5rem;
+        display: block;
+        margin: 0 auto 10px;
+      }
+      .inline-input {
+        width: 100%;
+        padding: 5px 8px;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.82rem;
+        font-family: inherit;
+        transition: border-color 0.15s;
+      }
+      .inline-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
     </style>
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <!-- ENCABEZADO -->
-        <div class="page-header">
-          <h1>
+        <!-- ══ PAGE HEADER ══════════════════════════════════════════════ -->
+        <div class="form-header">
+          <div class="form-header-title">
             <iconify-icon icon="mdi:file-document-edit-outline"></iconify-icon>
-            Formulario de Evaluación
-          </h1>
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              flex-wrap: wrap;
-            "
-          >
-            <span class="badge-grupo" id="badgeGrupo"
+            <h1>Formulario de Evaluación</h1>
+          </div>
+          <div class="form-header-right">
+            <span class="grupo-pill" id="badgeGrupo"
               >Sin grupo seleccionado</span
             >
-            <span class="estado-badge sin-config" id="estadoBadge">
-              <span class="dot-live"></span>Sin configurar
+            <span class="status-pill warn" id="estadoBadge">
+              <span class="dot-pulse"></span> Sin configurar
             </span>
+            <a
+              href="gruposMaestro.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:settings-2"></iconify-icon> Configurar
+              grupo
+            </a>
           </div>
         </div>
 
-        <!-- PASO 1: GRUPO -->
-        <div class="card">
-          <div class="card-title">
-            <span class="step-number">1</span>Selecciona un grupo
+        <!-- ══ PASO 1 — GRUPO ════════════════════════════════════════════ -->
+        <div class="step-card open" id="cardPaso1">
+          <div class="step-card-header" onclick="toggleStepCard('cardPaso1')">
+            <span class="step-num" id="numPaso1">1</span>
+            <span class="step-card-title">Configuración de evaluación</span>
+            <iconify-icon
+              class="step-chevron"
+              icon="lucide:chevron-down"
+            ></iconify-icon>
           </div>
-          <div class="field-group">
-            <label>Grupo</label>
-            <select
-              id="selGrupo"
-              onchange="cargarGrupo()"
-              style="max-width: 480px"
-            >
-              <option value="">-- Selecciona un grupo --</option>
-            </select>
-          </div>
-          <div id="emptyConfig" class="empty-state" style="margin-top: 16px">
-            <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
-            <p>Selecciona un grupo para comenzar</p>
-          </div>
-
-        <!-- Hint: configuración de rubros en gruposMaestro -->
-        <div id="hintConfigEval" style="display:none;margin-top:12px;padding:10px 14px;
-             background:var(--primary-light);border-radius:8px;font-size:0.82rem;color:var(--primary)">
-          <iconify-icon icon="lucide:info" style="margin-right:6px"></iconify-icon>
-          Configura los rubros de evaluación de este grupo en
-          <a href="gruposMaestro.html" style="font-weight:600;color:var(--primary)">Configurar Evaluación →</a>
-        </div>
-
-        <!-- PASO 2: UNIDAD -->
-        <div class="card" id="seccionUnidades" style="display: none">
-          <div class="card-title">
-            <span class="step-number">2</span>Selecciona una unidad
-            <span class="badge-peso" id="badgePesoTotal"></span>
-          </div>
-          <div class="field-group">
-            <label>Unidad</label>
-            <!-- Issue 6: opciones con "(Unidad X)" agregadas por JS -->
-            <select
-              id="selUnidad"
-              onchange="cargarUnidad()"
-              style="max-width: 480px"
-            >
-              <option value="">-- Selecciona una unidad --</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- PASO 3: CALIFICACIONES -->
-        <div class="card" id="seccionActividades" style="display: none">
-          <div
-            class="card-title"
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              flex-wrap: wrap;
-              gap: 10px;
-            "
-          >
-            <span>
-              <span class="step-number">3</span>Captura de calificaciones
-            </span>
-            <button
-              class="btn btn-outline"
-              onclick="abrirModalCSV()"
-              style="font-size: 0.82rem"
-            >
-              <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
-              Importar CSV
-            </button>
-          </div>
-
-          <div
-            id="resumenActividades"
-            style="
-              margin-bottom: 14px;
-              font-size: 0.85rem;
-              color: var(--text-muted);
-            "
-          ></div>
-          <div id="tablaCalWrap"></div>
-
-          <!-- ── Puntos extra / Bonus por unidad (plegable) ──────────── -->
-          <div
-            class="bonus-section card-collapsible collapsed"
-            id="seccionBonus"
-            style="display: none"
-          >
-            <div
-              class="bonus-header"
-              onclick="
-                this.closest('.card-collapsible').classList.toggle('collapsed')
-              "
-              style="cursor: pointer"
-            >
-              <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
-              <h3>Puntos extra (Bonus de unidad)</h3>
-              <span class="hint"
-                >Opcional · tope en 100 · requiere justificación</span
+          <div class="step-card-body">
+            <div class="step-inner">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 140px;
+                  gap: 14px;
+                  align-items: end;
+                  max-width: 520px;
+                "
               >
-              <button
-                class="card-toggle-btn"
-                type="button"
-                title="Expandir / colapsar"
+                <div class="field-group">
+                  <label>Grupo</label>
+                  <select id="selGrupo" onchange="cargarGrupo()">
+                    <option value="">— Selecciona un grupo —</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label>Número de unidades</label>
+                  <input
+                    type="number"
+                    id="numUnidades"
+                    readonly
+                    style="background: var(--bg-app); cursor: default"
+                    placeholder="—"
+                  />
+                </div>
+              </div>
+              <div
+                class="hint-banner"
+                id="hintConfigEval"
+                style="display: none; margin-top: 12px"
               >
-                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-              </button>
+                <iconify-icon
+                  icon="lucide:info"
+                  style="flex-shrink: 0"
+                ></iconify-icon>
+                Configura los rubros y ponderaciones de este grupo en
+                <a href="gruposMaestro.html">Configurar grupo →</a>
+              </div>
             </div>
-            <div class="card-body" style="padding: 0 0 4px">
-              <div id="bonusWrap"></div>
+          </div>
+        </div>
+
+        <!-- ══ PASO 3 — CAPTURA ══════════════════════════════════════════ -->
+        <div class="step-card open" id="cardPaso3" style="display: none">
+          <div class="step-card-header" onclick="toggleStepCard('cardPaso3')">
+            <span class="step-num" id="numPaso3">3</span>
+            <span class="step-card-title">Captura de calificaciones</span>
+            <div
+              style="
+                margin-left: auto;
+                margin-right: 10px;
+                display: flex;
+                gap: 6px;
+              "
+            >
               <button
                 class="btn btn-outline btn-sm"
-                style="margin-top: 10px"
-                onclick="guardarBonusUnidad()"
+                onclick="
+                  event.stopPropagation();
+                  actualizarActividades();
+                "
+                style="font-size: 0.76rem"
               >
-                <iconify-icon icon="mdi:star-check-outline"></iconify-icon>
-                Guardar puntos extra
+                <iconify-icon icon="lucide:refresh-cw"></iconify-icon>
+                Actualizar actividades
+              </button>
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="
+                  event.stopPropagation();
+                  abrirModalCSV();
+                "
+                style="font-size: 0.76rem"
+              >
+                <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
+                CSV
               </button>
             </div>
+            <iconify-icon
+              class="step-chevron"
+              icon="lucide:chevron-down"
+            ></iconify-icon>
           </div>
+          <div class="step-card-body">
+            <div class="step-inner">
+              <!-- Unit tabs -->
+              <div class="unit-tabs" id="unitTabs"></div>
 
-          <div class="acciones-row">
-            <button class="btn btn-primary" onclick="guardarCalificaciones()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              Guardar calificaciones
-            </button>
-            <button class="btn btn-success" onclick="calcularUnidad()">
-              <iconify-icon
-                icon="mdi:calculator-variant-outline"
-              ></iconify-icon>
-              Calcular y cerrar unidad
-            </button>
+              <!-- Rubro chips bar -->
+              <div class="rubros-bar" id="rubrosBar">
+                <span style="font-size: 0.78rem; color: var(--text-muted)"
+                  >Selecciona una unidad</span
+                >
+              </div>
+
+              <!-- Grade table -->
+              <div class="grade-table-wrap" id="gradeTableWrap">
+                <div class="empty-wrap">
+                  <iconify-icon
+                    icon="mdi:clipboard-text-outline"
+                  ></iconify-icon>
+                  <p>Selecciona una unidad para comenzar</p>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div
+                class="actions-row"
+                id="accionesCaptura"
+                style="display: none"
+              >
+                <button
+                  class="btn btn-outline"
+                  onclick="guardarCalificaciones()"
+                >
+                  <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                  Guardar
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="guardarYCerrarUnidad()"
+                >
+                  <iconify-icon
+                    icon="mdi:check-decagram-outline"
+                  ></iconify-icon>
+                  Guardar y cerrar unidad
+                </button>
+                <button
+                  class="btn btn-outline"
+                  onclick="limpiarUnidad()"
+                  style="color: var(--text-muted)"
+                >
+                  <iconify-icon icon="lucide:x"></iconify-icon> Salir
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- PASO 4: CALIFICACIÓN FINAL DEL GRUPO -->
-        <div class="card" id="seccionFinal" style="display:none">
-          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-            <span>
-              <span class="step-number" style="background:var(--success)">4</span>
-              Calificación final del grupo
-            </span>
-            <span id="badgeFinalGrupo" style="font-size:0.78rem;color:var(--text-muted)"></span>
+        <!-- ══ PASO 4 — CALIFICACIÓN FINAL ══════════════════════════════ -->
+        <div class="step-card open" id="cardPaso4" style="display: none">
+          <div class="step-card-header" onclick="toggleStepCard('cardPaso4')">
+            <span class="step-num" style="background: var(--success)">4</span>
+            <span class="step-card-title">Calificación final del grupo</span>
+            <span
+              id="badgeFinalGrupo"
+              style="
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                margin-left: auto;
+                margin-right: 10px;
+              "
+            ></span>
+            <iconify-icon
+              class="step-chevron"
+              icon="lucide:chevron-down"
+            ></iconify-icon>
           </div>
-
-          <p style="font-size:0.83rem;color:var(--text-muted);margin:0 0 16px">
-            Calcula y guarda la calificación oficial de cada alumno con base en sus promedios de unidad.
-            Solo disponible cuando <strong>todas las unidades tienen calificaciones registradas</strong>.
-          </p>
-
-          <div id="tablaFinalWrap"></div>
-
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-            <button class="btn btn-outline" onclick="calcularVistaFinal()">
-              <iconify-icon icon="mdi:calculator-variant-outline"></iconify-icon> Recalcular
-            </button>
-            <button class="btn btn-success" onclick="guardarCalificacionesFinal()">
-              <iconify-icon icon="mdi:check-decagram-outline"></iconify-icon> Guardar calificaciones finales
-            </button>
+          <div class="step-card-body">
+            <div class="step-inner">
+              <div class="final-table-wrap" id="tablaFinalWrap">
+                <div class="empty-wrap">
+                  <iconify-icon
+                    icon="mdi:calculator-variant-outline"
+                  ></iconify-icon>
+                  <p>Cierra las unidades para calcular la calificación final</p>
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  justify-content: flex-end;
+                  margin-top: 14px;
+                  padding-top: 14px;
+                  border-top: 1px solid var(--border);
+                "
+              >
+                <button class="btn btn-outline" onclick="calcularVistaFinal()">
+                  <iconify-icon
+                    icon="mdi:calculator-variant-outline"
+                  ></iconify-icon>
+                  Recalcular
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="guardarCalificacionesFinal()"
+                >
+                  <iconify-icon
+                    icon="mdi:check-decagram-outline"
+                  ></iconify-icon>
+                  Guardar calificaciones finales
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
       </main>
     </div>
 
-    <!-- MODAL CSV -->
+    <!-- ══ MODAL — Detalle actividades de un alumno ══════════════════════ -->
+    <div
+      class="modal-overlay"
+      id="modalActividades"
+      onclick="if (event.target === this) cerrarModalActividades();"
+    >
+      <div class="modal-panel modal-lg">
+        <div class="modal-header">
+          <h2
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              font-size: 1rem;
+            "
+          >
+            <iconify-icon
+              icon="lucide:clipboard-list"
+              style="color: var(--primary)"
+            ></iconify-icon>
+            <span id="modalActTitulo">Actividades del alumno</span>
+          </h2>
+          <button class="modal-close" onclick="cerrarModalActividades()">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="modalActContent"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalActividades()">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="guardarDesdeModal()">
+            <iconify-icon icon="lucide:save"></iconify-icon> Guardar
+            calificaciones
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL — CSV ════════════════════════════════════════════════════ -->
     <div
       class="modal-overlay"
       id="modalCSV"
       onclick="if (event.target === this) cerrarModalCSV();"
     >
-      <div class="modal-csv">
-        <div class="modal-csv-header">
-          <h3>
-            <iconify-icon
-              icon="mdi:file-delimited-outline"
-              style="color: var(--primary, #3b82f6)"
-            ></iconify-icon>
-            Importar calificaciones desde CSV
-          </h3>
-          <button class="btn-close" onclick="cerrarModalCSV()">
-            <iconify-icon icon="mdi:close"></iconify-icon>
-          </button>
-        </div>
-        <p
-          style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 8px"
-        >
-          Formato requerido: <code>matricula,calificacion</code>
-        </p>
-        <div class="csv-format">
-          matricula,calificacion<br />
-          2023001,85<br />
-          2023002,70<br />
-          2023003,NP
-        </div>
-        <div class="field-group" style="margin: 14px 0 12px">
-          <label>Aplicar a la actividad</label>
-          <select id="selCSVActividad">
-            <option value="">-- Selecciona la actividad --</option>
-          </select>
-        </div>
-        <div
-          class="csv-drop-zone"
-          id="csvDropZone"
-          ondragover="
-            event.preventDefault();
-            this.classList.add('drag-over');
-          "
-          ondragleave="this.classList.remove('drag-over')"
-          ondrop="manejarArchivoCSV(event)"
-        >
-          <iconify-icon
-            icon="mdi:file-upload-outline"
-            style="font-size: 2.2rem; color: var(--text-muted)"
-          ></iconify-icon>
-          <p>Arrastra tu archivo CSV aquí o</p>
-          <label
-            class="btn btn-outline"
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2
             style="
-              cursor: pointer;
-              display: inline-flex;
+              display: flex;
               align-items: center;
-              gap: 6px;
-              margin-top: 4px;
+              gap: 8px;
+              font-size: 1rem;
             "
           >
-            <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
-            Seleccionar archivo
-            <input
-              type="file"
-              id="inputCSV"
-              accept=".csv"
-              style="display: none"
-              onchange="manejarArchivoCSV(event)"
-            />
-          </label>
+            <iconify-icon
+              icon="mdi:file-delimited-outline"
+              style="color: var(--primary)"
+            ></iconify-icon>
+            Importar CSV
+          </h2>
+          <button class="modal-close" onclick="cerrarModalCSV()">✕</button>
         </div>
-        <div id="csvPreview"></div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 0.82rem;
+              color: var(--text-muted);
+              margin: 0 0 10px;
+            "
+          >
+            Formato: <code>matricula,calificacion</code>
+          </p>
+          <div class="field-group" style="margin-bottom: 12px">
+            <label>Actividad</label>
+            <select id="selCSVActividad">
+              <option value="">— Selecciona actividad —</option>
+            </select>
+          </div>
+          <div
+            class="csv-drop"
+            id="csvDropZone"
+            ondragover="
+              event.preventDefault();
+              this.classList.add('drag-over');
+            "
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="manejarArchivoCSV(event)"
+          >
+            <iconify-icon
+              icon="mdi:file-upload-outline"
+              style="
+                font-size: 2.2rem;
+                color: var(--text-muted);
+                display: block;
+                margin: 0 auto 8px;
+              "
+            ></iconify-icon>
+            <p
+              style="
+                color: var(--text-muted);
+                margin: 0 0 8px;
+                font-size: 0.84rem;
+              "
+            >
+              Arrastra aquí o
+            </p>
+            <label
+              class="btn btn-outline"
+              style="
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+              "
+            >
+              <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
+              Seleccionar
+              <input
+                type="file"
+                id="inputCSV"
+                accept=".csv"
+                style="display: none"
+                onchange="manejarArchivoCSV(event)"
+              />
+            </label>
+          </div>
+          <div id="csvPreview" style="margin-top: 10px"></div>
+        </div>
       </div>
     </div>
 
