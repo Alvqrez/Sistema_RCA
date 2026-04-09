@@ -727,17 +727,17 @@ async function calcularVistaFinal() {
   const wrap = document.getElementById("tablaFinalWrap");
   if (!wrap || !estado.grupoId) return;
 
-  // Fetch calificaciones_unidad for this group from backend
-  let califUnidades = [];
+  // Usar /reportes/grupo que sí existe y devuelve alumnos + califs por unidad
+  let reporteData = null;
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/calificaciones/grupo/${estado.grupoId}`,
+      `${BASE_URL_FORM}/api/reportes/grupo/${estado.grupoId}`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
-    if (res.ok) califUnidades = await res.json();
+    if (res.ok) reporteData = await res.json();
   } catch (_) {}
 
-  if (!Array.isArray(califUnidades) || !califUnidades.length) {
+  if (!reporteData?.alumnos?.length) {
     wrap.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.85rem">
       <iconify-icon icon="mdi:clipboard-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
       Aún no hay calificaciones de unidad calculadas.<br>
@@ -746,34 +746,30 @@ async function calcularVistaFinal() {
     return;
   }
 
-  // Build map: matricula → { unidadId → calificacion_unidad_final }
-  const mapaCalifs = {};
-  califUnidades.forEach((c) => {
-    if (!mapaCalifs[c.matricula]) mapaCalifs[c.matricula] = {};
-    mapaCalifs[c.matricula][c.id_unidad] =
-      parseFloat(c.calificacion_unidad_final ?? c.promedio_ponderado) || 0;
-  });
+  const unidades = reporteData.unidades || [];
+  const alumnos = reporteData.alumnos || [];
 
-  const unidades = estado.unidadesGrupo;
-  const alumnos = estado.alumnos;
-
-  // Header
   let html = `<div style="overflow-x:auto"><table class="tabla-calificaciones">
     <thead><tr>
-      <th>Alumno</th>
-      <th>Matrícula</th>
-      ${unidades.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad ?? ""}</th>`).join("")}
+      <th>Alumno</th><th>Matrícula</th>
+      ${unidades.map((u) => `<th style="text-align:center">${u.nombre_unidad}</th>`).join("")}
       <th style="text-align:center">Promedio Final</th>
       <th style="text-align:center">Estado</th>
     </tr></thead><tbody>`;
 
   let cfgsOk = 0;
   alumnos.forEach((al) => {
+    const califsUnidad = al.unidades || {};
     let suma = 0,
       count = 0;
+
     const celdas = unidades
       .map((u) => {
-        const cal = mapaCalifs[al.matricula]?.[u.id_unidad];
+        const info = califsUnidad[u.id_unidad];
+        const cal =
+          info?.calificacion != null
+            ? parseFloat(info.calificacion)
+            : undefined;
         if (cal !== undefined) {
           suma += cal;
           count++;
@@ -784,32 +780,37 @@ async function calcularVistaFinal() {
             : cal >= 70
               ? "var(--success)"
               : "var(--danger)";
-        return `<td style="text-align:center;font-weight:500;color:${color}">${cal !== undefined ? cal.toFixed(1) : "—"}</td>`;
+        return `<td style="text-align:center;font-weight:500;color:${color}">
+        ${cal !== undefined ? cal.toFixed(1) : "—"}
+      </td>`;
       })
       .join("");
 
-    const promedio = count > 0 ? suma / count : null;
-    const redondeado =
-      promedio !== null
-        ? promedio >= Math.floor(promedio) + 0.5
-          ? Math.ceil(promedio)
-          : Math.floor(promedio)
-        : null;
+    // Si ya tiene calificacion_oficial guardada, usarla
+    let redondeado =
+      al.calificacion_oficial != null
+        ? parseFloat(al.calificacion_oficial)
+        : count > 0
+          ? (() => {
+              const p = suma / count;
+              return p % 1 >= 0.5 ? Math.ceil(p) : Math.floor(p);
+            })()
+          : null;
+
     const aprobado = redondeado !== null && redondeado >= 70;
-    const promedioColor =
+    const colorFinal =
       redondeado === null
         ? "var(--text-muted)"
         : aprobado
           ? "var(--success)"
           : "var(--danger)";
-
     if (redondeado !== null) cfgsOk++;
 
     html += `<tr data-matricula="${al.matricula}" data-final="${redondeado ?? ""}">
-      <td style="font-weight:500">${al.nombre}</td>
+      <td style="font-weight:500">${al.nombre_completo}</td>
       <td style="font-size:0.78rem;color:var(--text-muted)">${al.matricula}</td>
       ${celdas}
-      <td style="text-align:center;font-weight:700;font-size:1rem;color:${promedioColor}">
+      <td style="text-align:center;font-weight:700;font-size:1rem;color:${colorFinal}">
         ${redondeado !== null ? redondeado : "—"}
       </td>
       <td style="text-align:center">
@@ -829,16 +830,36 @@ async function calcularVistaFinal() {
 
   const badge = document.getElementById("badgeFinalGrupo");
   if (badge)
-    badge.textContent = `${cfgsOk} de ${alumnos.length} alumnos con calificación calculada`;
+    badge.textContent = `${cfgsOk} de ${alumnos.length} alumnos con calificación`;
 }
 
 async function guardarCalificacionesFinal() {
   if (!estado.grupoId) return;
   const filas = document.querySelectorAll("#tablaFinalWrap tr[data-matricula]");
-  if (!filas.length) {
-    mostrarToast("No hay datos para guardar", "error");
-    return;
+  if (!filas.length) { mostrarToast("No hay datos para guardar", "error"); return; }
+
+  let guardados = 0, errores = 0;
+  for (const fila of filas) {
+    const matricula = fila.dataset.matricula;
+    const final     = fila.dataset.final;
+    if (!final) continue;
+
+    try {
+      // Usar calcular-final que sí existe en el backend
+      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/calcular-final`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
+      });
+      const data = await res.json();
+      data.success ? guardados++ : errores++;
+    } catch { errores++; }
   }
+
+  if (guardados > 0) mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
+  if (errores > 0)   mostrarToast(`${errores} errores al guardar`, "error");
+  if (guardados > 0) calcularVistaFinal(); // refresca para mostrar estado actualizado
+}
 
   let guardados = 0,
     errores = 0;
