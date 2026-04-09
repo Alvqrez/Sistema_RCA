@@ -35,6 +35,11 @@
         icono: "lucide:users-round",
       },
       {
+        href: "gruposMaestro.html",
+        texto: "Configurar Evaluación",
+        icono: "lucide:sliders-horizontal",
+      },
+      {
         href: "actividades.html",
         texto: "Actividades",
         icono: "lucide:clipboard-pen",

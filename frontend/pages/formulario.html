@@ -145,7 +145,11 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 14px;
+        margin-bottom: 0;
+        padding-bottom: 12px;
+      }
+      .bonus-section.collapsed .bonus-header {
+        padding-bottom: 0;
       }
       .bonus-header iconify-icon {
         font-size: 1.25rem;
@@ -437,25 +441,43 @@
           ></div>
           <div id="tablaCalWrap"></div>
 
-          <!-- ── Puntos extra / Bonus por unidad ──────────────────────── -->
-          <div class="bonus-section" id="seccionBonus" style="display: none">
-            <div class="bonus-header">
+          <!-- ── Puntos extra / Bonus por unidad (plegable) ──────────── -->
+          <div
+            class="bonus-section card-collapsible collapsed"
+            id="seccionBonus"
+            style="display: none"
+          >
+            <div
+              class="bonus-header"
+              onclick="
+                this.closest('.card-collapsible').classList.toggle('collapsed')
+              "
+              style="cursor: pointer"
+            >
               <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
               <h3>Puntos extra (Bonus de unidad)</h3>
               <span class="hint"
-                >Opcional · tope automático en 100 · requiere
-                justificación</span
+                >Opcional · tope en 100 · requiere justificación</span
               >
+              <button
+                class="card-toggle-btn"
+                type="button"
+                title="Expandir / colapsar"
+              >
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+              </button>
             </div>
-            <div id="bonusWrap"></div>
-            <button
-              class="btn btn-outline btn-sm"
-              style="margin-top: 10px"
-              onclick="guardarBonusUnidad()"
-            >
-              <iconify-icon icon="mdi:star-check-outline"></iconify-icon>
-              Guardar puntos extra
-            </button>
+            <div class="card-body" style="padding: 0 0 4px">
+              <div id="bonusWrap"></div>
+              <button
+                class="btn btn-outline btn-sm"
+                style="margin-top: 10px"
+                onclick="guardarBonusUnidad()"
+              >
+                <iconify-icon icon="mdi:star-check-outline"></iconify-icon>
+                Guardar puntos extra
+              </button>
+            </div>
           </div>
 
           <div class="acciones-row">

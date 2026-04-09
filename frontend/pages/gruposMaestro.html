@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configurar Evaluación — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Grupo card ─────────────────────────────────────────────── */
+      .grupo-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card-bg, #fff);
+        margin-bottom: 18px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: box-shadow 0.2s;
+      }
+      .grupo-card:hover {
+        box-shadow: var(--shadow-lg);
+      }
+      .grupo-card-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid transparent;
+        transition:
+          background 0.15s,
+          border-color 0.2s;
+      }
+      .grupo-card-header:hover {
+        background: var(--bg-app);
+      }
+      .grupo-card.open .grupo-card-header {
+        border-bottom-color: var(--border);
+      }
+      .grupo-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+      .grupo-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .grupo-info h3 {
+        margin: 0 0 3px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .grupo-info p {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+      .grupo-chevron {
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        transition: transform 0.25s;
+        flex-shrink: 0;
+      }
+      .grupo-card.open .grupo-chevron {
+        transform: rotate(180deg);
+      }
+
+      /* ── Grupo card body ────────────────────────────────────────── */
+      .grupo-card-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .grupo-card.open .grupo-card-body {
+        max-height: 4000px;
+      }
+      .grupo-card-body-inner {
+        padding: 20px;
+      }
+
+      /* ── Unidad config block ─────────────────────────────────────── */
+      .unidad-config-block {
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .unidad-config-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--bg-app);
+        cursor: pointer;
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: var(--text-main);
+        user-select: none;
+        border-bottom: 1px solid transparent;
+        transition: background 0.15s;
+      }
+      .unidad-config-header:hover {
+        background: var(--border);
+      }
+      .unidad-config-block.open .unidad-config-header {
+        border-bottom-color: var(--border);
+      }
+      .unidad-config-chevron {
+        margin-left: auto;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        transition: transform 0.2s;
+      }
+      .unidad-config-block.open .unidad-config-chevron {
+        transform: rotate(180deg);
+      }
+      .unidad-config-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.28s ease;
+      }
+      .unidad-config-block.open .unidad-config-body {
+        max-height: 1000px;
+      }
+      .unidad-config-body-inner {
+        padding: 14px 16px;
+      }
+
+      /* ── Rubro row ───────────────────────────────────────────────── */
+      .rubros-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .rubro-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--bg-app);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        transition: border-color 0.15s;
+      }
+      .rubro-row:hover {
+        border-color: var(--primary);
+      }
+      .rubro-icon {
+        font-size: 1rem;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .rubro-nombre {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-main);
+      }
+      .rubro-nombre-input {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 4px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        background: var(--card-bg, #fff);
+        color: var(--text-main);
+        font-family: inherit;
+      }
+      .rubro-nombre-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+      .rubro-pct-input {
+        width: 72px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: var(--card-bg, #fff);
+        color: var(--text-main);
+        font-size: 0.88rem;
+        text-align: center;
+        font-family: inherit;
+        transition: border-color 0.15s;
+      }
+      .rubro-pct-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+      }
+      .rubro-pct-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .btn-del-rubro {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--danger);
+        font-size: 1rem;
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+      .btn-del-rubro:hover {
+        background: var(--danger-light);
+      }
+      .btn-del-rubro:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* ── Suma badge ──────────────────────────────────────────────── */
+      .suma-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border);
+      }
+      .suma-badge {
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 3px 12px;
+        border-radius: 999px;
+      }
+      .suma-ok {
+        background: var(--success-light);
+        color: var(--success);
+      }
+      .suma-err {
+        background: var(--warning-light);
+        color: var(--warning);
+      }
+
+      /* ── Actions row ─────────────────────────────────────────────── */
+      .unidad-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      /* ── Estado badge ────────────────────────────────────────────── */
+      .cfg-badge {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+      .cfg-badge-ok {
+        background: var(--success-light);
+        color: var(--success);
+      }
+      .cfg-badge-pending {
+        background: var(--warning-light);
+        color: var(--warning);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Configurar Evaluación</h1>
+            <p class="page-subtitle">
+              Define cómo se califica cada unidad por grupo
+            </p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:library"></iconify-icon>
+            <div>
+              <p id="statGrupos">—</p>
+              <span>Mis grupos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:check-circle"></iconify-icon>
+            <div>
+              <p id="statConfigurados">—</p>
+              <span>Configurados</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:alert-circle"></iconify-icon>
+            <div>
+              <p id="statPendientes">—</p>
+              <span>Sin configurar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info banner -->
+        <div
+          style="
+            background: var(--primary-light);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.83rem;
+            color: var(--primary);
+          "
+        >
+          <iconify-icon
+            icon="lucide:info"
+            style="font-size: 1.1rem; flex-shrink: 0; margin-top: 1px"
+          ></iconify-icon>
+          <span>
+            Aquí defines
+            <strong>cómo se distribuye la calificación de cada unidad</strong>
+            por rubro: Actividades (tareas/trabajos), Examen, Asistencia y
+            cualquier rubro personalizado. La suma de porcentajes por unidad
+            <strong>debe ser exactamente 100%</strong>.
+          </span>
+        </div>
+
+        <!-- Loading / list -->
+        <div
+          id="loadingState"
+          style="text-align: center; padding: 48px; color: var(--text-muted)"
+        >
+          <iconify-icon
+            icon="lucide:loader-2"
+            style="font-size: 2rem; display: block; margin: 0 auto 10px"
+          ></iconify-icon>
+          <p>Cargando grupos…</p>
+        </div>
+
+        <div id="listaGrupos" style="display: none"></div>
+
+        <div
+          id="emptyState"
+          style="
+            display: none;
+            text-align: center;
+            padding: 64px 24px;
+            color: var(--text-muted);
+          "
+        >
+          <iconify-icon
+            icon="lucide:inbox"
+            style="font-size: 3rem; display: block; margin: 0 auto 12px"
+          ></iconify-icon>
+          <p style="font-size: 1rem; margin: 0 0 6px; font-weight: 600">
+            Sin grupos asignados
+          </p>
+          <p style="font-size: 0.85rem">
+            Cuando te asignen grupos aparecerán aquí.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/gruposMaestro.js"></script>
+  </body>
+</html>
