@@ -587,3 +587,50 @@ async function importarCSVInsc() {
     await cargarAlumnosLista();
   }
 }
+
+async function exportarCSVInscripciones() {
+  const token = localStorage.getItem("token");
+  try {
+    const r = await fetch(`${BASE}/api/inscripciones`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const inscripciones = await r.json();
+
+    if (!inscripciones.length) {
+      alert("No hay inscripciones para exportar.");
+      return;
+    }
+
+    const cols = [
+      "matricula",
+      "id_grupo",
+      "nombre_alumno",
+      "nombre_materia",
+      "nombre_maestro",
+      "periodo",
+      "tipo_curso",
+      "estatus",
+      "fecha_inscripcion",
+    ];
+    const rows = [cols.join(",")];
+    inscripciones.forEach((i) => {
+      rows.push(
+        cols
+          .map((c) => `"${(i[c] ?? "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      );
+    });
+
+    const blob = new Blob([rows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "inscripciones_RCA.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert("Error al exportar inscripciones.");
+  }
+}
