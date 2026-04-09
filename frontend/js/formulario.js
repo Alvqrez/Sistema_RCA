@@ -836,30 +836,10 @@ async function calcularVistaFinal() {
 async function guardarCalificacionesFinal() {
   if (!estado.grupoId) return;
   const filas = document.querySelectorAll("#tablaFinalWrap tr[data-matricula]");
-  if (!filas.length) { mostrarToast("No hay datos para guardar", "error"); return; }
-
-  let guardados = 0, errores = 0;
-  for (const fila of filas) {
-    const matricula = fila.dataset.matricula;
-    const final     = fila.dataset.final;
-    if (!final) continue;
-
-    try {
-      // Usar calcular-final que sí existe en el backend
-      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/calcular-final`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-        body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
-      });
-      const data = await res.json();
-      data.success ? guardados++ : errores++;
-    } catch { errores++; }
+  if (!filas.length) {
+    mostrarToast("No hay datos para guardar", "error");
+    return;
   }
-
-  if (guardados > 0) mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
-  if (errores > 0)   mostrarToast(`${errores} errores al guardar`, "error");
-  if (guardados > 0) calcularVistaFinal(); // refresca para mostrar estado actualizado
-}
 
   let guardados = 0,
     errores = 0;
@@ -869,19 +849,18 @@ async function guardarCalificacionesFinal() {
     if (!final) continue;
 
     try {
-      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/final`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token()}`,
+      // Usar calcular-final que sí existe en el backend
+      const res = await fetch(
+        `${BASE_URL_FORM}/api/calificaciones/calcular-final`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token()}`,
+          },
+          body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
         },
-        body: JSON.stringify({
-          matricula,
-          id_grupo: estado.grupoId,
-          calificacion_oficial: parseFloat(final),
-          estatus_final: parseFloat(final) >= 70 ? "Aprobado" : "Reprobado",
-        }),
-      });
+      );
       const data = await res.json();
       data.success ? guardados++ : errores++;
     } catch {
@@ -892,4 +871,5 @@ async function guardarCalificacionesFinal() {
   if (guardados > 0)
     mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
   if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
+  if (guardados > 0) calcularVistaFinal(); // refresca para mostrar estado actualizado
 }
