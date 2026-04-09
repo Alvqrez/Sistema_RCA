@@ -8,21 +8,21 @@ const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 router.get("/", verificarToken, (req, res) => {
   const { id_referencia, rol } = req.usuario;
 
-  const camposBase = `
-    a.*,
-    u.nombre_unidad,
-    ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
-  `;
+  const camposSql = `
+        a.*,
+        u.nombre_unidad,
+        u.clave_materia
+    `;
 
   if (rol === "maestro") {
     const sql = `
-      SELECT ${camposBase}
-      FROM actividad a
-      JOIN grupo g  ON a.id_grupo  = g.id_grupo
-      JOIN unidad u ON a.id_unidad = u.id_unidad
-      WHERE g.numero_empleado = ?
-      ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
-    `;
+            SELECT ${camposSql}
+            FROM actividad a
+            JOIN grupo  g ON a.id_grupo  = g.id_grupo
+            LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+            WHERE g.numero_empleado = ?
+            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
+        `;
     db.query(sql, [id_referencia], (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -30,11 +30,11 @@ router.get("/", verificarToken, (req, res) => {
     });
   } else {
     const sql = `
-      SELECT ${camposBase}
-      FROM actividad a
-      JOIN unidad u ON a.id_unidad = u.id_unidad
-      ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
-    `;
+            SELECT ${camposSql}
+            FROM actividad a
+            LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
+        `;
     db.query(sql, (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
