@@ -70,13 +70,12 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   // 3) Unidades del grupo (a través de la materia)
   // ── FIX PRINCIPAL: era u.id_materia, la columna correcta es u.clave_materia
   const sqlUnidades = `
-    SELECT u.id_unidad, u.nombre_unidad,
-           ROW_NUMBER() OVER (PARTITION BY u.clave_materia ORDER BY u.id_unidad) AS numero_unidad
+    SELECT u.id_unidad, u.nombre_unidad
     FROM unidad u
     JOIN grupo g ON u.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
     ORDER BY u.id_unidad ASC
-  `;
+`;
 
   // 4) Calificaciones por unidad de todos los alumnos del grupo
   const sqlUnidadCalif = `

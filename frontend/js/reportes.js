@@ -148,17 +148,20 @@ function mostrarReporte({ grupo, unidades, alumnos, stats }) {
 function renderTablaReporte(alumnos, unidades) {
   const thead = document.getElementById("headReporte");
   const tbody = document.getElementById("bodyReporte");
-  const uns = unidades ?? reporteActual?.unidades ?? [];
+  // Agrega numero_unidad en cliente si no viene del servidor
+  const uns = (unidades ?? reporteActual?.unidades ?? []).map((u, i) => ({
+    ...u,
+    numero_unidad: u.numero_unidad ?? i + 1,
+  }));
 
-  // Cabeceras
   thead.innerHTML = `<tr>
-    <th>Alumno</th>
-    <th>No. Control</th>
-    ${uns.map((u) => `<th style="text-align:center">${u.nombre_unidad}</th>`).join("")}
-    <th style="text-align:center">Promedio unidades</th>
-    <th style="text-align:center">Cal. oficial</th>
-    <th style="text-align:center">Estado</th>
-  </tr>`;
+        <th>Alumno</th>
+        <th>No. Control</th>
+        ${uns.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad}<br><small style="font-weight:400;color:var(--text-muted)">${u.nombre_unidad}</small></th>`).join("")}
+        <th style="text-align:center">Promedio</th>
+        <th style="text-align:center">Cal. oficial</th>
+        <th style="text-align:center">Estado</th>
+    </tr>`;
 
   if (!alumnos.length) {
     tbody.innerHTML = `<tr><td colspan="${6 + uns.length}"><div class="empty-state">
