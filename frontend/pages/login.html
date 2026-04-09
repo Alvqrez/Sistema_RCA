@@ -108,17 +108,6 @@
         position: relative;
         overflow: hidden;
       }
-      .panel-left::before {
-        content: "";
-        position: absolute;
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        background: rgba(37, 99, 235, 0.15);
-        bottom: -80px;
-        left: -80px;
-      }
-
       /* ── Burbujas animadas ───────────────────────────────── */
       .bubbles {
         position: absolute;
@@ -134,16 +123,7 @@
         background: rgba(37, 99, 235, 0.18);
         animation: rise linear infinite;
       }
-      .bubble::after {
-        content: "";
-        position: absolute;
-        top: 15%;
-        left: 20%;
-        width: 30%;
-        height: 25%;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.25);
-      }
+
       @keyframes rise {
         0% {
           transform: translateY(0) scale(1);
