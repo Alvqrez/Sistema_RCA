@@ -79,7 +79,8 @@ router.post("/", soloAdmin, async (req, res) => {
         nombre,
         apellido_paterno,
         apellido_materno ?? null,
-        curp ?? null,
+        // curp puede ser null — el schema fue corregido a NULL DEFAULT NULL
+        curp?.trim().toUpperCase() || null,
         correo_institucional,
         correo_personal ?? null,
         tel_celular ?? null,

@@ -80,24 +80,33 @@ router.post("/", soloAdmin, (req, res) => {
   if (!matricula || !id_grupo)
     return res.status(400).json({ error: "Matrícula y grupo son requeridos" });
 
+  // INSERT IGNORE: si el alumno ya está inscrito en este grupo,
+  // la operación no falla (affectedRows = 0) y devuelve éxito.
+  // Esto hace la ruta idempotente y permite reimportar el mismo CSV sin errores.
   const sql = `
-    INSERT INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
+    INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
     VALUES (?, ?, CURDATE(), 'Cursando', ?)
   `;
-  db.query(sql, [matricula, id_grupo, tipo_curso || "Ordinario"], (err) => {
-    if (err) {
-      if (err.code === "ER_DUP_ENTRY")
+  db.query(
+    sql,
+    [matricula, id_grupo, tipo_curso || "Ordinario"],
+    (err, result) => {
+      if (err)
         return res
-          .status(409)
-          .json({ error: "El alumno ya está inscrito en este grupo" });
-      return res
-        .status(500)
-        .json({ error: "Error interno del servidor", detalle: err.message });
-    }
-    res
-      .status(201)
-      .json({ success: true, mensaje: "Alumno inscrito correctamente" });
-  });
+          .status(500)
+          .json({ error: "Error interno del servidor", detalle: err.message });
+
+      if (result.affectedRows === 0)
+        return res.status(200).json({
+          success: true,
+          mensaje: "El alumno ya estaba inscrito (sin cambios)",
+        });
+
+      res
+        .status(201)
+        .json({ success: true, mensaje: "Alumno inscrito correctamente" });
+    },
+  );
 });
 
 // POST — inscripción masiva (varios alumnos a un grupo)
