@@ -159,3 +159,195 @@ async function eliminarGrupo(id) {
   if (data.success) cargarGrupos();
   else alert(data.error);
 }
+
+// ── Estado CSV ────────────────────────────────────────────────────────────────
+let csvGruposData = [];
+
+// ── Toast (si grupos.js no tiene uno propio) ──────────────────────────────────
+function toastGrupo(msg, tipo = "success") {
+  // Reutiliza el contenedor global del proyecto
+  const c = document.getElementById("toast-container");
+  if (!c) {
+    alert(msg);
+    return;
+  }
+  const t = document.createElement("div");
+  t.className = `toast toast-${tipo}`;
+  const icons = {
+    success: "lucide:check-circle",
+    error: "lucide:x-circle",
+    info: "lucide:info",
+  };
+  t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ── Abrir / cerrar modal ───────────────────────────────────────────────────────
+function abrirModalCSVGrupos() {
+  csvGruposData = [];
+  document.getElementById("csvGruposPreview").innerHTML = "";
+  document.getElementById("btnImportarGrupos").disabled = true;
+  document.getElementById("inputCSVGrupos").value = "";
+  document.getElementById("modalImportGrupos").classList.add("visible");
+}
+function cerrarModalCSVGrupos() {
+  document.getElementById("modalImportGrupos").classList.remove("visible");
+}
+
+// ── Leer archivo ──────────────────────────────────────────────────────────────
+function leerCSVGrupos(e) {
+  const file = e.target.files[0];
+  if (file) procesarCSVGrupos(file);
+}
+
+function soltarCSVGrupos(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneGrupos").classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCSVGrupos(file);
+}
+
+function dragOverGrupos(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneGrupos").classList.add("drag-over");
+}
+
+function procesarCSVGrupos(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.trim().split("\n").filter(Boolean);
+    if (lines.length < 2) {
+      document.getElementById("csvGruposPreview").innerHTML =
+        "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>El archivo está vacío o solo tiene encabezado.</p>";
+      return;
+    }
+    const headers = lines[0]
+      .split(",")
+      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    csvGruposData = lines.slice(1).map((line) => {
+      const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const obj = {};
+      headers.forEach((h, i) => {
+        obj[h] = vals[i] ?? "";
+      });
+      return obj;
+    });
+    mostrarPreviewCSVGrupos(headers, csvGruposData);
+    document.getElementById("btnImportarGrupos").disabled =
+      csvGruposData.length === 0;
+  };
+  reader.readAsText(file);
+}
+
+function mostrarPreviewCSVGrupos(headers, data) {
+  const muestra = data.slice(0, 5);
+  const preview = document.getElementById("csvGruposPreview");
+  if (!data.length) {
+    preview.innerHTML =
+      "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>Sin datos válidos.</p>";
+    return;
+  }
+  preview.innerHTML = `
+    <p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">
+      ${data.length} registros detectados — vista previa (primeros 5):
+    </p>
+    <div class="csv-preview">
+      <table>
+        <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+        <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── Enviar al backend ─────────────────────────────────────────────────────────
+async function importarCSVGrupos() {
+  if (!csvGruposData.length) return;
+  const token = localStorage.getItem("token");
+  const btn = document.getElementById("btnImportarGrupos");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Importando…`;
+
+  try {
+    const r = await fetch(`${BASE_URL}/api/grupos/csv`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ grupos: csvGruposData }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Error al importar");
+
+    toastGrupo(`${data.insertados} grupo(s) importados correctamente`);
+    if (data.errores?.length) {
+      toastGrupo(
+        `${data.errores.length} fila(s) con errores — revisa la consola`,
+        "info",
+      );
+      console.table(data.errores);
+    }
+    cerrarModalCSVGrupos();
+    cargarGrupos();
+  } catch (err) {
+    toastGrupo(err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+  }
+}
+
+// ── Exportar CSV ──────────────────────────────────────────────────────────────
+async function exportarCSVGrupos() {
+  const token = localStorage.getItem("token");
+  try {
+    const r = await fetch(`${BASE_URL}/api/grupos`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const grupos = await r.json();
+    if (!grupos.length) {
+      toastGrupo("No hay grupos para exportar", "info");
+      return;
+    }
+
+    const cols = [
+      "id_grupo",
+      "clave_materia",
+      "nombre_materia",
+      "numero_empleado",
+      "nombre_maestro",
+      "id_periodo",
+      "limite_alumnos",
+      "horario",
+      "aula",
+      "estatus",
+    ];
+    const rows = [cols.join(",")];
+    grupos.forEach((g) => {
+      rows.push(
+        cols
+          .map((c) => `"${(g[c] ?? "").toString().replace(/"/g, '""')}"`)
+          .join(","),
+      );
+    });
+
+    const blob = new Blob([rows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "grupos_RCA.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toastGrupo("CSV exportado correctamente");
+  } catch {
+    toastGrupo("Error al exportar", "error");
+  }
+}
+
+// ── Cerrar modal al hacer clic fuera ──────────────────────────────────────────
+document.addEventListener("click", (e) => {
+  if (e.target.id === "modalImportGrupos") cerrarModalCSVGrupos();
+});

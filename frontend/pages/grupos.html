@@ -75,8 +75,37 @@
           </form>
         </div>
 
+        <!-- ── Lista de grupos con botones CSV ─────────────────────────── -->
         <div class="card">
-          <h2>Lista de Grupos</h2>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 10px;
+              margin-bottom: 14px;
+            "
+          >
+            <h2 style="margin: 0">Lista de Grupos</h2>
+            <div style="display: flex; gap: 8px" id="botonesCSVGrupos">
+              <button class="btn-secundario" onclick="abrirModalCSVGrupos()">
+                <iconify-icon
+                  icon="lucide:upload"
+                  style="margin-right: 4px"
+                ></iconify-icon>
+                Importar CSV
+              </button>
+              <button class="btn-secundario" onclick="exportarCSVGrupos()">
+                <iconify-icon
+                  icon="lucide:download"
+                  style="margin-right: 4px"
+                ></iconify-icon>
+                Exportar CSV
+              </button>
+            </div>
+          </div>
+
           <table>
             <thead>
               <tr>
@@ -95,6 +124,106 @@
         </div>
       </main>
     </div>
+
+    <!-- ── Modal Importar CSV Grupos ───────────────────────────────────── -->
+    <div class="modal-overlay" id="modalImportGrupos">
+      <div class="modal" style="max-width: 560px">
+        <div class="modal-header">
+          <h3>Importar Grupos desde CSV</h3>
+          <button class="btn-cerrar-modal" onclick="cerrarModalCSVGrupos()">
+            <iconify-icon icon="lucide:x"></iconify-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Formato esperado -->
+          <div
+            style="
+              background: var(--bg-alt, #f1f5f9);
+              border-radius: 6px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
+              font-size: 0.82rem;
+              color: var(--text-muted);
+            "
+          >
+            <strong>Columnas requeridas:</strong>
+            <code style="display: block; margin-top: 4px"
+              >clave_materia, numero_empleado, id_periodo</code
+            >
+            <strong style="margin-top: 6px; display: block"
+              >Columnas opcionales:</strong
+            >
+            <code style="display: block; margin-top: 4px"
+              >limite_alumnos, horario, aula</code
+            >
+            <strong style="margin-top: 6px; display: block">Ejemplo:</strong>
+            <code style="display: block; margin-top: 4px"
+              >FBD001,EMP001,1,35,"Lun-Mié-Vie 07:00-08:00",Aula 101</code
+            >
+          </div>
+
+          <!-- Drop zone -->
+          <div
+            id="dropZoneGrupos"
+            class="drop-zone"
+            ondragover="dragOverGrupos(event)"
+            ondrop="soltarCSVGrupos(event)"
+            onclick="document.getElementById('inputCSVGrupos').click()"
+          >
+            <iconify-icon
+              icon="lucide:file-up"
+              style="font-size: 2rem; color: var(--primary, #6366f1)"
+            ></iconify-icon>
+            <p style="margin: 6px 0 0; font-size: 0.88rem">
+              Arrastra tu archivo CSV aquí o
+              <strong>haz clic para seleccionar</strong>
+            </p>
+          </div>
+          <input
+            type="file"
+            id="inputCSVGrupos"
+            accept=".csv"
+            style="display: none"
+            onchange="leerCSVGrupos(event)"
+          />
+
+          <!-- Preview -->
+          <div
+            id="csvGruposPreview"
+            style="overflow-x: auto; margin-top: 6px"
+          ></div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancelar" onclick="cerrarModalCSVGrupos()">
+            Cancelar
+          </button>
+          <button
+            id="btnImportarGrupos"
+            class="btn-guardar"
+            disabled
+            onclick="importarCSVGrupos()"
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast container (si el sidebar no lo incluye) -->
+    <div
+      id="toast-container"
+      style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      "
+    ></div>
 
     <script src="../js/sidebar.js"></script>
     <script src="../js/grupos.js"></script>

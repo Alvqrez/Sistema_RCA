@@ -309,4 +309,64 @@ router.put("/:id/unidades/agrupacion", maestroOAdmin, (req, res) => {
     .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
 });
 
+router.post("/csv", soloAdmin, async (req, res) => {
+  const { grupos } = req.body;
+
+  if (!Array.isArray(grupos) || grupos.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const errores = [];
+  let insertados = 0;
+
+  for (const g of grupos) {
+    const { clave_materia, numero_empleado, id_periodo } = g;
+
+    // Validar campos obligatorios
+    if (!clave_materia || !numero_empleado || !id_periodo) {
+      errores.push({
+        fila: `${clave_materia || "?"}/${numero_empleado || "?"}`,
+        motivo:
+          "Faltan campos requeridos (clave_materia, numero_empleado, id_periodo)",
+      });
+      continue;
+    }
+
+    try {
+      await new Promise((ok, fail) => {
+        db.query(
+          `INSERT INTO grupo
+             (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             limite_alumnos = VALUES(limite_alumnos),
+             horario        = VALUES(horario),
+             aula           = VALUES(aula)`,
+          [
+            clave_materia.trim(),
+            numero_empleado.trim(),
+            parseInt(id_periodo),
+            parseInt(g.limite_alumnos) || 30,
+            g.horario?.trim() || null,
+            g.aula?.trim() || null,
+          ],
+          (err) => (err ? fail(err) : ok()),
+        );
+      });
+      insertados++;
+    } catch (e) {
+      errores.push({
+        fila: `${clave_materia}/${numero_empleado}`,
+        motivo: e.message,
+      });
+    }
+  }
+
+  res.json({
+    success: true,
+    insertados,
+    errores,
+    mensaje: `${insertados} grupo(s) importados. ${errores.length} con errores.`,
+  });
+});
+
 module.exports = router;
