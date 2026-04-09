@@ -40,14 +40,56 @@ function setRubrosExtra(id_grupo, arr) {
 function getRubrosGrupo(id_grupo) {
   return [...RUBROS_DEFAULT, ...getRubrosExtra(id_grupo)];
 }
-function getPcts(id_grupo, id_unidad) {
+async function getPctsFromBD(id_grupo, id_unidad) {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+    const res = await fetch(
+      `${BASE_URL_GM}/api/config-evaluacion/${id_grupo}/${id_unidad}`,
+      {
+        headers: { Authorization: `Bearer ${tokenGM()}` },
+      },
     );
-    if (saved && Object.keys(saved).length) return saved;
-  } catch (_) {}
-  return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
+    if (!res.ok) throw new Error();
+    const cfg = await res.json();
+    return {
+      pct_actividades: cfg.pct_actividades ?? 60,
+      pct_examen: cfg.pct_examen ?? 30,
+      pct_asistencia: cfg.pct_asistencia ?? 10,
+    };
+  } catch {
+    // Fallback a localStorage si la BD falla
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+      );
+      if (saved && Object.keys(saved).length) return saved;
+    } catch (_) {}
+    return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
+  }
+}
+
+async function guardarPctsEnBD(id_grupo, id_unidad, pcts) {
+  // Guarda en localStorage como respaldo inmediato
+  localStorage.setItem(`pcts_${id_grupo}_${id_unidad}`, JSON.stringify(pcts));
+
+  // Guarda en la BD
+  try {
+    await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenGM()}`,
+      },
+      body: JSON.stringify({
+        id_grupo,
+        id_unidad,
+        pct_actividades: pcts.pct_actividades,
+        pct_examen: pcts.pct_examen,
+        pct_asistencia: pcts.pct_asistencia,
+      }),
+    });
+  } catch (e) {
+    console.warn("No se pudo guardar en BD, solo en localStorage:", e);
+  }
 }
 
 // ── localStorage helpers para unidades personalizadas por grupo ───────

@@ -64,6 +64,11 @@
             texto: "Asistencia",
             icono: "lucide:calendar-check",
           },
+          {
+            href: "gruposMaestro.html",
+            texto: "Configurar evaluación",
+            icono: "lucide:sliders-horizontal",
+          },
         ],
       },
       {
