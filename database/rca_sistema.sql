@@ -587,3 +587,69 @@ CREATE TABLE IF NOT EXISTS `rca_sistema`.`config_evaluacion_unidad` (
     CONSTRAINT `fk_CEU_Grupo`  FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`(`id_grupo`)  ON DELETE CASCADE,
     CONSTRAINT `fk_CEU_Unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidad`(`id_unidad`) ON DELETE CASCADE
 ) COMMENT = 'Configuración de cómo califica el maestro cada unidad de cada grupo';
+
+-- ============================================================
+--  Sistema RCA — Correcciones al schema
+--  Ejecutar en MySQL Workbench contra la BD rca_sistema
+-- ============================================================
+
+USE rca_sistema;
+
+-- ============================================================
+-- CORRECCIÓN 1: maestro.curp — NOT NULL sin DEFAULT
+-- ============================================================
+-- PROBLEMA: El campo curp es NOT NULL pero el formulario
+-- no lo exige. MySQL en modo estricto rechaza NULL → error
+-- "Field 'curp' doesn't have a default value".
+-- La CURP es útil para reportes pero no debe bloquear el registro.
+-- SOLUCIÓN: Hacer el campo nullable.
+-- (El UNIQUE INDEX se mantiene para evitar duplicados cuando sí se capture)
+ALTER TABLE maestro
+  MODIFY COLUMN curp CHAR(18) NULL DEFAULT NULL;
+
+-- ============================================================
+-- CORRECCIÓN 2: maestro.apellido_materno — NOT NULL sin DEFAULT
+-- ============================================================
+-- PROBLEMA: apellido_materno es NOT NULL en maestro pero el
+-- formulario no lo obliga (personas con un solo apellido).
+-- NOTA: En alumno ya estaba NULL DEFAULT NULL — inconsistencia corregida.
+ALTER TABLE maestro
+  MODIFY COLUMN apellido_materno VARCHAR(50) NULL DEFAULT NULL;
+
+-- ============================================================
+-- CORRECCIÓN 3: bonusunidad.fecha_asignacion — NOT NULL sin DEFAULT
+-- CORRECCIÓN 4: bonusfinal.fecha_asignacion — NOT NULL sin DEFAULT
+-- ============================================================
+-- PROBLEMA: El backend llama CURDATE() solo si el campo llega vacío,
+-- pero si MySQL evalúa antes del default, falla.
+-- SOLUCIÓN: Agregar DEFAULT CURDATE() a nivel de schema como respaldo.
+ALTER TABLE bonusunidad
+  MODIFY COLUMN fecha_asignacion DATE NOT NULL DEFAULT (CURDATE());
+
+ALTER TABLE bonusfinal
+  MODIFY COLUMN fecha_asignacion DATE NOT NULL DEFAULT (CURDATE());
+
+-- ============================================================
+-- CORRECCIÓN 5: inscripcion — hacer la ruta POST idempotente
+-- ============================================================
+-- PROBLEMA: El CSV de inscripciones llama POST /api/inscripciones
+-- en un loop. Si el seed ya insertó esas inscripciones, cada fila
+-- devuelve 409 (ER_DUP_ENTRY). El fix real es en el backend
+-- (ver inscripciones.js), pero como respaldo se puede usar INSERT IGNORE
+-- directamente — ya está en la ruta /bulk.
+-- No requiere cambio en el schema.
+-- VER: corrección en backend/src/routes/inscripciones.js (archivo adjunto).
+
+-- ============================================================
+-- VERIFICACIÓN FINAL
+-- ============================================================
+-- Ejecuta esto para confirmar que quedaron nullable:
+SELECT
+  COLUMN_NAME,
+  IS_NULLABLE,
+  COLUMN_DEFAULT
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'rca_sistema'
+  AND TABLE_NAME   = 'maestro'
+  AND COLUMN_NAME IN ('curp', 'apellido_materno');
+-- Esperado: IS_NULLABLE = 'YES' en ambos
