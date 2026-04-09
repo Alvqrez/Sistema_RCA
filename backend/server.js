@@ -108,10 +108,7 @@ app.use("/api/maestros", require("./src/routes/maestros"));
 app.use("/api/unidades", require("./src/routes/unidades"));
 app.use("/api/carreras", require("./src/routes/carreras"));
 app.use("/api/actividades", require("./src/routes/actividades"));
-app.use(
-  "/api/resultado-actividad",
-  require("./src/routes/resultado_actividad"),
-);
+app.use("/api/resultado-actividad", require("./src/routes/resultado_actividad"));
 
 app.use("/api/inscripciones", require("./src/routes/inscripciones"));
 app.use("/api/periodos", require("./src/routes/periodos"));

@@ -657,6 +657,9 @@ async function guardarCalificacionesActividad() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+//  CERRAR PANEL
+// ─────────────────────────────────────────────────────────────────────
 function cerrarPanelCal() {
   document.getElementById("panelCalActividad").style.display = "none";
   actividadActiva = null;
@@ -671,6 +674,7 @@ function pedirEliminar(id) {
   document.getElementById("btnConfirmarEliminar").onclick = () =>
     confirmarEliminar(id);
 }
+
 async function confirmarEliminar(id) {
   cerrarModal("modalEliminar");
   const token = localStorage.getItem("token");
@@ -686,7 +690,7 @@ async function confirmarEliminar(id) {
       data = { error: "Error del servidor" };
     }
     if (res.ok && data.success) {
-      mostrarToast("Actividad eliminada", "success");
+      mostrarToast("Actividad eliminada correctamente", "success");
       if (actividadActiva?.id_actividad === id) cerrarPanelCal();
       await cargarActividades();
     } else {
@@ -698,12 +702,90 @@ async function confirmarEliminar(id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+//  CARDS PLEGABLES
+// ─────────────────────────────────────────────────────────────────────
+function toggleCard(btn) {
+  const card = btn.closest(".card-collapsible");
+  card.classList.toggle("collapsed");
+  btn.title = card.classList.contains("collapsed") ? "Expandir" : "Contraer";
+}
+
+// ─────────────────────────────────────────────────────────────────────
+//  MODALES
+// ─────────────────────────────────────────────────────────────────────
+function abrirModal(id) {
+  document.getElementById(id)?.classList.add("visible");
+}
+function cerrarModal(id) {
+  document.getElementById(id)?.classList.remove("visible");
+}
+
+document.querySelectorAll(".modal-overlay").forEach((o) => {
+  o.addEventListener("click", (e) => {
+    if (e.target === o) o.classList.remove("visible");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
 //  UTILIDADES
+// ─────────────────────────────────────────────────────────────────────
+function formatFecha(f) {
+  if (!f) return "—";
+  // Las fechas de MySQL vienen como "2025-04-15T00:00:00.000Z"
+  // Usar split para evitar problemas de zona horaria
+  const partes = f.toString().split("T")[0].split("-");
+  if (partes.length !== 3) return f;
+  const [anio, mes, dia] = partes;
+  const meses = [
+    "ene",
+    "feb",
+    "mar",
+    "abr",
+    "may",
+    "jun",
+    "jul",
+    "ago",
+    "sep",
+    "oct",
+    "nov",
+    "dic",
+  ];
+  return `${parseInt(dia)} ${meses[parseInt(mes) - 1]} ${anio}`;
+}
 
-// Llamar al init para poblar los selects de config
-poblarSelectsConfig();
-
-// ── Toast alias (usa showToast global de sidebar.js) ─────────────────
+// ── Toast (usa showToast del sidebar.js si está disponible) ──────────
 function mostrarToast(msg, tipo = "success") {
-  if (typeof showToast === "function") showToast(msg, tipo);
+  if (typeof showToast === "function") {
+    showToast(msg, tipo);
+  } else {
+    // Fallback independiente por si sidebar no cargó
+    let t = document.getElementById("rca-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "rca-toast";
+      Object.assign(t.style, {
+        position: "fixed",
+        bottom: "24px",
+        right: "24px",
+        padding: "12px 20px",
+        borderRadius: "8px",
+        fontFamily: "Inter,sans-serif",
+        fontSize: "0.9rem",
+        fontWeight: "600",
+        zIndex: "9999",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        transition: "opacity 0.3s",
+      });
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background =
+      tipo === "success" ? "#059669" : tipo === "error" ? "#dc2626" : "#1e40af";
+    t.style.color = "#fff";
+    t.style.opacity = "1";
+    clearTimeout(t._t);
+    t._t = setTimeout(() => {
+      t.style.opacity = "0";
+    }, 3000);
+  }
 }

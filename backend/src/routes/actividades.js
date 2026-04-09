@@ -73,19 +73,25 @@ router.post("/", maestroOAdmin, (req, res) => {
 
   // Verificar que la unidad pertenece a la materia del grupo
   const sqlVerifica = `
-    SELECT g.clave_materia, u.clave_materia AS clave_unidad
-    FROM grupo g, unidad u
+    SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad,
+           u.nombre_unidad
+    FROM grupo g
+    CROSS JOIN unidad u
     WHERE g.id_grupo = ? AND u.id_unidad = ?
-  `;
+`;
   db.query(sqlVerifica, [id_grupo, id_unidad], (errV, rowsV) => {
     if (errV)
       return res.status(500).json({ error: "Error interno del servidor" });
-    if (rowsV.length === 0)
-      return res.status(400).json({ error: "Grupo o unidad no encontrados" });
-    if (rowsV[0].clave_materia !== rowsV[0].clave_unidad)
+    if (rowsV.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Grupo o unidad no encontrados en la base de datos" });
+    }
+    if (rowsV[0].clave_grupo !== rowsV[0].clave_unidad) {
       return res.status(400).json({
-        error: "La unidad seleccionada no pertenece a la materia de este grupo",
+        error: `La unidad "${rowsV[0].nombre_unidad}" pertenece a otra materia. Selecciona una unidad de la materia correcta.`,
       });
+    }
 
     // Verificar que la suma no supere 100%
     const sqlSuma = `
