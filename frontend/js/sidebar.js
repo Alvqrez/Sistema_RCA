@@ -31,25 +31,57 @@
     maestro: [
       {
         href: "mis_grupos.html",
-        texto: "Mis grupos",
-        icono: "lucide:users-round",
+        texto: "Inicio",
+        icono: "lucide:layout-dashboard",
       },
       {
-        href: "gruposMaestro.html",
-        texto: "Configurar Evaluación",
-        icono: "lucide:sliders-horizontal",
+        texto: "Alumnos",
+        icono: "lucide:users",
+        hijos: [
+          {
+            href: "alumnosMaestro.html",
+            texto: "Buscar alumnos",
+            icono: "lucide:search",
+          },
+        ],
       },
       {
-        href: "actividades.html",
-        texto: "Actividades",
-        icono: "lucide:clipboard-pen",
+        texto: "Clases",
+        icono: "lucide:book-open",
+        hijos: [
+          {
+            href: "gruposMaestro.html",
+            texto: "Configurar evaluación",
+            icono: "lucide:sliders-horizontal",
+          },
+          {
+            href: "actividades.html",
+            texto: "Actividades",
+            icono: "lucide:clipboard-pen",
+          },
+          {
+            href: "asistencia.html",
+            texto: "Asistencia",
+            icono: "lucide:calendar-check",
+          },
+        ],
       },
       {
-        href: "formulario.html",
-        texto: "Evaluación",
+        texto: "Calificaciones",
         icono: "mdi:file-document-edit-outline",
+        hijos: [
+          {
+            href: "formulario.html",
+            texto: "Capturar calificaciones",
+            icono: "lucide:pencil",
+          },
+        ],
       },
-      { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
+      {
+        href: "reportes.html",
+        texto: "Reportes",
+        icono: "lucide:bar-chart-2",
+      },
     ],
 
     administrador: [

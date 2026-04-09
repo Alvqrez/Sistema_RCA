@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Asistencia — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .asistencia-table th,
+      .asistencia-table td {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.85rem;
+      }
+      .asistencia-table th {
+        background: var(--bg-app);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+      }
+      .asistencia-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .toggle-asist {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 2px solid var(--border);
+        background: var(--bg-app);
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        color: var(--text-muted);
+      }
+      .toggle-asist.presente {
+        background: var(--success-light);
+        border-color: var(--success);
+        color: var(--success);
+      }
+      .toggle-asist.falta {
+        background: var(--danger-light);
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .pct-badge {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Asistencia</h1>
+            <p class="page-subtitle">
+              Registro de asistencia por grupo y fecha
+            </p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="exportarCSV()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-primary" onclick="guardarAsistencia()">
+              <iconify-icon icon="lucide:save"></iconify-icon> Guardar
+            </button>
+          </div>
+        </div>
+
+        <!-- Selectores -->
+        <div class="card" style="padding: 16px 20px; margin-bottom: 18px">
+          <div
+            style="
+              display: flex;
+              gap: 14px;
+              flex-wrap: wrap;
+              align-items: flex-end;
+            "
+          >
+            <div
+              class="form-group"
+              style="margin: 0; flex: 1; min-width: 180px"
+            >
+              <label>Grupo</label>
+              <select id="selGrupo" onchange="cargarAlumnosGrupo()">
+                <option value="">— Selecciona grupo —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0">
+              <label>Fecha</label>
+              <input type="date" id="fechaAsistencia" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Info: pct promedio -->
+        <div
+          id="resumenAsist"
+          style="display: none"
+          class="stats-row"
+          style="margin-bottom: 18px"
+        >
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:user-check"></iconify-icon>
+            <div>
+              <p id="statPresentes">—</p>
+              <span>Presentes</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:user-x"></iconify-icon>
+            <div>
+              <p id="statFaltas">—</p>
+              <span>Faltas</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <iconify-icon icon="lucide:percent"></iconify-icon>
+            <div>
+              <p id="statPct">—</p>
+              <span>Asistencia</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div
+          id="loadingState"
+          style="
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            display: none;
+          "
+        >
+          <iconify-icon
+            icon="lucide:loader-2"
+            style="font-size: 2rem; display: block; margin: 0 auto 8px"
+          ></iconify-icon>
+          <p>Cargando…</p>
+        </div>
+        <div class="card" id="cardTabla" style="display: none">
+          <div style="overflow-x: auto">
+            <table class="asistencia-table" id="tablaAsist">
+              <thead>
+                <tr>
+                  <th>Alumno</th>
+                  <th>Matrícula</th>
+                  <th style="text-align: center">Hoy</th>
+                  <th style="text-align: center">Asistencia total</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyAsist"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          id="emptyState"
+          style="
+            display: none;
+            text-align: center;
+            padding: 48px;
+            color: var(--text-muted);
+          "
+        >
+          <iconify-icon
+            icon="lucide:calendar-x"
+            style="font-size: 2.5rem; display: block; margin: 0 auto 10px"
+          ></iconify-icon>
+          <p>Selecciona un grupo y fecha para registrar asistencia.</p>
+        </div>
+      </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const tkn = () => localStorage.getItem("token");
+      const STORE = (key) => `asist_${key}`; // localStorage key pattern
+
+      let alumnos = []; // { matricula, nombre }
+      let grupoActual = null;
+
+      // ── Init ─────────────────────────────────────────────────────────
+      (async function init() {
+        soloPermitido("maestro", "administrador");
+        document.getElementById("fechaAsistencia").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        await cargarGrupos();
+        document.getElementById("emptyState").style.display = "block";
+      })();
+
+      async function cargarGrupos() {
+        let grupos = [];
+        try {
+          const r = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+            headers: { Authorization: `Bearer ${tkn()}` },
+          });
+          if (r.ok) grupos = await r.json();
+        } catch (_) {}
+        if (!Array.isArray(grupos) || !grupos.length) {
+          const r2 = await fetch(`${BASE}/api/grupos`, {
+            headers: { Authorization: `Bearer ${tkn()}` },
+          });
+          const todos = await r2.json();
+          let id_ref = null;
+          try {
+            id_ref = JSON.parse(atob(tkn().split(".")[1])).id_referencia;
+          } catch (_) {}
+          grupos = id_ref
+            ? todos.filter((g) => String(g.numero_empleado) === String(id_ref))
+            : [];
+        }
+        const sel = document.getElementById("selGrupo");
+        grupos
+          .filter((g) => g.estatus === "Activo" || !g.estatus)
+          .forEach((g) => {
+            sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} — Grupo #${g.id_grupo}</option>`;
+          });
+      }
+
+      async function cargarAlumnosGrupo() {
+        grupoActual = document.getElementById("selGrupo").value;
+        if (!grupoActual) {
+          document.getElementById("cardTabla").style.display = "none";
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("resumenAsist").style.display = "none";
+          return;
+        }
+        document.getElementById("loadingState").style.display = "block";
+        document.getElementById("emptyState").style.display = "none";
+        try {
+          const r = await fetch(
+            `${BASE}/api/inscripciones/grupo/${grupoActual}`,
+            { headers: { Authorization: `Bearer ${tkn()}` } },
+          );
+          const data = await r.json();
+          alumnos = (data || []).map((a) => ({
+            matricula: a.matricula,
+            nombre:
+              `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
+          }));
+          renderTabla();
+        } catch (_) {
+          showToast("Error al cargar alumnos", "error");
+        }
+        document.getElementById("loadingState").style.display = "none";
+      }
+
+      function getFecha() {
+        return document.getElementById("fechaAsistencia").value;
+      }
+
+      function getRegistro(matricula) {
+        // { fecha: "presente"|"falta" }
+        try {
+          return (
+            JSON.parse(
+              localStorage.getItem(STORE(`${grupoActual}_${matricula}`)),
+            ) || {}
+          );
+        } catch {
+          return {};
+        }
+      }
+      function setRegistro(matricula, data) {
+        localStorage.setItem(
+          STORE(`${grupoActual}_${matricula}`),
+          JSON.stringify(data),
+        );
+      }
+
+      function toggleAsist(matricula, btn) {
+        const fecha = getFecha();
+        if (!fecha) {
+          showToast("Selecciona una fecha primero", "error");
+          return;
+        }
+        const reg = getRegistro(matricula);
+        const actual = reg[fecha];
+        // Cycle: sin registro → presente → falta → sin registro
+        if (!actual) {
+          reg[fecha] = "presente";
+        } else if (actual === "presente") {
+          reg[fecha] = "falta";
+        } else {
+          delete reg[fecha];
+        }
+        setRegistro(matricula, reg);
+        actualizarBtn(btn, reg[fecha]);
+        actualizarResumen();
+      }
+
+      function actualizarBtn(btn, estado) {
+        btn.className =
+          "toggle-asist" +
+          (estado === "presente"
+            ? " presente"
+            : estado === "falta"
+              ? " falta"
+              : "");
+        btn.innerHTML =
+          estado === "presente"
+            ? `<iconify-icon icon="lucide:check"></iconify-icon>`
+            : estado === "falta"
+              ? `<iconify-icon icon="lucide:x"></iconify-icon>`
+              : `<iconify-icon icon="lucide:minus"></iconify-icon>`;
+        btn.title =
+          estado === "presente"
+            ? "Presente"
+            : estado === "falta"
+              ? "Falta"
+              : "Sin registrar";
+      }
+
+      function getPctAsistencia(matricula) {
+        const reg = getRegistro(matricula);
+        const fechas = Object.keys(reg);
+        if (!fechas.length) return null;
+        const presentes = fechas.filter((f) => reg[f] === "presente").length;
+        return Math.round((presentes / fechas.length) * 100);
+      }
+
+      function renderTabla() {
+        const fecha = getFecha();
+        const tbody = document.getElementById("tbodyAsist");
+        tbody.innerHTML = alumnos
+          .map((a) => {
+            const reg = getRegistro(a.matricula);
+            const estado = reg[fecha];
+            const pct = getPctAsistencia(a.matricula);
+            const pctBadge =
+              pct === null
+                ? `<span style="font-size:0.78rem;color:var(--text-muted)">—</span>`
+                : `<span class="pct-badge" style="background:${pct >= 80 ? "var(--success-light)" : "var(--danger-light)"};color:${pct >= 80 ? "var(--success)" : "var(--danger)"}">${pct}%</span>`;
+
+            return `<tr>
+            <td style="font-weight:500">${a.nombre}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+            <td style="text-align:center">
+              <button class="toggle-asist${estado === "presente" ? " presente" : estado === "falta" ? " falta" : ""}"
+                      onclick="toggleAsist('${a.matricula}', this)"
+                      data-matricula="${a.matricula}">
+                <iconify-icon icon="${estado === "presente" ? "lucide:check" : estado === "falta" ? "lucide:x" : "lucide:minus"}"></iconify-icon>
+              </button>
+            </td>
+            <td style="text-align:center">${pctBadge}</td>
+          </tr>`;
+          })
+          .join("");
+
+        document.getElementById("cardTabla").style.display = "block";
+        document.getElementById("resumenAsist").style.display = "flex";
+        actualizarResumen();
+      }
+
+      function actualizarResumen() {
+        const fecha = getFecha();
+        let presentes = 0,
+          faltas = 0;
+        alumnos.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          if (reg[fecha] === "presente") presentes++;
+          else if (reg[fecha] === "falta") faltas++;
+        });
+        const total = alumnos.length;
+        const pct =
+          presentes + faltas > 0
+            ? Math.round((presentes / (presentes + faltas)) * 100)
+            : 0;
+        document.getElementById("statPresentes").textContent = presentes;
+        document.getElementById("statFaltas").textContent = faltas;
+        document.getElementById("statPct").textContent = `${pct}%`;
+      }
+
+      function guardarAsistencia() {
+        // Data is auto-saved to localStorage on each toggle.
+        // This button provides user confirmation feedback.
+        showToast("Asistencia guardada localmente ✓", "success");
+      }
+
+      function exportarCSV() {
+        if (!alumnos.length) {
+          showToast("Sin datos para exportar", "info");
+          return;
+        }
+        // Collect all unique dates across all students
+        const fechas = new Set();
+        alumnos.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          Object.keys(reg).forEach((f) => fechas.add(f));
+        });
+        const fechasOrdenadas = [...fechas].sort();
+        const header = [
+          "Matricula",
+          "Nombre",
+          ...fechasOrdenadas,
+          "% Asistencia",
+        ];
+        const rows = alumnos.map((a) => {
+          const reg = getRegistro(a.matricula);
+          const celdas = fechasOrdenadas.map((f) =>
+            reg[f] === "presente" ? "P" : reg[f] === "falta" ? "F" : "",
+          );
+          const pct = getPctAsistencia(a.matricula);
+          return [
+            `"${a.matricula}"`,
+            `"${a.nombre}"`,
+            ...celdas,
+            pct !== null ? `${pct}%` : "",
+          ];
+        });
+        const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `asistencia_grupo${grupoActual}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast("CSV exportado", "success");
+      }
+    </script>
+  </body>
+</html>

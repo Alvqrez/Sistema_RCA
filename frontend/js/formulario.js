@@ -337,7 +337,9 @@ function renderTablaCalificaciones() {
 function recalcularFila(matricula) {
   let suma = 0;
   document
-    .querySelectorAll(`input[data-matricula="${matricula}"]`)
+    .querySelectorAll(
+      `input.cal-input[data-matricula="${matricula}"][data-ponderacion]`,
+    )
     .forEach((inp) => {
       suma +=
         (parseFloat(inp.value) || 0) *

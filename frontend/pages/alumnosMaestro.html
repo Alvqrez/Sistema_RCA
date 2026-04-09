@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mis Alumnos — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .alumno-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card-bg, #fff);
+        transition:
+          box-shadow 0.18s,
+          border-color 0.18s;
+      }
+      .alumno-card:hover {
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+      }
+      .alumno-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--primary-light);
+        color: var(--primary);
+        font-size: 1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .alumno-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .alumno-nombre {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0 0 3px;
+      }
+      .alumno-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .alumno-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .grid-alumnos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Mis Alumnos</h1>
+            <p class="page-subtitle">Alumnos inscritos en tus grupos activos</p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+            <div>
+              <p id="statTotal">—</p>
+              <span>Total alumnos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:check-circle"></iconify-icon>
+            <div>
+              <p id="statAprobados">—</p>
+              <span>Aprobados</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:library"></iconify-icon>
+            <div>
+              <p id="statGrupos">—</p>
+              <span>Grupos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card" style="padding: 14px 18px; margin-bottom: 18px">
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              align-items: center;
+            "
+          >
+            <input
+              type="text"
+              id="filtroBusqueda"
+              placeholder="🔍 Buscar por nombre o matrícula…"
+              oninput="filtrar()"
+              style="flex: 1; min-width: 200px"
+            />
+            <select
+              id="filtroGrupo"
+              onchange="filtrar()"
+              style="min-width: 200px"
+            >
+              <option value="">Todos los grupos</option>
+            </select>
+            <select id="filtroEstatus" onchange="filtrar()">
+              <option value="">Todos los estados</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Reprobado">Reprobado</option>
+              <option value="Pendiente">Pendiente</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div
+          id="loadingState"
+          style="text-align: center; padding: 48px; color: var(--text-muted)"
+        >
+          <iconify-icon
+            icon="lucide:loader-2"
+            style="font-size: 2rem; display: block; margin: 0 auto 10px"
+          ></iconify-icon>
+          <p>Cargando alumnos…</p>
+        </div>
+        <div id="gridAlumnos" class="grid-alumnos" style="display: none"></div>
+        <div
+          id="emptyState"
+          style="
+            display: none;
+            text-align: center;
+            padding: 48px;
+            color: var(--text-muted);
+          "
+        >
+          <iconify-icon
+            icon="lucide:search-x"
+            style="font-size: 2.5rem; display: block; margin: 0 auto 10px"
+          ></iconify-icon>
+          <p>Sin resultados para esa búsqueda.</p>
+        </div>
+      </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const tkn = () => localStorage.getItem("token");
+
+      let todosAlumnos = []; // { matricula, nombre, grupo, id_grupo, materia, estatus_final }
+
+      // ── Init ─────────────────────────────────────────────────────────
+      (async function init() {
+        soloPermitido("maestro", "administrador");
+        await cargarAlumnos();
+      })();
+
+      async function cargarAlumnos() {
+        try {
+          // 1. Get teacher's groups
+          let grupos = [];
+          try {
+            const r = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            if (r.ok) grupos = await r.json();
+          } catch (_) {}
+
+          if (!Array.isArray(grupos) || !grupos.length) {
+            const r2 = await fetch(`${BASE}/api/grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            const todos = await r2.json();
+            let id_ref = null;
+            try {
+              id_ref = JSON.parse(atob(tkn().split(".")[1])).id_referencia;
+            } catch (_) {}
+            grupos = id_ref
+              ? todos.filter(
+                  (g) => String(g.numero_empleado) === String(id_ref),
+                )
+              : [];
+          }
+
+          grupos = grupos.filter((g) => g.estatus === "Activo" || !g.estatus);
+
+          // 2. For each group, get enrolled students + their final grade
+          todosAlumnos = [];
+          const sel = document.getElementById("filtroGrupo");
+
+          for (const g of grupos) {
+            sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} (Grupo #${g.id_grupo})</option>`;
+            try {
+              const r = await fetch(
+                `${BASE}/api/reportes/grupo/${g.id_grupo}`,
+                { headers: { Authorization: `Bearer ${tkn()}` } },
+              );
+              if (!r.ok) continue;
+              const data = await r.json();
+              (data.alumnos || []).forEach((a) => {
+                todosAlumnos.push({
+                  matricula: a.matricula,
+                  nombre: a.nombre_completo,
+                  id_grupo: g.id_grupo,
+                  materia: g.nombre_materia,
+                  periodo: g.descripcion_periodo || "",
+                  estatus_inscripcion: a.estatus_inscripcion,
+                  estatus_final: a.estatus_final || "Pendiente",
+                  calificacion: a.calificacion_oficial,
+                });
+              });
+            } catch (_) {}
+          }
+
+          document.getElementById("loadingState").style.display = "none";
+
+          // Stats
+          document.getElementById("statTotal").textContent =
+            todosAlumnos.length;
+          document.getElementById("statAprobados").textContent =
+            todosAlumnos.filter((a) => a.estatus_final === "Aprobado").length;
+          document.getElementById("statGrupos").textContent = grupos.length;
+
+          filtrar();
+        } catch (e) {
+          document.getElementById("loadingState").innerHTML =
+            `<iconify-icon icon="lucide:wifi-off" style="font-size:2rem;color:var(--danger);display:block;margin:0 auto 8px"></iconify-icon>
+             <p style="color:var(--danger)">Error al cargar. <button class="btn btn-outline btn-sm" onclick="location.reload()">Reintentar</button></p>`;
+        }
+      }
+
+      // ── Filtrar ───────────────────────────────────────────────────────
+      function filtrar() {
+        const q = document
+          .getElementById("filtroBusqueda")
+          .value.toLowerCase()
+          .trim();
+        const grupo = document.getElementById("filtroGrupo").value;
+        const estatus = document.getElementById("filtroEstatus").value;
+
+        const resultado = todosAlumnos.filter((a) => {
+          const matchQ =
+            !q ||
+            a.nombre.toLowerCase().includes(q) ||
+            a.matricula.toLowerCase().includes(q);
+          const matchG = !grupo || String(a.id_grupo) === grupo;
+          const matchE = !estatus || a.estatus_final === estatus;
+          return matchQ && matchG && matchE;
+        });
+
+        renderAlumnos(resultado);
+      }
+
+      // ── Render ────────────────────────────────────────────────────────
+      function renderAlumnos(lista) {
+        const grid = document.getElementById("gridAlumnos");
+        const empty = document.getElementById("emptyState");
+
+        if (!lista.length) {
+          grid.style.display = "none";
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        grid.style.display = "grid";
+
+        grid.innerHTML = lista
+          .map((a) => {
+            const ini =
+              (a.nombre.split(",")[1]?.trim()?.[0] ?? "") +
+              (a.nombre.split(",")[0]?.trim()?.[0] ?? "");
+
+            const estatusBadge =
+              a.estatus_final === "Aprobado"
+                ? `<span class="badge badge-success">Aprobado</span>`
+                : a.estatus_final === "Reprobado"
+                  ? `<span class="badge badge-danger">Reprobado</span>`
+                  : `<span class="badge badge-warning">Pendiente</span>`;
+
+            const calText =
+              a.calificacion != null
+                ? `<strong style="font-size:1.1rem;color:${a.calificacion >= 70 ? "var(--success)" : "var(--danger)"}">${a.calificacion}</strong>`
+                : `<span style="color:var(--text-muted)">—</span>`;
+
+            return `
+            <div class="alumno-card">
+              <div class="alumno-avatar">${ini.toUpperCase() || "?"}</div>
+              <div class="alumno-info">
+                <p class="alumno-nombre">${a.nombre}</p>
+                <div class="alumno-meta">
+                  <span><iconify-icon icon="lucide:hash"></iconify-icon> ${a.matricula}</span>
+                  <span><iconify-icon icon="lucide:book-open"></iconify-icon> ${a.materia}</span>
+                </div>
+                <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
+                  ${estatusBadge}
+                  <span style="font-size:0.78rem;color:var(--text-muted)">Cal. final: ${calText}</span>
+                </div>
+              </div>
+              <div class="alumno-actions">
+                <a href="formulario.html?grupo=${a.id_grupo}"
+                   class="btn btn-primary btn-sm" style="text-decoration:none"
+                   title="Capturar calificaciones de este grupo">
+                  <iconify-icon icon="lucide:pencil"></iconify-icon>
+                </a>
+                <a href="reportes.html?grupo=${a.id_grupo}"
+                   class="btn btn-outline btn-sm" style="text-decoration:none"
+                   title="Ver reporte del grupo">
+                  <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+                </a>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+    </script>
+  </body>
+</html>
