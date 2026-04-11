@@ -137,6 +137,11 @@
       },
 
       { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
+      {
+        href: "utilerias.html",
+        texto: "Utilerías",
+        icono: "lucide:settings-2",
+      },
     ],
   };
 

@@ -452,11 +452,14 @@ function renderTablaCalificaciones() {
     </th>`;
   });
 
-  thead += `<th style="min-width:76px;background:rgba(245,158,11,.07)">
+  thead += `<th style="min-width:82px;background:rgba(100,116,139,.06)">
+    Base<small>sin bonus</small>
+  </th>
+  <th style="min-width:76px;background:rgba(245,158,11,.07)">
     Bonus<small>pts extra</small>
   </th>
   <th style="min-width:90px;background:rgba(30,64,175,.06)">
-    Cal. Final<small>calculada</small>
+    Cal. Final<small>con bonus</small>
   </th></tr>`;
 
   // ── Rows ──
@@ -498,6 +501,20 @@ function renderTablaCalificaciones() {
         </td>`;
       }
     });
+
+    // Base (sin bonus) — req. Etapa 2 §3.2: mostrar diferencia antes/después del bonus
+    const base = calcularBaseScore(al.matricula);
+    const baseColor =
+      base === null
+        ? "var(--text-muted)"
+        : base >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    tbody += `<td style="text-align:center">
+      <span id="base-${al.matricula}" style="color:${baseColor};font-weight:600">
+        ${base !== null ? base : "—"}
+      </span>
+    </td>`;
 
     // Bonus
     const b = getBonus(al.matricula);
@@ -595,18 +612,54 @@ function calcularCalFinal(matricula) {
 }
 
 // ── Recalculate a row ─────────────────────────────────────────────────
+// ── Base score (sin bonus) — para mostrar diferencia antes/después ────
+function calcularBaseScore(matricula) {
+  if (!estado.rubros.length) return null;
+  let total = 0;
+  let haySomething = false;
+  for (const r of estado.rubros) {
+    let grade =
+      r.tipo === "actividades"
+        ? calcularPromedioActividades(matricula)
+        : (() => {
+            const v = getRubroEstado(matricula, r.key);
+            return v !== "" ? parseFloat(v) : null;
+          })();
+    if (grade === null) continue;
+    haySomething = true;
+    total += grade * (r.pct / 100);
+  }
+  if (!haySomething) return null;
+  return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
+}
+
 function recalcularFila(matricula) {
   const final = calcularCalFinal(matricula);
-  const el = document.getElementById(`final-${matricula}`);
-  if (!el) return;
-  const color =
-    final === null
-      ? "var(--text-muted)"
-      : final >= 70
-        ? "var(--success)"
-        : "var(--danger)";
-  el.textContent = final !== null ? final : "—";
-  el.style.color = color;
+  const base = calcularBaseScore(matricula);
+
+  const elFinal = document.getElementById(`final-${matricula}`);
+  const elBase = document.getElementById(`base-${matricula}`);
+
+  if (elFinal) {
+    const color =
+      final === null
+        ? "var(--text-muted)"
+        : final >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    elFinal.textContent = final !== null ? final : "—";
+    elFinal.style.color = color;
+  }
+  if (elBase) {
+    const color =
+      base === null
+        ? "var(--text-muted)"
+        : base >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    elBase.textContent = base !== null ? base : "—";
+    elBase.style.color = color;
+  }
 }
 
 function onRubroInput(matricula, key, val) {
