@@ -252,18 +252,104 @@ async function cargarUnidades() {
             : c.estatus_unidad === "Reprobada"
               ? "reprobado"
               : "pendiente";
-        return `<tr>
-        <td>${c.nombre_unidad}</td>
-        <td><div class="cal-final ${color}" style="display:inline-flex">${cal ?? "—"}</div></td>
-        <td><span class="badge-estatus ${c.estatus_unidad === "Aprobada" ? "badge-aprobado" : c.estatus_unidad === "Reprobada" ? "badge-reprobado" : "badge-pendiente"}">${c.estatus_unidad}</span></td>
-      </tr>`;
+        const badgeClass =
+          c.estatus_unidad === "Aprobada"
+            ? "badge-aprobado"
+            : c.estatus_unidad === "Reprobada"
+              ? "badge-reprobado"
+              : "badge-pendiente";
+        return `<tr style="cursor:pointer" onclick="toggleDesglose('${c.id_unidad}','${id_grupo}',this)">
+          <td>
+            <span style="margin-right:6px">▶</span>
+            ${c.nombre_unidad}
+          </td>
+          <td><div class="cal-final ${color}" style="display:inline-flex">${cal ?? "—"}</div></td>
+          <td><span class="badge-estatus ${badgeClass}">${c.estatus_unidad}</span></td>
+        </tr>
+        <tr id="desglose-${c.id_unidad}" style="display:none">
+          <td colspan="3" style="padding:0">
+            <div id="desglose-wrap-${c.id_unidad}" style="padding:12px 16px;background:var(--bg-alt,#f8fafc);border-bottom:1px solid var(--border)">
+              <span style="color:var(--text-muted);font-size:0.82rem">Cargando desglose…</span>
+            </div>
+          </td>
+        </tr>`;
       })
       .join("");
     wrap.innerHTML = `<div class="tabla-wrapper"><table>
-      <thead><tr><th>Unidad</th><th>Calificación</th><th>Estatus</th></tr></thead>
+      <thead><tr><th>Unidad <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">(click para ver detalle)</span></th><th>Calificación</th><th>Estatus</th></tr></thead>
       <tbody>${filas}</tbody>
     </table></div>`;
   } catch (_) {
     wrap.innerHTML = `<div class="empty-state"><p>No se pudo cargar el detalle.</p></div>`;
+  }
+}
+
+async function toggleDesglose(id_unidad, id_grupo, rowEl) {
+  const desgRow = document.getElementById(`desglose-${id_unidad}`);
+  const wrap = document.getElementById(`desglose-wrap-${id_unidad}`);
+  const arrow = rowEl.querySelector("span");
+  if (!desgRow) return;
+
+  if (desgRow.style.display !== "none") {
+    desgRow.style.display = "none";
+    if (arrow) arrow.textContent = "▶";
+    return;
+  }
+
+  desgRow.style.display = "";
+  if (arrow) arrow.textContent = "▼";
+
+  try {
+    const r = await fetch(
+      `${BASE}/api/calificaciones/desglose/${matricula}/${id_grupo}/${id_unidad}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const data = await r.json();
+    if (!data.actividades?.length) {
+      wrap.innerHTML = `<p style="font-size:0.82rem;color:var(--text-muted);margin:0">No hay actividades registradas en esta unidad.</p>`;
+      return;
+    }
+    const filas = data.actividades
+      .map((a) => {
+        const np = a.estatus === "NP";
+        const calColor = np
+          ? "var(--text-muted)"
+          : parseFloat(a.calificacion) >= 70
+            ? "var(--success)"
+            : "var(--danger)";
+        return `<tr>
+        <td style="font-size:0.82rem">${a.nombre_actividad}</td>
+        <td style="font-size:0.78rem;text-align:center;color:var(--text-muted)">${a.ponderacion}%</td>
+        <td style="text-align:center;font-weight:600;color:${calColor}">${np ? "NP" : a.calificacion}</td>
+        <td style="text-align:center;font-size:0.78rem;color:var(--text-muted)">${a.aporte_ponderado} pts</td>
+      </tr>`;
+      })
+      .join("");
+    wrap.innerHTML = `
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px;font-weight:600">DESGLOSE DE ACTIVIDADES</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px;font-weight:600">Actividad</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600">Peso</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600">Calificación</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600">Aporte</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--border)">
+            <td colspan="3" style="padding:6px 8px;font-weight:700;font-size:0.82rem">Promedio ponderado calculado</td>
+            <td style="text-align:center;font-weight:700;color:${data.promedioCalculado >= 70 ? "var(--success)" : "var(--danger)"}">
+              ${data.promedioCalculado.toFixed(1)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin:8px 0 0">
+        Fórmula: Σ (calificación × peso%) = promedio ponderado de la unidad
+      </p>`;
+  } catch (_) {
+    wrap.innerHTML = `<p style="font-size:0.82rem;color:var(--danger);margin:0">No se pudo cargar el desglose.</p>`;
   }
 }

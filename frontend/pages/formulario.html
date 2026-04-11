@@ -182,6 +182,10 @@
         cursor: pointer;
         transition: all 0.15s;
         font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        position: relative;
       }
       .unit-tab:hover {
         border-color: var(--primary);
@@ -192,6 +196,26 @@
         border-color: var(--primary);
         color: #fff;
         font-weight: 600;
+      }
+      .unit-tab-cerrada {
+        border-color: #f59e0b !important;
+        color: #92400e !important;
+        background: #fffbeb !important;
+        opacity: 0.85;
+      }
+      .unit-tab-cerrada.active {
+        background: #f59e0b !important;
+        border-color: #f59e0b !important;
+        color: #fff !important;
+      }
+      .unit-tab-badge {
+        font-size: 0.62rem;
+        padding: 1px 5px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.12);
+        margin-left: 2px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
       }
 
       /* ── Rubro chips bar ─────────────────────────────────────────────── */
@@ -721,6 +745,33 @@
               <div class="rubros-bar" id="rubrosBar">
                 <span style="font-size: 0.78rem; color: var(--text-muted)"
                   >Selecciona una unidad</span
+                >
+              </div>
+
+              <!-- Aviso unidad cerrada -->
+              <div
+                id="bannerUnidadCerrada"
+                style="
+                  display: none;
+                  align-items: center;
+                  gap: 10px;
+                  background: #fff7ed;
+                  border: 1px solid #fed7aa;
+                  border-radius: 10px;
+                  padding: 10px 16px;
+                  margin-bottom: 12px;
+                  font-size: 0.85rem;
+                  color: #92400e;
+                "
+              >
+                <iconify-icon
+                  icon="mdi:lock-outline"
+                  style="font-size: 1.2rem; color: #f59e0b; flex-shrink: 0"
+                ></iconify-icon>
+                <span
+                  ><strong>Unidad cerrada.</strong> Las calificaciones ya fueron
+                  calculadas y asentadas. Para modificarlas se requiere
+                  autorización formal.</span
                 >
               </div>
 

@@ -251,13 +251,17 @@ async function cargarUnidadesGrupo() {
   // Render unit tabs
   const tabsEl = document.getElementById("unitTabs");
   tabsEl.innerHTML = estado.unidadesGrupo
-    .map(
-      (u) =>
-        `<button class="unit-tab" data-uid="${u.id_unidad}"
+    .map((u) => {
+      const cerrada = u.estatus === "Cerrada";
+      const icon = cerrada
+        ? `<iconify-icon icon="mdi:lock-outline" style="font-size:.75rem;margin-right:3px;opacity:.7"></iconify-icon>`
+        : "";
+      return `<button class="unit-tab ${cerrada ? "unit-tab-cerrada" : ""}" data-uid="${u.id_unidad}" data-estatus="${u.estatus}"
        onclick="seleccionarUnidadTab(${u.id_unidad})">
-       Unidad ${u.numero_unidad}
-     </button>`,
-    )
+       ${icon}Unidad ${u.numero_unidad}
+       <span class="unit-tab-badge">${u.estatus}</span>
+     </button>`;
+    })
     .join("");
 
   // Update "número de unidades" field
@@ -295,6 +299,21 @@ async function seleccionarUnidadTab(id_unidad) {
   estado.rubrosState = {};
   bonusState = {};
 
+  // Check if unit is closed and show/hide banner
+  const unidadData = estado.unidadesGrupo.find(
+    (u) => u.id_unidad === id_unidad,
+  );
+  const bannerCerrada = document.getElementById("bannerUnidadCerrada");
+  const accionesCaptura = document.getElementById("accionesCaptura");
+  if (bannerCerrada) {
+    if (unidadData?.estatus === "Cerrada") {
+      bannerCerrada.style.display = "flex";
+      if (accionesCaptura) accionesCaptura.style.display = "none";
+    } else {
+      bannerCerrada.style.display = "none";
+    }
+  }
+
   await cargarActividades();
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
@@ -302,7 +321,9 @@ async function seleccionarUnidadTab(id_unidad) {
   renderRubrosBar();
   renderTablaCalificaciones();
 
-  document.getElementById("accionesCaptura").style.display = "flex";
+  if (unidadData?.estatus !== "Cerrada") {
+    if (accionesCaptura) accionesCaptura.style.display = "flex";
+  }
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 }
@@ -452,11 +473,14 @@ function renderTablaCalificaciones() {
     </th>`;
   });
 
-  thead += `<th style="min-width:76px;background:rgba(245,158,11,.07)">
+  thead += `<th style="min-width:80px;background:rgba(100,116,139,.06)">
+    Base<small>sin bonus</small>
+  </th>
+  <th style="min-width:76px;background:rgba(245,158,11,.07)">
     Bonus<small>pts extra</small>
   </th>
   <th style="min-width:90px;background:rgba(30,64,175,.06)">
-    Cal. Final<small>calculada</small>
+    Cal. Final<small>con bonus</small>
   </th></tr>`;
 
   // ── Rows ──
@@ -499,6 +523,20 @@ function renderTablaCalificaciones() {
       }
     });
 
+    // Base (sin bonus)
+    const base = calcularBaseScore(al.matricula);
+    const baseColor =
+      base === null
+        ? "var(--text-muted)"
+        : base >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    tbody += `<td style="text-align:center">
+      <span id="base-${al.matricula}" style="color:${baseColor};font-weight:500">
+        ${base !== null ? base : "—"}
+      </span>
+    </td>`;
+
     // Bonus
     const b = getBonus(al.matricula);
     tbody += `<td class="td-bonus">
@@ -507,6 +545,12 @@ function renderTablaCalificaciones() {
         data-matricula="${al.matricula}"
         value="${b.puntos ?? ""}" placeholder="0"
         oninput="onBonusInput('${al.matricula}',this.value)" />
+      <input class="bonus-just-input"
+        type="text" maxlength="120" placeholder="Justificación (obligatorio)"
+        data-matricula="${al.matricula}"
+        value="${b.justificacion ?? ""}"
+        style="display:${b.puntos ? "block" : "none"};margin-top:4px;font-size:0.72rem;padding:3px 6px;border-radius:6px;border:1px solid var(--border);width:100%"
+        oninput="onBonusJustInput('${al.matricula}',this.value)" />
     </td>`;
 
     // Cal. Final
@@ -577,19 +621,56 @@ function calcularCalFinal(matricula) {
   return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
 }
 
+// ── Base score (sin bonus) ──────────────────────────────────────────
+function calcularBaseScore(matricula) {
+  if (!estado.rubros.length) return null;
+  let total = 0;
+  let hayAlgo = false;
+  for (const r of estado.rubros) {
+    let grade = null;
+    if (r.tipo === "actividades") {
+      grade = calcularPromedioActividades(matricula);
+    } else {
+      const v = getRubroEstado(matricula, r.key);
+      grade = v !== "" && v !== undefined ? parseFloat(v) : null;
+    }
+    if (grade !== null) {
+      total += grade * (r.pct / 100);
+      hayAlgo = true;
+    }
+  }
+  if (!hayAlgo) return null;
+  return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
+}
+
 // ── Recalculate a row ─────────────────────────────────────────────────
 function recalcularFila(matricula) {
   const final = calcularCalFinal(matricula);
-  const el = document.getElementById(`final-${matricula}`);
-  if (!el) return;
-  const color =
-    final === null
-      ? "var(--text-muted)"
-      : final >= 70
-        ? "var(--success)"
-        : "var(--danger)";
-  el.textContent = final !== null ? final : "—";
-  el.style.color = color;
+  const base = calcularBaseScore(matricula);
+
+  const elFinal = document.getElementById(`final-${matricula}`);
+  const elBase = document.getElementById(`base-${matricula}`);
+
+  if (elFinal) {
+    const color =
+      final === null
+        ? "var(--text-muted)"
+        : final >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    elFinal.textContent = final !== null ? final : "—";
+    elFinal.style.color = color;
+  }
+  if (elBase) {
+    const color =
+      base === null
+        ? "var(--text-muted)"
+        : base >= 70
+          ? "var(--success)"
+          : "var(--danger)";
+    elBase.textContent = base !== null ? base : "—";
+    elBase.style.color = color;
+  }
 }
 
 function onRubroInput(matricula, key, val) {
@@ -601,7 +682,18 @@ function onBonusInput(matricula, val) {
   if (!bonusState[matricula])
     bonusState[matricula] = { puntos: "", justificacion: "" };
   bonusState[matricula].puntos = val;
+  // Show/hide justification field
+  const justEl = document.querySelector(
+    `.bonus-just-input[data-matricula="${matricula}"]`,
+  );
+  if (justEl) justEl.style.display = parseFloat(val) > 0 ? "block" : "none";
   recalcularFila(matricula);
+}
+
+function onBonusJustInput(matricula, val) {
+  if (!bonusState[matricula])
+    bonusState[matricula] = { puntos: "", justificacion: "" };
+  bonusState[matricula].justificacion = val;
 }
 
 // ── Modal: actividades de un alumno ──────────────────────────────────

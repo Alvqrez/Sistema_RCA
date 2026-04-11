@@ -215,4 +215,47 @@ router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
   );
 });
 
+// GET — desglose de actividades de un alumno en una unidad de un grupo
+// Usado por el portal del alumno para mostrar transparencia matemática (Etapa 2, req. 3.3)
+router.get(
+  "/desglose/:matricula/:id_grupo/:id_unidad",
+  verificarToken,
+  (req, res) => {
+    const { matricula, id_grupo, id_unidad } = req.params;
+    const sql = `
+    SELECT
+      act.id_actividad,
+      act.nombre_actividad,
+      act.ponderacion,
+      act.tipo_evaluacion,
+      COALESCE(ra.calificacion_obtenida, 0)                    AS calificacion,
+      ra.estatus,
+      ROUND(
+        COALESCE(ra.calificacion_obtenida, 0) * (act.ponderacion / 100), 2
+      )                                                          AS aporte_ponderado
+    FROM actividad act
+    LEFT JOIN resultado_actividad ra
+      ON ra.id_actividad = act.id_actividad AND ra.matricula = ?
+    WHERE act.id_grupo = ? AND act.id_unidad = ?
+    ORDER BY act.id_actividad ASC
+  `;
+    db.query(sql, [matricula, id_grupo, id_unidad], (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      const sumaPond = rows.reduce((s, r) => s + parseFloat(r.ponderacion), 0);
+      const sumaAporte = rows.reduce(
+        (s, r) => s + parseFloat(r.aporte_ponderado),
+        0,
+      );
+      const promedio =
+        sumaPond > 0 ? Math.round((sumaAporte / sumaPond) * 10000) / 100 : 0;
+      res.json({
+        actividades: rows,
+        sumaPonderacion: sumaPond,
+        promedioCalculado: promedio,
+      });
+    });
+  },
+);
+
 module.exports = router;
