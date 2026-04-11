@@ -251,17 +251,13 @@ async function cargarUnidadesGrupo() {
   // Render unit tabs
   const tabsEl = document.getElementById("unitTabs");
   tabsEl.innerHTML = estado.unidadesGrupo
-    .map((u) => {
-      const cerrada = u.estatus === "Cerrada";
-      const icon = cerrada
-        ? `<iconify-icon icon="mdi:lock-outline" style="font-size:.75rem;margin-right:3px;opacity:.7"></iconify-icon>`
-        : "";
-      return `<button class="unit-tab ${cerrada ? "unit-tab-cerrada" : ""}" data-uid="${u.id_unidad}" data-estatus="${u.estatus}"
+    .map(
+      (u) =>
+        `<button class="unit-tab" data-uid="${u.id_unidad}"
        onclick="seleccionarUnidadTab(${u.id_unidad})">
-       ${icon}Unidad ${u.numero_unidad}
-       <span class="unit-tab-badge">${u.estatus}</span>
-     </button>`;
-    })
+       Unidad ${u.numero_unidad}
+     </button>`,
+    )
     .join("");
 
   // Update "número de unidades" field
@@ -299,21 +295,6 @@ async function seleccionarUnidadTab(id_unidad) {
   estado.rubrosState = {};
   bonusState = {};
 
-  // Check if unit is closed and show/hide banner
-  const unidadData = estado.unidadesGrupo.find(
-    (u) => u.id_unidad === id_unidad,
-  );
-  const bannerCerrada = document.getElementById("bannerUnidadCerrada");
-  const accionesCaptura = document.getElementById("accionesCaptura");
-  if (bannerCerrada) {
-    if (unidadData?.estatus === "Cerrada") {
-      bannerCerrada.style.display = "flex";
-      if (accionesCaptura) accionesCaptura.style.display = "none";
-    } else {
-      bannerCerrada.style.display = "none";
-    }
-  }
-
   await cargarActividades();
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
@@ -321,9 +302,7 @@ async function seleccionarUnidadTab(id_unidad) {
   renderRubrosBar();
   renderTablaCalificaciones();
 
-  if (unidadData?.estatus !== "Cerrada") {
-    if (accionesCaptura) accionesCaptura.style.display = "flex";
-  }
+  document.getElementById("accionesCaptura").style.display = "flex";
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 }
@@ -473,14 +452,11 @@ function renderTablaCalificaciones() {
     </th>`;
   });
 
-  thead += `<th style="min-width:80px;background:rgba(100,116,139,.06)">
-    Base<small>sin bonus</small>
-  </th>
-  <th style="min-width:76px;background:rgba(245,158,11,.07)">
+  thead += `<th style="min-width:76px;background:rgba(245,158,11,.07)">
     Bonus<small>pts extra</small>
   </th>
   <th style="min-width:90px;background:rgba(30,64,175,.06)">
-    Cal. Final<small>con bonus</small>
+    Cal. Final<small>calculada</small>
   </th></tr>`;
 
   // ── Rows ──
@@ -518,24 +494,10 @@ function renderTablaCalificaciones() {
             type="number" min="0" max="100"
             data-matricula="${al.matricula}" data-key="${r.key}"
             value="${val}" placeholder="—"
-            oninput="onRubroInput('${al.matricula}','${r.key}',this.value)" />
+            oninput="onCalInput(this);onRubroInput('${al.matricula}','${r.key}',this.value)" />
         </td>`;
       }
     });
-
-    // Base (sin bonus)
-    const base = calcularBaseScore(al.matricula);
-    const baseColor =
-      base === null
-        ? "var(--text-muted)"
-        : base >= 70
-          ? "var(--success)"
-          : "var(--danger)";
-    tbody += `<td style="text-align:center">
-      <span id="base-${al.matricula}" style="color:${baseColor};font-weight:500">
-        ${base !== null ? base : "—"}
-      </span>
-    </td>`;
 
     // Bonus
     const b = getBonus(al.matricula);
@@ -545,12 +507,6 @@ function renderTablaCalificaciones() {
         data-matricula="${al.matricula}"
         value="${b.puntos ?? ""}" placeholder="0"
         oninput="onBonusInput('${al.matricula}',this.value)" />
-      <input class="bonus-just-input"
-        type="text" maxlength="120" placeholder="Justificación (obligatorio)"
-        data-matricula="${al.matricula}"
-        value="${b.justificacion ?? ""}"
-        style="display:${b.puntos ? "block" : "none"};margin-top:4px;font-size:0.72rem;padding:3px 6px;border-radius:6px;border:1px solid var(--border);width:100%"
-        oninput="onBonusJustInput('${al.matricula}',this.value)" />
     </td>`;
 
     // Cal. Final
@@ -575,6 +531,23 @@ function renderTablaCalificaciones() {
 }
 
 // ── Calculate actividades avg (from resultados) ────────────────────────
+// ── Clamp calificación al rango institucional 0–100 ──────────────────
+function clampCal(val) {
+  if (val === null || val === undefined || val === "") return null;
+  const n = parseFloat(val);
+  if (isNaN(n)) return null;
+  return Math.min(100, Math.max(0, n));
+}
+
+// Llama desde oninput en cada input de calificación
+function onCalInput(inp) {
+  const val = parseFloat(inp.value);
+  if (!isNaN(val)) {
+    if (val > 100) inp.value = 100;
+    if (val < 0) inp.value = 0;
+  }
+}
+
 function calcularPromedioActividades(matricula) {
   if (!estado.actividades.length) return null;
   const sumaPond = estado.actividades.reduce(
@@ -585,7 +558,7 @@ function calcularPromedioActividades(matricula) {
   let suma = 0;
   estado.actividades.forEach((a) => {
     const r = estado.resultados[matricula]?.[a.id_actividad];
-    const cal = r?.estatus === "NP" ? 0 : parseFloat(r?.cal) || 0;
+    const cal = r?.estatus === "NP" ? 0 : (clampCal(r?.cal) ?? 0);
     suma += cal * (parseFloat(a.ponderacion) / 100);
   });
   // Normalize if ponderaciones don't sum to 100
@@ -621,56 +594,19 @@ function calcularCalFinal(matricula) {
   return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
 }
 
-// ── Base score (sin bonus) ──────────────────────────────────────────
-function calcularBaseScore(matricula) {
-  if (!estado.rubros.length) return null;
-  let total = 0;
-  let hayAlgo = false;
-  for (const r of estado.rubros) {
-    let grade = null;
-    if (r.tipo === "actividades") {
-      grade = calcularPromedioActividades(matricula);
-    } else {
-      const v = getRubroEstado(matricula, r.key);
-      grade = v !== "" && v !== undefined ? parseFloat(v) : null;
-    }
-    if (grade !== null) {
-      total += grade * (r.pct / 100);
-      hayAlgo = true;
-    }
-  }
-  if (!hayAlgo) return null;
-  return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
-}
-
 // ── Recalculate a row ─────────────────────────────────────────────────
 function recalcularFila(matricula) {
   const final = calcularCalFinal(matricula);
-  const base = calcularBaseScore(matricula);
-
-  const elFinal = document.getElementById(`final-${matricula}`);
-  const elBase = document.getElementById(`base-${matricula}`);
-
-  if (elFinal) {
-    const color =
-      final === null
-        ? "var(--text-muted)"
-        : final >= 70
-          ? "var(--success)"
-          : "var(--danger)";
-    elFinal.textContent = final !== null ? final : "—";
-    elFinal.style.color = color;
-  }
-  if (elBase) {
-    const color =
-      base === null
-        ? "var(--text-muted)"
-        : base >= 70
-          ? "var(--success)"
-          : "var(--danger)";
-    elBase.textContent = base !== null ? base : "—";
-    elBase.style.color = color;
-  }
+  const el = document.getElementById(`final-${matricula}`);
+  if (!el) return;
+  const color =
+    final === null
+      ? "var(--text-muted)"
+      : final >= 70
+        ? "var(--success)"
+        : "var(--danger)";
+  el.textContent = final !== null ? final : "—";
+  el.style.color = color;
 }
 
 function onRubroInput(matricula, key, val) {
@@ -682,18 +618,7 @@ function onBonusInput(matricula, val) {
   if (!bonusState[matricula])
     bonusState[matricula] = { puntos: "", justificacion: "" };
   bonusState[matricula].puntos = val;
-  // Show/hide justification field
-  const justEl = document.querySelector(
-    `.bonus-just-input[data-matricula="${matricula}"]`,
-  );
-  if (justEl) justEl.style.display = parseFloat(val) > 0 ? "block" : "none";
   recalcularFila(matricula);
-}
-
-function onBonusJustInput(matricula, val) {
-  if (!bonusState[matricula])
-    bonusState[matricula] = { puntos: "", justificacion: "" };
-  bonusState[matricula].justificacion = val;
 }
 
 // ── Modal: actividades de un alumno ──────────────────────────────────
@@ -737,7 +662,7 @@ function abrirModalActividades(matricula) {
         <input class="grade-input modal-act-input" type="number" min="0" max="100"
           data-actividad="${a.id_actividad}" data-ponderacion="${a.ponderacion}"
           value="${val}" placeholder="${r?.estatus === "NP" ? "NP" : "—"}"
-          oninput="recalcularModalAvg()" />
+          oninput="onCalInput(this);recalcularModalAvg()" />
       </td>
     </tr>`;
     })
@@ -774,7 +699,9 @@ function recalcularModalAvg() {
   document.querySelectorAll(".modal-act-input").forEach((inp) => {
     const pond = parseFloat(inp.dataset.ponderacion) || 0;
     sumaPond += pond;
-    avg += (parseFloat(inp.value) || 0) * (pond / 100);
+    avg +=
+      (Math.min(100, Math.max(0, parseFloat(inp.value) || 0)) || 0) *
+      (pond / 100);
   });
   if (Math.abs(sumaPond - 100) > 0.5 && sumaPond > 0)
     avg = (avg / sumaPond) * 100;
@@ -799,7 +726,7 @@ async function guardarDesdeModal() {
 
   const resultados = [];
   inputs.forEach((inp) => {
-    const cal = inp.value.trim() === "" ? null : parseFloat(inp.value);
+    const cal = inp.value.trim() === "" ? null : clampCal(inp.value);
     resultados.push({
       matricula: _modalMatricula,
       calificacion_obtenida: cal,
@@ -811,7 +738,7 @@ async function guardarDesdeModal() {
   let guardados = 0;
   for (const inp of inputs) {
     const idAct = parseInt(inp.dataset.actividad);
-    const cal = inp.value.trim() === "" ? null : parseFloat(inp.value);
+    const cal = inp.value.trim() === "" ? null : clampCal(inp.value);
     try {
       const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
         method: "POST",
@@ -869,7 +796,8 @@ async function guardarCalificaciones() {
     document
       .querySelectorAll(`input[data-actividad="${act.id_actividad}"]`)
       .forEach((inp) => {
-        const cal = inp.value.trim() === "" ? null : parseFloat(inp.value);
+        const rawVal = inp.value.trim();
+        const cal = rawVal === "" ? null : clampCal(rawVal);
         resultados.push({
           matricula: inp.dataset.matricula,
           calificacion_obtenida: cal,

@@ -84,6 +84,13 @@ router.post("/", maestroOAdmin, (req, res) => {
         calificacion_obtenida === undefined
           ? null
           : parseFloat(calificacion_obtenida);
+
+      // Validar rango institucional 0–100 (sección 1.3.1)
+      if (cal !== null && (isNaN(cal) || cal < 0 || cal > 100)) {
+        return res.status(400).json({
+          error: "La calificación debe estar entre 0 y 100",
+        });
+      }
       const est = estatus || (cal === null ? "NP" : "Validada");
 
       const sql = `
@@ -139,16 +146,21 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
-      const values = resultados.map((r) => [
-        r.matricula,
-        id_actividad,
-        r.calificacion_obtenida === undefined
-          ? null
-          : parseFloat(r.calificacion_obtenida),
-        r.estatus ||
-          (r.calificacion_obtenida === undefined ? "NP" : "Validada"),
-        numero_empleado,
-      ]);
+      const values = resultados.map((r) => {
+        const cal =
+          r.calificacion_obtenida === undefined
+            ? null
+            : parseFloat(r.calificacion_obtenida);
+        // Clamp al rango institucional 0–100
+        const calSegura = cal === null ? null : Math.min(100, Math.max(0, cal));
+        return [
+          r.matricula,
+          id_actividad,
+          calSegura,
+          r.estatus || (calSegura === null ? "NP" : "Validada"),
+          numero_empleado,
+        ];
+      });
 
       const sql = `
       INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)

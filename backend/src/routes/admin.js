@@ -87,13 +87,11 @@ router.post("/usuarios", soloAdmin, async (req, res) => {
         }
         return res.status(500).json({ error: "Error interno del servidor" });
       }
-      res
-        .status(201)
-        .json({
-          success: true,
-          mensaje: "Usuario creado",
-          id_usuario: result.insertId,
-        });
+      res.status(201).json({
+        success: true,
+        mensaje: "Usuario creado",
+        id_usuario: result.insertId,
+      });
     });
   } catch (err) {
     res.status(500).json({ error: "Error interno del servidor" });
@@ -214,13 +212,11 @@ router.post("/administradores", soloAdmin, async (req, res) => {
                 .status(500)
                 .json({ error: "Error interno del servidor" });
             }
-            res
-              .status(201)
-              .json({
-                success: true,
-                mensaje: "Administrador creado",
-                id_admin,
-              });
+            res.status(201).json({
+              success: true,
+              mensaje: "Administrador creado",
+              id_admin,
+            });
           },
         );
       },
@@ -228,6 +224,97 @@ router.post("/administradores", soloAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error interno del servidor" });
   }
+});
+
+// GET — exportar respaldo completo del sistema en JSON
+// Incluye: alumnos, maestros, materias, grupos, inscripciones, unidades, actividades
+router.get("/backup", soloAdmin, (req, res) => {
+  const tablas = {
+    alumnos:
+      "SELECT matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional FROM alumno",
+    maestros:
+      "SELECT numero_empleado, nombre, apellido_paterno, apellido_materno, correo_institucional, departamento, estatus FROM maestro",
+    carreras: "SELECT * FROM carrera",
+    materias: "SELECT * FROM materia",
+    periodos: "SELECT * FROM periodo_escolar",
+    grupos: "SELECT * FROM grupo",
+    inscripciones: "SELECT * FROM inscripcion",
+    unidades: "SELECT * FROM unidad",
+    actividades: "SELECT * FROM actividad",
+    calificaciones_unidad: "SELECT * FROM calificacion_unidad",
+    calificaciones_final: "SELECT * FROM calificacion_final",
+    bonus_unidad: "SELECT * FROM bonusunidad",
+    bonus_final: "SELECT * FROM bonusfinal",
+  };
+  const keys = Object.keys(tablas);
+  const resultado = {};
+  let pendientes = keys.length;
+
+  keys.forEach((key) => {
+    db.query(tablas[key], (err, rows) => {
+      resultado[key] = err ? [] : rows;
+      if (--pendientes === 0) {
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="rca_backup_${new Date().toISOString().slice(0, 10)}.json"`,
+        );
+        res.json({
+          sistema: "RCA",
+          version: "1.1",
+          fecha_backup: new Date().toISOString(),
+          datos: resultado,
+        });
+      }
+    });
+  });
+});
+
+// PUT — cambiar contraseña del usuario autenticado (perfil propio)
+router.put("/mi-password", async (req, res) => {
+  // Acepta cualquier rol autenticado
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer "))
+    return res.status(401).json({ error: "No autorizado" });
+  const jwt = require("jsonwebtoken");
+  let payload;
+  try {
+    payload = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
+  } catch {
+    return res.status(401).json({ error: "Token inválido" });
+  }
+  const { passwordActual, nuevaPassword } = req.body;
+  if (!passwordActual || !nuevaPassword)
+    return res.status(400).json({ error: "Faltan campos requeridos" });
+  if (nuevaPassword.length < 6)
+    return res
+      .status(400)
+      .json({ error: "La contraseña debe tener al menos 6 caracteres" });
+
+  db.query(
+    "SELECT id_usuario, pwd FROM usuario WHERE id_usuario = ?",
+    [payload.id_usuario],
+    async (err, rows) => {
+      if (err || !rows.length)
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      const bcrypt = require("bcrypt");
+      const valida = await bcrypt.compare(passwordActual, rows[0].pwd);
+      if (!valida)
+        return res.status(401).json({ error: "Contraseña actual incorrecta" });
+      const hash = await bcrypt.hash(nuevaPassword, 10);
+      db.query(
+        "UPDATE usuario SET pwd = ? WHERE id_usuario = ?",
+        [hash, payload.id_usuario],
+        (e) => {
+          if (e) return res.status(500).json({ error: "Error interno" });
+          res.json({
+            success: true,
+            mensaje: "Contraseña actualizada correctamente",
+          });
+        },
+      );
+    },
+  );
 });
 
 module.exports = router;

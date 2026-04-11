@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Utilerías — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .util-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+      }
+      .util-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .util-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .util-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+      .util-icon-blue {
+        background: rgba(37, 99, 235, 0.12);
+        color: #2563eb;
+      }
+      .util-icon-green {
+        background: rgba(22, 163, 74, 0.12);
+        color: #16a34a;
+      }
+      .util-icon-purple {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
+      }
+      .util-icon-amber {
+        background: rgba(217, 119, 6, 0.12);
+        color: #d97706;
+      }
+      .util-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .util-card-desc {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-row label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+      .form-row input {
+        padding: 9px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.88rem;
+        color: var(--text-main);
+        background: var(--bg-app);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .form-row input:focus {
+        border-color: var(--primary);
+        background: var(--bg-card);
+      }
+      .msg-ok {
+        font-size: 0.82rem;
+        color: var(--success, #16a34a);
+        margin-top: 4px;
+        display: none;
+      }
+      .msg-err {
+        font-size: 0.82rem;
+        color: var(--danger, #dc2626);
+        margin-top: 4px;
+        display: none;
+      }
+      .export-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .export-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.85rem;
+      }
+      .export-row:last-child {
+        border-bottom: none;
+      }
+      .export-row span {
+        color: var(--text-main);
+      }
+      .backup-info {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+      .backup-info strong {
+        color: var(--text-main);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Utilerías</h1>
+            <p class="page-subtitle">
+              Configuración del sistema, respaldo y exportaciones
+            </p>
+          </div>
+        </div>
+
+        <div class="util-grid">
+          <!-- ── PERFIL DE USUARIO ────────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-blue">
+                <iconify-icon icon="lucide:user-cog"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Perfil de usuario</div>
+                <p class="util-card-desc">
+                  Cambia tu contraseña de acceso al sistema
+                </p>
+              </div>
+            </div>
+
+            <div
+              id="perfilInfo"
+              style="
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                padding: 8px 12px;
+                background: var(--bg-app);
+                border-radius: 8px;
+                line-height: 1.8;
+              "
+            >
+              <strong style="color: var(--text-main)" id="perfilNombre"
+                >—</strong
+              ><br />
+              Usuario: <code id="perfilUsername">—</code><br />
+              Rol: <span id="perfilRol">—</span>
+            </div>
+
+            <div class="form-row">
+              <label>Contraseña actual</label>
+              <input
+                type="password"
+                id="passActual"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="form-row">
+              <label>Nueva contraseña</label>
+              <input
+                type="password"
+                id="passNueva"
+                placeholder="Mínimo 6 caracteres"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="form-row">
+              <label>Confirmar nueva contraseña</label>
+              <input
+                type="password"
+                id="passConfirm"
+                placeholder="Repite la nueva contraseña"
+                autocomplete="new-password"
+              />
+            </div>
+            <p class="msg-ok" id="perfilOk">
+              ✓ Contraseña actualizada correctamente
+            </p>
+            <p class="msg-err" id="perfilErr"></p>
+            <button
+              class="btn btn-primary"
+              onclick="cambiarPassword()"
+              style="width: 100%"
+            >
+              <iconify-icon icon="lucide:lock-keyhole"></iconify-icon>
+              Actualizar contraseña
+            </button>
+          </div>
+
+          <!-- ── EXPORTACIONES CSV ───────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-green">
+                <iconify-icon icon="lucide:file-down"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Exportar datos</div>
+                <p class="util-card-desc">
+                  Descarga la información del sistema en formato CSV
+                </p>
+              </div>
+            </div>
+            <div class="export-list">
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:users"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Alumnos</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('alumnos')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:graduation-cap"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Maestros</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('maestros')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:book-open"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Materias</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('materias')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:layout-list"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Grupos</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('grupos')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:clipboard-list"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Inscripciones</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('inscripciones')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+              <div class="export-row">
+                <span
+                  ><iconify-icon
+                    icon="lucide:bar-chart-3"
+                    style="margin-right: 6px"
+                  ></iconify-icon
+                  >Calificaciones</span
+                >
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="exportarCSV('calificaciones')"
+                >
+                  <iconify-icon icon="lucide:download"></iconify-icon> CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── RESPALDO COMPLETO ───────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-purple">
+                <iconify-icon icon="lucide:database-backup"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Respaldo del sistema</div>
+                <p class="util-card-desc">
+                  Genera y descarga una copia de seguridad completa
+                </p>
+              </div>
+            </div>
+            <div class="backup-info">
+              El respaldo incluye:
+              <strong
+                >alumnos, maestros, materias, grupos, inscripciones, unidades,
+                actividades, calificaciones y bonus</strong
+              >. Se descarga como archivo JSON con fecha y hora.
+            </div>
+            <button
+              class="btn btn-primary"
+              onclick="descargarBackup()"
+              id="btnBackup"
+              style="width: 100%"
+            >
+              <iconify-icon icon="lucide:download-cloud"></iconify-icon> Generar
+              y descargar respaldo
+            </button>
+            <p class="msg-ok" id="backupOk">
+              ✓ Respaldo generado correctamente
+            </p>
+            <p class="msg-err" id="backupErr"></p>
+            <p
+              style="
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                text-align: center;
+                margin: 0;
+              "
+            >
+              Se recomienda realizar respaldos periódicamente
+            </p>
+          </div>
+
+          <!-- ── INFORMACIÓN DEL SISTEMA ────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-amber">
+                <iconify-icon icon="lucide:info"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Información del sistema</div>
+                <p class="util-card-desc">Versión y datos técnicos del RCA</p>
+              </div>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                font-size: 0.83rem;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Sistema</span>
+                <span style="font-weight: 600">RCA v1.1</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Institución</span>
+                <span style="font-weight: 600">ITV · TecNM</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Backend</span>
+                <span>Node.js + Express</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Base de datos</span>
+                <span>MySQL 8.0</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                "
+              >
+                <span style="color: var(--text-muted)">Sesión activa</span>
+                <span id="infoSesion" style="font-size: 0.78rem">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const tk = () => localStorage.getItem("token");
+
+      // ── Toast ─────────────────────────────────────────────────────
+      function toast(msg, tipo = "success") {
+        const c = document.getElementById("toast-container");
+        if (!c) return;
+        const t = document.createElement("div");
+        t.className = `toast toast-${tipo}`;
+        const icons = {
+          success: "lucide:check-circle",
+          error: "lucide:x-circle",
+          info: "lucide:info",
+        };
+        t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3200);
+      }
+
+      // ── Cargar info del perfil ────────────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        soloPermitido("administrador");
+        const nombre = localStorage.getItem("nombre") || "—";
+        const rol = localStorage.getItem("rol") || "—";
+        // Decode username from token
+        let username = "—";
+        try {
+          const payload = JSON.parse(atob(tk().split(".")[1]));
+          username = payload.username || "—";
+          document.getElementById("infoSesion").textContent =
+            `${username} · ${new Date().toLocaleDateString("es-MX")}`;
+        } catch (_) {}
+        document.getElementById("perfilNombre").textContent = nombre;
+        document.getElementById("perfilUsername").textContent = username;
+        document.getElementById("perfilRol").textContent =
+          {
+            administrador: "Administrador",
+            maestro: "Docente",
+            alumno: "Alumno",
+          }[rol] || rol;
+      });
+
+      // ── Cambiar contraseña ────────────────────────────────────────
+      async function cambiarPassword() {
+        const actual = document.getElementById("passActual").value;
+        const nueva = document.getElementById("passNueva").value;
+        const confirm = document.getElementById("passConfirm").value;
+        const okEl = document.getElementById("perfilOk");
+        const errEl = document.getElementById("perfilErr");
+        okEl.style.display = errEl.style.display = "none";
+
+        if (!actual || !nueva || !confirm) {
+          errEl.textContent = "Completa todos los campos.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (nueva.length < 6) {
+          errEl.textContent =
+            "La nueva contraseña debe tener al menos 6 caracteres.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (nueva !== confirm) {
+          errEl.textContent = "Las contraseñas nuevas no coinciden.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        try {
+          const r = await fetch(`${BASE}/api/admin/mi-password`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tk()}`,
+            },
+            body: JSON.stringify({
+              passwordActual: actual,
+              nuevaPassword: nueva,
+            }),
+          });
+          const d = await r.json();
+          if (d.success) {
+            okEl.style.display = "block";
+            document.getElementById("passActual").value = "";
+            document.getElementById("passNueva").value = "";
+            document.getElementById("passConfirm").value = "";
+            toast("Contraseña actualizada");
+          } else {
+            errEl.textContent = d.error || "Error al actualizar.";
+            errEl.style.display = "block";
+          }
+        } catch {
+          errEl.textContent = "Error de conexión con el servidor.";
+          errEl.style.display = "block";
+        }
+      }
+
+      // ── Exportar CSV por módulo ───────────────────────────────────
+      const csvEndpoints = {
+        alumnos: {
+          url: "/api/alumnos",
+          cols: [
+            "matricula",
+            "nombre",
+            "apellido_paterno",
+            "apellido_materno",
+            "id_carrera",
+            "correo_institucional",
+          ],
+        },
+        maestros: {
+          url: "/api/maestros",
+          cols: [
+            "numero_empleado",
+            "nombre",
+            "apellido_paterno",
+            "apellido_materno",
+            "correo_institucional",
+            "departamento",
+            "estatus",
+          ],
+        },
+        materias: {
+          url: "/api/materias",
+          cols: [
+            "clave_materia",
+            "nombre_materia",
+            "creditos_totales",
+            "horas_teoricas",
+            "horas_practicas",
+            "no_unidades",
+          ],
+        },
+        grupos: {
+          url: "/api/grupos",
+          cols: [
+            "id_grupo",
+            "clave_materia",
+            "nombre_materia",
+            "numero_empleado",
+            "nombre_maestro",
+            "id_periodo",
+            "limite_alumnos",
+            "horario",
+            "aula",
+            "estatus",
+          ],
+        },
+        inscripciones: {
+          url: "/api/inscripciones",
+          cols: [
+            "matricula",
+            "id_grupo",
+            "nombre_alumno",
+            "nombre_materia",
+            "periodo",
+            "tipo_curso",
+            "estatus",
+            "fecha_inscripcion",
+          ],
+        },
+        calificaciones: {
+          url: "/api/calificaciones",
+          cols: [
+            "matricula",
+            "nombre_alumno",
+            "id_unidad",
+            "nombre_unidad",
+            "id_grupo",
+            "promedio_ponderado",
+            "calificacion_unidad_final",
+            "estatus_unidad",
+          ],
+        },
+      };
+
+      async function exportarCSV(modulo) {
+        const cfg = csvEndpoints[modulo];
+        try {
+          const r = await fetch(`${BASE}${cfg.url}`, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          });
+          const datos = await r.json();
+          if (!datos.length) {
+            toast(`Sin datos en ${modulo}`, "info");
+            return;
+          }
+          const rows = [cfg.cols.join(",")];
+          datos.forEach((d) =>
+            rows.push(
+              cfg.cols
+                .map((c) => `"${(d[c] ?? "").toString().replace(/"/g, '""')}"`)
+                .join(","),
+            ),
+          );
+          const blob = new Blob([rows.join("\n")], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `${modulo}_rca_${new Date().toISOString().slice(0, 10)}.csv`;
+          a.click();
+          toast(`${modulo}.csv exportado`);
+        } catch {
+          toast(`Error al exportar ${modulo}`, "error");
+        }
+      }
+
+      // ── Respaldo JSON completo ────────────────────────────────────
+      async function descargarBackup() {
+        const btn = document.getElementById("btnBackup");
+        const okEl = document.getElementById("backupOk");
+        const errEl = document.getElementById("backupErr");
+        okEl.style.display = errEl.style.display = "none";
+        btn.disabled = true;
+        btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Generando…`;
+
+        try {
+          const r = await fetch(`${BASE}/api/admin/backup`, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          });
+          if (!r.ok) throw new Error("Error del servidor");
+          const blob = await r.blob();
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `rca_backup_${new Date().toISOString().slice(0, 10)}.json`;
+          a.click();
+          okEl.style.display = "block";
+          toast("Respaldo descargado correctamente");
+        } catch {
+          errEl.textContent =
+            "No se pudo generar el respaldo. Verifica la conexión.";
+          errEl.style.display = "block";
+          toast("Error al generar respaldo", "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<iconify-icon icon="lucide:download-cloud"></iconify-icon> Generar y descargar respaldo`;
+        }
+      }
+
+      // Spinner CSS
+      const s = document.createElement("style");
+      s.textContent = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
+      document.head.appendChild(s);
+    </script>
+  </body>
+</html>
