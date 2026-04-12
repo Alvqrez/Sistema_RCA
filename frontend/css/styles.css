@@ -2809,16 +2809,6 @@ th.col-final {
 .btn-primary:hover {
   background: var(--primary-hover);
 }
-.btn-outline {
-  background: transparent;
-  color: var(--text-main);
-  border: 1.5px solid var(--border);
-}
-.btn-outline:hover {
-  background: var(--bg-app);
-  border-color: var(--primary);
-  color: var(--primary);
-}
 .btn-success {
   background: var(--success);
   color: white;

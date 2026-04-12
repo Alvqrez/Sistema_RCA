@@ -102,13 +102,12 @@
               <input type="number" id="noUnidades" min="1" value="3" />
             </div>
             <div class="botones">
-              <button type="submit" class="btn-guardar">Guardar</button>
-              <button
-                type="button"
-                class="btn-cancelar"
-                onclick="cerrarModalMateria()"
-              >
-                Cancelar
+              <button type="submit" class="btn btn-primary">
+                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                Guardar
+              </button>
+              <button class="btn btn-outline" onclick="cerrarModalMateria()">
+                <iconify-icon icon="mdi:close"></iconify-icon> Cancelar
               </button>
             </div>
             <p id="mensajeMateria"></p>

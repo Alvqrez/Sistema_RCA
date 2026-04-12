@@ -20,7 +20,8 @@ function toast(msg, tipo = "info") {
 // ── Init ──────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   soloPermitido("administrador", "maestro");
-  await cargarGrupos();
+  // Carga periodos y grupos en paralelo
+  await Promise.all([poblarFiltroPeriodo(), cargarGrupos()]);
 });
 
 // ── Cargar lista de grupos ─────────────────────────────────────────
@@ -31,22 +32,43 @@ async function cargarGrupos() {
     });
     if (!r.ok) throw new Error();
     todosGrupos = await r.json();
-    poblarFiltroPeriodo();
-    filtrarGrupos();
+    filtrarGrupos(); // renderiza la grid
   } catch {
     document.getElementById("gruposGrid").innerHTML =
       `<div class="empty-state"><iconify-icon icon="lucide:wifi-off"></iconify-icon><p>No se pudieron cargar los grupos</p></div>`;
   }
 }
 
-function poblarFiltroPeriodo() {
-  const sel = document.getElementById("filtroPeriodo");
-  const periodos = [
-    ...new Map(todosGrupos.map((g) => [g.id_periodo, g.periodo])).entries(),
-  ];
-  periodos.forEach(([id, desc]) => {
-    sel.innerHTML += `<option value="${id}">${desc ?? "Sin periodo"}</option>`;
-  });
+async function poblarFiltroPeriodo() {
+  try {
+    const r = await fetch(`${BASE}/api/periodos`, {
+      headers: { Authorization: `Bearer ${tk()}` },
+    });
+    if (!r.ok) throw new Error();
+    const periodos = await r.json();
+
+    const sel = document.getElementById("filtroPeriodo");
+    // Mantener la opción vacía inicial
+    sel.innerHTML = `<option value="">Todos los periodos</option>`;
+    periodos.forEach((p) => {
+      const etiqueta =
+        p.estatus === "Vigente"
+          ? " ✓"
+          : p.estatus === "Proximo"
+            ? " (próximo)"
+            : "";
+      sel.innerHTML += `<option value="${p.id_periodo}">${p.descripcion} (${p.anio})${etiqueta}</option>`;
+    });
+  } catch {
+    // Si falla la API de periodos, construye desde los grupos como fallback
+    const sel = document.getElementById("filtroPeriodo");
+    const periodos = [
+      ...new Map(todosGrupos.map((g) => [g.id_periodo, g.periodo])).entries(),
+    ];
+    periodos.forEach(([id, desc]) => {
+      sel.innerHTML += `<option value="${id}">${desc ?? "Sin periodo"}</option>`;
+    });
+  }
 }
 
 function filtrarGrupos() {

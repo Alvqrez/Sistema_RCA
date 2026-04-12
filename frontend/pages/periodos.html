@@ -30,63 +30,94 @@
           </h1>
         </div>
 
-        <div class="card">
+        <div class="card card-collapsible" id="cardPeriodoForm">
           <div class="card-title">
             <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
             <span id="tituloPeriodoForm">Nuevo periodo</span>
             <button
+              class="card-toggle-btn"
+              onclick="toggleCardPeriodo(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+            <button
               class="btn btn-outline btn-sm"
-              style="margin-left: auto"
               id="btnCancelarEdicion"
               onclick="cancelarEdicion()"
-              style="display: none"
+              style="display: none; margin-left: 8px"
             >
               <iconify-icon icon="mdi:close"></iconify-icon> Cancelar edición
             </button>
           </div>
-
-          <div class="config-grid">
-            <div class="field-group">
-              <label>Descripción</label>
-              <input
-                type="text"
-                id="pDesc"
-                placeholder="Ej. Enero–Junio 2026"
-              />
+          <div class="card-body">
+            <div class="config-grid">
+              <div class="field-group">
+                <label
+                  >Descripción
+                  <span style="color: var(--danger)">*</span></label
+                >
+                <input
+                  type="text"
+                  id="pDesc"
+                  placeholder="Ej. Enero-Junio 2026"
+                />
+              </div>
+              <div class="field-group">
+                <label>Año <span style="color: var(--danger)">*</span></label>
+                <input
+                  type="number"
+                  id="pAnio"
+                  placeholder="2026"
+                  min="2000"
+                  max="2099"
+                />
+              </div>
+              <div class="field-group">
+                <label
+                  >Fecha inicio
+                  <span style="color: var(--danger)">*</span></label
+                >
+                <input type="date" id="pInicio" oninput="validarFechas()" />
+              </div>
+              <div class="field-group">
+                <label
+                  >Fecha fin <span style="color: var(--danger)">*</span></label
+                >
+                <input type="date" id="pFin" oninput="validarFechas()" />
+              </div>
+              <div class="field-group">
+                <label>Estatus</label>
+                <select id="pEstatus">
+                  <option value="Proximo">Próximo</option>
+                  <option value="Vigente">Vigente (activo)</option>
+                  <option value="Concluido">Concluido</option>
+                </select>
+              </div>
             </div>
-            <div class="field-group">
-              <label>Año</label>
-              <input
-                type="number"
-                id="pAnio"
-                placeholder="2026"
-                min="2000"
-                max="2099"
-              />
+            <!-- Aviso de fechas inválidas -->
+            <div
+              id="avisoFechas"
+              style="
+                display: none;
+                margin-top: 10px;
+                padding: 10px 14px;
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 8px;
+                font-size: 0.83rem;
+                color: #92400e;
+              "
+            >
+              <iconify-icon icon="mdi:alert-outline"></iconify-icon>
+              <span id="avisoFechasMsg"></span>
             </div>
-            <div class="field-group">
-              <label>Fecha inicio</label>
-              <input type="date" id="pInicio" />
+            <div class="acciones-row" style="margin-top: 16px">
+              <button class="btn btn-primary" onclick="guardarPeriodo()">
+                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                <span id="lblBtnPeriodo">Crear periodo</span>
+              </button>
             </div>
-            <div class="field-group">
-              <label>Fecha fin</label>
-              <input type="date" id="pFin" />
-            </div>
-            <div class="field-group">
-              <label>Estatus</label>
-              <select id="pEstatus">
-                <option value="Proximo">Próximo</option>
-                <option value="Vigente">Vigente (activo)</option>
-                <option value="Concluido">Concluido</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="acciones-row" style="margin-top: 16px">
-            <button class="btn btn-primary" onclick="guardarPeriodo()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              <span id="lblBtnPeriodo">Crear periodo</span>
-            </button>
           </div>
         </div>
 
@@ -119,6 +150,42 @@
       const BASE = "http://localhost:3000";
       const tk = () => localStorage.getItem("token");
       let editandoId = null;
+
+      function showToastLocal(msg, tipo = "success") {
+        if (typeof showToast === "function") {
+          showToast(msg, tipo);
+          return;
+        }
+        let t = document.getElementById("rca-toast");
+        if (!t) {
+          t = document.createElement("div");
+          t.id = "rca-toast";
+          Object.assign(t.style, {
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            zIndex: "9999",
+            fontFamily: "Inter,sans-serif",
+            fontWeight: "600",
+            boxShadow: "0 4px 16px rgba(0,0,0,.15)",
+            transition: "opacity .3s",
+          });
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.background =
+          tipo === "success"
+            ? "#059669"
+            : tipo === "error"
+              ? "#dc2626"
+              : "#1e40af";
+        t.style.color = "#fff";
+        t.style.opacity = "1";
+        clearTimeout(t._t);
+        t._t = setTimeout(() => (t.style.opacity = "0"), 3200);
+      }
 
       async function cargarPeriodos() {
         const r = await fetch(`${BASE}/api/periodos`, {
@@ -203,7 +270,7 @@
           !body.fecha_inicio ||
           !body.fecha_fin
         ) {
-          alert("Completa todos los campos requeridos");
+          showToastLocal("Completa todos los campos requeridos", "error");
           return;
         }
         const url = editandoId
@@ -220,9 +287,15 @@
         });
         const d = await r.json();
         if (d.success) {
+          showToastLocal(
+            editandoId ? "Periodo actualizado" : "Periodo creado correctamente",
+            "success",
+          );
           cancelarEdicion();
           cargarPeriodos();
-        } else alert(d.error || "Error");
+        } else {
+          showToastLocal(d.error || "Error al guardar", "error");
+        }
       }
 
       async function eliminarPeriodo(id) {
@@ -237,10 +310,38 @@
           headers: { Authorization: `Bearer ${tk()}` },
         });
         const d = await r.json();
-        if (d.success) cargarPeriodos();
-        else alert(d.error);
+        if (d.success) {
+          showToastLocal("Periodo eliminado", "success");
+          cargarPeriodos();
+        } else {
+          showToastLocal(d.error || "Error al eliminar", "error");
+        }
       }
 
+      function toggleCardPeriodo(btn) {
+        const card = btn.closest(".card-collapsible");
+        card.classList.toggle("collapsed");
+        btn.title = card.classList.contains("collapsed")
+          ? "Expandir"
+          : "Contraer";
+      }
+
+      function validarFechas() {
+        const inicio = document.getElementById("pInicio").value;
+        const fin = document.getElementById("pFin").value;
+        const aviso = document.getElementById("avisoFechas");
+        const msg = document.getElementById("avisoFechasMsg");
+
+        if (inicio && fin && new Date(inicio) >= new Date(fin)) {
+          msg.textContent =
+            "La fecha de inicio debe ser anterior a la fecha de fin.";
+          aviso.style.display = "flex";
+          aviso.style.gap = "8px";
+          aviso.style.alignItems = "center";
+        } else {
+          aviso.style.display = "none";
+        }
+      }
       soloPermitido?.("administrador");
       cargarPeriodos();
     </script>

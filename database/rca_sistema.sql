@@ -653,3 +653,53 @@ WHERE TABLE_SCHEMA = 'rca_sistema'
   AND TABLE_NAME   = 'maestro'
   AND COLUMN_NAME IN ('curp', 'apellido_materno');
 -- Esperado: IS_NULLABLE = 'YES' en ambos
+
+
+
+-- MEGACORRECCION WE ----
+USE rca_sistema;
+
+-- 1. maestro.curp — NOT NULL bloquea el registro cuando no se captura
+ALTER TABLE maestro
+    MODIFY COLUMN curp CHAR(18) NULL DEFAULT NULL;
+
+-- 2. maestro.apellido_materno — NOT NULL pero personas con un solo apellido
+ALTER TABLE maestro
+    MODIFY COLUMN apellido_materno VARCHAR(50) NULL DEFAULT NULL;
+
+-- 3. maestro.usuario y maestro.password — campos legacy huérfanos
+--    La autenticación es 100% por tabla `usuario`. Estos campos no se usan.
+--    Eliminarlos evita confusión:
+ALTER TABLE maestro
+    DROP COLUMN  usuario,
+    DROP COLUMN  password;
+
+-- 4. periodo_escolar — agregar UNIQUE en solapamiento es difícil con SQL puro,
+--    pero podemos proteger contra duplicados exactos de descripción:
+ALTER TABLE periodo_escolar
+    ADD UNIQUE INDEX uq_periodo_descripcion (descripcion);
+
+-- 5. grupo — la FK a maestro usa numero_empleado VARCHAR(15).
+--    Verificar que el índice exista (genera warning si ya existe, no error):
+ALTER TABLE grupo
+    ADD INDEX idx_grupo_periodo (id_periodo),
+    ADD INDEX idx_grupo_empleado (numero_empleado);
+
+-- 6. bonusunidad y bonusfinal — fecha_asignacion necesita default
+ALTER TABLE bonusunidad
+    MODIFY COLUMN fecha_asignacion DATE NOT NULL DEFAULT (CURDATE());
+
+ALTER TABLE bonusfinal
+    MODIFY COLUMN fecha_asignacion DATE NOT NULL DEFAULT (CURDATE());
+
+-- 7. actividad — campo 'estatus' existe en la tabla pero el backend 
+--    nunca lo actualiza (solo usa 'bloqueado' TINYINT). 
+--    Normalizar: si bloqueado=1 → estatus='Calificada', si 0 → 'Pendiente'
+--    (esto es informativo, no requiere alter)
+
+-- VERIFICACIÓN
+SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE, COLUMN_DEFAULT
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'rca_sistema'
+  AND TABLE_NAME = 'maestro'
+  AND COLUMN_NAME IN ('curp', 'apellido_materno', 'usuario', 'password');
