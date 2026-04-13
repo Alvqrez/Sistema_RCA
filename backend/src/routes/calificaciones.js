@@ -136,15 +136,23 @@ router.post("/", maestroOAdmin, async (req, res) => {
 
 // POST — calcular y cerrar calificación de unidad automáticamente
 router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
-  const { matricula, id_unidad, id_grupo } = req.body;
+  const { matricula, id_unidad, id_grupo, cal_examen, cal_asistencia } = req.body;
   if (!matricula || !id_unidad || !id_grupo) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   try {
+    const overrides = {};
+    if (cal_examen !== undefined && cal_examen !== null && cal_examen !== "") {
+      overrides.cal_examen = parseFloat(cal_examen);
+    }
+    if (cal_asistencia !== undefined && cal_asistencia !== null && cal_asistencia !== "") {
+      overrides.cal_asistencia = parseFloat(cal_asistencia);
+    }
     const resultado = await calculo.cerrarUnidad(
       matricula,
       id_unidad,
       id_grupo,
+      overrides,
     );
     res.json({ success: true, ...resultado });
   } catch (err) {

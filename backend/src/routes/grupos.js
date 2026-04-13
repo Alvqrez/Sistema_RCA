@@ -102,8 +102,26 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
     ORDER BY gu.id_unidad
 `;
   db.query(sql, [req.params.id], (err, results) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
+    if (err) {
+      // Fallback: las columnas agrupacion_id / tipo_config pueden no existir
+      // si el ALTER TABLE de corrección 4 aún no se ha aplicado en la BD.
+      const sqlBase = `
+        SELECT
+            gu.id_unidad, u.nombre_unidad, u.estatus,
+            gu.ponderacion, u.clave_materia,
+            NULL AS agrupacion_id, 'original' AS tipo_config
+        FROM grupo_unidad gu
+        JOIN unidad u ON gu.id_unidad = u.id_unidad
+        WHERE gu.id_grupo = ?
+        ORDER BY gu.id_unidad
+      `;
+      return db.query(sqlBase, [req.params.id], (err2, results2) => {
+        if (err2)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        const conNumero = results2.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+        res.json(conNumero);
+      });
+    }
 
     // Agregar numero_unidad en JS (sin ROW_NUMBER)
     const conNumero = results.map((u, i) => ({ ...u, numero_unidad: i + 1 }));

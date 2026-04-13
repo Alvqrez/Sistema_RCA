@@ -714,6 +714,7 @@ function abrirModalActividades(matricula) {
       <td>
         <input class="grade-input modal-act-input" type="number" min="0" max="100"
           data-actividad="${a.id_actividad}" data-ponderacion="${a.ponderacion}"
+          data-matricula="${matricula}"
           value="${val}" placeholder="${r?.estatus === "NP" ? "NP" : "—"}"
           oninput="onCalInput(this);recalcularModalAvg()" />
       </td>
@@ -889,6 +890,18 @@ async function guardarYCerrarUnidad() {
 
   let errores = 0;
   for (const al of estado.alumnos) {
+    // Leer los rubros directos (examen, asistencia y custom) del estado en memoria
+    const rubrosDirectos = {};
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const val = getRubroEstado(al.matricula, r.key);
+        if (val !== "" && val !== undefined) {
+          if (r.key === "pct_examen")     rubrosDirectos.cal_examen     = parseFloat(val);
+          if (r.key === "pct_asistencia") rubrosDirectos.cal_asistencia  = parseFloat(val);
+        }
+      });
+
     const res = await fetch(
       `${BASE_URL_FORM}/api/calificaciones/calcular-unidad`,
       {
@@ -901,6 +914,7 @@ async function guardarYCerrarUnidad() {
           matricula: al.matricula,
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
+          ...rubrosDirectos,
         }),
       },
     );

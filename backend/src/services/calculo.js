@@ -7,14 +7,15 @@ const CALIFICACION_APROBATORIA = 70; // sección 1.3.1
  * Calcula el promedio ponderado de un alumno en una unidad de un grupo.
  * NP equivale a 0. Si las ponderaciones no suman 100, normaliza.
  */
-async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
+async function calcularPromedioUnidad(matricula, id_unidad, id_grupo, overrides = {}) {
   // 1. Obtener la configuración de evaluación para este grupo+unidad
-  const config = await new Promise((resolve, reject) => {
+  const config = await new Promise((resolve) => {
     db.query(
       "SELECT * FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",
       [id_grupo, id_unidad],
       (err, rows) => {
-        if (err) return reject(err);
+        // Si la tabla aún no existe en la BD, usar valores por defecto
+        if (err) return resolve({ pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 });
         // Defaults si no hay config
         resolve(
           rows[0] || {
@@ -62,23 +63,34 @@ async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
     });
   });
 
-  // 3. Para examen y asistencia, obtener del resultado_actividad
-  //    buscando actividades de tipo especial, o usar 0 si no existen
-  const calExamen = await new Promise((resolve, reject) => {
-    db.query(
-      `SELECT COALESCE(AVG(ra.calificacion_obtenida), 0) AS cal
-             FROM resultado_actividad ra
-             JOIN actividad a ON ra.id_actividad = a.id_actividad
-             WHERE ra.matricula = ? AND a.id_unidad = ? AND a.id_grupo = ?
-               AND a.tipo_evaluacion = 'Diagnóstica'
-               AND ra.estatus != 'NP'`,
-      [matricula, id_unidad, id_grupo],
-      (err, rows) =>
-        err ? reject(err) : resolve(parseFloat(rows[0]?.cal ?? 0)),
-    );
-  });
+  // 3. Calificación de examen: usar valor enviado desde el frontend (override)
+  //    o buscar en resultado_actividad actividades de tipo 'Diagnóstica' como fallback
+  let calExamen = 0;
+  if (overrides.cal_examen !== undefined && overrides.cal_examen !== null) {
+    calExamen = parseFloat(overrides.cal_examen) || 0;
+  } else {
+    calExamen = await new Promise((resolve) => {
+      db.query(
+        `SELECT COALESCE(AVG(ra.calificacion_obtenida), 0) AS cal
+               FROM resultado_actividad ra
+               JOIN actividad a ON ra.id_actividad = a.id_actividad
+               WHERE ra.matricula = ? AND a.id_unidad = ? AND a.id_grupo = ?
+                 AND a.tipo_evaluacion = 'Diagnóstica'
+                 AND ra.estatus != 'NP'`,
+        [matricula, id_unidad, id_grupo],
+        (err, rows) => resolve(parseFloat(rows[0]?.cal ?? 0)),
+      );
+    });
+  }
 
-  // 4. Calcular promedio ponderado final según config
+  // 4. Calificación de asistencia: usar valor enviado desde el frontend (override)
+  //    o asumir 100 si el maestro no lo capturó
+  let calAsistencia = 100;
+  if (overrides.cal_asistencia !== undefined && overrides.cal_asistencia !== null) {
+    calAsistencia = parseFloat(overrides.cal_asistencia) || 0;
+  }
+
+  // 5. Calcular promedio ponderado final según config
   const pA = parseFloat(config.pct_actividades) / 100;
   const pE = parseFloat(config.pct_examen) / 100;
   const pAs = parseFloat(config.pct_asistencia) / 100;
@@ -90,9 +102,7 @@ async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
   if (soloActividades) {
     promedio = promedioActividades;
   } else {
-    promedio = promedioActividades * pA + calExamen * pE;
-    // pct_asistencia: si no hay registro de asistencia, se asume 100% asistencia
-    // (el maestro puede ajustar manualmente vía calificacion_unidad)
+    promedio = promedioActividades * pA + calExamen * pE + calAsistencia * pAs;
     promedio = Math.round(promedio * 100) / 100;
   }
 
@@ -103,8 +113,8 @@ async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
  * Cierra una unidad: calcula promedio, aplica bonus, guarda calificacion_unidad.
  * FIX 1: umbral 70
  */
-async function cerrarUnidad(matricula, id_unidad, id_grupo) {
-  const promedio = await calcularPromedioUnidad(matricula, id_unidad, id_grupo);
+async function cerrarUnidad(matricula, id_unidad, id_grupo, overrides = {}) {
+  const promedio = await calcularPromedioUnidad(matricula, id_unidad, id_grupo, overrides);
 
   return new Promise((resolve, reject) => {
     const sqlBonus = `
