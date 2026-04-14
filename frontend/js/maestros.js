@@ -38,11 +38,23 @@ function abrirModal(id) {
 }
 function cerrarModal(id) {
   document.getElementById(id).classList.remove("visible");
+  // BUG FIX: resetear estado de edición al cerrar para que "Nuevo maestro"
+  // no herede datos de la última edición si se cerró con ✕ o click fuera
+  if (id === "modalMaestro") {
+    modoEdicion = false;
+    empleadoEditando = null;
+    limpiarForm();
+  }
 }
 
 document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("modal-overlay"))
+  if (e.target.classList.contains("modal-overlay")) {
     e.target.classList.remove("visible");
+    // Mismo reset por click fuera
+    modoEdicion = false;
+    empleadoEditando = null;
+    limpiarForm();
+  }
 });
 
 // ─── Init ────────────────────────────────────────────────────────────

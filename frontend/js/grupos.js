@@ -61,20 +61,32 @@ async function cargarMaestrosSelect() {
 
 async function cargarGrupos() {
   const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/api/grupos`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (response.status === 401 || response.status === 403) {
-    window.location.href = "login.html";
+  const tabla = document.getElementById("tablaGrupos");
+  const rol = localStorage.getItem("rol");
+
+  // BUG FIX: envolver en try/catch para manejar errores de red
+  let grupos;
+  try {
+    const response = await fetch(`${BASE_URL}/api/grupos`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 401 || response.status === 403) {
+      window.location.href = "login.html";
+      return;
+    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    grupos = await response.json();
+  } catch (err) {
+    if (tabla) tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">
+      <iconify-icon icon="lucide:wifi-off" style="font-size:1.4rem;display:block;margin:0 auto 8px"></iconify-icon>
+      Error al cargar grupos. Verifica la conexión con el servidor.
+    </td></tr>`;
     return;
   }
 
-  const grupos = await response.json();
-  const tabla = document.getElementById("tablaGrupos");
-  const rol = localStorage.getItem("rol");
   tabla.innerHTML = "";
 
-  if (grupos.length === 0) {
+  if (!grupos || grupos.length === 0) {
     tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">No hay grupos registrados</td></tr>`;
     return;
   }
@@ -121,7 +133,7 @@ document
     };
 
     if (!grupo.clave_materia || !grupo.numero_empleado || !grupo.id_periodo) {
-      alert("Selecciona materia, maestro y periodo.");
+      toastGrupo("Selecciona materia, maestro y periodo.", "error");
       return;
     }
 
@@ -135,11 +147,11 @@ document
     });
     const data = await res.json();
     if (data.success) {
-      alert(`Grupo creado (ID: ${data.id_grupo})`);
+      toastGrupo(`Grupo creado correctamente (ID: ${data.id_grupo})`);
       this.reset();
       cargarGrupos();
     } else {
-      alert(data.error || "Error al crear grupo");
+      toastGrupo(data.error || "Error al crear grupo", "error");
     }
   });
 
@@ -156,8 +168,12 @@ async function eliminarGrupo(id) {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
-  if (data.success) cargarGrupos();
-  else alert(data.error);
+  if (data.success) {
+    toastGrupo("Grupo eliminado");
+    cargarGrupos();
+  } else {
+    toastGrupo(data.error || "Error al eliminar", "error");
+  }
 }
 
 // ── Estado CSV ────────────────────────────────────────────────────────────────

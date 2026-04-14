@@ -174,6 +174,9 @@ async function cargarGrupo() {
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
 
+  // BUG 5 FIX: verificar si el grupo ya tiene config en BD para actualizar badge
+  await verificarConfigGrupo(id);
+
   // Show paso 3
   const paso3 = document.getElementById("cardPaso3");
   paso3.style.display = "block";
@@ -187,6 +190,56 @@ async function cargarGrupo() {
   document.getElementById("numPaso1").classList.add("done");
   document.getElementById("numPaso1").innerHTML =
     `<iconify-icon icon="lucide:check" style="font-size:.8rem"></iconify-icon>`;
+
+  // BUG 7 FIX: si ya hay calificaciones de unidad en BD, mostrar paso 4 directo
+  await verificarUnidadesCerradas(id);
+}
+
+// BUG 5 FIX: verifica config en BD y actualiza badge
+async function verificarConfigGrupo(id_grupo) {
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/config-evaluacion/grupo/${id_grupo}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (res.ok) {
+      const configs = await res.json();
+      if (Array.isArray(configs) && configs.length > 0) {
+        actualizarEstadoBadge(true);
+        // Poblar localStorage con los valores de BD para que los rubros
+        // aparezcan correctamente al abrir cada unidad
+        configs.forEach((c) => {
+          const key = `pcts_${id_grupo}_${c.id_unidad}`;
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(
+              key,
+              JSON.stringify({
+                pct_actividades: c.pct_actividades,
+                pct_examen: c.pct_examen,
+                pct_asistencia: c.pct_asistencia,
+              })
+            );
+          }
+        });
+      }
+    }
+  } catch (_) {}
+}
+
+// BUG 7 FIX: si ya hay unidades cerradas, mostrar paso 4 automáticamente
+async function verificarUnidadesCerradas(id_grupo) {
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/reportes/grupo/${id_grupo}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const hayCalifs = data?.alumnos?.some(
+      (a) => Object.keys(a.unidades || {}).length > 0
+    );
+    if (hayCalifs) intentarMostrarSeccionFinal();
+  } catch (_) {}
 }
 
 function resetVista() {
@@ -299,6 +352,20 @@ async function seleccionarUnidadTab(id_unidad) {
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
 
+  // BUG 8 FIX: restaurar valores de examen/asistencia guardados en localStorage
+  estado.alumnos.forEach((al) => {
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const guardado = localStorage.getItem(
+          `rubro_${estado.grupoId}_${id_unidad}_${al.matricula}_${r.key}`
+        );
+        if (guardado !== null && guardado !== "") {
+          setRubroEstado(al.matricula, r.key, guardado);
+        }
+      });
+  });
+
   renderRubrosBar();
   renderTablaCalificaciones();
 
@@ -326,8 +393,11 @@ async function cargarActividades() {
     headers: { Authorization: `Bearer ${token()}` },
   });
   const todas = await res.json();
+  // BUG 8 FIX: parseInt en ambos lados para evitar fallo string vs número
   estado.actividades = todas.filter(
-    (a) => a.id_grupo === estado.grupoId && a.id_unidad === estado.unidadId,
+    (a) =>
+      parseInt(a.id_grupo) === parseInt(estado.grupoId) &&
+      parseInt(a.id_unidad) === parseInt(estado.unidadId),
   );
 }
 
@@ -664,6 +734,13 @@ function recalcularFila(matricula) {
 
 function onRubroInput(matricula, key, val) {
   setRubroEstado(matricula, key, val);
+  // BUG 8 FIX: persistir en localStorage para sobrevivir recarga
+  if (estado.grupoId && estado.unidadId) {
+    localStorage.setItem(
+      `rubro_${estado.grupoId}_${estado.unidadId}_${matricula}_${key}`,
+      val
+    );
+  }
   recalcularFila(matricula);
 }
 
@@ -930,7 +1007,7 @@ async function guardarYCerrarUnidad() {
   );
 
   if (errores === 0) {
-    // Mark tab as done
+    // Marcar tab como cerrada (verde)
     document.querySelectorAll(".unit-tab").forEach((t) => {
       if (parseInt(t.dataset.uid) === estado.unidadId) {
         t.style.background = "var(--success)";
@@ -938,6 +1015,22 @@ async function guardarYCerrarUnidad() {
         t.style.color = "#fff";
       }
     });
+
+    // BUG 4 FIX: cambiar botón "Guardar y cerrar" a estado cerrado (rojo/disabled)
+    const btnCerrar = document.querySelector(
+      '.btn-success[onclick="guardarYCerrarUnidad()"]'
+    );
+    if (btnCerrar) {
+      btnCerrar.textContent = "Unidad Cerrada";
+      btnCerrar.style.background = "var(--danger, #ef4444)";
+      btnCerrar.style.borderColor = "var(--danger, #ef4444)";
+      btnCerrar.disabled = true;
+    }
+
+    // Mostrar banner de unidad cerrada
+    const banner = document.getElementById("bannerUnidadCerrada");
+    if (banner) banner.style.display = "flex";
+
     intentarMostrarSeccionFinal();
   }
 }

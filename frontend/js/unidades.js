@@ -113,7 +113,7 @@ async function cargarUnidades(claveFiltro = null) {
                 <td><span class="badge-unidad">${u.clave_materia}</span></td>
                 <td><strong>${u.nombre_unidad}</strong></td>
                 <td><span class="badge-estatus ${badgeClass}">${u.estatus}</span></td>
-                <td style="font-size:0.82rem;color:var(--text-muted)">${u.fecha_cierre ? new Date(u.fecha_cierre).toLocaleDateString("es-MX") : "—"}</td>
+                <td style="font-size:0.82rem;color:var(--text-muted)">${fmtFecha(u.fecha_cierre)}</td>
                 <td>
                     <button class="btn btn-sm btn-danger-outline" onclick="eliminarUnidad(${u.id_unidad})">
                         <iconify-icon icon="mdi:delete-outline"></iconify-icon>

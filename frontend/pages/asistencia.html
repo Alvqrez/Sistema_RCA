@@ -113,7 +113,7 @@
             </div>
             <div class="form-group" style="margin: 0">
               <label>Fecha</label>
-              <input type="date" id="fechaAsistencia" />
+              <input type="date" id="fechaAsistencia" onchange="onFechaChange()" />
             </div>
           </div>
         </div>
@@ -210,11 +210,25 @@
       // ── Init ─────────────────────────────────────────────────────────
       (async function init() {
         soloPermitido("maestro", "administrador");
-        document.getElementById("fechaAsistencia").value = new Date()
-          .toISOString()
-          .split("T")[0];
+
+        // BUG 6 FIX: restaurar última fecha usada (o fecha de hoy si no hay)
+        const ultimaFecha = localStorage.getItem("asist_ultima_fecha");
+        document.getElementById("fechaAsistencia").value =
+          ultimaFecha || new Date().toISOString().split("T")[0];
+
         await cargarGrupos();
-        document.getElementById("emptyState").style.display = "block";
+
+        // BUG 6 FIX: restaurar último grupo seleccionado
+        const ultimoGrupo = localStorage.getItem("asist_ultimo_grupo");
+        if (ultimoGrupo) {
+          const sel = document.getElementById("selGrupo");
+          if (sel && [...sel.options].some((o) => o.value === ultimoGrupo)) {
+            sel.value = ultimoGrupo;
+            await cargarAlumnosGrupo();
+          }
+        } else {
+          document.getElementById("emptyState").style.display = "block";
+        }
       })();
 
       async function cargarGrupos() {
@@ -254,6 +268,8 @@
           document.getElementById("resumenAsist").style.display = "none";
           return;
         }
+        // BUG 6 FIX: persistir grupo seleccionado
+        localStorage.setItem("asist_ultimo_grupo", grupoActual);
         document.getElementById("loadingState").style.display = "block";
         document.getElementById("emptyState").style.display = "none";
         try {
@@ -276,6 +292,13 @@
 
       function getFecha() {
         return document.getElementById("fechaAsistencia").value;
+      }
+
+      // BUG 6 FIX: persisitir la fecha cada vez que cambia
+      function onFechaChange() {
+        const f = getFecha();
+        if (f) localStorage.setItem("asist_ultima_fecha", f);
+        renderTabla();
       }
 
       function getRegistro(matricula) {
@@ -401,9 +424,26 @@
       }
 
       function guardarAsistencia() {
-        // Data is auto-saved to localStorage on each toggle.
-        // This button provides user confirmation feedback.
-        showToast("Asistencia guardada localmente ✓", "success");
+        // BUG 6 FIX: re-guardar explícitamente todos los registros actuales
+        // (ya se guardan por clic, pero este botón lo confirma y persiste
+        // el grupo y fecha para restaurar al recargar la página)
+        if (!grupoActual) {
+          showToast("Selecciona un grupo primero", "error");
+          return;
+        }
+        const fecha = getFecha();
+
+        // Persistir último grupo y fecha usados
+        localStorage.setItem("asist_ultimo_grupo", grupoActual);
+        if (fecha) localStorage.setItem("asist_ultima_fecha", fecha);
+
+        // Re-guardar estado de cada alumno (por si algún toggle no se guardó)
+        alumnos.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          setRegistro(a.matricula, reg);
+        });
+
+        showToast("Asistencia guardada ✓", "success");
       }
 
       function exportarCSV() {

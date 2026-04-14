@@ -80,33 +80,55 @@ router.post("/", soloAdmin, (req, res) => {
   if (!matricula || !id_grupo)
     return res.status(400).json({ error: "Matrícula y grupo son requeridos" });
 
-  // INSERT IGNORE: si el alumno ya está inscrito en este grupo,
-  // la operación no falla (affectedRows = 0) y devuelve éxito.
-  // Esto hace la ruta idempotente y permite reimportar el mismo CSV sin errores.
-  const sql = `
-    INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
-    VALUES (?, ?, CURDATE(), 'Cursando', ?)
+  // BUG 3 FIX: verificar capacidad máxima antes de insertar
+  const sqlCapacidad = `
+    SELECT g.limite_alumnos,
+           COUNT(i.matricula) AS inscritos_actuales
+    FROM grupo g
+    LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
+    WHERE g.id_grupo = ?
+    GROUP BY g.id_grupo, g.limite_alumnos
   `;
-  db.query(
-    sql,
-    [matricula, id_grupo, tipo_curso || "Ordinario"],
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ error: "Error interno del servidor", detalle: err.message });
+  db.query(sqlCapacidad, [id_grupo], (errCap, capRows) => {
+    if (errCap)
+      return res.status(500).json({ error: "Error interno del servidor" });
 
-      if (result.affectedRows === 0)
-        return res.status(200).json({
-          success: true,
-          mensaje: "El alumno ya estaba inscrito (sin cambios)",
+    if (capRows.length > 0) {
+      const { limite_alumnos, inscritos_actuales } = capRows[0];
+      // Solo bloquear si el límite está definido y es mayor a 0
+      if (limite_alumnos && inscritos_actuales >= limite_alumnos) {
+        return res.status(400).json({
+          error: `El grupo ya alcanzó su capacidad máxima (${limite_alumnos} alumnos).`,
         });
+      }
+    }
 
-      res
-        .status(201)
-        .json({ success: true, mensaje: "Alumno inscrito correctamente" });
-    },
-  );
+    // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
+    const sql = `
+      INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
+      VALUES (?, ?, CURDATE(), 'Cursando', ?)
+    `;
+    db.query(
+      sql,
+      [matricula, id_grupo, tipo_curso || "Ordinario"],
+      (err, result) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ error: "Error interno del servidor", detalle: err.message });
+
+        if (result.affectedRows === 0)
+          return res.status(200).json({
+            success: true,
+            mensaje: "El alumno ya estaba inscrito (sin cambios)",
+          });
+
+        res
+          .status(201)
+          .json({ success: true, mensaje: "Alumno inscrito correctamente" });
+      },
+    );
+  });
 });
 
 // POST — inscripción masiva (varios alumnos a un grupo)
@@ -115,34 +137,48 @@ router.post("/bulk", soloAdmin, (req, res) => {
   if (!matriculas?.length || !id_grupo)
     return res.status(400).json({ error: "Matriculas y grupo son requeridos" });
 
-  const values = matriculas.map((m) => [
-    m,
-    id_grupo,
-    tipo_curso || "Ordinario",
-  ]);
-  const sql = `
-    INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
-    VALUES ?
+  // BUG 3 FIX: verificar capacidad antes de inserción masiva
+  const sqlCapacidad = `
+    SELECT g.limite_alumnos,
+           COUNT(i.matricula) AS inscritos_actuales
+    FROM grupo g
+    LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
+    WHERE g.id_grupo = ?
+    GROUP BY g.id_grupo, g.limite_alumnos
   `;
-  // Trick: add fecha manually
-  const vals = values.map((v) => [
-    v[0],
-    v[1],
-    new Date().toISOString().split("T")[0],
-    "Cursando",
-    v[2],
-  ]);
-  db.query(
-    "INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
-    [vals],
-    (err, r) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ error: "Error interno del servidor", detalle: err.message });
-      res.status(201).json({ success: true, insertados: r.affectedRows });
-    },
-  );
+  db.query(sqlCapacidad, [id_grupo], (errCap, capRows) => {
+    if (errCap)
+      return res.status(500).json({ error: "Error interno del servidor" });
+
+    if (capRows.length > 0) {
+      const { limite_alumnos, inscritos_actuales } = capRows[0];
+      if (limite_alumnos && inscritos_actuales + matriculas.length > limite_alumnos) {
+        const disponibles = Math.max(0, limite_alumnos - inscritos_actuales);
+        return res.status(400).json({
+          error: `Capacidad insuficiente. El grupo tiene espacio para ${disponibles} alumno(s) más (límite: ${limite_alumnos}).`,
+        });
+      }
+    }
+
+    const vals = matriculas.map((m) => [
+      m,
+      id_grupo,
+      new Date().toISOString().split("T")[0],
+      "Cursando",
+      tipo_curso || "Ordinario",
+    ]);
+    db.query(
+      "INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+      [vals],
+      (err, r) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ error: "Error interno del servidor", detalle: err.message });
+        res.status(201).json({ success: true, insertados: r.affectedRows });
+      },
+    );
+  });
 });
 
 // PUT — cambiar estatus de inscripción

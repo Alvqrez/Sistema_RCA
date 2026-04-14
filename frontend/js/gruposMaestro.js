@@ -188,6 +188,10 @@ async function cargarGruposGM() {
       }),
     );
 
+    // BUG 3 MAESTRO FIX: cargar configs desde BD y poblar localStorage
+    // para que los badges "Configurado" sobrevivan entre sesiones
+    await cargarConfigsDesdeDB();
+
     // Render cards
     if (lista) lista.innerHTML = "";
     for (const g of misGrupos) {
@@ -234,6 +238,38 @@ async function cargarUnidadesDeGrupo(grupo) {
       : [];
   } catch {
     return [];
+  }
+}
+
+// ── BUG 3 MAESTRO FIX: cargar configs desde BD → localStorage ────────
+async function cargarConfigsDesdeDB() {
+  for (const g of misGrupos) {
+    try {
+      const res = await fetch(
+        `${BASE_URL_GM}/api/config-evaluacion/grupo/${g.id_grupo}`,
+        { headers: { Authorization: `Bearer ${tokenGM()}` } }
+      );
+      if (!res.ok) continue;
+      const configs = await res.json();
+      if (!Array.isArray(configs)) continue;
+      configs.forEach((c) => {
+        const key = `pcts_${g.id_grupo}_${c.id_unidad}`;
+        // Solo escribir si no existe ya en localStorage (respeta cambios locales)
+        const existing = localStorage.getItem(key);
+        if (!existing) {
+          localStorage.setItem(
+            key,
+            JSON.stringify({
+              pct_actividades: c.pct_actividades,
+              pct_examen: c.pct_examen,
+              pct_asistencia: c.pct_asistencia,
+            })
+          );
+        }
+      });
+    } catch (_) {
+      // No bloquear si falla un grupo
+    }
   }
 }
 

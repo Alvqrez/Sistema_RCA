@@ -209,8 +209,8 @@
       <td>#${p.id_periodo}</td>
       <td><strong>${p.descripcion}</strong></td>
       <td>${p.anio}</td>
-      <td style="font-size:0.82rem">${p.fecha_inicio}</td>
-      <td style="font-size:0.82rem">${p.fecha_fin}</td>
+      <td style="font-size:0.82rem">${fmtFecha(p.fecha_inicio)}</td>
+      <td style="font-size:0.82rem">${fmtFecha(p.fecha_fin)}</td>
       <td><span class="badge-estatus ${col}">${p.estatus}</span></td>
       <td style="display:flex;gap:6px">
         <button class="btn btn-sm btn-outline" onclick="editarPeriodo(${JSON.stringify(p).replace(/"/g, "&quot;")})">
@@ -232,8 +232,8 @@
         editandoId = p.id_periodo;
         document.getElementById("pDesc").value = p.descripcion;
         document.getElementById("pAnio").value = p.anio;
-        document.getElementById("pInicio").value = p.fecha_inicio;
-        document.getElementById("pFin").value = p.fecha_fin;
+        document.getElementById("pInicio").value = p.fecha_inicio ? p.fecha_inicio.toString().split("T")[0] : "";
+        document.getElementById("pFin").value = p.fecha_fin ? p.fecha_fin.toString().split("T")[0] : "";
         document.getElementById("pEstatus").value = p.estatus;
         document.getElementById("tituloPeriodoForm").textContent =
           `Editando: ${p.descripcion}`;
