@@ -1,4 +1,3 @@
-// frontend/js/calificaciones.js
 const BASE_URL = "http://localhost:3000";
 
 async function cargarCalificaciones() {

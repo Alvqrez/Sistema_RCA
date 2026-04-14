@@ -1,4 +1,3 @@
-// frontend/js/portalAlumno.js
 const BASE = "http://localhost:3000";
 const token = localStorage.getItem("token");
 const rol = localStorage.getItem("rol");
@@ -17,7 +16,6 @@ const matricula = payload?.id_referencia;
 
 let todasInscripciones = [];
 
-// ── INIT ──────────────────────────────────────────────────────────────
 (async () => {
   await cargarDatosAlumno();
   await cargarInscripciones();

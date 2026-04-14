@@ -1,10 +1,8 @@
-// frontend/js/maestros.js
 const BASE_URL = "http://localhost:3000";
 let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
 
-// ─── Toast ───────────────────────────────────────────────────────────
 function toast(msg, tipo = "success") {
   const c = document.getElementById("toast-container");
   if (!c) return;
@@ -20,7 +18,6 @@ function toast(msg, tipo = "success") {
   setTimeout(() => t.remove(), 3200);
 }
 
-// ─── Tabs ────────────────────────────────────────────────────────────
 function cambiarTab(nombre) {
   document
     .querySelectorAll(".tab-panel")
@@ -32,7 +29,6 @@ function cambiarTab(nombre) {
   document.getElementById(`tab-btn-${nombre}`)?.classList.add("active");
 }
 
-// ─── Modal helpers ───────────────────────────────────────────────────
 function abrirModal(id) {
   document.getElementById(id).classList.add("visible");
 }
@@ -57,7 +53,6 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// ─── Init ────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   soloPermitido("administrador");
   document.getElementById("headerActions").style.display = "flex";
@@ -65,7 +60,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (window.location.hash === "#registro") abrirModalNuevo();
 });
 
-// ─── Cargar maestros ─────────────────────────────────────────────────
 async function cargarMaestros() {
   const token = localStorage.getItem("token");
   try {
@@ -156,7 +150,6 @@ function renderTabla(datos) {
     .join("");
 }
 
-// ─── Abrir modal nuevo ───────────────────────────────────────────────
 function abrirModalNuevo() {
   modoEdicion = false;
   empleadoEditando = null;
@@ -170,7 +163,6 @@ function abrirModalNuevo() {
   abrirModal("modalMaestro");
 }
 
-// ─── Editar maestro ──────────────────────────────────────────────────
 function editarMaestro(ne) {
   const m = maestrosGlobal.find((x) => x.numero_empleado === ne);
   if (!m) return;
@@ -222,7 +214,6 @@ function editarMaestro(ne) {
   abrirModal("modalMaestro");
 }
 
-// ─── Guardar maestro ─────────────────────────────────────────────────
 async function guardarMaestro() {
   const ne = document.getElementById("f_num_emp").value.trim();
   const nom = document.getElementById("f_nombre").value.trim();
@@ -312,7 +303,6 @@ async function guardarMaestro() {
   }
 }
 
-// ─── Eliminar maestro ────────────────────────────────────────────────
 async function eliminarMaestro(ne) {
   if (!confirm(`¿Eliminar al maestro ${ne}? Esta acción no se puede deshacer.`))
     return;
@@ -330,7 +320,6 @@ async function eliminarMaestro(ne) {
   }
 }
 
-// ─── Helpers de error ────────────────────────────────────────────────
 function mostrarError(msg, tabDonde = null) {
   const errEl = document.getElementById("modalError");
   errEl.textContent = msg;
@@ -342,7 +331,6 @@ function ocultarError() {
   if (errEl) errEl.style.display = "none";
 }
 
-// ─── Limpiar form ────────────────────────────────────────────────────
 function limpiarForm() {
   const ids = [
     "f_num_emp",
@@ -375,7 +363,6 @@ function limpiarForm() {
   ocultarError();
 }
 
-// ─── Exportar CSV ────────────────────────────────────────────────────
 function exportarCSVMaestros() {
   if (!maestrosGlobal.length) {
     toast("No hay datos para exportar", "info");
@@ -410,10 +397,8 @@ function exportarCSVMaestros() {
   toast("CSV exportado correctamente");
 }
 
-// ── Estado CSV ────────────────────────────────────────────────────────────────
 let csvMaestrosData = [];
 
-// ── Abrir / cerrar modal ──────────────────────────────────────────────────────
 function abrirModalCSVMaestros() {
   csvMaestrosData = [];
   document.getElementById("csvMaestrosPreview").innerHTML = "";
@@ -425,7 +410,6 @@ function cerrarModalCSVMaestros() {
   document.getElementById("modalImportMaestros").classList.remove("visible");
 }
 
-// ── Drag & drop ───────────────────────────────────────────────────────────────
 function dragOverMaestros(e) {
   e.preventDefault();
   document.getElementById("dropZoneMaestros").classList.add("drag-over");
@@ -441,7 +425,6 @@ function leerCSVMaestros(e) {
   if (file) procesarCSVMaestros(file);
 }
 
-// ── Parsear archivo ───────────────────────────────────────────────────────────
 function procesarCSVMaestros(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -494,7 +477,6 @@ function mostrarPreviewCSVMaestros(headers, data) {
     </div>`;
 }
 
-// ── Enviar al backend ─────────────────────────────────────────────────────────
 async function importarCSVMaestros() {
   if (!csvMaestrosData.length) return;
   const token = localStorage.getItem("token");
@@ -532,7 +514,6 @@ async function importarCSVMaestros() {
   }
 }
 
-// ── Cerrar al hacer clic fuera ─────────────────────────────────────────────────
 document.addEventListener("click", (e) => {
   if (e.target.id === "modalImportMaestros") cerrarModalCSVMaestros();
 });

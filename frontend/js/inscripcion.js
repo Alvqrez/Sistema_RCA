@@ -1,4 +1,3 @@
-// frontend/js/inscripcion.js
 const BASE = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
@@ -9,7 +8,6 @@ let grupoSel = null; // objeto grupo seleccionado
 let alumnosSel = new Set();
 let yaInscritos = new Set(); // matriculas ya en el grupo seleccionado
 
-// ── INIT ─────────────────────────────────────────────────────────────
 (async () => {
   soloPermitido("administrador");
   await Promise.all([
@@ -21,7 +19,6 @@ let yaInscritos = new Set(); // matriculas ya en el grupo seleccionado
   await cargarCarrerasAlumno();
 })();
 
-// ── PERIODOS ─────────────────────────────────────────────────────────
 async function cargarPeriodos() {
   try {
     const r = await fetch(`${BASE}/api/periodos`, {
@@ -36,7 +33,6 @@ async function cargarPeriodos() {
   } catch (_) {}
 }
 
-// ── GRUPOS ───────────────────────────────────────────────────────────
 async function cargarGrupos() {
   try {
     const r = await fetch(`${BASE}/api/grupos`, {
@@ -120,7 +116,6 @@ function seleccionarGrupo(id) {
   );
 }
 
-// ── PASO 2 — ALUMNOS ─────────────────────────────────────────────────
 async function irPaso2() {
   if (!grupoSel) return;
   setStep(2);
@@ -243,7 +238,6 @@ function deseleccionarTodos() {
   toggleTodos({ checked: false });
 }
 
-// ── PASO 3 — CONFIRMACIÓN ─────────────────────────────────────────────
 function irPaso3() {
   setStep(3);
   const alumnosSelArr = todosAlumnos.filter((a) => alumnosSel.has(a.matricula));
@@ -323,7 +317,6 @@ async function confirmarInscripcion() {
   }
 }
 
-// ── TABLA DE INSCRIPCIONES ────────────────────────────────────────────
 async function cargarInscripciones() {
   try {
     const r = await fetch(`${BASE}/api/inscripciones`, {
@@ -430,7 +423,6 @@ async function eliminarInscripcion(matricula, id_grupo) {
   } else mostrarToast(d.error, "error");
 }
 
-// ── NAVEGACIÓN DE PASOS ───────────────────────────────────────────────
 function setStep(n) {
   [1, 2, 3].forEach((i) => {
     document.getElementById(`paso${i}`).style.display =
@@ -449,7 +441,6 @@ function volverPaso2() {
   filtrarAlumnos();
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────
 function cerrarModal(id) {
   document.getElementById(id).classList.remove("visible");
 }
@@ -472,7 +463,6 @@ function mostrarToast(msg, tipo = "success") {
   t._t = setTimeout(() => t.classList.remove("visible"), 3200);
 }
 
-// ── CSV Inscripciones ─────────────────────────────────────────────
 let csvInscData = [];
 
 function abrirModalCSVInscripcion() {

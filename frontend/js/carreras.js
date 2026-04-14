@@ -1,4 +1,3 @@
-// frontend/js/carreras.js
 // Rellena cualquier <select> con id dado con las carreras de la BD
 async function cargarCarrerasEnSelect(selectId) {
   const token = localStorage.getItem("token");

@@ -1,4 +1,3 @@
-// frontend/js/api.js — CORREGIDO
 // Maneja toda la funcionalidad de la página alumnos.html
 const BASE_URL = "http://localhost:3000";
 let alumnosGlobal = [];
@@ -6,8 +5,6 @@ let filtroCarrera = "";
 let filtroBusqueda = "";
 let modoEdicion = false; // false = registrar, true = editar
 let matriculaEditando = null; // matrícula del alumno en edición
-
-// ─── CARGAR Y RENDERIZAR ────────────────────────────────────────────────────
 
 async function cargarAlumnos() {
   const token = localStorage.getItem("token");
@@ -74,8 +71,6 @@ function renderTabla() {
   });
 }
 
-// ─── GUARDAR (REGISTRAR O EDITAR) ──────────────────────────────────────────
-
 document.addEventListener("DOMContentLoaded", () => {
   // Ocultar card de registro si no es admin
   const rol = localStorage.getItem("rol");
@@ -103,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarCarrerasEnSelect("filtroCarrera");
   cargarAlumnos();
 
-  // ── SUBMIT del formulario ────────────────────────────────────────────────
   const form = document.getElementById("formAlumno");
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -209,8 +203,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ─── EDITAR ────────────────────────────────────────────────────────────────
-
 async function editarAlumno(matricula) {
   // Busca el alumno en la lista global (ya cargada)
   const alumno = alumnosGlobal.find((a) => a.matricula === matricula);
@@ -244,8 +236,6 @@ async function editarAlumno(matricula) {
     .scrollIntoView({ behavior: "smooth" });
 }
 
-// ─── CANCELAR EDICIÓN ──────────────────────────────────────────────────────
-
 function cancelarEdicion() {
   modoEdicion = false;
   matriculaEditando = null;
@@ -261,8 +251,6 @@ function cancelarEdicion() {
   document.getElementById("tituloFormAlumno").textContent = "Registrar alumno";
   document.querySelector("#formAlumno .btn-guardar").textContent = "Guardar";
 }
-
-// ─── ELIMINAR ──────────────────────────────────────────────────────────────
 
 async function eliminarAlumno(matricula) {
   if (
@@ -291,8 +279,6 @@ async function eliminarAlumno(matricula) {
     alert("Error de conexión con el servidor.");
   }
 }
-
-// ─── UTILIDAD ──────────────────────────────────────────────────────────────
 
 function mostrarMensaje(elementId, texto, tipo) {
   const el = document.getElementById(elementId);

@@ -1,4 +1,3 @@
-// frontend/js/reportes.js
 const BASE = "http://localhost:3000";
 const tk = () => localStorage.getItem("token");
 
@@ -6,7 +5,6 @@ let todosGrupos = [];
 let reporteActual = null; // { grupo, unidades, alumnos, stats }
 let alumnosRenderizados = [];
 
-// ── Toast ─────────────────────────────────────────────────────────
 function toast(msg, tipo = "info") {
   const c = document.getElementById("toast-container");
   if (!c) return;
@@ -17,14 +15,12 @@ function toast(msg, tipo = "info") {
   setTimeout(() => t.remove(), 3200);
 }
 
-// ── Init ──────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   soloPermitido("administrador", "maestro");
   // Carga periodos y grupos en paralelo
   await Promise.all([poblarFiltroPeriodo(), cargarGrupos()]);
 });
 
-// ── Cargar lista de grupos ─────────────────────────────────────────
 async function cargarGrupos() {
   try {
     const r = await fetch(`${BASE}/api/reportes/grupos`, {
@@ -109,7 +105,6 @@ function renderGruposGrid(grupos) {
     .join("");
 }
 
-// ── Cargar reporte de un grupo ─────────────────────────────────────
 async function cargarReporte(id_grupo) {
   const grid = document.getElementById("gruposGrid");
   // marcar seleccionado
@@ -257,7 +252,6 @@ function volverSelector() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ── Exportar CSV del reporte ───────────────────────────────────────
 function exportarReporteCSV() {
   if (!reporteActual) return;
   const { grupo, unidades, alumnos } = reporteActual;

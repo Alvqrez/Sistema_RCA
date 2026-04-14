@@ -1,4 +1,3 @@
-// frontend/js/grupos.js
 const BASE_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
@@ -176,10 +175,8 @@ async function eliminarGrupo(id) {
   }
 }
 
-// ── Estado CSV ────────────────────────────────────────────────────────────────
 let csvGruposData = [];
 
-// ── Toast (si grupos.js no tiene uno propio) ──────────────────────────────────
 function toastGrupo(msg, tipo = "success") {
   // Reutiliza el contenedor global del proyecto
   const c = document.getElementById("toast-container");
@@ -199,7 +196,6 @@ function toastGrupo(msg, tipo = "success") {
   setTimeout(() => t.remove(), 3200);
 }
 
-// ── Abrir / cerrar modal ───────────────────────────────────────────────────────
 function abrirModalCSVGrupos() {
   csvGruposData = [];
   document.getElementById("csvGruposPreview").innerHTML = "";
@@ -211,7 +207,6 @@ function cerrarModalCSVGrupos() {
   document.getElementById("modalImportGrupos").classList.remove("visible");
 }
 
-// ── Leer archivo ──────────────────────────────────────────────────────────────
 function leerCSVGrupos(e) {
   const file = e.target.files[0];
   if (file) procesarCSVGrupos(file);
@@ -276,7 +271,6 @@ function mostrarPreviewCSVGrupos(headers, data) {
     </div>`;
 }
 
-// ── Enviar al backend ─────────────────────────────────────────────────────────
 async function importarCSVGrupos() {
   if (!csvGruposData.length) return;
   const token = localStorage.getItem("token");
@@ -314,7 +308,6 @@ async function importarCSVGrupos() {
   }
 }
 
-// ── Exportar CSV ──────────────────────────────────────────────────────────────
 async function exportarCSVGrupos() {
   const token = localStorage.getItem("token");
   try {
@@ -363,7 +356,6 @@ async function exportarCSVGrupos() {
   }
 }
 
-// ── Cerrar modal al hacer clic fuera ──────────────────────────────────────────
 document.addEventListener("click", (e) => {
   if (e.target.id === "modalImportGrupos") cerrarModalCSVGrupos();
 });

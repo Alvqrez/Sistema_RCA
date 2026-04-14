@@ -1,4 +1,3 @@
-// frontend/js/login.js
 const BASE_URL = "http://localhost:3000";
 
 const form = document.getElementById("loginForm");
@@ -33,7 +32,6 @@ form.addEventListener("submit", async function (e) {
       localStorage.setItem("nombre", data.nombre);
       localStorage.setItem("rol", data.rol);
 
-      // ─── REDIRECCIÓN POR ROL ──────────────────────────────────────────
       if (data.rol === "alumno") window.location.href = "portalAlumno.html";
       else if (data.rol === "maestro")
         window.location.href = "mis_grupos.html"; // ← CORREGIDO

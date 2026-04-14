@@ -1,4 +1,3 @@
-// frontend/js/sidebar.js — v2 reorganizado
 (function () {
   const rol = localStorage.getItem("rol");
   const nombre = localStorage.getItem("nombre");
@@ -232,7 +231,6 @@ function soloPermitido(...roles) {
 }
 
 function cerrarSesion() {
-  // BUG 1/4 FIX: conservar datos académicos (configs y asistencia) que
   // vienen de la BD y se recargan al iniciar sesión, pero NO los tokens de auth.
   // Solo borrar las keys de sesión, no las de configuración.
   const keysAConservar = [];
@@ -254,7 +252,6 @@ function cerrarSesion() {
   window.location.href = "login.html";
 }
 
-// ── Utilidad de fecha global (DD/MM/YYYY) — disponible en todas las páginas ──
 // Recibe string ISO "2025-04-15T00:00:00.000Z", "2025-04-15" o Date
 // Devuelve "15/04/2025". Si f es nulo/vacío devuelve "—".
 function fmtFecha(f) {
@@ -267,7 +264,6 @@ function fmtFecha(f) {
   return `${dia.padStart(2,"0")}/${mes.padStart(2,"0")}/${anio}`;
 }
 
-// ── Toast global (disponible en todas las páginas) ─────────────────
 function showToast(msg, tipo = "success") {
   let c = document.getElementById("toast-container");
   if (!c) {

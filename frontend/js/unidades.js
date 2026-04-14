@@ -1,4 +1,3 @@
-// frontend/js/unidades.js
 const BASE_URL = "http://localhost:3000";
 const rol = localStorage.getItem("rol");
 const token = localStorage.getItem("token");
@@ -6,14 +5,12 @@ const token = localStorage.getItem("token");
 // Estado local de agrupación (antes de guardar)
 let unidadesGrupoActual = [];
 
-// ── Toggle plegable local ─────────────────────────────────────────────
 function toggleCardLocal(btn) {
   const card = btn.closest(".card-collapsible");
   card.classList.toggle("collapsed");
   btn.title = card.classList.contains("collapsed") ? "Expandir" : "Contraer";
 }
 
-// ── Poblar select de materias ─────────────────────────────────────────
 async function poblarSelectMaterias() {
   const url =
     rol === "maestro"
@@ -55,7 +52,6 @@ async function poblarSelectMaterias() {
   }
 }
 
-// ── Poblar select de grupos (para la vista visual) ────────────────────
 async function poblarSelectGrupos() {
   const url =
     rol === "maestro"
@@ -81,7 +77,6 @@ async function poblarSelectGrupos() {
   }
 }
 
-// ── Cargar tabla clásica ──────────────────────────────────────────────
 async function cargarUnidades(claveFiltro = null) {
   const url = claveFiltro
     ? `${BASE_URL}/api/unidades/materia/${claveFiltro}`
@@ -127,7 +122,6 @@ async function cargarUnidades(claveFiltro = null) {
   });
 }
 
-// ── VISTA VISUAL con fusionar/dividir ─────────────────────────────────
 async function cargarUnidadesGrupoVisual() {
   const idGrupo = document.getElementById("selGrupoUnidades").value;
   const lista = document.getElementById("listaUnidades");
@@ -236,7 +230,6 @@ function renderListaUnidades(unidades) {
   });
 }
 
-// ── Acciones de fusión/división ───────────────────────────────────────
 function fusionarUnidad(idUnidad, event) {
   event.stopPropagation();
   const u = unidadesGrupoActual.find((x) => x.id_unidad === idUnidad);
@@ -295,7 +288,6 @@ function restaurarUnidad(idUnidad, event) {
   mostrarToast("Unidad restaurada a original (pendiente guardar)", "success");
 }
 
-// ── Auto-vincular unidades de la materia al grupo ─────────────────────
 async function autoVincularUnidades(idGrupo) {
   try {
     const res = await fetch(
@@ -317,7 +309,6 @@ async function autoVincularUnidades(idGrupo) {
   }
 }
 
-// ── Guardar configuración de agrupación ──────────────────────────────
 async function guardarConfigAgrupacion() {
   const idGrupo = document.getElementById("selGrupoUnidades").value;
   if (!idGrupo) return;
@@ -345,7 +336,6 @@ async function guardarConfigAgrupacion() {
   }
 }
 
-// ── Registrar unidad ──────────────────────────────────────────────────
 document
   .getElementById("formUnidad")
   .addEventListener("submit", async function (e) {
@@ -384,7 +374,6 @@ document
     }
   });
 
-// ── Eliminar ──────────────────────────────────────────────────────────
 async function eliminarUnidad(id) {
   if (!confirm("¿Eliminar esta unidad?")) return;
   const res = await fetch(`${BASE_URL}/api/unidades/${id}`, {
@@ -401,7 +390,6 @@ async function eliminarUnidad(id) {
   }
 }
 
-// ── Toast local ───────────────────────────────────────────────────────
 function mostrarToast(msg, tipo = "success") {
   let t = document.getElementById("rca-toast");
   if (!t) {
@@ -415,7 +403,6 @@ function mostrarToast(msg, tipo = "success") {
   t._t = setTimeout(() => t.classList.remove("visible"), 3200);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────
 (async function init() {
   await poblarSelectMaterias();
   await poblarSelectGrupos();

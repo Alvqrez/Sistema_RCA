@@ -1,8 +1,6 @@
-// frontend/js/formulario.js — v3 (rediseño completo)
 const BASE_URL_FORM = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
-// ── Estado global ─────────────────────────────────────────────────────
 let estado = {
   grupoId: null,
   unidadId: null,
@@ -16,7 +14,6 @@ let estado = {
 let bonusState = {}; // matricula → { puntos, justificacion }
 let _modalMatricula = null; // alumno activo en modal de actividades
 
-// ── Helpers localStorage ──────────────────────────────────────────────
 function getRubrosConfig(id_grupo, id_unidad) {
   try {
     const saved = JSON.parse(
@@ -39,7 +36,6 @@ function getBonus(matricula) {
   return bonusState[matricula] ?? { puntos: "", justificacion: "" };
 }
 
-// ── Rubro list from localStorage pcts ────────────────────────────────
 function buildRubros(id_grupo, id_unidad) {
   const pcts = getRubrosConfig(id_grupo, id_unidad);
   const extras = [];
@@ -81,7 +77,6 @@ function buildRubros(id_grupo, id_unidad) {
   return list;
 }
 
-// ── INIT ─────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   await cargarGruposSelect();
   const params = new URLSearchParams(window.location.search);
@@ -93,12 +88,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// ── Toggle step cards ─────────────────────────────────────────────────
 function toggleStepCard(id) {
   document.getElementById(id)?.classList.toggle("open");
 }
 
-// ── Load groups ───────────────────────────────────────────────────────
 async function cargarGruposSelect() {
   const sel = document.getElementById("selGrupo");
   const rol = localStorage.getItem("rol");
@@ -157,7 +150,6 @@ async function cargarGruposSelectFallback(sel) {
   } catch (_) {}
 }
 
-// ── Load group ────────────────────────────────────────────────────────
 async function cargarGrupo() {
   const sel = document.getElementById("selGrupo");
   const id = parseInt(sel.value);
@@ -174,7 +166,6 @@ async function cargarGrupo() {
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
 
-  // BUG 5 FIX: verificar si el grupo ya tiene config en BD para actualizar badge
   await verificarConfigGrupo(id);
 
   // Show paso 3
@@ -191,11 +182,9 @@ async function cargarGrupo() {
   document.getElementById("numPaso1").innerHTML =
     `<iconify-icon icon="lucide:check" style="font-size:.8rem"></iconify-icon>`;
 
-  // BUG 7 FIX: si ya hay calificaciones de unidad en BD, mostrar paso 4 directo
   await verificarUnidadesCerradas(id);
 }
 
-// BUG 5 FIX: verifica config en BD y actualiza badge
 async function verificarConfigGrupo(id_grupo) {
   try {
     const res = await fetch(
@@ -226,7 +215,6 @@ async function verificarConfigGrupo(id_grupo) {
   } catch (_) {}
 }
 
-// BUG 7 FIX: si ya hay unidades cerradas, mostrar paso 4 automáticamente
 async function verificarUnidadesCerradas(id_grupo) {
   try {
     const res = await fetch(
@@ -264,7 +252,6 @@ function resetVista() {
   n.textContent = "1";
 }
 
-// ── Load units ────────────────────────────────────────────────────────
 async function cargarUnidadesGrupo() {
   try {
     const res = await fetch(
@@ -318,7 +305,6 @@ async function cargarUnidadesGrupo() {
   if (nu) nu.value = estado.unidadesGrupo.length || "";
 }
 
-// ── Load students ─────────────────────────────────────────────────────
 async function cargarAlumnos() {
   try {
     const res = await fetch(
@@ -336,7 +322,6 @@ async function cargarAlumnos() {
   }
 }
 
-// ── Select unit via tab ───────────────────────────────────────────────
 async function seleccionarUnidadTab(id_unidad) {
   // Highlight tab
   document.querySelectorAll(".unit-tab").forEach((t) => {
@@ -352,7 +337,6 @@ async function seleccionarUnidadTab(id_unidad) {
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
 
-  // BUG 5 FIX: cargar grades directos desde BD (fuente de verdad) antes de restaurar localStorage
   await cargarGradesDirectos();
 
   // Restaurar valores de examen/asistencia (BD ya los pobló en localStorage vía cargarGradesDirectos)
@@ -376,11 +360,9 @@ async function seleccionarUnidadTab(id_unidad) {
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 
-  // BUG 6 FIX: verificar si esta unidad específica ya está cerrada
   await verificarEstadoUnidad();
 }
 
-// BUG 6 FIX: verificar si la unidad ya fue cerrada y actualizar UI
 async function verificarEstadoUnidad() {
   if (!estado.grupoId || !estado.unidadId) return;
   try {
@@ -417,7 +399,6 @@ function marcarUnidadCerradaUI(cerrada) {
   }
 }
 
-// BUG 6 FIX: advertencia si hay campos vacíos antes de guardar/cerrar
 function hayAlumnosSinDatos() {
   const vacios = [];
   estado.alumnos.forEach((al) => {
@@ -448,13 +429,11 @@ function limpiarUnidad() {
   actualizarEstadoBadge(false);
 }
 
-// ── Load activities ───────────────────────────────────────────────────
 async function cargarActividades() {
   const res = await fetch(`${BASE_URL_FORM}/api/actividades`, {
     headers: { Authorization: `Bearer ${token()}` },
   });
   const todas = await res.json();
-  // BUG 8 FIX: parseInt en ambos lados para evitar fallo string vs número
   estado.actividades = todas.filter(
     (a) =>
       parseInt(a.id_grupo) === parseInt(estado.grupoId) &&
@@ -472,7 +451,6 @@ async function actualizarActividades() {
   mostrarToast("Actividades actualizadas", "success");
 }
 
-// ── Load results ──────────────────────────────────────────────────────
 async function cargarResultadosExistentes() {
   estado.resultados = {};
   for (const act of estado.actividades) {
@@ -494,7 +472,6 @@ async function cargarResultadosExistentes() {
   }
 }
 
-// ── Load bonus ────────────────────────────────────────────────────────
 async function cargarBonusUnidad() {
   bonusState = {};
   if (!estado.grupoId || !estado.unidadId) return;
@@ -517,7 +494,6 @@ async function cargarBonusUnidad() {
   } catch (_) {}
 }
 
-// ── Render rubro chips bar ────────────────────────────────────────────
 function renderRubrosBar() {
   const bar = document.getElementById("rubrosBar");
   const unidad = estado.unidadesGrupo.find(
@@ -551,7 +527,6 @@ function renderRubrosBar() {
   bar.innerHTML = html;
 }
 
-// ── Render grade table ────────────────────────────────────────────────
 function renderTablaCalificaciones() {
   const wrap = document.getElementById("gradeTableWrap");
   if (!wrap) return;
@@ -565,7 +540,6 @@ function renderTablaCalificaciones() {
     return;
   }
 
-  // ── Header ──
   const chipColors = {
     pct_actividades: "#2563eb",
     pct_examen: "#b45309",
@@ -593,7 +567,6 @@ function renderTablaCalificaciones() {
     Cal. Final<small>con bonus</small>
   </th></tr>`;
 
-  // ── Rows ──
   let tbody = "";
   estado.alumnos.forEach((al) => {
     tbody += `<tr data-matricula="${al.matricula}">
@@ -678,8 +651,6 @@ function renderTablaCalificaciones() {
   </table>`;
 }
 
-// ── Calculate actividades avg (from resultados) ────────────────────────
-// ── Clamp calificación al rango institucional 0–100 ──────────────────
 function clampCal(val) {
   if (val === null || val === undefined || val === "") return null;
   const n = parseFloat(val);
@@ -715,7 +686,6 @@ function calcularPromedioActividades(matricula) {
   return Math.round(normalized * 10) / 10;
 }
 
-// ── Calculate final grade for a student ──────────────────────────────
 function calcularCalFinal(matricula) {
   if (!estado.rubros.length) return null;
   let total = 0;
@@ -742,8 +712,6 @@ function calcularCalFinal(matricula) {
   return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
 }
 
-// ── Recalculate a row ─────────────────────────────────────────────────
-// ── Base score (sin bonus) — para mostrar diferencia antes/después ────
 function calcularBaseScore(matricula) {
   if (!estado.rubros.length) return null;
   let total = 0;
@@ -795,7 +763,6 @@ function recalcularFila(matricula) {
 
 function onRubroInput(matricula, key, val) {
   setRubroEstado(matricula, key, val);
-  // BUG 8 FIX: persistir en localStorage para sobrevivir recarga
   if (estado.grupoId && estado.unidadId) {
     localStorage.setItem(
       `rubro_${estado.grupoId}_${estado.unidadId}_${matricula}_${key}`,
@@ -812,7 +779,6 @@ function onBonusInput(matricula, val) {
   recalcularFila(matricula);
 }
 
-// ── Modal: actividades de un alumno ──────────────────────────────────
 function abrirModalActividades(matricula) {
   _modalMatricula = matricula;
   const alumno = estado.alumnos.find((a) => a.matricula === matricula);
@@ -974,7 +940,6 @@ async function guardarDesdeModal() {
   cerrarModalActividades();
 }
 
-// ── BUG 5 FIX: guardar calificaciones directas (examen/asistencia) en BD ──
 async function guardarGradesDirectos() {
   if (!estado.grupoId || !estado.unidadId) return;
   const grades = {};
@@ -1009,7 +974,6 @@ async function guardarGradesDirectos() {
   }
 }
 
-// ── BUG 5 FIX: cargar grades directos desde BD al seleccionar una unidad ──
 async function cargarGradesDirectos() {
   if (!estado.grupoId || !estado.unidadId) return;
   try {
@@ -1039,14 +1003,12 @@ async function cargarGradesDirectos() {
   } catch (_) {}
 }
 
-// ── Save all grades ───────────────────────────────────────────────────
 async function guardarCalificaciones() {
   if (!estado.grupoId || !estado.unidadId) {
     mostrarToast("Selecciona grupo y unidad primero", "error");
     return;
   }
 
-  // BUG 6 FIX: advertir si hay campos vacíos, pero permitir continuar
   const vacios = hayAlumnosSinDatos();
   if (vacios.length > 0) {
     const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
@@ -1097,7 +1059,6 @@ async function guardarCalificaciones() {
   // 2. Save bonus
   await guardarBonusUnidad();
 
-  // BUG 5 FIX: guardar examen/asistencia en BD también
   await guardarGradesDirectos();
 
   if (total > 0) mostrarToast(`${total} calificaciones guardadas`, "success");
@@ -1105,9 +1066,7 @@ async function guardarCalificaciones() {
   renderTablaCalificaciones();
 }
 
-// ── Save and close unit ───────────────────────────────────────────────
 async function guardarYCerrarUnidad() {
-  // BUG 6 FIX: verificar campos vacíos con advertencia más fuerte al cerrar
   const vacios = hayAlumnosSinDatos();
   if (vacios.length > 0) {
     const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
@@ -1168,7 +1127,6 @@ async function guardarYCerrarUnidad() {
   );
 
   if (errores === 0) {
-    // BUG 6 FIX: marcar SOLO la tab de la unidad actual como cerrada (verde)
     document.querySelectorAll(".unit-tab").forEach((t) => {
       if (parseInt(t.dataset.uid) === estado.unidadId) {
         t.style.background = "var(--success)";
@@ -1178,14 +1136,12 @@ async function guardarYCerrarUnidad() {
       }
     });
 
-    // BUG 6 FIX: usar función centralizada para actualizar UI de cierre
     marcarUnidadCerradaUI(true);
 
     intentarMostrarSeccionFinal();
   }
 }
 
-// ── Save bonus ────────────────────────────────────────────────────────
 async function guardarBonusUnidad() {
   let saved = 0,
     errs = 0;
@@ -1232,7 +1188,6 @@ async function guardarBonusUnidad() {
     mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
 }
 
-// ── CSV ───────────────────────────────────────────────────────────────
 function abrirModalCSV() {
   if (!estado.unidadId) {
     mostrarToast("Selecciona una unidad primero", "info");
@@ -1323,7 +1278,6 @@ async function aplicarCSV(id_actividad) {
   window._csvDatos = null;
 }
 
-// ── Paso 4 — Final grades ─────────────────────────────────────────────
 function intentarMostrarSeccionFinal() {
   const sec = document.getElementById("cardPaso4");
   if (!sec || !estado.grupoId) return;
@@ -1466,12 +1420,10 @@ async function guardarCalificacionesFinal() {
   if (guardados > 0)
     mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
   if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
-  // BUG 7 FIX: refrescar siempre la vista para mostrar calificacion_oficial
   // que ahora sí se guarda en BD (fix en calculo.js)
   await calcularVistaFinal();
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────
 function actualizarEstadoBadge(activo) {
   const badge = document.getElementById("estadoBadge");
   if (!badge) return;

@@ -1,4 +1,3 @@
-// frontend/js/materias.js — CORREGIDO v2
 const BASE_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
@@ -8,20 +7,15 @@ let materiaEditando = null; // null = modo registro, string = clave en edición
 const form = document.getElementById("formMateria");
 const tabla = document.getElementById("tablaMaterias");
 
-// ── Helpers modal ──────────────────────────────────────────────────────
-
 function abrirModalMateria() {
   document.getElementById("modalMateria").classList.add("visible");
 }
 
 function cerrarModalMateria() {
   document.getElementById("modalMateria").classList.remove("visible");
-  // BUG 1 FIX: limpiar estado al cerrar para que "Nueva materia" no quede
   // contaminado con el estado de la última edición que pudo haber fallado
   cancelarEdicion();
 }
-
-// ─── CARGAR ────────────────────────────────────────────────────────────────
 
 async function cargarMaterias() {
   const token = localStorage.getItem("token");
@@ -64,8 +58,6 @@ async function cargarMaterias() {
     `;
   });
 }
-
-// ─── SUBMIT (REGISTRAR O EDITAR) ───────────────────────────────────────────
 
 form.addEventListener("submit", async function (e) {
   e.preventDefault();
@@ -126,8 +118,6 @@ form.addEventListener("submit", async function (e) {
   }
 });
 
-// ─── EDITAR ────────────────────────────────────────────────────────────────
-
 async function editarMateria(clave) {
   const token = localStorage.getItem("token");
 
@@ -140,7 +130,6 @@ async function editarMateria(clave) {
 
     const data = await res.json();
 
-    // BUG 1 FIX: asignar materiaEditando SOLO después de que el fetch tuvo éxito
     materiaEditando = clave;
 
     document.getElementById("claveMateria").value = data.clave_materia;
@@ -152,19 +141,15 @@ async function editarMateria(clave) {
     document.getElementById("noUnidades").value = data.no_unidades;
 
     document.getElementById("tituloFormMateria").textContent = "Editar materia";
-    // BUG 1 FIX: selector correcto — era ".btn-guardar" (no existe), ahora "[type='submit']"
     const btnSubmit = document.querySelector("#formMateria [type='submit']");
     if (btnSubmit) btnSubmit.textContent = "Actualizar";
 
     abrirModalMateria();
   } catch {
     alert("Error al cargar datos de la materia. Intenta de nuevo.");
-    // BUG 1 FIX: asegurarse de NO dejar materiaEditando contaminado
     materiaEditando = null;
   }
 }
-
-// ─── CANCELAR EDICIÓN ──────────────────────────────────────────────────────
 
 function cancelarEdicion() {
   materiaEditando = null;
@@ -172,13 +157,10 @@ function cancelarEdicion() {
   document.getElementById("claveMateria").disabled = false;
   document.getElementById("tituloFormMateria").textContent =
     "Registrar materia";
-  // BUG 1 FIX: selector corregido
   const btnSubmit = document.querySelector("#formMateria [type='submit']");
   if (btnSubmit) btnSubmit.textContent = "Guardar";
   mostrarMensaje("", "");
 }
-
-// ─── ELIMINAR ──────────────────────────────────────────────────────────────
 
 async function eliminarMateria(clave) {
   if (
@@ -207,8 +189,6 @@ async function eliminarMateria(clave) {
   }
 }
 
-// ─── UTILIDAD ──────────────────────────────────────────────────────────────
-
 function mostrarMensaje(texto, tipo) {
   const el = document.getElementById("mensajeMateria");
   if (!el) return;
@@ -220,11 +200,9 @@ function mostrarMensaje(texto, tipo) {
     }, 4000);
 }
 
-// ── Estado CSV ────────────────────────────────────────────────────────────────
 let csvMateriasData = [];
 let materiasGlobal = [];
 
-// ── Abrir / cerrar modal ──────────────────────────────────────────────────────
 function abrirModalCSVMaterias() {
   csvMateriasData = [];
   document.getElementById("csvMateriasPreview").innerHTML = "";
@@ -236,7 +214,6 @@ function cerrarModalCSVMaterias() {
   document.getElementById("modalImportMaterias").classList.remove("visible");
 }
 
-// ── Drag & drop ───────────────────────────────────────────────────────────────
 function dragOverMaterias(e) {
   e.preventDefault();
   document.getElementById("dropZoneMaterias").classList.add("drag-over");
@@ -252,7 +229,6 @@ function leerCSVMaterias(e) {
   if (file) procesarCSVMaterias(file);
 }
 
-// ── Parsear archivo ───────────────────────────────────────────────────────────
 function procesarCSVMaterias(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -305,7 +281,6 @@ function mostrarPreviewCSVMaterias(headers, data) {
     </div>`;
 }
 
-// ── Enviar al backend ─────────────────────────────────────────────────────────
 async function importarCSVMaterias() {
   if (!csvMateriasData.length) return;
 
@@ -347,7 +322,6 @@ async function importarCSVMaterias() {
   }
 }
 
-// ── Exportar CSV ──────────────────────────────────────────────────────────────
 async function exportarCSVMaterias() {
   const token =
     localStorage.getItem("token") || localStorage.getItem("authToken");
@@ -393,7 +367,6 @@ async function exportarCSVMaterias() {
   }
 }
 
-// ── Cerrar al hacer clic fuera ────────────────────────────────────────────────
 document.addEventListener("click", (e) => {
   if (e.target.id === "modalImportMaterias") cerrarModalCSVMaterias();
 });

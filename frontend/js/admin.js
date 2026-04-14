@@ -1,4 +1,3 @@
-// frontend/js/admin.js
 const BASE_URL = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
@@ -7,7 +6,6 @@ let resetUserId = null;
 
 soloPermitido("administrador");
 
-// ── Toast ─────────────────────────────────────────────────────────
 function toast(msg, tipo = "success") {
   const c = document.getElementById("toast-container");
   if (!c) return;
@@ -23,7 +21,6 @@ function toast(msg, tipo = "success") {
   setTimeout(() => t.remove(), 3200);
 }
 
-// ── Modal helpers ─────────────────────────────────────────────────
 function abrirModal(id) {
   document.getElementById(id).classList.add("visible");
 }
@@ -36,13 +33,11 @@ document.addEventListener("click", (e) => {
     e.target.classList.remove("visible");
 });
 
-// ── Init ──────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   cargarStats();
   cargarUsuarios();
 });
 
-// ── Estadísticas del sistema ──────────────────────────────────────
 async function cargarStats() {
   try {
     const r = await fetch(`${BASE_URL}/api/admin/stats`, {
@@ -100,7 +95,6 @@ function renderStats(s) {
     .join("");
 }
 
-// ── Usuarios ──────────────────────────────────────────────────────
 async function cargarUsuarios() {
   try {
     const r = await fetch(`${BASE_URL}/api/admin/usuarios`, {
@@ -174,7 +168,6 @@ function renderUsuarios(datos) {
     .join("");
 }
 
-// ── Crear usuario ─────────────────────────────────────────────────
 async function crearUsuario() {
   const username = document.getElementById("uUsername").value.trim();
   const password = document.getElementById("uPassword").value;
@@ -228,7 +221,6 @@ function limpiarModalUser() {
   if (e) e.style.display = "none";
 }
 
-// ── Toggle estatus ────────────────────────────────────────────────
 async function toggleEstatus(id, estadoActual) {
   try {
     const r = await fetch(`${BASE_URL}/api/admin/usuarios/${id}/estatus`, {
@@ -248,7 +240,6 @@ async function toggleEstatus(id, estadoActual) {
   }
 }
 
-// ── Reset contraseña ──────────────────────────────────────────────
 function abrirReset(id, username) {
   resetUserId = id;
   document.getElementById("resetUsername").textContent = username;

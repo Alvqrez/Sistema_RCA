@@ -1,17 +1,11 @@
-// frontend/js/actividades.js
 const BASE_URL = "http://localhost:3000";
 
-// ── ESTADO ────────────────────────────────────────────────────────────
 let todasActividades = [];
 let actividadActiva = null;
 let gruposMap = {}; // id_grupo → grupo completo
 let unidadesGrupoMap = {}; // id_grupo → [{ id_unidad, nombre_unidad, numero_unidad }]
 
-// ─────────────────────────────────────────────────────────────────────
-//  INIT
-// ─────────────────────────────────────────────────────────────────────
 (async function init() {
-  // Issue 2: fecha_entrega no puede ser en el pasado
   const hoy = new Date().toISOString().split("T")[0];
   const fechaInput = document.getElementById("fechaEntrega");
   if (fechaInput) fechaInput.min = hoy;
@@ -20,7 +14,6 @@ let unidadesGrupoMap = {}; // id_grupo → [{ id_unidad, nombre_unidad, numero_u
   await cargarActividades();
 })();
 
-// ── Carga grupos ──────────────────────────────────────────────────────
 async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
   const rol = localStorage.getItem("rol");
@@ -56,7 +49,6 @@ async function cargarGruposSelect() {
   }
 }
 
-// ── Cargar unidades para un grupo (grupo_unidad → fallback materia) ───
 async function cargarUnidadesParaGrupo(idGrupo) {
   const token = localStorage.getItem("token");
   if (unidadesGrupoMap[idGrupo]) return unidadesGrupoMap[idGrupo];
@@ -100,7 +92,6 @@ async function cargarUnidadesParaGrupo(idGrupo) {
   return [];
 }
 
-// ── Issue 1 FIX: filtroGrupo usa la misma función de carga con fallback
 async function onFiltroGrupoChange() {
   const idGrupo = document.getElementById("filtroGrupo").value;
   const selUni = document.getElementById("filtroUnidad");
@@ -115,7 +106,6 @@ async function onFiltroGrupoChange() {
   filtrarActividades();
 }
 
-// ── grupoActividad change: carga unidades en el formulario de creación ─
 document
   .getElementById("grupoActividad")
   .addEventListener("change", async function () {
@@ -150,22 +140,17 @@ document
 
     selUni.innerHTML = `<option value="">-- Selecciona unidad --</option>`;
     unidades.forEach((u) => {
-      // Issue 6 (formulario) / Issue 2 en actividades: mostrar "(Unidad X) nombre"
       selUni.innerHTML += `<option value="${u.id_unidad}">(Unidad ${u.numero_unidad}) ${u.nombre_unidad}</option>`;
     });
     actualizarIndicadorPonderacion();
   });
 
-// ── unidadActividad change: actualiza el indicador ────────────────────
 document
   .getElementById("unidadActividad")
   .addEventListener("change", function () {
     actualizarIndicadorPonderacion();
   });
 
-// ─────────────────────────────────────────────────────────────────────
-//  Issue 3: INDICADOR DE PONDERACIÓN DISPONIBLE
-// ─────────────────────────────────────────────────────────────────────
 function actualizarIndicadorPonderacion() {
   const idGrupo = document.getElementById("grupoActividad").value;
   const idUnidad = document.getElementById("unidadActividad").value;
@@ -220,9 +205,6 @@ function actualizarIndicadorEnTiempoReal() {
   actualizarIndicadorPonderacion();
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  CARGAR Y RENDERIZAR ACTIVIDADES
-// ─────────────────────────────────────────────────────────────────────
 async function cargarActividades() {
   const token = localStorage.getItem("token");
   try {
@@ -325,9 +307,6 @@ function renderTablaActividades(actividades) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  REGISTRAR ACTIVIDAD
-// ─────────────────────────────────────────────────────────────────────
 async function registrarActividad() {
   const token = localStorage.getItem("token");
 
@@ -356,7 +335,6 @@ async function registrarActividad() {
     return;
   }
 
-  // Issue 2: validar que la fecha no sea en el pasado
   if (fecha_entrega) {
     const hoy = new Date().toISOString().split("T")[0];
     if (fecha_entrega < hoy) {
@@ -419,9 +397,6 @@ function limpiarFormActividad() {
   actualizarIndicadorPonderacion();
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  PANEL DE CALIFICACIONES POR ACTIVIDAD
-// ─────────────────────────────────────────────────────────────────────
 async function abrirPanelCalificaciones(id_actividad) {
   const token = localStorage.getItem("token");
   const act = todasActividades.find((a) => a.id_actividad === id_actividad);
@@ -657,18 +632,12 @@ async function guardarCalificacionesActividad() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  CERRAR PANEL
-// ─────────────────────────────────────────────────────────────────────
 function cerrarPanelCal() {
   document.getElementById("panelCalActividad").style.display = "none";
   actividadActiva = null;
   renderTablaActividades(todasActividades);
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  ELIMINAR ACTIVIDAD
-// ─────────────────────────────────────────────────────────────────────
 function pedirEliminar(id) {
   document.getElementById("modalEliminar").classList.add("visible");
   document.getElementById("btnConfirmarEliminar").onclick = () =>
@@ -701,18 +670,12 @@ async function confirmarEliminar(id) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  CARDS PLEGABLES
-// ─────────────────────────────────────────────────────────────────────
 function toggleCard(btn) {
   const card = btn.closest(".card-collapsible");
   card.classList.toggle("collapsed");
   btn.title = card.classList.contains("collapsed") ? "Expandir" : "Contraer";
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  MODALES
-// ─────────────────────────────────────────────────────────────────────
 function abrirModal(id) {
   document.getElementById(id)?.classList.add("visible");
 }
@@ -726,9 +689,6 @@ document.querySelectorAll(".modal-overlay").forEach((o) => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────
-//  UTILIDADES
-// ─────────────────────────────────────────────────────────────────────
 function formatFecha(f) {
   // Devuelve DD/MM/YYYY — usa fmtFecha global del sidebar si existe,
   // o la implementación local como respaldo
@@ -740,7 +700,6 @@ function formatFecha(f) {
   return `${dia.padStart(2,"0")}/${mes.padStart(2,"0")}/${anio}`;
 }
 
-// ── Toast (usa showToast del sidebar.js si está disponible) ──────────
 function mostrarToast(msg, tipo = "success") {
   if (typeof showToast === "function") {
     showToast(msg, tipo);
