@@ -377,6 +377,7 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
   };
 
   let bdOk = false;
+  let serverError = "";
   for (const rid of idsReales) {
     try {
       const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
@@ -388,11 +389,17 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
       if (res.ok && data.success) {
         bdOk = true;
         localStorage.setItem(`pcts_${id_grupo}_${rid}`, JSON.stringify(pcts));
+      } else {
+        serverError = data.error || `Error HTTP ${res.status}`;
       }
-    } catch (_) {}
+    } catch (e) {
+      serverError = "Sin conexión con el servidor";
+    }
   }
   if (!bdOk && idsReales.length > 0 && !isNaN(idsReales[0])) {
-    showToast("⚠️ Guardado solo localmente — error al conectar con el servidor", "info");
+    showToast(`⚠️ Solo guardado localmente — ${serverError}`, "info");
+  } else if (bdOk) {
+    showToast("Configuración guardada", "success");
   }
 
   const blockId = `uc-${id_grupo}-${id_unidad}`;
