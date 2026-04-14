@@ -1,4 +1,4 @@
-// backend/seed.js — datos de demostración completos para el 13 de Abril
+// backend/seed.js
 const bcrypt = require("bcrypt");
 const db = require("./src/db");
 
@@ -10,7 +10,7 @@ async function seed() {
     await q(`INSERT IGNORE INTO carrera (id_carrera, nombre_carrera, siglas, total_semestres, total_creditos)
              VALUES ('ISC','Ingeniería en Sistemas Computacionales','ISC',9,345)`);
 
-    // ── FIX 8: Periodo escolar ─────────────────────────────────────────────
+    // ── Periodo escolar ─────────────────────────────────────────────
     await q(`INSERT IGNORE INTO periodo_escolar (id_periodo, descripcion, anio, fecha_inicio, fecha_fin, estatus)
              VALUES (1,'Enero-Junio 2025',2025,'2025-01-13','2025-06-20','Vigente')`);
     console.log("✓ Periodo  →  Enero-Junio 2025 (Vigente)");

@@ -139,7 +139,7 @@ router.post("/", maestroOAdmin, (req, res) => {
   });
 });
 
-// PUT — editar actividad (solo si no está bloqueada)
+// PUT — editar actividad
 router.put("/:id", maestroOAdmin, (req, res) => {
   const { nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega } =
     req.body;
