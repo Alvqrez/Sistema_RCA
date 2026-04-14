@@ -254,18 +254,15 @@ async function cargarConfigsDesdeDB() {
       if (!Array.isArray(configs)) continue;
       configs.forEach((c) => {
         const key = `pcts_${g.id_grupo}_${c.id_unidad}`;
-        // Solo escribir si no existe ya en localStorage (respeta cambios locales)
-        const existing = localStorage.getItem(key);
-        if (!existing) {
-          localStorage.setItem(
-            key,
-            JSON.stringify({
-              pct_actividades: c.pct_actividades,
-              pct_examen: c.pct_examen,
-              pct_asistencia: c.pct_asistencia,
-            })
-          );
-        }
+        // BUG 1 FIX: SIEMPRE sincronizar desde BD (la BD es la fuente de verdad)
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            pct_actividades: c.pct_actividades,
+            pct_examen: c.pct_examen,
+            pct_asistencia: c.pct_asistencia,
+          })
+        );
       });
     } catch (_) {
       // No bloquear si falla un grupo
@@ -494,27 +491,40 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
   }
   localStorage.setItem(`pcts_${id_grupo}_${id_unidad}`, JSON.stringify(pcts));
 
+  // BUG 2/3 FIX: para unidades fusionadas/divididas (id con "_"),
+  // guardar la config bajo TODOS los id_unidad originales que la componen
+  const idStr = String(id_unidad);
+  const idsReales = idStr.includes("_")
+    ? idStr.replace(/_[ab]$/, "").split("_").map(Number).filter((n) => !isNaN(n) && n > 0)
+    : [id_unidad];
+
   const body = {
     id_grupo,
-    id_unidad,
     pct_actividades: pcts.pct_actividades ?? 0,
     pct_examen: pcts.pct_examen ?? 0,
     pct_asistencia: pcts.pct_asistencia ?? 0,
     nota: JSON.stringify(pcts),
   };
-  try {
-    const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tokenGM()}`,
-      },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success) throw new Error(data.error);
-  } catch (_) {
-    // silently saved to localStorage already; server fail is non-blocking
+
+  let bdOk = false;
+  for (const rid of idsReales) {
+    try {
+      const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenGM()}` },
+        body: JSON.stringify({ ...body, id_unidad: rid }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        bdOk = true;
+        // Sincronizar localStorage también para el id real
+        localStorage.setItem(`pcts_${id_grupo}_${rid}`, JSON.stringify(pcts));
+      }
+    } catch (_) {}
+  }
+  // BUG 1 FIX: advertir si no se pudo guardar en BD
+  if (!bdOk && idsReales.length > 0 && !isNaN(idsReales[0])) {
+    showToast("⚠️ Guardado solo localmente — error al conectar con el servidor", "info");
   }
 
   // Update the badge in the unit header
@@ -535,24 +545,24 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
 
 // ── Guardar todas las unidades de un grupo ────────────────────────────
 async function guardarTodasUnidades(id_grupo) {
-  const unidades = unidadesPorGrupo[id_grupo] || [];
+  // BUG 2/3 FIX: usar unidades efectivas (incluye fusionadas/divididas)
+  const unidades = getUnidadesEfectivas(id_grupo).length
+    ? getUnidadesEfectivas(id_grupo)
+    : unidadesPorGrupo[id_grupo] || [];
+
   if (!unidades.length) {
     showToast("No hay unidades para guardar", "info");
     return;
   }
 
-  let ok = 0,
-    fail = 0;
+  let ok = 0, fail = 0;
   for (const u of unidades) {
     const res = await guardarConfigUnidad(id_grupo, u.id_unidad);
     res ? ok++ : fail++;
   }
 
   if (fail === 0)
-    showToast(
-      `✓ ${ok} unidad${ok > 1 ? "es" : ""} guardada${ok > 1 ? "s" : ""}`,
-      "success",
-    );
+    showToast(`✓ ${ok} unidad${ok > 1 ? "es" : ""} guardada${ok > 1 ? "s" : ""}`, "success");
   else showToast(`${ok} guardadas, ${fail} con error (suma ≠ 100%)`, "error");
 }
 

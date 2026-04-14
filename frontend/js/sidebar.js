@@ -232,7 +232,25 @@ function soloPermitido(...roles) {
 }
 
 function cerrarSesion() {
+  // BUG 1/4 FIX: conservar datos académicos (configs y asistencia) que
+  // vienen de la BD y se recargan al iniciar sesión, pero NO los tokens de auth.
+  // Solo borrar las keys de sesión, no las de configuración.
+  const keysAConservar = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (
+      k.startsWith("pcts_") ||
+      k.startsWith("rubros_extra_") ||
+      k.startsWith("unidades_custom_") ||
+      k.startsWith("asist_") ||
+      k.startsWith("rubro_") ||
+      k === "tema"
+    ) {
+      keysAConservar.push([k, localStorage.getItem(k)]);
+    }
+  }
   localStorage.clear();
+  keysAConservar.forEach(([k, v]) => localStorage.setItem(k, v));
   window.location.href = "login.html";
 }
 

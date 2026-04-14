@@ -266,4 +266,78 @@ router.get(
   },
 );
 
+
+// ── BUGS 4/5 FIX: guardar calificaciones directas (examen, asistencia) por alumno ──
+// Almacena en config_evaluacion_unidad.nota como JSON {grades:{matricula:{cal_examen,cal_asistencia}}}
+router.post("/guardar-directos", maestroOAdmin, (req, res) => {
+  const { id_grupo, id_unidad, grades } = req.body;
+  if (!id_grupo || !id_unidad || !grades || typeof grades !== "object") {
+    return res.status(400).json({ error: "Faltan campos: id_grupo, id_unidad, grades" });
+  }
+
+  // Leer nota actual para no sobrescribir los pcts
+  db.query(
+    "SELECT nota FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",
+    [id_grupo, id_unidad],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "Error interno" });
+
+      let notaObj = {};
+      if (rows[0]?.nota) {
+        try { notaObj = JSON.parse(rows[0].nota); } catch (_) {}
+      }
+      // Fusionar grades con los existentes (por alumno)
+      if (!notaObj.grades) notaObj.grades = {};
+      Object.entries(grades).forEach(([mat, vals]) => {
+        notaObj.grades[mat] = { ...(notaObj.grades[mat] || {}), ...vals };
+      });
+
+      db.query(
+        `INSERT INTO config_evaluacion_unidad (id_grupo, id_unidad, pct_actividades, pct_examen, pct_asistencia, nota)
+         VALUES (?, ?, 60, 30, 10, ?)
+         ON DUPLICATE KEY UPDATE nota = VALUES(nota)`,
+        [id_grupo, id_unidad, JSON.stringify(notaObj)],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: "Error interno al guardar" });
+          res.json({ success: true });
+        }
+      );
+    }
+  );
+});
+
+// GET — obtener calificaciones directas de todos los alumnos de una unidad
+router.get("/directos/:id_grupo/:id_unidad", verificarToken, (req, res) => {
+  const { id_grupo, id_unidad } = req.params;
+  db.query(
+    "SELECT nota FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",
+    [id_grupo, id_unidad],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "Error interno" });
+      let grades = {};
+      if (rows[0]?.nota) {
+        try {
+          const parsed = JSON.parse(rows[0].nota);
+          grades = parsed.grades || {};
+        } catch (_) {}
+      }
+      res.json(grades);
+    }
+  );
+});
+
+// GET — verificar si una unidad ya tiene calificaciones calculadas (para Bug 6)
+router.get("/estado-unidad/:id_grupo/:id_unidad", verificarToken, (req, res) => {
+  const { id_grupo, id_unidad } = req.params;
+  db.query(
+    `SELECT COUNT(*) AS total FROM calificacion_unidad
+     WHERE id_grupo = ? AND id_unidad = ? AND calificacion_unidad_final IS NOT NULL`,
+    [id_grupo, id_unidad],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "Error interno" });
+      res.json({ cerrada: rows[0].total > 0, total_alumnos: rows[0].total });
+    }
+  );
+});
+
 module.exports = router;

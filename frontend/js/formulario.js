@@ -352,7 +352,10 @@ async function seleccionarUnidadTab(id_unidad) {
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
 
-  // BUG 8 FIX: restaurar valores de examen/asistencia guardados en localStorage
+  // BUG 5 FIX: cargar grades directos desde BD (fuente de verdad) antes de restaurar localStorage
+  await cargarGradesDirectos();
+
+  // Restaurar valores de examen/asistencia (BD ya los pobló en localStorage vía cargarGradesDirectos)
   estado.alumnos.forEach((al) => {
     estado.rubros
       .filter((r) => r.tipo === "directo")
@@ -372,6 +375,64 @@ async function seleccionarUnidadTab(id_unidad) {
   document.getElementById("accionesCaptura").style.display = "flex";
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
+
+  // BUG 6 FIX: verificar si esta unidad específica ya está cerrada
+  await verificarEstadoUnidad();
+}
+
+// BUG 6 FIX: verificar si la unidad ya fue cerrada y actualizar UI
+async function verificarEstadoUnidad() {
+  if (!estado.grupoId || !estado.unidadId) return;
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/calificaciones/estado-unidad/${estado.grupoId}/${estado.unidadId}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (!res.ok) return;
+    const { cerrada } = await res.json();
+    marcarUnidadCerradaUI(cerrada);
+  } catch (_) {}
+}
+
+function marcarUnidadCerradaUI(cerrada) {
+  const banner = document.getElementById("bannerUnidadCerrada");
+  const btnCerrar = document.querySelector('.btn-success[onclick="guardarYCerrarUnidad()"]');
+
+  if (cerrada) {
+    if (banner) banner.style.display = "flex";
+    if (btnCerrar) {
+      btnCerrar.textContent = "Unidad Cerrada";
+      btnCerrar.style.background = "var(--danger, #ef4444)";
+      btnCerrar.style.borderColor = "var(--danger, #ef4444)";
+      btnCerrar.disabled = true;
+    }
+  } else {
+    if (banner) banner.style.display = "none";
+    if (btnCerrar) {
+      btnCerrar.innerHTML = '<iconify-icon icon="mdi:check-decagram-outline"></iconify-icon> Guardar y cerrar unidad';
+      btnCerrar.style.background = "";
+      btnCerrar.style.borderColor = "";
+      btnCerrar.disabled = false;
+    }
+  }
+}
+
+// BUG 6 FIX: advertencia si hay campos vacíos antes de guardar/cerrar
+function hayAlumnosSinDatos() {
+  const vacios = [];
+  estado.alumnos.forEach((al) => {
+    const rubrosDirectosFaltantes = estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .some((r) => {
+        const v = getRubroEstado(al.matricula, r.key);
+        return v === "" || v === undefined || v === null;
+      });
+    const actFaltantes =
+      estado.rubros.some((r) => r.tipo === "actividades") &&
+      calcularPromedioActividades(al.matricula) === null;
+    if (rubrosDirectosFaltantes || actFaltantes) vacios.push(al.nombre);
+  });
+  return vacios;
 }
 
 function limpiarUnidad() {
@@ -913,11 +974,92 @@ async function guardarDesdeModal() {
   cerrarModalActividades();
 }
 
+// ── BUG 5 FIX: guardar calificaciones directas (examen/asistencia) en BD ──
+async function guardarGradesDirectos() {
+  if (!estado.grupoId || !estado.unidadId) return;
+  const grades = {};
+  let hayGrades = false;
+  estado.alumnos.forEach((al) => {
+    const entry = {};
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const val = getRubroEstado(al.matricula, r.key);
+        if (val !== "" && val !== undefined && val !== null) {
+          if (r.key === "pct_examen")     entry.cal_examen     = parseFloat(val);
+          if (r.key === "pct_asistencia") entry.cal_asistencia = parseFloat(val);
+        }
+      });
+    if (Object.keys(entry).length) {
+      grades[al.matricula] = entry;
+      hayGrades = true;
+    }
+  });
+
+  if (!hayGrades) return;
+
+  try {
+    await fetch(`${BASE_URL_FORM}/api/calificaciones/guardar-directos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ id_grupo: estado.grupoId, id_unidad: estado.unidadId, grades }),
+    });
+  } catch (_) {
+    // No bloquear el flujo si falla — los valores están en localStorage como respaldo
+  }
+}
+
+// ── BUG 5 FIX: cargar grades directos desde BD al seleccionar una unidad ──
+async function cargarGradesDirectos() {
+  if (!estado.grupoId || !estado.unidadId) return;
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/calificaciones/directos/${estado.grupoId}/${estado.unidadId}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (!res.ok) return;
+    const grades = await res.json();
+    // Poblar estado y localStorage
+    Object.entries(grades).forEach(([mat, vals]) => {
+      if (vals.cal_examen !== undefined) {
+        setRubroEstado(mat, "pct_examen", vals.cal_examen);
+        localStorage.setItem(
+          `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_examen`,
+          vals.cal_examen
+        );
+      }
+      if (vals.cal_asistencia !== undefined) {
+        setRubroEstado(mat, "pct_asistencia", vals.cal_asistencia);
+        localStorage.setItem(
+          `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_asistencia`,
+          vals.cal_asistencia
+        );
+      }
+    });
+  } catch (_) {}
+}
+
 // ── Save all grades ───────────────────────────────────────────────────
 async function guardarCalificaciones() {
   if (!estado.grupoId || !estado.unidadId) {
     mostrarToast("Selecciona grupo y unidad primero", "error");
     return;
+  }
+
+  // BUG 6 FIX: advertir si hay campos vacíos, pero permitir continuar
+  const vacios = hayAlumnosSinDatos();
+  if (vacios.length > 0) {
+    const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
+    const continuar = confirm(
+      `⚠️ Los siguientes alumnos tienen campos sin calificar: ${nombres}.
+
+` +
+      `Los campos vacíos se guardarán como "sin dato" y usarán el valor 0 al calcular la unidad.
+
+` +
+      `¿Deseas continuar de todas formas?`
+    );
+    if (!continuar) return;
   }
 
   let total = 0;
@@ -955,6 +1097,9 @@ async function guardarCalificaciones() {
   // 2. Save bonus
   await guardarBonusUnidad();
 
+  // BUG 5 FIX: guardar examen/asistencia en BD también
+  await guardarGradesDirectos();
+
   if (total > 0) mostrarToast(`${total} calificaciones guardadas`, "success");
   await cargarResultadosExistentes();
   renderTablaCalificaciones();
@@ -962,8 +1107,24 @@ async function guardarCalificaciones() {
 
 // ── Save and close unit ───────────────────────────────────────────────
 async function guardarYCerrarUnidad() {
+  // BUG 6 FIX: verificar campos vacíos con advertencia más fuerte al cerrar
+  const vacios = hayAlumnosSinDatos();
+  if (vacios.length > 0) {
+    const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
+    const continuar = confirm(
+      `⚠️ ATENCIÓN: Los siguientes alumnos tienen campos sin calificar: ${nombres}.
+
+` +
+      `Al cerrar la unidad, los campos vacíos se calcularán con valor 0 y NO podrán modificarse fácilmente.
+
+` +
+      `¿Deseas cerrar la unidad de todas formas?`
+    );
+    if (!continuar) return;
+  }
+
   await guardarCalificaciones();
-  if (!confirm("¿Calcular y cerrar la unidad para todos los alumnos?")) return;
+  if (!confirm("¿Confirmar cierre de la unidad para todos los alumnos? Esta acción calculará el promedio final de la unidad.")) return;
 
   let errores = 0;
   for (const al of estado.alumnos) {
@@ -1007,29 +1168,18 @@ async function guardarYCerrarUnidad() {
   );
 
   if (errores === 0) {
-    // Marcar tab como cerrada (verde)
+    // BUG 6 FIX: marcar SOLO la tab de la unidad actual como cerrada (verde)
     document.querySelectorAll(".unit-tab").forEach((t) => {
       if (parseInt(t.dataset.uid) === estado.unidadId) {
         t.style.background = "var(--success)";
         t.style.borderColor = "var(--success)";
         t.style.color = "#fff";
+        t.dataset.cerrada = "1"; // marcar el data attribute
       }
     });
 
-    // BUG 4 FIX: cambiar botón "Guardar y cerrar" a estado cerrado (rojo/disabled)
-    const btnCerrar = document.querySelector(
-      '.btn-success[onclick="guardarYCerrarUnidad()"]'
-    );
-    if (btnCerrar) {
-      btnCerrar.textContent = "Unidad Cerrada";
-      btnCerrar.style.background = "var(--danger, #ef4444)";
-      btnCerrar.style.borderColor = "var(--danger, #ef4444)";
-      btnCerrar.disabled = true;
-    }
-
-    // Mostrar banner de unidad cerrada
-    const banner = document.getElementById("bannerUnidadCerrada");
-    if (banner) banner.style.display = "flex";
+    // BUG 6 FIX: usar función centralizada para actualizar UI de cierre
+    marcarUnidadCerradaUI(true);
 
     intentarMostrarSeccionFinal();
   }
@@ -1316,7 +1466,9 @@ async function guardarCalificacionesFinal() {
   if (guardados > 0)
     mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
   if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
-  if (guardados > 0) calcularVistaFinal();
+  // BUG 7 FIX: refrescar siempre la vista para mostrar calificacion_oficial
+  // que ahora sí se guarda en BD (fix en calculo.js)
+  await calcularVistaFinal();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
