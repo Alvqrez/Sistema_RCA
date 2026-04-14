@@ -151,7 +151,7 @@ function renderUsuarios(datos) {
       </div></td>
       <td><span class="badge ${rolColor[u.rol] || "badge-info"}">${rolLabel[u.rol] || u.rol}</span></td>
       <td style="font-size:0.8rem;color:var(--text-muted)">
-        ${u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "2-digit" }) : "Nunca"}
+        ${u.ultimo_acceso ? fmtFecha(u.ultimo_acceso) : "Nunca"}
       </td>
       <td>
         ${

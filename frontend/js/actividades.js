@@ -730,27 +730,14 @@ document.querySelectorAll(".modal-overlay").forEach((o) => {
 //  UTILIDADES
 // ─────────────────────────────────────────────────────────────────────
 function formatFecha(f) {
+  // Devuelve DD/MM/YYYY — usa fmtFecha global del sidebar si existe,
+  // o la implementación local como respaldo
+  if (typeof fmtFecha === "function") return fmtFecha(f);
   if (!f) return "—";
-  // Las fechas de MySQL vienen como "2025-04-15T00:00:00.000Z"
-  // Usar split para evitar problemas de zona horaria
-  const partes = f.toString().split("T")[0].split("-");
-  if (partes.length !== 3) return f;
-  const [anio, mes, dia] = partes;
-  const meses = [
-    "ene",
-    "feb",
-    "mar",
-    "abr",
-    "may",
-    "jun",
-    "jul",
-    "ago",
-    "sep",
-    "oct",
-    "nov",
-    "dic",
-  ];
-  return `${parseInt(dia)} ${meses[parseInt(mes) - 1]} ${anio}`;
+  const str = f.toString().split("T")[0];
+  const [anio, mes, dia] = str.split("-");
+  if (!anio || !mes || !dia) return str;
+  return `${dia.padStart(2,"0")}/${mes.padStart(2,"0")}/${anio}`;
 }
 
 // ── Toast (usa showToast del sidebar.js si está disponible) ──────────

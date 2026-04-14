@@ -1,4 +1,4 @@
-// frontend/js/materias.js — CORREGIDO
+// frontend/js/materias.js — CORREGIDO v2
 const BASE_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
@@ -7,13 +7,18 @@ let materiaEditando = null; // null = modo registro, string = clave en edición
 
 const form = document.getElementById("formMateria");
 const tabla = document.getElementById("tablaMaterias");
-//_____________________________
+
+// ── Helpers modal ──────────────────────────────────────────────────────
+
 function abrirModalMateria() {
   document.getElementById("modalMateria").classList.add("visible");
 }
 
 function cerrarModalMateria() {
   document.getElementById("modalMateria").classList.remove("visible");
+  // BUG 1 FIX: limpiar estado al cerrar para que "Nueva materia" no quede
+  // contaminado con el estado de la última edición que pudo haber fallado
+  cancelarEdicion();
 }
 
 // ─── CARGAR ────────────────────────────────────────────────────────────────
@@ -111,9 +116,8 @@ form.addEventListener("submit", async function (e) {
 
     if (data.success) {
       mostrarMensaje(data.mensaje || "Guardado correctamente.", "ok");
-      cerrarModalMateria();
-      cancelarEdicion();
-      cargarMaterias();
+      cerrarModalMateria();      // ya llama cancelarEdicion() internamente
+      await cargarMaterias();   // BUG 2 FIX: recargar tabla después de guardar
     } else {
       mostrarMensaje(data.error || "Error al guardar.", "error");
     }
@@ -131,12 +135,16 @@ async function editarMateria(clave) {
     const res = await fetch(`${BASE_URL}/api/materias/${clave}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const data = await res.json();
 
+    // BUG 1 FIX: asignar materiaEditando SOLO después de que el fetch tuvo éxito
     materiaEditando = clave;
 
     document.getElementById("claveMateria").value = data.clave_materia;
-    document.getElementById("claveMateria").disabled = true; // PK no editable
+    document.getElementById("claveMateria").disabled = true;
     document.getElementById("nombreMateria").value = data.nombre_materia;
     document.getElementById("creditos").value = data.creditos_totales;
     document.getElementById("horasTeoricas").value = data.horas_teoricas;
@@ -144,11 +152,15 @@ async function editarMateria(clave) {
     document.getElementById("noUnidades").value = data.no_unidades;
 
     document.getElementById("tituloFormMateria").textContent = "Editar materia";
-    document.querySelector("#formMateria .btn-guardar").textContent =
-      "Actualizar";
+    // BUG 1 FIX: selector correcto — era ".btn-guardar" (no existe), ahora "[type='submit']"
+    const btnSubmit = document.querySelector("#formMateria [type='submit']");
+    if (btnSubmit) btnSubmit.textContent = "Actualizar";
+
     abrirModalMateria();
   } catch {
-    alert("Error al cargar datos de la materia.");
+    alert("Error al cargar datos de la materia. Intenta de nuevo.");
+    // BUG 1 FIX: asegurarse de NO dejar materiaEditando contaminado
+    materiaEditando = null;
   }
 }
 
@@ -160,7 +172,9 @@ function cancelarEdicion() {
   document.getElementById("claveMateria").disabled = false;
   document.getElementById("tituloFormMateria").textContent =
     "Registrar materia";
-  document.querySelector("#formMateria .btn-guardar").textContent = "Guardar";
+  // BUG 1 FIX: selector corregido
+  const btnSubmit = document.querySelector("#formMateria [type='submit']");
+  if (btnSubmit) btnSubmit.textContent = "Guardar";
   mostrarMensaje("", "");
 }
 
@@ -208,13 +222,7 @@ function mostrarMensaje(texto, tipo) {
 
 // ── Estado CSV ────────────────────────────────────────────────────────────────
 let csvMateriasData = [];
-let materiasGlobal = []; // se llena cuando cargarMaterias() carga la tabla
-
-// ── Guardar referencia global al cargar (para poder exportar después) ─────────
-// Si tu cargarMaterias() ya tiene una variable global, úsala en lugar de esta.
-// Si no, agrega al final de tu función cargarMaterias():
-//   materiasGlobal = materias;
-// ─────────────────────────────────────────────────────────────────────────────
+let materiasGlobal = [];
 
 // ── Abrir / cerrar modal ──────────────────────────────────────────────────────
 function abrirModalCSVMaterias() {
@@ -319,7 +327,6 @@ async function importarCSVMaterias() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
 
-    // Toast (usa la función que ya existe en materias.js o crea una básica)
     if (typeof toast === "function") {
       toast(`${data.insertados} materia(s) importadas correctamente`);
       if (data.errores?.length)
@@ -330,7 +337,7 @@ async function importarCSVMaterias() {
 
     if (data.errores?.length) console.table(data.errores);
     cerrarModalCSVMaterias();
-    cargarMaterias(); // recarga la tabla existente
+    cargarMaterias();
   } catch (err) {
     if (typeof toast === "function") toast(err.message, "error");
     else alert(err.message);
