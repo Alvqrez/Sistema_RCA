@@ -346,7 +346,7 @@ function buildGrupoBody(grupo, unidades) {
   if (!unidades.length) {
     return `<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:0.85rem">
       <iconify-icon icon="lucide:inbox" style="font-size:1.8rem;display:block;margin:0 auto 8px"></iconify-icon>
-      No hay unidades definidas. Agrégalas en la sección <strong>Materias → Unidades</strong>.
+      No hay unidades definidas. <a href="unidades.html" style="color:var(--primary);font-weight:600">Ir a crear unidades →</a>
     </div>`;
   }
 
@@ -840,15 +840,17 @@ function restaurarUnidadesOriginal() {
 
 async function guardarUnidadesModal() {
   if (!_modalGrupoId || !_modalUnidades.length) return;
+  // Guardar el id ANTES de cerrar el modal (cerrarModalUnidades pone _modalGrupoId = null)
+  const idGrupo = _modalGrupoId;
   // Re-numerar secuencialmente para que quede limpio
   const final = _modalUnidades.map((u, i) => ({
     ...u,
     numero_unidad: i + 1,
   }));
-  setUnidadesCustom(_modalGrupoId, final);
+  setUnidadesCustom(idGrupo, final);
   cerrarModalUnidades();
-  // Rerender the group body with the new unit layout
-  await rerenderGrupoBody(_modalGrupoId);
-  actualizarBadgeGrupo(_modalGrupoId);
+  // Rerender inmediato sin necesidad de recargar la página
+  await rerenderGrupoBody(idGrupo);
+  actualizarBadgeGrupo(idGrupo);
   showToast("Configuración de unidades guardada", "success");
 }

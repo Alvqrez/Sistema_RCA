@@ -202,6 +202,53 @@ router.post("/", soloAdmin, (req, res) => {
   );
 });
 
+// POST — auto-vincular todas las unidades de la materia del grupo
+router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
+  const idGrupo = req.params.id;
+
+  db.query(
+    "SELECT clave_materia FROM grupo WHERE id_grupo = ?",
+    [idGrupo],
+    (err, grupos) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!grupos.length) return res.status(404).json({ error: "Grupo no encontrado" });
+
+      const claveMateria = grupos[0].clave_materia;
+
+      db.query(
+        "SELECT id_unidad FROM unidad WHERE clave_materia = ?",
+        [claveMateria],
+        (err2, unidades) => {
+          if (err2) return res.status(500).json({ error: "Error interno del servidor" });
+          if (!unidades.length)
+            return res.json({ success: true, vinculadas: 0, mensaje: "No hay unidades creadas para esta materia" });
+
+          let vinculadas = 0;
+          let pendientes = unidades.length;
+
+          unidades.forEach((u) => {
+            db.query(
+              "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (?, ?, 0)",
+              [idGrupo, u.id_unidad],
+              (err3, result) => {
+                if (!err3 && result.affectedRows > 0) vinculadas++;
+                pendientes--;
+                if (pendientes === 0) {
+                  res.json({
+                    success: true,
+                    vinculadas,
+                    mensaje: `${vinculadas} unidad(es) vinculada(s) correctamente`,
+                  });
+                }
+              }
+            );
+          });
+        }
+      );
+    }
+  );
+});
+
 // POST — asignar unidad a grupo con ponderación
 router.post("/:id/unidades", maestroOAdmin, (req, res) => {
   const { id_unidad, ponderacion } = req.body;

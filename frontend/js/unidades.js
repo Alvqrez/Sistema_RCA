@@ -70,7 +70,11 @@ async function poblarSelectGrupos() {
     const sel = document.getElementById("selGrupoUnidades");
     sel.innerHTML = `<option value="">-- Elige un grupo --</option>`;
     grupos.forEach((g) => {
-      sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} — ${g.nombre_maestro} (${g.descripcion_periodo || "Periodo " + g.id_periodo})</option>`;
+      const opt = document.createElement("option");
+      opt.value = g.id_grupo;
+      opt.textContent = `${g.nombre_materia} — ${g.nombre_maestro} (${g.descripcion_periodo || "Periodo " + g.id_periodo})`;
+      opt.dataset.claveMateria = g.clave_materia;
+      sel.appendChild(opt);
     });
   } catch (e) {
     console.error(e);
@@ -144,10 +148,18 @@ async function cargarUnidadesGrupoVisual() {
     let unidades = await res.json();
 
     if (!unidades.length) {
+      const sel = document.getElementById("selGrupoUnidades");
+      const claveMateria = sel.options[sel.selectedIndex]?.dataset.claveMateria || "";
       lista.innerHTML = `<div class="empty-state" style="padding:24px;text-align:center;color:var(--text-muted)">
                 <iconify-icon icon="mdi:clipboard-off-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
                 <p>Este grupo no tiene unidades vinculadas todavía.</p>
-                <small>Crea unidades para la materia del grupo primero.</small></div>`;
+                <small>Crea unidades para la materia del grupo primero, luego vincúlalas aquí.</small>
+                <br><br>
+                <button class="btn btn-primary" onclick="autoVincularUnidades(${idGrupo})">
+                  <iconify-icon icon="mdi:link-variant-plus"></iconify-icon>
+                  Vincular unidades de la materia
+                </button>
+              </div>`;
       acciones.style.display = "none";
       return;
     }
@@ -281,6 +293,28 @@ function restaurarUnidad(idUnidad, event) {
   u.agrupacion_id = null;
   renderListaUnidades(unidadesGrupoActual);
   mostrarToast("Unidad restaurada a original (pendiente guardar)", "success");
+}
+
+// ── Auto-vincular unidades de la materia al grupo ─────────────────────
+async function autoVincularUnidades(idGrupo) {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/grupos/${idGrupo}/unidades/auto-vincular`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const data = await res.json();
+    if (data.success) {
+      mostrarToast(data.mensaje, data.vinculadas > 0 ? "success" : "error");
+      if (data.vinculadas > 0) cargarUnidadesGrupoVisual();
+    } else {
+      mostrarToast(data.error || "Error al vincular", "error");
+    }
+  } catch (e) {
+    mostrarToast("Error de conexión", "error");
+  }
 }
 
 // ── Guardar configuración de agrupación ──────────────────────────────
