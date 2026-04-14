@@ -204,13 +204,15 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
       const estatus =
         redondeado >= CALIFICACION_APROBATORIA ? "Aprobado" : "Reprobado";
 
+      // BUG 7 FIX: incluir calificacion_oficial en el INSERT/UPDATE
       db.query(
-        `INSERT INTO calificacion_final (matricula, id_grupo, promedio_unidades, estatus_final)
-         VALUES (?, ?, ?, ?)
+        `INSERT INTO calificacion_final (matricula, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
+         VALUES (?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-          promedio_unidades = VALUES(promedio_unidades),
-          estatus_final     = VALUES(estatus_final)`,
-        [matricula, id_grupo, redondeado, estatus],
+          promedio_unidades  = VALUES(promedio_unidades),
+          calificacion_oficial = VALUES(calificacion_oficial),
+          estatus_final      = VALUES(estatus_final)`,
+        [matricula, id_grupo, redondeado, redondeado, estatus],
         (err2) => {
           if (err2) return reject(err2);
           resolve({ promedio: redondeado, estatus });
