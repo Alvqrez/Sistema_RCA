@@ -4,7 +4,7 @@ const db = require("./src/db");
 
 async function seed() {
   try {
-    console.log("⏳ Iniciando seed...\n");
+    console.log("Iniciando seed...\n");
 
     // ── Carrera ───────────────────────────────────────────────────────────
     await q(`INSERT IGNORE INTO carrera (id_carrera, nombre_carrera, siglas, total_semestres, total_creditos)
