@@ -1422,6 +1422,226 @@ async function guardarCalificacionesFinal() {
   if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
   // que ahora sí se guarda en BD (fix en calculo.js)
   await calcularVistaFinal();
+  // Renderizar tablas de bonus final y modificación final
+  await renderBonusFinalTabla();
+  await renderModificacionFinalTabla();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BONUS FINAL — UI
+// ══════════════════════════════════════════════════════════════════════
+
+// Cache de calificaciones finales para los modales
+let _cfCache = {}; // matricula → { nombre_alumno, calificacion_oficial }
+
+async function renderBonusFinalTabla() {
+  const wrap = document.getElementById("tablaBonusFinalWrap");
+  if (!wrap || !estado.grupoId) return;
+
+  // Cargar calificaciones finales y bonuses existentes en paralelo
+  const [resCF, resBF] = await Promise.all([
+    fetch(`${BASE_URL_FORM}/api/calificaciones/grupo/${estado.grupoId}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    }),
+    fetch(`${BASE_URL_FORM}/api/bonus/final/grupo/${estado.grupoId}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    }),
+  ]);
+
+  const calFinales = resCF.ok ? await resCF.json() : [];
+  const bonuses    = resBF.ok ? await resBF.json() : [];
+
+  // Agrupar: una fila por alumno (la calificación final viene de calificacion_final, no de calificacion_unidad)
+  // Reusamos el endpoint /calificaciones/grupo que devuelve calificacion_unidad; necesitamos el final
+  // Hacemos fetch de /calificaciones/final por alumno — más simple: usamos tablaFinalWrap filas
+  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")];
+
+  if (!filasFinal.length) {
+    wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
+    return;
+  }
+
+  // Mapa de bonuses existentes por matricula
+  const bonusMap = {};
+  bonuses.forEach(b => { bonusMap[b.matricula] = b; });
+
+  // Construir cache de calificaciones
+  filasFinal.forEach(f => {
+    _cfCache[f.dataset.matricula] = {
+      nombre_alumno: f.querySelector("td:first-child")?.textContent || f.dataset.matricula,
+      calificacion_oficial: parseFloat(f.dataset.final ?? 0),
+    };
+  });
+
+  let html = `
+    <table class="final-table" style="width:100%;">
+      <thead><tr>
+        <th>Alumno</th>
+        <th style="text-align:center;">Cal. Final</th>
+        <th style="text-align:center;">Bonus</th>
+        <th style="text-align:center;">Acción</th>
+      </tr></thead><tbody>`;
+
+  filasFinal.forEach(f => {
+    const mat  = f.dataset.matricula;
+    const cal  = parseFloat(f.dataset.final ?? 0);
+    const nom  = f.querySelector("td:first-child")?.textContent || mat;
+    const bon  = bonusMap[mat];
+    html += `<tr>
+      <td>${nom}</td>
+      <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
+      <td style="text-align:center;">
+        ${bon ? `<span style="color:#7c3aed; font-weight:600;">+${parseFloat(bon.puntos_otorgados).toFixed(2)} pts</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
+      </td>
+      <td style="text-align:center;">
+        <button class="btn btn-sm" style="background:#7c3aed; color:#fff; padding:4px 10px; font-size:0.78rem;"
+                onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/'/g,"\\'")}', ${cal})">
+          <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
+          ${bon ? "Editar" : "Asignar"}
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+}
+
+function abrirModalBonusFinal(matricula, nombre, calActual) {
+  document.getElementById("bonusFinalMatricula").value  = matricula;
+  document.getElementById("bonusFinalNombreAlumno").textContent = nombre;
+  document.getElementById("bonusFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
+  document.getElementById("bonusFinalPuntos").value       = "";
+  document.getElementById("bonusFinalJustificacion").value = "";
+  document.getElementById("modalBonusFinal").style.display = "flex";
+}
+
+function cerrarModalBonusFinal() {
+  document.getElementById("modalBonusFinal").style.display = "none";
+}
+
+async function guardarBonusFinal() {
+  const matricula     = document.getElementById("bonusFinalMatricula").value;
+  const puntos        = parseFloat(document.getElementById("bonusFinalPuntos").value);
+  const justificacion = document.getElementById("bonusFinalJustificacion").value.trim();
+
+  if (!puntos || puntos <= 0) return mostrarToast("Ingresa puntos válidos", "error");
+  if (!justificacion)         return mostrarToast("La justificación es obligatoria", "error");
+
+  try {
+    const res = await fetch(`${BASE_URL_FORM}/api/bonus/final`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ matricula, id_grupo: estado.grupoId, puntos_otorgados: puntos, justificacion }),
+    });
+    const d = await res.json();
+    if (!res.ok) return mostrarToast(d.error || "Error al asignar bonus", "error");
+
+    mostrarToast(`Bonus final asignado: +${d.puntos_aplicados} pts${d.advertencia ? " (ajustado al máximo)" : ""}`, "success");
+    cerrarModalBonusFinal();
+    await renderBonusFinalTabla();
+    await calcularVistaFinal();
+  } catch {
+    mostrarToast("Error de conexión", "error");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODIFICACIÓN FINAL — UI
+// ══════════════════════════════════════════════════════════════════════
+
+async function renderModificacionFinalTabla() {
+  const wrap = document.getElementById("tablaModificacionFinalWrap");
+  if (!wrap || !estado.grupoId) return;
+
+  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")];
+  if (!filasFinal.length) {
+    wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
+    return;
+  }
+
+  // Cargar modificaciones existentes del grupo
+  const resModif = await fetch(
+    `${BASE_URL_FORM}/api/modificacion-final/grupo/${estado.grupoId}`,
+    { headers: { Authorization: `Bearer ${token()}` } }
+  ).catch(() => null);
+  const modifs = (resModif && resModif.ok) ? await resModif.json() : [];
+  const modifMap = {};
+  modifs.forEach(m => { modifMap[m.matricula] = m; });
+
+  let html = `
+    <table class="final-table" style="width:100%;">
+      <thead><tr>
+        <th>Alumno</th>
+        <th style="text-align:center;">Cal. Actual</th>
+        <th style="text-align:center;">Modificada</th>
+        <th style="text-align:center;">Acción</th>
+      </tr></thead><tbody>`;
+
+  filasFinal.forEach(f => {
+    const mat  = f.dataset.matricula;
+    const cal  = parseFloat(f.dataset.final ?? 0);
+    const nom  = f.querySelector("td:first-child")?.textContent || mat;
+    const mod  = modifMap[mat];
+    html += `<tr>
+      <td>${nom}</td>
+      <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
+      <td style="text-align:center;">
+        ${mod ? `<span style="color:#dc2626; font-weight:600;">${parseFloat(mod.calif_modificada).toFixed(2)}</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
+      </td>
+      <td style="text-align:center;">
+        <button class="btn btn-sm" style="background:#dc2626; color:#fff; padding:4px 10px; font-size:0.78rem;"
+                onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/'/g,"\\'")}', ${cal})">
+          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+          ${mod ? "Editar" : "Modificar"}
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+}
+
+function abrirModalModificacionFinal(matricula, nombre, calActual) {
+  document.getElementById("modifFinalMatricula").value      = matricula;
+  document.getElementById("modifFinalNombreAlumno").textContent = nombre;
+  document.getElementById("modifFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
+  document.getElementById("modifFinalNuevaCal").value       = "";
+  document.getElementById("modifFinalJustificacion").value  = "";
+  document.getElementById("modalModificacionFinal").style.display = "flex";
+}
+
+function cerrarModalModificacionFinal() {
+  document.getElementById("modalModificacionFinal").style.display = "none";
+}
+
+async function guardarModificacionFinal() {
+  const matricula      = document.getElementById("modifFinalMatricula").value;
+  const nuevaCal       = parseFloat(document.getElementById("modifFinalNuevaCal").value);
+  const justificacion  = document.getElementById("modifFinalJustificacion").value.trim();
+
+  if (isNaN(nuevaCal) || nuevaCal < 0 || nuevaCal > 100)
+    return mostrarToast("Calificación debe estar entre 0 y 100", "error");
+  if (!justificacion)
+    return mostrarToast("La justificación es obligatoria", "error");
+
+  try {
+    const res = await fetch(`${BASE_URL_FORM}/api/modificacion-final`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ matricula, id_grupo: estado.grupoId, calif_modificada: nuevaCal, justificacion }),
+    });
+    const d = await res.json();
+    if (!res.ok) return mostrarToast(d.error || "Error al modificar", "error");
+
+    mostrarToast(`Modificación aplicada: ${d.calif_original} → ${d.calif_modificada}`, "success");
+    cerrarModalModificacionFinal();
+    await renderModificacionFinalTabla();
+    await calcularVistaFinal();
+  } catch {
+    mostrarToast("Error de conexión", "error");
+  }
 }
 
 function actualizarEstadoBadge(activo) {

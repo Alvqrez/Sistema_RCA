@@ -4,7 +4,23 @@ const router = express.Router();
 const db = require("../db");
 const { maestroOAdmin } = require("../middleware/auth");
 
-// GET — modificación de un alumno en un grupo
+// GET — todas las modificaciones de un grupo (ruta específica — va ANTES de la dinámica)
+router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
+  const sql = `
+    SELECT mf.*,
+           CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
+    FROM modificacionfinal mf
+    JOIN maestro mae ON mf.numero_empleado = mae.numero_empleado
+    WHERE mf.id_grupo = ?
+    ORDER BY mf.matricula
+  `;
+  db.query(sql, [req.params.id_grupo], (err, r) => {
+    if (err) return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(r);
+  });
+});
+
+// GET — modificación de un alumno en un grupo (ruta dinámica — va DESPUÉS de /grupo/)
 router.get("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT mf.*,

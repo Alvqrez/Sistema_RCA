@@ -859,25 +859,129 @@
                 "
               >
                 <button class="btn btn-outline" onclick="calcularVistaFinal()">
-                  <iconify-icon
-                    icon="mdi:calculator-variant-outline"
-                  ></iconify-icon>
+                  <iconify-icon icon="mdi:calculator-variant-outline"></iconify-icon>
                   Recalcular
                 </button>
-                <button
-                  class="btn btn-success"
-                  onclick="guardarCalificacionesFinal()"
-                >
-                  <iconify-icon
-                    icon="mdi:check-decagram-outline"
-                  ></iconify-icon>
+                <button class="btn btn-success" onclick="guardarCalificacionesFinal()">
+                  <iconify-icon icon="mdi:check-decagram-outline"></iconify-icon>
                   Guardar calificaciones finales
                 </button>
+              </div>
+
+              <!-- ── BONUS FINAL (nivel materia) ── -->
+              <div style="margin-top:22px; padding-top:18px; border-top:2px dashed var(--border);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                  <iconify-icon icon="mdi:star-plus-outline" style="font-size:1.2rem; color:#7c3aed;"></iconify-icon>
+                  <span style="font-weight:600; color:#7c3aed;">Bonus Final (nivel materia)</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">— Se aplica sobre la calificación final calculada</span>
+                </div>
+                <div id="tablaBonusFinalWrap" style="margin-bottom:12px;">
+                  <p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero para habilitar el bonus.</p>
+                </div>
+              </div>
+
+              <!-- ── MODIFICACIÓN FINAL (ajuste manual docente) ── -->
+              <div style="margin-top:22px; padding-top:18px; border-top:2px dashed var(--border);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                  <iconify-icon icon="mdi:pencil-circle-outline" style="font-size:1.2rem; color:#dc2626;"></iconify-icon>
+                  <span style="font-weight:600; color:#dc2626;">Modificación Final (ajuste manual)</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">— Sobreescribe la calificación con justificación obligatoria</span>
+                </div>
+                <div id="tablaModificacionFinalWrap" style="margin-bottom:12px;">
+                  <p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero para habilitar la modificación.</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </main>
+    </div>
+
+    <!-- ══ MODAL — Bonus Final ═══════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalBonusFinal"
+         onclick="if(event.target===this) cerrarModalBonusFinal();">
+      <div class="modal-panel" style="max-width:480px;">
+        <div class="modal-header">
+          <span style="color:#7c3aed; font-weight:700;">
+            <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
+            Asignar Bonus Final
+          </span>
+          <button class="modal-close" onclick="cerrarModalBonusFinal()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Alumno</label>
+            <div id="bonusFinalNombreAlumno" style="font-size:0.9rem; color:var(--text-muted);"></div>
+            <input type="hidden" id="bonusFinalMatricula">
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Calificación actual</label>
+            <div id="bonusFinalCalActual" style="font-size:1.1rem; font-weight:700;"></div>
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Puntos a otorgar</label>
+            <input type="number" id="bonusFinalPuntos" min="0.1" max="100" step="0.5"
+                   style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text);">
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Justificación <span style="color:#dc2626;">*</span></label>
+            <textarea id="bonusFinalJustificacion" rows="3"
+                      placeholder="Motivo del bonus (obligatorio)..."
+                      style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+            <button class="btn btn-outline" onclick="cerrarModalBonusFinal()">Cancelar</button>
+            <button class="btn" style="background:#7c3aed; color:#fff;" onclick="guardarBonusFinal()">
+              <iconify-icon icon="mdi:check"></iconify-icon> Asignar Bonus
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL — Modificación Final ════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalModificacionFinal"
+         onclick="if(event.target===this) cerrarModalModificacionFinal();">
+      <div class="modal-panel" style="max-width:480px;">
+        <div class="modal-header">
+          <span style="color:#dc2626; font-weight:700;">
+            <iconify-icon icon="mdi:pencil-circle-outline"></iconify-icon>
+            Modificación Final Manual
+          </span>
+          <button class="modal-close" onclick="cerrarModalModificacionFinal()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 12px; font-size:0.82rem; color:#991b1b;">
+            ⚠️ Esta operación sobreescribe la calificación final. Requiere justificación obligatoria y queda registrada para auditoría.
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Alumno</label>
+            <div id="modifFinalNombreAlumno" style="font-size:0.9rem; color:var(--text-muted);"></div>
+            <input type="hidden" id="modifFinalMatricula">
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Calificación actual</label>
+            <div id="modifFinalCalActual" style="font-size:1.1rem; font-weight:700;"></div>
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Nueva calificación (0–100)</label>
+            <input type="number" id="modifFinalNuevaCal" min="0" max="100" step="1"
+                   style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text);">
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Justificación <span style="color:#dc2626;">*</span></label>
+            <textarea id="modifFinalJustificacion" rows="3"
+                      placeholder="Motivo de la modificación (obligatorio)..."
+                      style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+            <button class="btn btn-outline" onclick="cerrarModalModificacionFinal()">Cancelar</button>
+            <button class="btn" style="background:#dc2626; color:#fff;" onclick="guardarModificacionFinal()">
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon> Aplicar Modificación
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══ MODAL — Detalle actividades de un alumno ══════════════════════ -->

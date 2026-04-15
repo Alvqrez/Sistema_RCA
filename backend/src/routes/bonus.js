@@ -8,25 +8,8 @@ const MAX_CALIFICACION = 100;
 
 // ─── BONUS UNIDAD ──────────────────────────────────────────────────────────
 
-// GET — bonus de unidad de un alumno en un grupo
-router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
-  const sql = `
-    SELECT bu.*, u.nombre_unidad,
-           CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
-    FROM bonusunidad bu
-    JOIN unidad u ON bu.id_unidad = u.id_unidad
-    JOIN maestro mae ON bu.numero_empleado = mae.numero_empleado
-    WHERE bu.matricula = ? AND bu.id_grupo = ?
-    ORDER BY bu.id_unidad
-  `;
-  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(r);
-  });
-});
-
 // GET — todos los bonus de unidad de un grupo (para el maestro)
+// IMPORTANTE: esta ruta va ANTES de la dinámica /:matricula/:id_grupo
 router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT bu.*,
@@ -39,6 +22,24 @@ router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     ORDER BY bu.id_unidad, a.apellido_paterno
   `;
   db.query(sql, [req.params.id_grupo], (err, r) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(r);
+  });
+});
+
+// GET — bonus de unidad de un alumno específico (ruta dinámica — va DESPUÉS de /grupo/)
+router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
+  const sql = `
+    SELECT bu.*, u.nombre_unidad,
+           CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
+    FROM bonusunidad bu
+    JOIN unidad u ON bu.id_unidad = u.id_unidad
+    JOIN maestro mae ON bu.numero_empleado = mae.numero_empleado
+    WHERE bu.matricula = ? AND bu.id_grupo = ?
+    ORDER BY bu.id_unidad
+  `;
+  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r);
@@ -164,23 +165,7 @@ router.delete(
 
 // ─── BONUS FINAL ───────────────────────────────────────────────────────────
 
-// GET — bonus final de un alumno en un grupo
-router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
-  const sql = `
-    SELECT bf.*,
-           CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
-    FROM bonusfinal bf
-    JOIN maestro mae ON bf.numero_empleado = mae.numero_empleado
-    WHERE bf.matricula = ? AND bf.id_grupo = ?
-  `;
-  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(r[0] || null);
-  });
-});
-
-// GET — todos los bonus finales de un grupo
+// GET — todos los bonus finales de un grupo (ruta específica — va ANTES de la dinámica)
 router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT bf.*,
@@ -194,6 +179,22 @@ router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r);
+  });
+});
+
+// GET — bonus final de un alumno en un grupo (ruta dinámica — va DESPUÉS de /grupo/)
+router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
+  const sql = `
+    SELECT bf.*,
+           CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
+    FROM bonusfinal bf
+    JOIN maestro mae ON bf.numero_empleado = mae.numero_empleado
+    WHERE bf.matricula = ? AND bf.id_grupo = ?
+  `;
+  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(r[0] || null);
   });
 });
 
