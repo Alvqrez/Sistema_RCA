@@ -182,7 +182,18 @@
   const aside = document.querySelector("aside.sidebar");
   if (!aside) return;
 
+  // aplicar estado guardado antes de renderizar
+  const sidebarColapsado =
+    localStorage.getItem("sidebar_estado") === "colapsado";
+  if (sidebarColapsado) {
+    aside.classList.add("collapsed");
+    document.body.classList.add("sidebar-collapsed");
+  }
+
   aside.innerHTML = `
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar / expandir menú">
+      <iconify-icon icon="lucide:chevron-left"></iconify-icon>
+    </button>
     <div class="sidebar-logo">
       <div class="sidebar-avatar"><iconify-icon icon="${iconoRol}"></iconify-icon></div>
       <p class="sidebar-bienvenida">¡Bienvenido!</p>
@@ -205,6 +216,14 @@
   if (localStorage.getItem("tema") === "oscuro")
     document.documentElement.classList.add("dark-mode");
 })();
+
+function toggleSidebar() {
+  const aside = document.querySelector("aside.sidebar");
+  if (!aside) return;
+  const colapsado = aside.classList.toggle("collapsed");
+  document.body.classList.toggle("sidebar-collapsed", colapsado);
+  localStorage.setItem("sidebar_estado", colapsado ? "colapsado" : "expandido");
+}
 
 function toggleTheme() {
   const isDark = document.documentElement.classList.toggle("dark-mode");
@@ -257,11 +276,11 @@ function cerrarSesion() {
 function fmtFecha(f) {
   if (!f) return "—";
   // Tomamos solo la parte de fecha para evitar desfase de zona horaria
-  const str = f.toString().split("T")[0];          // "2025-04-15"
-  const partes = str.split("-");                    // ["2025","04","15"]
+  const str = f.toString().split("T")[0]; // "2025-04-15"
+  const partes = str.split("-"); // ["2025","04","15"]
   if (partes.length !== 3) return str;
   const [anio, mes, dia] = partes;
-  return `${dia.padStart(2,"0")}/${mes.padStart(2,"0")}/${anio}`;
+  return `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${anio}`;
 }
 
 function showToast(msg, tipo = "success") {

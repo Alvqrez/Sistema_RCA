@@ -55,33 +55,96 @@
           </div>
         </div>
 
-        <!-- Quick actions banner -->
+        <!-- Accesos rápidos -->
         <div
-          style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px"
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+          "
         >
-          <a
-            href="gruposMaestro.html"
-            class="btn btn-primary"
-            style="text-decoration: none"
-          >
-            <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
-            Configurar evaluación
-          </a>
-          <a
-            href="actividades.html"
-            class="btn btn-outline"
-            style="text-decoration: none"
-          >
-            <iconify-icon icon="lucide:clipboard-pen"></iconify-icon> Gestionar
-            actividades
-          </a>
-          <a
-            href="reportes.html"
-            class="btn btn-outline"
-            style="text-decoration: none"
-          >
-            <iconify-icon icon="lucide:bar-chart-2"></iconify-icon> Ver reportes
-          </a>
+          <div class="card">
+            <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 600">
+              Accesos rápidos
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <a href="gruposMaestro.html" class="quick-link">
+                <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+                <div>
+                  <strong>Configurar evaluación</strong>
+                  <p>Rubros, ponderaciones y pesos por unidad</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="actividades.html" class="quick-link">
+                <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
+                <div>
+                  <strong>Actividades</strong>
+                  <p>Gestionar tareas, exámenes y prácticas</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="formulario.html" class="quick-link">
+                <iconify-icon icon="lucide:pencil"></iconify-icon>
+                <div>
+                  <strong>Capturar calificaciones</strong>
+                  <p>Registrar y editar resultados de alumnos</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="reportes.html" class="quick-link">
+                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+                <div>
+                  <strong>Reportes</strong>
+                  <p>Promedios, avances y resultados del grupo</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 600">
+              Herramientas
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <a href="alumnosMaestro.html" class="quick-link">
+                <iconify-icon icon="lucide:search"></iconify-icon>
+                <div>
+                  <strong>Buscar alumnos</strong>
+                  <p>Consultar alumnos y su historial</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="asistencia.html" class="quick-link">
+                <iconify-icon icon="lucide:calendar-check"></iconify-icon>
+                <div>
+                  <strong>Asistencia</strong>
+                  <p>Registrar asistencia por grupo y unidad</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+            </div>
+          </div>
         </div>
 
         <!-- Group cards grid -->

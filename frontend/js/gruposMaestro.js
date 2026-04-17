@@ -2,9 +2,13 @@ const BASE_URL_GM = "http://localhost:3000";
 const tokenGM = () => localStorage.getItem("token");
 
 const RUBROS_DEFAULT = [
-  { key: "pct_actividades", nombre: "Actividades", icono: "lucide:clipboard-list", bloqueado: true },
-  { key: "pct_examen",      nombre: "Examen",       icono: "lucide:file-text",      bloqueado: true },
-  { key: "pct_asistencia",  nombre: "Asistencia",   icono: "lucide:user-check",     bloqueado: true },
+  {
+    key: "pct_actividades",
+    nombre: "Actividades",
+    icono: "lucide:clipboard-list",
+  },
+  { key: "pct_examen", nombre: "Examen", icono: "lucide:file-text" },
+  { key: "pct_asistencia", nombre: "Asistencia", icono: "lucide:user-check" },
 ];
 
 let misGrupos = [];
@@ -12,37 +16,61 @@ let unidadesPorGrupo = {};
 
 // localStorage helpers
 function getRubrosExtra(id_grupo) {
-  try { return JSON.parse(localStorage.getItem(`rubros_extra_${id_grupo}`)) || []; }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(`rubros_extra_${id_grupo}`)) || [];
+  } catch {
+    return [];
+  }
 }
 function setRubrosExtra(id_grupo, arr) {
   localStorage.setItem(`rubros_extra_${id_grupo}`, JSON.stringify(arr));
 }
+function getDefaultsOcultos(id_grupo) {
+  try {
+    return (
+      JSON.parse(localStorage.getItem(`defaults_ocultos_${id_grupo}`)) || []
+    );
+  } catch {
+    return [];
+  }
+}
+function setDefaultsOcultos(id_grupo, arr) {
+  localStorage.setItem(`defaults_ocultos_${id_grupo}`, JSON.stringify(arr));
+}
 function getRubrosGrupo(id_grupo) {
-  return [...RUBROS_DEFAULT, ...getRubrosExtra(id_grupo)];
+  const ocultos = getDefaultsOcultos(id_grupo);
+  const visibles = RUBROS_DEFAULT.filter((r) => !ocultos.includes(r.key));
+  return [...visibles, ...getRubrosExtra(id_grupo)];
 }
 function getPcts(id_grupo, id_unidad) {
   try {
-    const saved = JSON.parse(localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`));
+    const saved = JSON.parse(
+      localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+    );
     if (saved && Object.keys(saved).length) return saved;
   } catch (_) {}
   return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
 }
 async function getPctsFromBD(id_grupo, id_unidad) {
   try {
-    const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion/${id_grupo}/${id_unidad}`, {
-      headers: { Authorization: `Bearer ${tokenGM()}` },
-    });
+    const res = await fetch(
+      `${BASE_URL_GM}/api/config-evaluacion/${id_grupo}/${id_unidad}`,
+      {
+        headers: { Authorization: `Bearer ${tokenGM()}` },
+      },
+    );
     if (!res.ok) throw new Error();
     const cfg = await res.json();
     return {
       pct_actividades: cfg.pct_actividades ?? 60,
-      pct_examen:      cfg.pct_examen      ?? 30,
-      pct_asistencia:  cfg.pct_asistencia  ?? 10,
+      pct_examen: cfg.pct_examen ?? 30,
+      pct_asistencia: cfg.pct_asistencia ?? 10,
     };
   } catch {
     try {
-      const saved = JSON.parse(localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`));
+      const saved = JSON.parse(
+        localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+      );
       if (saved && Object.keys(saved).length) return saved;
     } catch (_) {}
     return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
@@ -54,7 +82,10 @@ async function guardarPctsEnBD(id_grupo, id_unidad, pcts) {
   try {
     await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenGM()}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenGM()}`,
+      },
       body: JSON.stringify({ id_grupo, id_unidad, ...pcts }),
     });
   } catch (e) {
@@ -63,8 +94,13 @@ async function guardarPctsEnBD(id_grupo, id_unidad, pcts) {
 }
 
 function getUnidadesCustom(id_grupo) {
-  try { return JSON.parse(localStorage.getItem(`unidades_custom_${id_grupo}`)) || null; }
-  catch { return null; }
+  try {
+    return (
+      JSON.parse(localStorage.getItem(`unidades_custom_${id_grupo}`)) || null
+    );
+  } catch {
+    return null;
+  }
 }
 function setUnidadesCustom(id_grupo, arr) {
   localStorage.setItem(`unidades_custom_${id_grupo}`, JSON.stringify(arr));
@@ -79,8 +115,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function fetchAuthGM(url) {
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${tokenGM()}` } });
-  if (res.status === 401) { window.location.href = "login.html"; throw new Error("401"); }
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${tokenGM()}` },
+  });
+  if (res.status === 401) {
+    window.location.href = "login.html";
+    throw new Error("401");
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -95,28 +136,39 @@ async function cargarGruposGM() {
       try {
         const todos = await fetchAuthGM(`${BASE_URL_GM}/api/grupos`);
         let id_ref = null;
-        try { id_ref = JSON.parse(atob(tokenGM().split(".")[1])).id_referencia; } catch (__) {}
+        try {
+          id_ref = JSON.parse(atob(tokenGM().split(".")[1])).id_referencia;
+        } catch (__) {}
         const rol = localStorage.getItem("rol");
         grupos = id_ref
           ? todos.filter((g) => String(g.numero_empleado) === String(id_ref))
-          : rol === "administrador" ? todos : [];
-      } catch (__) { grupos = []; }
+          : rol === "administrador"
+            ? todos
+            : [];
+      } catch (__) {
+        grupos = [];
+      }
     }
 
     misGrupos = grupos;
     actualizarStats();
 
     const loader = document.getElementById("loadingState");
-    const lista  = document.getElementById("listaGrupos");
-    const empty  = document.getElementById("emptyState");
+    const lista = document.getElementById("listaGrupos");
+    const empty = document.getElementById("emptyState");
     if (loader) loader.style.display = "none";
 
-    if (!misGrupos.length) { if (empty) empty.style.display = "block"; return; }
+    if (!misGrupos.length) {
+      if (empty) empty.style.display = "block";
+      return;
+    }
     if (lista) lista.style.display = "block";
 
-    await Promise.all(misGrupos.map(async (g) => {
-      unidadesPorGrupo[g.id_grupo] = await cargarUnidadesDeGrupo(g);
-    }));
+    await Promise.all(
+      misGrupos.map(async (g) => {
+        unidadesPorGrupo[g.id_grupo] = await cargarUnidadesDeGrupo(g);
+      }),
+    );
 
     await cargarConfigsDesdeDB();
 
@@ -141,35 +193,52 @@ async function cargarGruposGM() {
 async function cargarUnidadesDeGrupo(grupo) {
   try {
     let unidades = [];
-    try { unidades = await fetchAuthGM(`${BASE_URL_GM}/api/grupos/${grupo.id_grupo}/unidades`); } catch (_) {}
+    try {
+      unidades = await fetchAuthGM(
+        `${BASE_URL_GM}/api/grupos/${grupo.id_grupo}/unidades`,
+      );
+    } catch (_) {}
     if (!Array.isArray(unidades) || !unidades.length) {
       if (grupo.clave_materia) {
         try {
-          unidades = await fetchAuthGM(`${BASE_URL_GM}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`);
+          unidades = await fetchAuthGM(
+            `${BASE_URL_GM}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+          );
         } catch (_) {}
       }
     }
     return Array.isArray(unidades)
-      ? unidades.map((u, i) => ({ ...u, numero_unidad: u.numero_unidad ?? i + 1 }))
+      ? unidades.map((u, i) => ({
+          ...u,
+          numero_unidad: u.numero_unidad ?? i + 1,
+        }))
       : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 async function cargarConfigsDesdeDB() {
   for (const g of misGrupos) {
     try {
-      const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion/grupo/${g.id_grupo}`, {
-        headers: { Authorization: `Bearer ${tokenGM()}` },
-      });
+      const res = await fetch(
+        `${BASE_URL_GM}/api/config-evaluacion/grupo/${g.id_grupo}`,
+        {
+          headers: { Authorization: `Bearer ${tokenGM()}` },
+        },
+      );
       if (!res.ok) continue;
       const configs = await res.json();
       if (!Array.isArray(configs)) continue;
       configs.forEach((c) => {
-        localStorage.setItem(`pcts_${g.id_grupo}_${c.id_unidad}`, JSON.stringify({
-          pct_actividades: c.pct_actividades,
-          pct_examen:      c.pct_examen,
-          pct_asistencia:  c.pct_asistencia,
-        }));
+        localStorage.setItem(
+          `pcts_${g.id_grupo}_${c.id_unidad}`,
+          JSON.stringify({
+            pct_actividades: c.pct_actividades,
+            pct_examen: c.pct_examen,
+            pct_asistencia: c.pct_asistencia,
+          }),
+        );
       });
     } catch (_) {}
   }
@@ -179,15 +248,23 @@ function actualizarStats() {
   const total = misGrupos.length;
   const configurados = misGrupos.filter((g) => {
     const us = unidadesPorGrupo[g.id_grupo] || [];
-    return us.some((u) => {
-      try { return !!JSON.parse(localStorage.getItem(`pcts_${g.id_grupo}_${u.id_unidad}`)); }
-      catch { return false; }
-    }) || getRubrosExtra(g.id_grupo).length > 0;
+    return (
+      us.some((u) => {
+        try {
+          return !!JSON.parse(
+            localStorage.getItem(`pcts_${g.id_grupo}_${u.id_unidad}`),
+          );
+        } catch {
+          return false;
+        }
+      }) || getRubrosExtra(g.id_grupo).length > 0
+    );
   }).length;
   const el = (id) => document.getElementById(id);
-  if (el("statGrupos"))       el("statGrupos").textContent       = total;
+  if (el("statGrupos")) el("statGrupos").textContent = total;
   if (el("statConfigurados")) el("statConfigurados").textContent = configurados;
-  if (el("statPendientes"))   el("statPendientes").textContent   = total - configurados;
+  if (el("statPendientes"))
+    el("statPendientes").textContent = total - configurados;
 }
 
 function buildGrupoCard(grupo, unidades) {
@@ -195,10 +272,16 @@ function buildGrupoCard(grupo, unidades) {
   card.className = "grupo-card";
   card.id = `grupo-card-${grupo.id_grupo}`;
 
-  const tieneConfig = getRubrosExtra(grupo.id_grupo).length > 0 ||
+  const tieneConfig =
+    getRubrosExtra(grupo.id_grupo).length > 0 ||
     unidades.some((u) => {
-      try { return !!JSON.parse(localStorage.getItem(`pcts_${grupo.id_grupo}_${u.id_unidad}`)); }
-      catch { return false; }
+      try {
+        return !!JSON.parse(
+          localStorage.getItem(`pcts_${grupo.id_grupo}_${u.id_unidad}`),
+        );
+      } catch {
+        return false;
+      }
     });
 
   const cfgBadge = tieneConfig
@@ -241,7 +324,12 @@ function buildGrupoBody(grupo, unidades) {
       <div class="rubros-toolbar-info">
         <iconify-icon icon="lucide:layers" style="color:var(--primary)"></iconify-icon>
         <span>Rubros del grupo: <strong id="rubros-count-${grupo.id_grupo}">${getRubrosGrupo(grupo.id_grupo).length}</strong></span>
-        ${extras.map((r) => `<span class="rubro-chip">${r.nombre} <button onclick="eliminarRubroGrupo(${grupo.id_grupo},'${r.key}')">×</button></span>`).join("")}
+        ${getRubrosGrupo(grupo.id_grupo)
+          .map(
+            (r) =>
+              `<span class="rubro-chip">${r.nombre} <button onclick="eliminarRubroGrupo(${grupo.id_grupo},'${r.key}')">×</button></span>`,
+          )
+          .join("")}
       </div>
       <button class="btn btn-outline btn-sm" onclick="agregarRubroGrupo(${grupo.id_grupo})">
         <iconify-icon icon="lucide:plus"></iconify-icon> Agregar rubro
@@ -254,7 +342,9 @@ function buildGrupoBody(grupo, unidades) {
   const unidadesEfectivas = getUnidadesEfectivas(grupo.id_grupo).length
     ? getUnidadesEfectivas(grupo.id_grupo)
     : unidades;
-  unidadesEfectivas.forEach((u) => { html += buildUnidadConfig(grupo.id_grupo, u); });
+  unidadesEfectivas.forEach((u) => {
+    html += buildUnidadConfig(grupo.id_grupo, u);
+  });
 
   html += `
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
@@ -267,9 +357,9 @@ function buildGrupoBody(grupo, unidades) {
 
 function buildUnidadConfig(id_grupo, unidad) {
   const blockId = `uc-${id_grupo}-${unidad.id_unidad}`;
-  const pcts  = getPcts(id_grupo, unidad.id_unidad);
+  const pcts = getPcts(id_grupo, unidad.id_unidad);
   const rubros = getRubrosGrupo(id_grupo);
-  const suma  = rubros.reduce((s, r) => s + (parseFloat(pcts[r.key]) || 0), 0);
+  const suma = rubros.reduce((s, r) => s + (parseFloat(pcts[r.key]) || 0), 0);
   const sumaOk = Math.abs(suma - 100) < 0.01;
 
   const sumaBadge = sumaOk
@@ -312,12 +402,13 @@ function buildUnidadConfig(id_grupo, unidad) {
 
 function buildRubrosRows(id_grupo, id_unidad) {
   const rubros = getRubrosGrupo(id_grupo);
-  const pcts   = getPcts(id_grupo, id_unidad);
+  const pcts = getPcts(id_grupo, id_unidad);
 
-  return rubros.map((r) => {
-    const val = pcts[r.key] ?? 0;
-    // id_unidad entre comillas en oninput para manejar IDs compuestos como "1_2"
-    return `
+  return rubros
+    .map((r) => {
+      const val = pcts[r.key] ?? 0;
+      // id_unidad entre comillas en oninput para manejar IDs compuestos como "1_2"
+      return `
       <div class="rubro-row">
         <iconify-icon class="rubro-icon" icon="${r.icono || "lucide:tag"}"></iconify-icon>
         <span class="rubro-nombre">${r.nombre}</span>
@@ -328,16 +419,20 @@ function buildRubrosRows(id_grupo, id_unidad) {
                oninput="actualizarSumaRubros(${id_grupo},'${id_unidad}')"
                placeholder="0" />
         <span class="rubro-pct-label">%</span>
-        <button class="btn-del-rubro" ${r.bloqueado ? "disabled title='Rubro predeterminado'" : `onclick="eliminarRubroGrupo(${id_grupo},'${r.key}')"`}>
+        <button class="btn-del-rubro" onclick="eliminarRubroGrupo(${id_grupo},'${r.key}')">
           <iconify-icon icon="lucide:x"></iconify-icon>
         </button>
       </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 function actualizarSumaRubros(id_grupo, id_unidad) {
   let suma = 0;
-  document.querySelectorAll(`.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`)
+  document
+    .querySelectorAll(
+      `.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`,
+    )
     .forEach((inp) => (suma += parseFloat(inp.value) || 0));
   const badge = document.getElementById(`suma-badge-${id_grupo}-${id_unidad}`);
   if (!badge) return;
@@ -347,7 +442,9 @@ function actualizarSumaRubros(id_grupo, id_unidad) {
 }
 
 async function guardarConfigUnidad(id_grupo, id_unidad) {
-  const inputs = document.querySelectorAll(`.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`);
+  const inputs = document.querySelectorAll(
+    `.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`,
+  );
   let suma = 0;
   const pcts = {};
   inputs.forEach((inp) => {
@@ -357,7 +454,10 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
   });
 
   if (Math.abs(suma - 100) > 0.01) {
-    showToast(`La suma debe ser 100%. Actualmente: ${suma.toFixed(1)}%`, "error");
+    showToast(
+      `La suma debe ser 100%. Actualmente: ${suma.toFixed(1)}%`,
+      "error",
+    );
     return false;
   }
   localStorage.setItem(`pcts_${id_grupo}_${id_unidad}`, JSON.stringify(pcts));
@@ -365,14 +465,18 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
   // Para unidades fusionadas (id compuesto como "1_2"), guardar en todos los IDs reales
   const idStr = String(id_unidad);
   const idsReales = idStr.includes("_")
-    ? idStr.replace(/_[ab]$/, "").split("_").map(Number).filter((n) => !isNaN(n) && n > 0)
+    ? idStr
+        .replace(/_[ab]$/, "")
+        .split("_")
+        .map(Number)
+        .filter((n) => !isNaN(n) && n > 0)
     : [id_unidad];
 
   const body = {
     id_grupo,
     pct_actividades: pcts.pct_actividades ?? 0,
-    pct_examen:      pcts.pct_examen      ?? 0,
-    pct_asistencia:  pcts.pct_asistencia  ?? 0,
+    pct_examen: pcts.pct_examen ?? 0,
+    pct_asistencia: pcts.pct_asistencia ?? 0,
     nota: JSON.stringify(pcts),
   };
 
@@ -382,7 +486,10 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
     try {
       const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenGM()}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokenGM()}`,
+        },
         body: JSON.stringify({ ...body, id_unidad: rid }),
       });
       const data = await res.json();
@@ -422,50 +529,89 @@ async function guardarTodasUnidades(id_grupo) {
     ? getUnidadesEfectivas(id_grupo)
     : unidadesPorGrupo[id_grupo] || [];
 
-  if (!unidades.length) { showToast("No hay unidades para guardar", "info"); return; }
+  if (!unidades.length) {
+    showToast("No hay unidades para guardar", "info");
+    return;
+  }
 
-  let ok = 0, fail = 0;
+  let ok = 0,
+    fail = 0;
   for (const u of unidades) {
     const res = await guardarConfigUnidad(id_grupo, u.id_unidad);
     res ? ok++ : fail++;
   }
 
   fail === 0
-    ? showToast(`✓ ${ok} unidad${ok > 1 ? "es" : ""} guardada${ok > 1 ? "s" : ""}`, "success")
+    ? showToast(
+        `✓ ${ok} unidad${ok > 1 ? "es" : ""} guardada${ok > 1 ? "s" : ""}`,
+        "success",
+      )
     : showToast(`${ok} guardadas, ${fail} con error (suma ≠ 100%)`, "error");
 }
 
 function resetConfigUnidad(id_grupo, id_unidad) {
-  if (!confirm("¿Restablecer a los valores predeterminados: Actividades 60% · Examen 30% · Asistencia 10%?")) return;
+  if (
+    !confirm(
+      "¿Restablecer rubros a Actividades 60% · Examen 30% · Asistencia 10%? Se eliminarán rubros extra y se restaurarán los predeterminados.",
+    )
+  )
+    return;
+  // Restaurar defaults ocultos y limpiar extras del grupo
+  setDefaultsOcultos(id_grupo, []);
+  setRubrosExtra(id_grupo, []);
   const defaults = { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
-  localStorage.setItem(`pcts_${id_grupo}_${id_unidad}`, JSON.stringify(defaults));
-  document.querySelectorAll(`.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`)
-    .forEach((inp) => { inp.value = defaults[inp.dataset.key] ?? 0; });
-  actualizarSumaRubros(id_grupo, id_unidad);
-  showToast("Valores restablecidos", "info");
+  localStorage.setItem(
+    `pcts_${id_grupo}_${id_unidad}`,
+    JSON.stringify(defaults),
+  );
+  rerenderGrupoBody(id_grupo);
+  showToast("Rubros restablecidos a valores predeterminados", "info");
 }
 
 function agregarRubroGrupo(id_grupo) {
-  const nombre = prompt("Nombre del nuevo rubro\n(ej: Participación, Proyecto, Práctica, etc.):");
+  const nombre = prompt(
+    "Nombre del nuevo rubro\n(ej: Participación, Proyecto, Práctica, etc.):",
+  );
   if (!nombre || !nombre.trim()) return;
 
-  const key = "custom_" + nombre.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  const key =
+    "custom_" +
+    nombre
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
   const extras = getRubrosExtra(id_grupo);
 
-  if (extras.find((r) => r.key === key) || RUBROS_DEFAULT.find((r) => r.key === key)) {
+  if (
+    extras.find((r) => r.key === key) ||
+    RUBROS_DEFAULT.find((r) => r.key === key)
+  ) {
     showToast("Ya existe un rubro con ese nombre", "error");
     return;
   }
-  extras.push({ key, nombre: nombre.trim(), icono: "lucide:star", bloqueado: false });
+  extras.push({ key, nombre: nombre.trim(), icono: "lucide:star" });
   setRubrosExtra(id_grupo, extras);
   rerenderGrupoBody(id_grupo);
   showToast(`Rubro "${nombre.trim()}" agregado`, "success");
 }
 
 function eliminarRubroGrupo(id_grupo, key) {
-  if (RUBROS_DEFAULT.find((r) => r.key === key)) { showToast("No se puede eliminar un rubro predeterminado", "error"); return; }
+  if (getRubrosGrupo(id_grupo).length <= 1) {
+    showToast("Debe quedar al menos un rubro", "error");
+    return;
+  }
   if (!confirm("¿Eliminar este rubro de todas las unidades del grupo?")) return;
-  setRubrosExtra(id_grupo, getRubrosExtra(id_grupo).filter((r) => r.key !== key));
+  const esDefault = RUBROS_DEFAULT.find((r) => r.key === key);
+  if (esDefault) {
+    const ocultos = getDefaultsOcultos(id_grupo);
+    if (!ocultos.includes(key)) setDefaultsOcultos(id_grupo, [...ocultos, key]);
+  } else {
+    setRubrosExtra(
+      id_grupo,
+      getRubrosExtra(id_grupo).filter((r) => r.key !== key),
+    );
+  }
   rerenderGrupoBody(id_grupo);
   showToast("Rubro eliminado", "info");
 }
@@ -474,8 +620,13 @@ async function rerenderGrupoBody(id_grupo) {
   const bodyEl = document.getElementById(`body-${id_grupo}`);
   if (!bodyEl) return;
   const grupo = misGrupos.find((g) => g.id_grupo === id_grupo);
-  const unidades = unidadesPorGrupo[id_grupo] || (grupo ? await cargarUnidadesDeGrupo(grupo) : []);
-  bodyEl.innerHTML = buildGrupoBody(grupo || { id_grupo, nombre_materia: "" }, unidades);
+  const unidades =
+    unidadesPorGrupo[id_grupo] ||
+    (grupo ? await cargarUnidadesDeGrupo(grupo) : []);
+  bodyEl.innerHTML = buildGrupoBody(
+    grupo || { id_grupo, nombre_materia: "" },
+    unidades,
+  );
   const cnt = document.getElementById(`rubros-count-${id_grupo}`);
   if (cnt) cnt.textContent = getRubrosGrupo(id_grupo).length;
 }
@@ -485,10 +636,16 @@ function actualizarBadgeGrupo(id_grupo) {
   if (!card) return;
   const badge = card.querySelector(".grupo-info .cfg-badge");
   if (!badge) return;
-  const tieneConfig = getRubrosExtra(id_grupo).length > 0 ||
+  const tieneConfig =
+    getRubrosExtra(id_grupo).length > 0 ||
     (unidadesPorGrupo[id_grupo] || []).some((u) => {
-      try { return !!JSON.parse(localStorage.getItem(`pcts_${id_grupo}_${u.id_unidad}`)); }
-      catch { return false; }
+      try {
+        return !!JSON.parse(
+          localStorage.getItem(`pcts_${id_grupo}_${u.id_unidad}`),
+        );
+      } catch {
+        return false;
+      }
     });
   badge.className = `cfg-badge ${tieneConfig ? "cfg-badge-ok" : "cfg-badge-pending"}`;
   badge.innerHTML = tieneConfig
@@ -496,11 +653,15 @@ function actualizarBadgeGrupo(id_grupo) {
     : `<iconify-icon icon="lucide:alert-circle" style="font-size:0.75rem"></iconify-icon> Pendiente`;
 }
 
-function toggleGrupoCard(id_grupo) { document.getElementById(`grupo-card-${id_grupo}`)?.classList.toggle("open"); }
-function toggleUnidadBlock(blockId) { document.getElementById(blockId)?.classList.toggle("open"); }
+function toggleGrupoCard(id_grupo) {
+  document.getElementById(`grupo-card-${id_grupo}`)?.classList.toggle("open");
+}
+function toggleUnidadBlock(blockId) {
+  document.getElementById(blockId)?.classList.toggle("open");
+}
 
 // Modal: gestionar unidades (dividir / fusionar)
-let _modalGrupoId  = null;
+let _modalGrupoId = null;
 let _modalUnidades = [];
 
 function abrirModalUnidades(id_grupo) {
@@ -509,10 +670,10 @@ function abrirModalUnidades(id_grupo) {
     ? getUnidadesEfectivas(id_grupo)
     : unidadesPorGrupo[id_grupo] || [];
   _modalUnidades = base.map((u, i) => ({
-    id_unidad:    u.id_unidad,
+    id_unidad: u.id_unidad,
     nombre_unidad: u.nombre_unidad,
     numero_unidad: u.numero_unidad ?? i + 1,
-    _origen:       u._origen || String(u.id_unidad),
+    _origen: u._origen || String(u.id_unidad),
   }));
   renderModalUnidades();
   document.getElementById("modalUnidades").classList.add("visible");
@@ -520,17 +681,18 @@ function abrirModalUnidades(id_grupo) {
 
 function cerrarModalUnidades() {
   document.getElementById("modalUnidades").classList.remove("visible");
-  _modalGrupoId  = null;
+  _modalGrupoId = null;
   _modalUnidades = [];
 }
 
 function renderModalUnidades() {
   const lista = document.getElementById("modalUnidadesLista");
   if (!lista) return;
-  lista.innerHTML = _modalUnidades.map((u, idx) => {
-    const esCustom    = String(u.id_unidad).includes("_");
-    const colorBorde = esCustom ? "var(--bonus,#7c3aed)" : "var(--border)";
-    return `
+  lista.innerHTML = _modalUnidades
+    .map((u, idx) => {
+      const esCustom = String(u.id_unidad).includes("_");
+      const colorBorde = esCustom ? "var(--bonus,#7c3aed)" : "var(--border)";
+      return `
       <div class="rubro-row" style="border-color:${colorBorde};flex-direction:column;align-items:stretch;gap:8px" id="mu-row-${idx}">
         <div style="display:flex;align-items:center;gap:10px">
           <iconify-icon icon="lucide:grip-vertical" style="color:var(--text-muted);flex-shrink:0"></iconify-icon>
@@ -538,34 +700,51 @@ function renderModalUnidades() {
           <input type="text" value="${u.nombre_unidad}"
                  onchange="_modalUnidades[${idx}].nombre_unidad = this.value"
                  style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-app);color:var(--text-main);font-size:0.85rem;font-family:inherit" />
-          ${esCustom
-            ? `<button onclick="eliminarUnidadModal(${idx})" title="Eliminar esta división/fusión"
+          ${
+            esCustom
+              ? `<button onclick="eliminarUnidadModal(${idx})" title="Eliminar esta división/fusión"
                        style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:1rem;padding:4px;border-radius:6px;flex-shrink:0">
                <iconify-icon icon="lucide:x"></iconify-icon>
              </button>`
-            : ""}
+              : ""
+          }
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="dividirUnidad(${idx})" class="btn btn-sm"
                   style="background:var(--primary-light);color:var(--primary);border:none;font-size:0.78rem">
             <iconify-icon icon="lucide:scissors"></iconify-icon> Dividir en dos
           </button>
-          ${idx < _modalUnidades.length - 1
-            ? `<button onclick="fusionarUnidades(${idx})" class="btn btn-sm"
+          ${
+            idx < _modalUnidades.length - 1
+              ? `<button onclick="fusionarUnidades(${idx})" class="btn btn-sm"
                        style="background:var(--success-light);color:var(--success);border:none;font-size:0.78rem">
                <iconify-icon icon="lucide:link"></iconify-icon> Fusionar con siguiente
              </button>`
-            : ""}
+              : ""
+          }
         </div>
       </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 function dividirUnidad(idx) {
   const u = _modalUnidades[idx];
-  _modalUnidades.splice(idx, 1,
-    { id_unidad: `${u._origen}_a`, nombre_unidad: `${u.nombre_unidad} — Parte A`, numero_unidad: `${u.numero_unidad}a`, _origen: u._origen },
-    { id_unidad: `${u._origen}_b`, nombre_unidad: `${u.nombre_unidad} — Parte B`, numero_unidad: `${u.numero_unidad}b`, _origen: u._origen }
+  _modalUnidades.splice(
+    idx,
+    1,
+    {
+      id_unidad: `${u._origen}_a`,
+      nombre_unidad: `${u.nombre_unidad} — Parte A`,
+      numero_unidad: `${u.numero_unidad}a`,
+      _origen: u._origen,
+    },
+    {
+      id_unidad: `${u._origen}_b`,
+      nombre_unidad: `${u.nombre_unidad} — Parte B`,
+      numero_unidad: `${u.numero_unidad}b`,
+      _origen: u._origen,
+    },
   );
   renderModalUnidades();
 }
@@ -574,24 +753,26 @@ function fusionarUnidades(idx) {
   const a = _modalUnidades[idx];
   const b = _modalUnidades[idx + 1];
   _modalUnidades.splice(idx, 2, {
-    id_unidad:    `${a._origen}_${b._origen}`,
+    id_unidad: `${a._origen}_${b._origen}`,
     nombre_unidad: `${a.nombre_unidad} + ${b.nombre_unidad}`,
     numero_unidad: `${a.numero_unidad}-${b.numero_unidad}`,
-    _origen:       `${a._origen}_${b._origen}`,
+    _origen: `${a._origen}_${b._origen}`,
   });
   renderModalUnidades();
 }
 
 function eliminarUnidadModal(idx) {
-  const u          = _modalUnidades[idx];
+  const u = _modalUnidades[idx];
   const origenBase = String(u._origen).split("_")[0];
-  const original   = (unidadesPorGrupo[_modalGrupoId] || []).find((o) => String(o.id_unidad) === origenBase);
+  const original = (unidadesPorGrupo[_modalGrupoId] || []).find(
+    (o) => String(o.id_unidad) === origenBase,
+  );
   if (original) {
     _modalUnidades.splice(idx, 1, {
-      id_unidad:    original.id_unidad,
+      id_unidad: original.id_unidad,
       nombre_unidad: original.nombre_unidad,
       numero_unidad: original.numero_unidad,
-      _origen:       String(original.id_unidad),
+      _origen: String(original.id_unidad),
     });
   } else {
     _modalUnidades.splice(idx, 1);
@@ -600,13 +781,18 @@ function eliminarUnidadModal(idx) {
 }
 
 function restaurarUnidadesOriginal() {
-  if (!confirm("¿Restaurar las unidades originales de la materia? Se perderán las divisiones y fusiones guardadas.")) return;
+  if (
+    !confirm(
+      "¿Restaurar las unidades originales de la materia? Se perderán las divisiones y fusiones guardadas.",
+    )
+  )
+    return;
   localStorage.removeItem(`unidades_custom_${_modalGrupoId}`);
   _modalUnidades = (unidadesPorGrupo[_modalGrupoId] || []).map((u, i) => ({
-    id_unidad:    u.id_unidad,
+    id_unidad: u.id_unidad,
     nombre_unidad: u.nombre_unidad,
     numero_unidad: u.numero_unidad ?? i + 1,
-    _origen:       String(u.id_unidad),
+    _origen: String(u.id_unidad),
   }));
   renderModalUnidades();
   showToast("Unidades restablecidas al original", "info");

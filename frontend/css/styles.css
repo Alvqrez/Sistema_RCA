@@ -3486,3 +3486,74 @@ th.col-final {
   display: block;
   transition: transform 0.25s;
 }
+
+/* ── SIDEBAR COLAPSABLE (toggle desktop) ─────────────────────────── */
+.sidebar {
+  transition: width 0.22s ease;
+}
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 14px;
+  right: -13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #334155;
+  background: #1e293b;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.22s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.sidebar.collapsed .sidebar-toggle-btn {
+  transform: rotate(180deg);
+}
+.sidebar.collapsed {
+  width: 64px;
+  overflow: visible;
+}
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .sidebar-bienvenida,
+.sidebar.collapsed .sidebar-nombre,
+.sidebar.collapsed .sidebar-rol-badge {
+  display: none;
+}
+.sidebar.collapsed nav a span,
+.sidebar.collapsed .nav-group-btn span,
+.sidebar.collapsed .nav-group-btn .chevron,
+.sidebar.collapsed .logout-btn span,
+.sidebar.collapsed .theme-icon-btn span {
+  display: none;
+}
+.sidebar.collapsed nav a,
+.sidebar.collapsed .nav-group-btn,
+.sidebar.collapsed .logout-btn,
+.sidebar.collapsed .theme-icon-btn {
+  justify-content: center;
+  padding: 14px;
+}
+.sidebar.collapsed .submenu {
+  display: none !important;
+}
+.sidebar.collapsed .sidebar-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 10px;
+}
+body.sidebar-collapsed .content {
+  margin-left: 64px;
+  width: calc(100% - 64px);
+}
