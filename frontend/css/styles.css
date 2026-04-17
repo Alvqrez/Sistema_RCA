@@ -116,7 +116,15 @@ body {
   color: white;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
+  transition: width 0.22s ease;
+}
+
+.sidebar nav {
+  flex: 1;
+  padding: 8px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── LOGO / BIENVENIDA ────────────────────────────────────────────── */
@@ -2788,20 +2796,6 @@ th.col-final {
 }
 
 /* ── Botones estándar ────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.15s;
-  text-decoration: none;
-  font-family: inherit;
-}
 .btn-primary {
   background: var(--primary);
   color: white;
@@ -3493,10 +3487,11 @@ th.col-final {
 }
 .sidebar-toggle-btn {
   position: absolute;
-  top: 14px;
-  right: -13px;
-  width: 26px;
-  height: 26px;
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2px solid #334155;
   background: #1e293b;
@@ -3505,21 +3500,30 @@ th.col-final {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 300;
+  z-index: 400;
   transition:
     background 0.15s,
     color 0.15s,
-    transform 0.22s;
+    border-color 0.15s;
   padding: 0;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
 .sidebar-toggle-btn:hover {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
 }
+
 .sidebar.collapsed .sidebar-toggle-btn {
-  transform: rotate(180deg);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Asegura que el ícono dentro sea el correcto */
+.sidebar-toggle-btn iconify-icon {
+  font-size: 16px;
+  display: flex;
 }
 .sidebar.collapsed {
   width: 64px;
@@ -3556,4 +3560,59 @@ th.col-final {
 body.sidebar-collapsed .content {
   margin-left: 64px;
   width: calc(100% - 64px);
+}
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--primary);
+  color: #fff;
+}
+.btn-guardar:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+}
+
+.btn-cancelar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: transparent;
+  color: var(--text-muted);
+}
+.btn-cancelar:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.dark-mode .btn-guardar {
+  box-shadow: none;
+}
+.dark-mode .btn-cancelar {
+  border-color: #334155;
+  color: #94a3b8;
+}
+.dark-mode .btn-cancelar:hover {
+  border-color: var(--primary);
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.12);
 }

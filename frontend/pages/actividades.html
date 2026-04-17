@@ -188,64 +188,84 @@
           </div>
         </div>
 
+        <!-- Panel de resumen rápido -->
+        <div
+          id="panelResumenActividades"
+          style="display: none; margin-bottom: 20px"
+        >
+          <div
+            id="resumenCards"
+            style="display: flex; gap: 14px; flex-wrap: wrap"
+          ></div>
+        </div>
+
         <!-- Lista de actividades -->
-        <div class="card">
+        <div class="card card-collapsible" id="cardListaActividades">
           <div class="card-title">
             <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
             Lista de actividades
             <span
               id="filtroGrupoBadge"
               style="
-                margin-left: auto;
                 font-size: 0.78rem;
                 font-weight: 400;
                 color: var(--text-muted);
               "
             ></span>
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+              style="margin-left: auto"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
           </div>
 
           <!-- Filtros -->
-          <div class="table-filters">
-            <div style="display: flex; gap: 12px; flex-wrap: wrap">
-              <div class="field-group" style="flex: 1; min-width: 160px">
-                <label>Filtrar por grupo</label>
-                <select id="filtroGrupo" onchange="onFiltroGrupoChange()">
-                  <option value="">Todos los grupos</option>
-                </select>
-              </div>
-              <div class="field-group" style="flex: 1; min-width: 160px">
-                <label>Filtrar por unidad</label>
-                <select id="filtroUnidad" onchange="filtrarActividades()">
-                  <option value="">Todas las unidades</option>
-                </select>
-              </div>
-              <div class="field-group" style="flex: 2; min-width: 180px">
-                <label>Buscar actividad</label>
-                <input
-                  type="text"
-                  id="buscarActividad"
-                  placeholder="Nombre..."
-                  oninput="filtrarActividades()"
-                />
+          <div class="card-body">
+            <div class="table-filters">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                <div class="field-group" style="flex: 1; min-width: 160px">
+                  <label>Filtrar por grupo</label>
+                  <select id="filtroGrupo" onchange="onFiltroGrupoChange()">
+                    <option value="">Todos los grupos</option>
+                  </select>
+                </div>
+                <div class="field-group" style="flex: 1; min-width: 160px">
+                  <label>Filtrar por unidad</label>
+                  <select id="filtroUnidad" onchange="filtrarActividades()">
+                    <option value="">Todas las unidades</option>
+                  </select>
+                </div>
+                <div class="field-group" style="flex: 2; min-width: 180px">
+                  <label>Buscar actividad</label>
+                  <input
+                    type="text"
+                    id="buscarActividad"
+                    placeholder="Nombre..."
+                    oninput="filtrarActividades()"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="tabla-wrapper">
-            <table class="tabla-actividades">
-              <thead>
-                <tr>
-                  <th>Actividad</th>
-                  <th>Grupo / Materia</th>
-                  <th>Unidad</th>
-                  <th>Ponderación</th>
-                  <th>Entrega</th>
-                  <th>Alumnos calificados</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tablaActividades"></tbody>
-            </table>
+            <div class="tabla-wrapper">
+              <table class="tabla-actividades">
+                <thead>
+                  <tr>
+                    <th>Actividad</th>
+                    <th>Grupo / Materia</th>
+                    <th>Unidad</th>
+                    <th>Ponderación</th>
+                    <th>Entrega</th>
+                    <th>Alumnos calificados</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaActividades"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 

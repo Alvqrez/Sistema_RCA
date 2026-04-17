@@ -221,11 +221,75 @@ async function cargarActividades() {
     }
     todasActividades = await res.json();
     filtrarActividades();
+    renderResumenActividades();
     actualizarIndicadorPonderacion(); // actualiza indicador con datos frescos
   } catch (e) {
     console.error("No se pudo cargar actividades:", e);
     mostrarToast("Error de conexión al cargar actividades", "error");
   }
+}
+
+// ── RESUMEN DE PONDERACIONES POR GRUPO/UNIDAD ─────────────────────
+function renderResumenActividades() {
+  const panel = document.getElementById("panelResumenActividades");
+  const cont = document.getElementById("resumenCards");
+  if (!panel || !cont || !todasActividades.length) {
+    if (panel) panel.style.display = "none";
+    return;
+  }
+
+  // Agrupar por grupo+unidad
+  const mapa = {};
+  todasActividades.forEach((a) => {
+    const key = `${a.id_grupo}__${a.id_unidad}`;
+    if (!mapa[key]) {
+      mapa[key] = {
+        grupo: gruposMap[a.id_grupo],
+        unidad: a.nombre_unidad || `Unidad ${a.id_unidad}`,
+        total: 0,
+        cantidad: 0,
+      };
+    }
+    mapa[key].total += parseFloat(a.ponderacion);
+    mapa[key].cantidad += 1;
+  });
+
+  cont.innerHTML = Object.values(mapa)
+    .map((item) => {
+      const pct = Math.round(item.total);
+      const completa = pct >= 100;
+      const color = completa
+        ? "var(--success)"
+        : pct > 75
+          ? "var(--warning,#f59e0b)"
+          : "var(--primary)";
+      const bg = completa
+        ? "var(--success-light,#d1fae5)"
+        : "rgba(59,130,246,0.07)";
+
+      return `
+        <div style="background:${bg}; border:1.5px solid ${color}40; border-radius:12px;
+                    padding:14px 18px; min-width:200px; flex:1;">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">
+                ${item.grupo?.nombre_materia || "Grupo"} · ${item.unidad}
+            </div>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                <span style="font-size:1.6rem;font-weight:700;color:${color};">${pct}%</span>
+                <span style="font-size:0.78rem;color:var(--text-muted);">${item.cantidad} actividad${item.cantidad !== 1 ? "es" : ""}</span>
+            </div>
+            <div style="height:5px;background:var(--border);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;width:${Math.min(pct, 100)}%;background:${color};border-radius:99px;transition:width 0.4s;"></div>
+            </div>
+            ${
+              completa
+                ? `<div style="font-size:0.72rem;color:${color};margin-top:5px;font-weight:600;">✓ Unidad completa</div>`
+                : `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:5px;">Disponible: ${100 - pct}%</div>`
+            }
+        </div>`;
+    })
+    .join("");
+
+  panel.style.display = "block";
 }
 
 function filtrarActividades() {
@@ -697,7 +761,7 @@ function formatFecha(f) {
   const str = f.toString().split("T")[0];
   const [anio, mes, dia] = str.split("-");
   if (!anio || !mes || !dia) return str;
-  return `${dia.padStart(2,"0")}/${mes.padStart(2,"0")}/${anio}`;
+  return `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${anio}`;
 }
 
 function mostrarToast(msg, tipo = "success") {
