@@ -530,22 +530,6 @@
           </div>`;
       }
 
-      const MESES_ES = [
-        "Ene",
-        "Feb",
-        "Mar",
-        "Abr",
-        "May",
-        "Jun",
-        "Jul",
-        "Ago",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dic",
-      ];
-      const DIAS_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
       function renderGrid(fechas) {
         if (!fechas.length) {
           document.getElementById("mainContent").innerHTML =
@@ -553,280 +537,101 @@
           return;
         }
 
-        // Agrupar fechas por mes para los encabezados
-        const meses = {};
-        fechas.forEach((f) => {
-          const [y, m] = f.split("-");
-          const key = `${y}-${m}`;
-          if (!meses[key])
-            meses[key] = {
-              label: `${MESES_ES[parseInt(m) - 1]} ${y}`,
-              fechas: [],
-            };
-          meses[key].fechas.push(f);
-        });
-
-        // Fila de mes (agrupadora)
-        const mesHeaders = Object.values(meses)
+        const headerCells = fechas
           .map(
-            (m) =>
-              `<th colspan="${m.fechas.length}" style="text-align:center;background:var(--primary);color:#fff;font-size:0.72rem;letter-spacing:.04em;border-right:2px solid rgba(255,255,255,.2);padding:7px 4px">${m.label}</th>`,
+            (f) =>
+              `<th title="${f}" style="text-align:center;font-size:0.68rem">${fmtFechaCorta(f)}</th>`,
           )
           .join("");
 
-        // Fila de día/fecha individual
-        const diaHeaders = fechas
-          .map((f) => {
-            const d = new Date(f + "T12:00:00");
-            const esFind = d.getDay() === 0 || d.getDay() === 6;
-            return `<th title="${f}" style="text-align:center;font-size:0.65rem;font-weight:600;padding:5px 3px;min-width:30px;color:${esFind ? "var(--danger)" : "var(--text-muted)"}">
-            <div>${d.getDate()}</div>
-            <div style="font-weight:400;font-size:.6rem">${DIAS_ES[d.getDay()]}</div>
-          </th>`;
-          })
-          .join("");
-
-        // Filas de alumnos
         const rows = alumnosGrupo
-          .map((a, idx) => {
+          .map((a) => {
             const reg = getRegistro(a.matricula);
-            let presentes = 0,
-              faltas = 0,
-              sinReg = 0;
-            const cells = fechas
-              .map((f) => {
-                const est = reg[f];
-                if (est === "presente") {
-                  presentes++;
-                  return `<td class="cell-p" title="Presente — ${fmtFechaLarga(f)}">
-                <iconify-icon icon="lucide:check" style="font-size:.9rem"></iconify-icon>
-              </td>`;
-                }
-                if (est === "falta") {
-                  faltas++;
-                  return `<td class="cell-f" title="Falta — ${fmtFechaLarga(f)}">
-                <iconify-icon icon="lucide:x" style="font-size:.9rem"></iconify-icon>
-              </td>`;
-                }
-                sinReg++;
-                return `<td class="cell-n" title="Sin registro — ${fmtFechaLarga(f)}">·</td>`;
-              })
-              .join("");
-
-            const total = presentes + faltas;
-            const pct =
-              total > 0 ? Math.round((presentes / total) * 100) : null;
-            const pctColor =
+            const pct = getPct(a.matricula, fechas);
+            const color =
               pct === null
-                ? "var(--text-muted)"
+                ? "#94a3b8"
                 : pct >= 80
                   ? "var(--success)"
                   : pct >= 60
                     ? "var(--warning)"
                     : "var(--danger)";
-            const riesgoMark =
-              pct !== null && pct < 80
-                ? `<iconify-icon icon="lucide:alert-triangle" style="font-size:.8rem;color:var(--danger);margin-left:4px" title="En riesgo de reprobación por inasistencias"></iconify-icon>`
-                : "";
-
-            const bg = idx % 2 === 0 ? "" : "background:var(--bg-app)";
-            return `<tr style="${bg}">
-            <td class="sticky-col-name" style="font-weight:600;white-space:nowrap;${bg}">
-              ${a.nombre}${riesgoMark}
-            </td>
-            <td style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;${bg}">${a.matricula}</td>
+            const cells = fechas
+              .map((f) => {
+                const est = reg[f];
+                if (est === "presente")
+                  return `<td class="cell-p" title="Presente ${f}">✓</td>`;
+                if (est === "falta")
+                  return `<td class="cell-f" title="Falta ${f}">✗</td>`;
+                return `<td class="cell-n" title="Sin registro ${f}">—</td>`;
+              })
+              .join("");
+            return `<tr>
+            <td style="font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--card-bg);z-index:1">${a.nombre}</td>
+            <td style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap">${a.matricula}</td>
             ${cells}
-            <td style="text-align:center;font-weight:700;color:${pctColor};white-space:nowrap;${bg}">
-              ${pct !== null ? `<span>${pct}%</span><br><span style="font-size:.65rem;font-weight:400;color:var(--text-muted)">${presentes}P / ${faltas}F</span>` : "—"}
-            </td>
+            <td style="text-align:center;font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
           </tr>`;
           })
           .join("");
 
-        // Fila de totales de la clase por fecha
-        const totalesCells = fechas
-          .map((f) => {
-            let p = 0,
-              fa = 0;
-            alumnosGrupo.forEach((a) => {
-              const est = getRegistro(a.matricula)[f];
-              if (est === "presente") p++;
-              else if (est === "falta") fa++;
-            });
-            const total = p + fa;
-            const pct = total > 0 ? Math.round((p / total) * 100) : null;
-            const col =
-              pct === null
-                ? "var(--text-muted)"
-                : pct >= 80
-                  ? "var(--success)"
-                  : pct >= 60
-                    ? "var(--warning)"
-                    : "var(--danger)";
-            return `<td style="text-align:center;background:var(--bg-app);border-top:2px solid var(--border)">
-            <span style="font-size:.7rem;font-weight:700;color:${col}">${pct !== null ? pct + "%" : "—"}</span>
-          </td>`;
-          })
-          .join("");
-
         document.getElementById("mainContent").innerHTML = `
-          <style>
-            .sticky-col-name {
-              position:sticky;left:0;z-index:2;
-              background:var(--card-bg);
-              border-right:1px solid var(--border);
-              min-width:160px;
-            }
-            .sticky-col-mat {
-              position:sticky;left:160px;z-index:2;
-              background:var(--card-bg);
-              border-right:2px solid var(--border);
-            }
-            .cell-p { text-align:center;color:var(--success); }
-            .cell-f { text-align:center;color:var(--danger);  }
-            .cell-n { text-align:center;color:var(--border);font-size:.8rem; }
-            .excel-table { width:100%;border-collapse:collapse;font-size:.82rem; }
-            .excel-table th, .excel-table td {
-              border:1px solid var(--border);
-              padding:5px 4px;
-            }
-            .excel-table th {
-              background:var(--bg-app);
-              color:var(--text-muted);
-              font-weight:600;
-            }
-          </style>
           <div class="card" style="padding:0;overflow:hidden">
-            <div style="padding:14px 18px 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
-              <iconify-icon icon="lucide:table" style="color:var(--primary);font-size:1.2rem"></iconify-icon>
-              <span style="font-weight:600;font-size:.95rem">Lista de asistencia — ${alumnosGrupo.length} alumno${alumnosGrupo.length !== 1 ? "s" : ""} · ${fechas.length} clase${fechas.length !== 1 ? "s" : ""}</span>
-              <div style="margin-left:auto;display:flex;gap:10px;font-size:.75rem">
-                <span style="display:flex;align-items:center;gap:4px;color:var(--success)"><iconify-icon icon="lucide:check"></iconify-icon> Presente</span>
-                <span style="display:flex;align-items:center;gap:4px;color:var(--danger)"><iconify-icon icon="lucide:x"></iconify-icon> Falta</span>
-                <span style="display:flex;align-items:center;gap:4px;color:var(--text-muted)">· Sin registro</span>
-              </div>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="excel-table">
+            <div style="overflow-x:auto;max-width:100%">
+              <table class="grid-table">
                 <thead>
                   <tr>
-                    <th class="sticky-col-name" style="z-index:3;background:var(--bg-app)" rowspan="2">Alumno</th>
-                    <th class="sticky-col-mat" style="z-index:3;background:var(--bg-app);min-width:90px" rowspan="2">Matrícula</th>
-                    ${mesHeaders}
-                    <th style="text-align:center;background:var(--bg-app);min-width:72px" rowspan="2">%<br><span style="font-weight:400;font-size:.65rem">P / F</span></th>
+                    <th style="position:sticky;left:0;background:var(--bg-app);z-index:2">Alumno</th>
+                    <th>Matrícula</th>
+                    ${headerCells}
+                    <th style="text-align:center">Total %</th>
                   </tr>
-                  <tr>${diaHeaders}</tr>
                 </thead>
                 <tbody>${rows}</tbody>
-                <tfoot>
-                  <tr>
-                    <td class="sticky-col-name" colspan="2" style="font-size:.75rem;font-weight:700;color:var(--text-muted);background:var(--bg-app);border-top:2px solid var(--border)">
-                      ASISTENCIA DEL DÍA
-                    </td>
-                    ${totalesCells}
-                    <td style="background:var(--bg-app);border-top:2px solid var(--border)"></td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </div>`;
       }
 
       function renderFaltas(fechas) {
-        // Tabla detallada: una fila por alumno con conteo acumulado y detalle por fecha
-        const datos = alumnosGrupo
-          .map((a) => {
-            const reg = getRegistro(a.matricula);
-            const faltasFechas = fechas
-              .filter((f) => reg[f] === "falta")
-              .sort();
-            const presentes = fechas.filter(
-              (f) => reg[f] === "presente",
-            ).length;
-            const total = presentes + faltasFechas.length;
-            const pct =
-              total > 0 ? Math.round((presentes / total) * 100) : null;
-            return { ...a, faltasFechas, presentes, pct };
-          })
-          .filter((a) => a.faltasFechas.length > 0)
-          .sort((a, b) => a.faltasFechas.length - b.faltasFechas.length); // más faltas al final
-
-        if (!datos.length) {
-          document.getElementById("mainContent").innerHTML = `
-            <div class="card" style="text-align:center;padding:48px">
-              <iconify-icon icon="lucide:party-popper" style="font-size:3rem;color:var(--success);display:block;margin:0 auto 12px"></iconify-icon>
-              <p style="font-weight:600;font-size:1rem;color:var(--text-main);margin:0 0 4px">¡Sin faltas registradas!</p>
-              <p style="font-size:.85rem;color:var(--text-muted);margin:0">Todos los alumnos tienen asistencia perfecta en el período seleccionado.</p>
-            </div>`;
-          return;
-        }
-
-        const filas = datos.map((a, idx) => {
-          const pctColor =
-            a.pct === null
-              ? "var(--text-muted)"
-              : a.pct >= 80
-                ? "var(--success)"
-                : a.pct >= 60
-                  ? "var(--warning)"
-                  : "var(--danger)";
-          const riesgo = a.pct !== null && a.pct < 80;
-          const bg = idx % 2 === 0 ? "" : "background:var(--bg-app)";
-
-          // Chips de fechas de falta
-          const fechaChips = a.faltasFechas
-            .map((f) => {
-              const d = new Date(f + "T12:00:00");
-              return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--danger-light);color:var(--danger);
-                               font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;margin:2px">
-              <iconify-icon icon="lucide:x" style="font-size:.65rem"></iconify-icon>
-              ${d.getDate()} ${MESES_ES[d.getMonth()]}
-            </span>`;
-            })
-            .join("");
-
-          return `<tr style="${bg}">
-            <td style="font-weight:600;${bg}">
-              ${a.nombre}
-              ${riesgo ? `<span class="badge badge-danger" style="font-size:.68rem;margin-left:6px">RIESGO</span>` : ""}
-            </td>
-            <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;${bg}">${a.matricula}</td>
-            <td style="text-align:center;${bg}">
-              <span style="display:inline-flex;align-items:center;gap:4px;font-weight:700;
-                           background:var(--danger-light);color:var(--danger);
-                           padding:3px 10px;border-radius:20px;font-size:.82rem">
-                <iconify-icon icon="lucide:x-circle" style="font-size:.9rem"></iconify-icon>
-                ${a.faltasFechas.length} falta${a.faltasFechas.length !== 1 ? "s" : ""}
-              </span>
-            </td>
-            <td style="${bg}">${fechaChips}</td>
-            <td style="text-align:center;${bg}">
-              <span style="font-weight:700;color:${pctColor}">
-                ${a.pct !== null ? a.pct + "%" : "—"}
-              </span>
-            </td>
-          </tr>`;
+        // Solo muestra alumnos con al menos una falta en el período
+        const filas = [];
+        alumnosGrupo.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          const faltasFechas = fechas.filter((f) => reg[f] === "falta");
+          if (!faltasFechas.length) return;
+          const pct = getPct(a.matricula, fechas);
+          const color =
+            pct !== null && pct < 80 ? "var(--danger)" : "var(--warning)";
+          faltasFechas.forEach((f) => {
+            filas.push(`<tr>
+              <td style="font-weight:600">${a.nombre}</td>
+              <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+              <td class="fecha-col">${fmtFechaLarga(f)}</td>
+              <td><span class="badge badge-danger">Falta</span></td>
+              <td style="font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
+            </tr>`);
+          });
         });
 
         document.getElementById("mainContent").innerHTML = `
           <div class="card" style="padding:0;overflow:hidden">
-            <div style="padding:14px 18px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)">
-              <iconify-icon icon="lucide:alert-triangle" style="color:var(--danger);font-size:1.2rem"></iconify-icon>
-              <span style="font-weight:600;font-size:.95rem">${datos.length} alumno${datos.length !== 1 ? "s" : ""} con faltas en el período</span>
-              <span style="margin-left:auto;font-size:.78rem;color:var(--text-muted)">Ordenado: menos faltas → más faltas</span>
-            </div>
             <div style="overflow-x:auto">
               <table class="hist-table">
                 <thead>
                   <tr>
                     <th>Alumno</th>
                     <th>Matrícula</th>
-                    <th style="text-align:center">Total faltas</th>
-                    <th>Fechas de inasistencia</th>
-                    <th style="text-align:center">Asistencia %</th>
+                    <th>Fecha de falta</th>
+                    <th>Estado</th>
+                    <th>Asistencia total</th>
                   </tr>
                 </thead>
-                <tbody>${filas.join("")}</tbody>
+                <tbody>${
+                  filas.length
+                    ? filas.join("")
+                    : '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Sin faltas en el período seleccionado. 🎉</td></tr>'
+                }</tbody>
               </table>
             </div>
           </div>`;

@@ -90,6 +90,7 @@
 
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
+      { separador: "Gestión" },
       {
         texto: "Alumnos",
         icono: "lucide:users",
@@ -118,6 +119,7 @@
         ],
       },
 
+      { separador: "Catálogo" },
       {
         texto: "Catálogo",
         icono: "lucide:folder-open",
@@ -140,6 +142,7 @@
         ],
       },
 
+      { separador: "Sistema" },
       { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
       {
         href: "utilerias.html",
@@ -158,9 +161,12 @@
   const isDark = localStorage.getItem("tema") === "oscuro";
 
   function buildLink(link) {
+    if (link.separador) {
+      return `<div class="nav-group-label">${link.separador}</div>`;
+    }
     if (link.hijos) {
       const algunoActivo = link.hijos.some(
-        (h) => h.href.split("#")[0] === paginaActual,
+        (h) => h.href && h.href.split("#")[0] === paginaActual,
       );
       const hijosHTML = link.hijos
         .map((h) => {
@@ -196,7 +202,6 @@
   }
 
   aside.innerHTML = `
-    <div class="sidebar-accent-bar"></div>
     <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar / expandir menú">
       <iconify-icon icon="lucide:chevron-left"></iconify-icon>
     </button>
