@@ -86,11 +86,12 @@ function renderStats(s) {
       cls: "rose",
     },
   ];
+  /* Estructura idéntica al Estilo A Deep Ocean */
   statsRow.innerHTML = items
     .map(
       (i) => `
-    <div class="stat-card-v2">
-      <div class="stat-icon-wrap ${i.cls}">
+    <div class="stat-card c-${i.cls}">
+      <div class="stat-icon">
         <iconify-icon icon="${i.icon}"></iconify-icon>
       </div>
       <div>
@@ -101,7 +102,6 @@ function renderStats(s) {
     )
     .join("");
 
-  /* distribución de roles */
   renderDistribucion(s);
 }
 

@@ -14,19 +14,20 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
+      /* ── Barras de distribución ──────────────────────────────── */
       .dist-bar-row {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
       }
       .dist-bar-label {
-        width: 96px;
+        width: 80px;
         font-size: 0.78rem;
         font-weight: 600;
         color: var(--text-muted);
@@ -37,7 +38,7 @@
       }
       .dist-bar-track {
         flex: 1;
-        height: 8px;
+        height: 7px;
         background: var(--border);
         border-radius: 99px;
         overflow: hidden;
@@ -45,81 +46,156 @@
       .dist-bar-fill {
         height: 100%;
         border-radius: 99px;
-        transition: width 0.5s ease;
+        transition: width 0.55s ease;
       }
       .dist-bar-count {
-        font-size: 0.82rem;
+        font-size: 0.85rem;
         font-weight: 700;
         color: var(--text-main);
-        min-width: 28px;
+        min-width: 24px;
         text-align: right;
       }
-      .stat-card-v2 {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 16px 18px;
-        display: flex;
-        align-items: center;
+
+      /* ── Grid de stats — 5 columnas ─────────────────────────── */
+      #statsRow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
         gap: 14px;
-        box-shadow: var(--shadow);
-        transition:
-          transform 0.15s,
-          box-shadow 0.15s;
+        margin-bottom: 22px;
       }
-      .stat-card-v2:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
+      @media (max-width: 1100px) {
+        #statsRow {
+          grid-template-columns: repeat(3, 1fr);
+        }
       }
-      .stat-icon-wrap {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
+
+      /* ── Grid inferior — 2 columnas ─────────────────────────── */
+      #gridInferior {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 900px) {
+        #gridInferior {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Card título con ícono ───────────────────────────────── */
+      .card-head {
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        flex-shrink: 0;
-      }
-      .stat-icon-wrap.blue {
-        background: rgba(59, 130, 246, 0.12);
-        color: #3b82f6;
-      }
-      .stat-icon-wrap.green {
-        background: rgba(16, 185, 129, 0.12);
-        color: #10b981;
-      }
-      .stat-icon-wrap.purple {
-        background: rgba(124, 58, 237, 0.12);
-        color: #7c3aed;
-      }
-      .stat-icon-wrap.amber {
-        background: rgba(245, 158, 11, 0.12);
-        color: #f59e0b;
-      }
-      .stat-icon-wrap.rose {
-        background: rgba(244, 63, 94, 0.12);
-        color: #f43f5e;
-      }
-      .stat-val {
-        font-size: 1.6rem;
+        gap: 8px;
+        font-size: 1rem;
         font-weight: 700;
         color: var(--text-main);
-        line-height: 1;
-        margin-bottom: 3px;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
       }
-      .stat-lbl {
-        font-size: 0.75rem;
-        font-weight: 500;
+      .card-head iconify-icon {
+        color: var(--primary);
+        font-size: 1.1rem;
+      }
+
+      /* ── Buscador de usuarios ────────────────────────────────── */
+      .users-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-app);
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        padding: 5px 10px;
+      }
+      .users-search-wrap input {
+        background: none;
+        border: none;
+        outline: none;
+        color: var(--text-main);
+        font-size: 0.78rem;
+        font-family: "Inter", sans-serif;
+        width: 120px;
+      }
+      .users-search-wrap input::placeholder {
         color: var(--text-muted);
+      }
+      .users-search-wrap iconify-icon {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+
+      /* ── Tabla de usuarios ───────────────────────────────────── */
+      .ut {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .ut th {
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--text-muted);
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1.5px solid var(--border);
+        background: var(--bg-app);
+      }
+      .ut td {
+        padding: 10px 10px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.82rem;
+        vertical-align: middle;
+        color: var(--text-main);
+      }
+      .ut tr:last-child td {
+        border-bottom: none;
+      }
+      .ut tbody tr {
+        transition: background 0.13s;
+      }
+      .ut tbody tr:hover td {
+        background: var(--row-hover, rgba(59, 130, 246, 0.06));
+      }
+
+      /* Avatar de inicial */
+      .user-av {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--primary-light);
+        color: var(--primary);
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .dark-mode .user-av {
+        background: rgba(59, 130, 246, 0.18);
+        color: #60a5fa;
+      }
+      .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ── Columna derecha: stacked ────────────────────────────── */
+      .right-col {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
       }
     </style>
   </head>
-
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
+
       <main class="content">
+        <!-- Header -->
         <div class="page-header-v2">
           <div>
             <h1>Panel de Administración</h1>
@@ -136,18 +212,10 @@
           </div>
         </div>
 
-        <!-- Stats mejorados -->
-        <div
-          id="statsRow"
-          style="
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 14px;
-            margin-bottom: 22px;
-          "
-        >
-          <div class="stat-card-v2">
-            <div class="stat-icon-wrap blue">
+        <!-- STATS — se rellena por admin.js con estructura c-{color} -->
+        <div id="statsRow">
+          <div class="stat-card c-blue">
+            <div class="stat-icon">
               <iconify-icon icon="lucide:loader-2"></iconify-icon>
             </div>
             <div>
@@ -157,22 +225,15 @@
           </div>
         </div>
 
-        <!-- Fila inferior: 3 columnas -->
-        <div
-          style="
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 4px;
-          "
-          id="gridInferior"
-        >
-          <!-- Accesos rápidos -->
+        <!-- GRID INFERIOR -->
+        <div id="gridInferior">
+          <!-- ── Accesos rápidos ── -->
           <div class="card">
-            <h2 style="margin: 0 0 16px; font-size: 1rem; font-weight: 600">
+            <div class="card-head">
+              <iconify-icon icon="lucide:zap"></iconify-icon>
               Accesos rápidos
-            </h2>
-            <div style="display: flex; flex-direction: column; gap: 10px">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
               <a href="alumnos.html" class="quick-link">
                 <iconify-icon icon="lucide:users"></iconify-icon>
                 <div>
@@ -231,67 +292,55 @@
             </div>
           </div>
 
-          <!-- Panel derecho: distribución + usuarios -->
-          <div style="display: flex; flex-direction: column; gap: 20px">
-            <!-- Distribución de roles -->
-            <div class="card" id="cardDistribucion" style="padding: 20px 22px">
-              <h2
-                style="
-                  margin: 0 0 16px;
-                  font-size: 1rem;
-                  font-weight: 600;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                "
-              >
-                <iconify-icon
-                  icon="lucide:pie-chart"
-                  style="color: var(--primary)"
-                ></iconify-icon>
+          <!-- ── Columna derecha ── -->
+          <div class="right-col">
+            <!-- Distribución -->
+            <div class="card" id="cardDistribucion">
+              <div class="card-head">
+                <iconify-icon icon="lucide:pie-chart"></iconify-icon>
                 Distribución de usuarios
-              </h2>
+              </div>
               <div id="distBars">
-                <div style="color: var(--text-muted); font-size: 0.85rem">
+                <div style="color: var(--text-muted); font-size: 0.82rem">
                   Cargando…
                 </div>
               </div>
             </div>
 
-            <!-- Gestión de usuarios -->
+            <!-- Tabla usuarios -->
             <div class="card" style="flex: 1">
               <div
                 style="
                   display: flex;
                   align-items: center;
                   justify-content: space-between;
-                  margin-bottom: 14px;
+                  margin-bottom: 16px;
+                  padding-bottom: 12px;
+                  border-bottom: 1px solid var(--border);
                 "
               >
-                <h2 style="margin: 0; font-size: 1rem; font-weight: 600">
-                  Usuarios del sistema
-                </h2>
-                <input
-                  type="text"
-                  id="filtroUsuarios"
-                  placeholder="Buscar…"
-                  oninput="filtrarUsuarios()"
+                <span
                   style="
-                    padding: 6px 10px;
-                    border: 1.5px solid var(--border);
-                    border-radius: 8px;
-                    font-size: 0.8rem;
-                    background: var(--bg-app);
+                    font-size: 1rem;
+                    font-weight: 700;
                     color: var(--text-main);
-                    font-family: inherit;
-                    width: 130px;
                   "
-                />
+                  >Usuarios del sistema</span
+                >
+                <div class="users-search-wrap">
+                  <iconify-icon icon="lucide:search"></iconify-icon>
+                  <input
+                    type="text"
+                    id="filtroUsuarios"
+                    placeholder="Buscar…"
+                    oninput="filtrarUsuarios()"
+                  />
+                </div>
               </div>
               <div
-                style="overflow-x: auto; max-height: 320px; overflow-y: auto"
+                style="overflow-x: auto; max-height: 340px; overflow-y: auto"
               >
-                <table>
+                <table class="ut">
                   <thead>
                     <tr>
                       <th>Usuario</th>
@@ -315,8 +364,9 @@
               </div>
             </div>
           </div>
+          <!-- /right-col -->
         </div>
-        <!-- /grid -->
+        <!-- /gridInferior -->
       </main>
     </div>
 
