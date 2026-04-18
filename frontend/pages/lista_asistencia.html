@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Historial de Asistencias — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Tabla historial ── */
+      .hist-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .hist-table th {
+        background: var(--bg-app);
+        color: var(--text-muted);
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+      }
+      .hist-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+        vertical-align: middle;
+      }
+      .hist-table tr:last-child td {
+        border-bottom: none;
+      }
+      .hist-table tbody tr:hover td {
+        background: var(--bg-app);
+      }
+
+      /* Celdas de fecha — compactas */
+      .fecha-col {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      /* Badge de estado */
+      .est-presente {
+        background: var(--success-light);
+        color: var(--success);
+      }
+      .est-falta {
+        background: var(--danger-light);
+        color: var(--danger);
+      }
+      .est-sin {
+        background: var(--border);
+        color: var(--text-muted);
+      }
+
+      /* Barra de asistencia por alumno */
+      .pct-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 120px;
+      }
+      .pct-bar-track {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .pct-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.4s ease;
+      }
+      .pct-num {
+        font-size: 0.8rem;
+        font-weight: 700;
+        min-width: 36px;
+        text-align: right;
+      }
+
+      /* Chips de resumen por fecha */
+      .fecha-summary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      /* Vista tabular de fechas (grid) */
+      .grid-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        table-layout: auto;
+      }
+      .grid-table th {
+        background: var(--bg-app);
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 8px 10px;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+      }
+      .grid-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+      }
+      .grid-table tr:last-child td {
+        border-bottom: none;
+      }
+      .grid-table tbody tr:hover td {
+        background: var(--bg-app);
+      }
+
+      .cell-p {
+        text-align: center;
+        font-size: 1rem;
+        color: var(--success);
+      }
+      .cell-f {
+        text-align: center;
+        font-size: 1rem;
+        color: var(--danger);
+      }
+      .cell-n {
+        text-align: center;
+        font-size: 1rem;
+        color: var(--border);
+      }
+
+      /* Tabs de vista */
+      .vista-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .vista-tab {
+        padding: 7px 18px;
+        border: 1.5px solid var(--border);
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--bg-app);
+        color: var(--text-muted);
+        font-family: "Inter", sans-serif;
+        transition: all 0.15s;
+      }
+      .vista-tab.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+      .vista-tab:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      @media print {
+        .sidebar,
+        .page-header-v2 button,
+        .header-actions,
+        .vista-tabs,
+        .card-filter-bar,
+        .btn {
+          display: none !important;
+        }
+        .content {
+          margin-left: 0 !important;
+          width: 100% !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <!-- Header -->
+        <div class="page-header-v2">
+          <div>
+            <h1 style="display: flex; align-items: center; gap: 10px">
+              <iconify-icon
+                icon="lucide:calendar-clock"
+                style="color: var(--primary)"
+              ></iconify-icon>
+              Historial de Asistencias
+            </h1>
+            <p class="page-subtitle">
+              Consulta el registro acumulado por grupo
+            </p>
+          </div>
+          <div class="header-actions">
+            <a
+              href="asistencia.html"
+              class="btn btn-outline"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Tomar lista
+            </a>
+            <button class="btn btn-outline" onclick="exportarCSV()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-outline" onclick="window.print()">
+              <iconify-icon icon="lucide:printer"></iconify-icon> Imprimir
+            </button>
+          </div>
+        </div>
+
+        <!-- Selector de grupo -->
+        <div class="card" style="padding: 16px 20px; margin-bottom: 18px">
+          <div
+            style="
+              display: flex;
+              gap: 14px;
+              flex-wrap: wrap;
+              align-items: flex-end;
+            "
+          >
+            <div
+              class="form-group"
+              style="margin: 0; flex: 1; min-width: 200px"
+            >
+              <label>Grupo</label>
+              <select id="selGrupo" onchange="cargarHistorial()">
+                <option value="">— Selecciona un grupo —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0">
+              <label>Desde</label>
+              <input
+                type="date"
+                id="fechaDesde"
+                onchange="aplicarFiltroFechas()"
+              />
+            </div>
+            <div class="form-group" style="margin: 0">
+              <label>Hasta</label>
+              <input
+                type="date"
+                id="fechaHasta"
+                onchange="aplicarFiltroFechas()"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div
+          id="statsRow"
+          class="stats-row"
+          style="display: none; margin-bottom: 18px"
+        >
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:calendar-check"></iconify-icon>
+            <div>
+              <p id="stClases">—</p>
+              <span>Clases registradas</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+            <div>
+              <p id="stAlumnos">—</p>
+              <span>Alumnos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:user-check"></iconify-icon>
+            <div>
+              <p id="stPctGrupo">—</p>
+              <span>Asistencia promedio</span>
+            </div>
+          </div>
+          <div class="stat-card stat-danger">
+            <iconify-icon icon="lucide:user-x"></iconify-icon>
+            <div>
+              <p id="stAlRiesgo">—</p>
+              <span>Alumnos en riesgo (&lt;80%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs de vista -->
+        <div class="vista-tabs" id="vistaTabs" style="display: none">
+          <button
+            class="vista-tab active"
+            onclick="cambiarVista('resumen', this)"
+          >
+            <iconify-icon icon="lucide:layout-list"></iconify-icon> Resumen por
+            alumno
+          </button>
+          <button class="vista-tab" onclick="cambiarVista('grid', this)">
+            <iconify-icon icon="lucide:table"></iconify-icon> Tabla de fechas
+          </button>
+          <button class="vista-tab" onclick="cambiarVista('faltas', this)">
+            <iconify-icon icon="lucide:alert-triangle"></iconify-icon> Solo
+            faltas
+          </button>
+        </div>
+
+        <!-- Contenido principal -->
+        <div id="mainContent">
+          <div class="empty-state" id="emptyState">
+            <iconify-icon icon="lucide:calendar-search"></iconify-icon>
+            <p>Selecciona un grupo para ver el historial de asistencias.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const tkn = () => localStorage.getItem("token");
+      const STORE = (key) => `asist_${key}`;
+
+      let grupoActual = null;
+      let alumnosGrupo = [];
+      let todasFechas = []; // ordenadas
+      let vistaActual = "resumen";
+
+      soloPermitido("maestro", "administrador");
+
+      // ── Init ──────────────────────────────────────────────────────
+      (async function init() {
+        await cargarGrupos();
+        // Restaurar último grupo de asistencia.html
+        const ug = localStorage.getItem("asist_ultimo_grupo");
+        if (ug) {
+          const sel = document.getElementById("selGrupo");
+          if ([...sel.options].some((o) => o.value === ug)) {
+            sel.value = ug;
+            await cargarHistorial();
+          }
+        }
+      })();
+
+      async function cargarGrupos() {
+        let grupos = [];
+        try {
+          const r = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+            headers: { Authorization: `Bearer ${tkn()}` },
+          });
+          if (r.ok) grupos = await r.json();
+        } catch (_) {}
+        if (!grupos.length) {
+          try {
+            const r2 = await fetch(`${BASE}/api/grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            grupos = await r2.json();
+          } catch (_) {}
+        }
+        const sel = document.getElementById("selGrupo");
+        (grupos || []).forEach((g) => {
+          sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} — Grupo #${g.id_grupo}</option>`;
+        });
+      }
+
+      async function cargarHistorial() {
+        grupoActual = document.getElementById("selGrupo").value;
+        if (!grupoActual) {
+          mostrarVacio();
+          return;
+        }
+        localStorage.setItem("asist_ultimo_grupo", grupoActual);
+
+        // Cargar lista de alumnos del grupo
+        try {
+          const r = await fetch(
+            `${BASE}/api/inscripciones/grupo/${grupoActual}`,
+            {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            },
+          );
+          const data = await r.json();
+          alumnosGrupo = (data || []).map((a) => ({
+            matricula: a.matricula,
+            nombre:
+              `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
+          }));
+        } catch (_) {
+          alumnosGrupo = [];
+        }
+
+        construirFechas();
+        aplicarFiltroFechas();
+      }
+
+      function construirFechas() {
+        // Recopilar todas las fechas registradas en localStorage para este grupo
+        const fechasSet = new Set();
+        alumnosGrupo.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          Object.keys(reg).forEach((f) => fechasSet.add(f));
+        });
+        todasFechas = [...fechasSet].sort();
+      }
+
+      function aplicarFiltroFechas() {
+        const desde = document.getElementById("fechaDesde").value;
+        const hasta = document.getElementById("fechaHasta").value;
+        const fechas = todasFechas.filter(
+          (f) => (!desde || f >= desde) && (!hasta || f <= hasta),
+        );
+        renderVista(fechas);
+      }
+
+      function renderVista(fechas) {
+        if (!alumnosGrupo.length && !fechas.length) {
+          mostrarVacio();
+          return;
+        }
+
+        document.getElementById("statsRow").style.display = "grid";
+        document.getElementById("vistaTabs").style.display = "flex";
+        document.getElementById("emptyState").style.display = "none";
+
+        calcularStats(fechas);
+
+        if (vistaActual === "resumen") renderResumen(fechas);
+        else if (vistaActual === "grid") renderGrid(fechas);
+        else renderFaltas(fechas);
+      }
+
+      function calcularStats(fechas) {
+        document.getElementById("stClases").textContent = fechas.length;
+        document.getElementById("stAlumnos").textContent = alumnosGrupo.length;
+
+        let totalPct = 0,
+          enRiesgo = 0;
+        alumnosGrupo.forEach((a) => {
+          const pct = getPct(a.matricula, fechas);
+          if (pct !== null) {
+            totalPct += pct;
+            if (pct < 80) enRiesgo++;
+          }
+        });
+        const promedio = alumnosGrupo.length
+          ? Math.round(totalPct / alumnosGrupo.length)
+          : 0;
+        document.getElementById("stPctGrupo").textContent = promedio + "%";
+        document.getElementById("stAlRiesgo").textContent = enRiesgo;
+      }
+
+      function renderResumen(fechas) {
+        const rows = alumnosGrupo
+          .map((a) => {
+            const reg = getRegistro(a.matricula);
+            const pres = fechas.filter((f) => reg[f] === "presente").length;
+            const falt = fechas.filter((f) => reg[f] === "falta").length;
+            const sinR = fechas.length - pres - falt;
+            const pct = fechas.length
+              ? Math.round((pres / fechas.length) * 100)
+              : null;
+            const color =
+              pct === null
+                ? "#94a3b8"
+                : pct >= 80
+                  ? "var(--success)"
+                  : pct >= 60
+                    ? "var(--warning)"
+                    : "var(--danger)";
+            const riesgo =
+              pct !== null && pct < 80
+                ? `<span class="badge badge-danger" style="font-size:0.68rem;margin-left:6px">RIESGO</span>`
+                : "";
+
+            return `<tr>
+            <td style="font-weight:600">${a.nombre} ${riesgo}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+            <td style="text-align:center;color:var(--success);font-weight:600">${pres}</td>
+            <td style="text-align:center;color:var(--danger);font-weight:600">${falt}</td>
+            <td style="text-align:center;color:var(--text-muted)">${sinR}</td>
+            <td>
+              <div class="pct-bar-wrap">
+                <div class="pct-bar-track">
+                  <div class="pct-bar-fill" style="width:${pct ?? 0}%;background:${color}"></div>
+                </div>
+                <span class="pct-num" style="color:${color}">${pct !== null ? pct + "%" : "—"}</span>
+              </div>
+            </td>
+          </tr>`;
+          })
+          .join("");
+
+        document.getElementById("mainContent").innerHTML = `
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="overflow-x:auto">
+              <table class="hist-table">
+                <thead>
+                  <tr>
+                    <th>Alumno</th>
+                    <th>Matrícula</th>
+                    <th style="text-align:center">✓ Presentes</th>
+                    <th style="text-align:center">✗ Faltas</th>
+                    <th style="text-align:center">— Sin reg.</th>
+                    <th style="min-width:160px">% Asistencia</th>
+                  </tr>
+                </thead>
+                <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Sin registros en el período seleccionado.</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function renderGrid(fechas) {
+        if (!fechas.length) {
+          document.getElementById("mainContent").innerHTML =
+            `<div class="empty-state"><iconify-icon icon="lucide:calendar-x"></iconify-icon><p>No hay fechas registradas en el período.</p></div>`;
+          return;
+        }
+
+        const headerCells = fechas
+          .map(
+            (f) =>
+              `<th title="${f}" style="text-align:center;font-size:0.68rem">${fmtFechaCorta(f)}</th>`,
+          )
+          .join("");
+
+        const rows = alumnosGrupo
+          .map((a) => {
+            const reg = getRegistro(a.matricula);
+            const pct = getPct(a.matricula, fechas);
+            const color =
+              pct === null
+                ? "#94a3b8"
+                : pct >= 80
+                  ? "var(--success)"
+                  : pct >= 60
+                    ? "var(--warning)"
+                    : "var(--danger)";
+            const cells = fechas
+              .map((f) => {
+                const est = reg[f];
+                if (est === "presente")
+                  return `<td class="cell-p" title="Presente ${f}">✓</td>`;
+                if (est === "falta")
+                  return `<td class="cell-f" title="Falta ${f}">✗</td>`;
+                return `<td class="cell-n" title="Sin registro ${f}">—</td>`;
+              })
+              .join("");
+            return `<tr>
+            <td style="font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--card-bg);z-index:1">${a.nombre}</td>
+            <td style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap">${a.matricula}</td>
+            ${cells}
+            <td style="text-align:center;font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
+          </tr>`;
+          })
+          .join("");
+
+        document.getElementById("mainContent").innerHTML = `
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="overflow-x:auto;max-width:100%">
+              <table class="grid-table">
+                <thead>
+                  <tr>
+                    <th style="position:sticky;left:0;background:var(--bg-app);z-index:2">Alumno</th>
+                    <th>Matrícula</th>
+                    ${headerCells}
+                    <th style="text-align:center">Total %</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function renderFaltas(fechas) {
+        // Solo muestra alumnos con al menos una falta en el período
+        const filas = [];
+        alumnosGrupo.forEach((a) => {
+          const reg = getRegistro(a.matricula);
+          const faltasFechas = fechas.filter((f) => reg[f] === "falta");
+          if (!faltasFechas.length) return;
+          const pct = getPct(a.matricula, fechas);
+          const color =
+            pct !== null && pct < 80 ? "var(--danger)" : "var(--warning)";
+          faltasFechas.forEach((f) => {
+            filas.push(`<tr>
+              <td style="font-weight:600">${a.nombre}</td>
+              <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+              <td class="fecha-col">${fmtFechaLarga(f)}</td>
+              <td><span class="badge badge-danger">Falta</span></td>
+              <td style="font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
+            </tr>`);
+          });
+        });
+
+        document.getElementById("mainContent").innerHTML = `
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="overflow-x:auto">
+              <table class="hist-table">
+                <thead>
+                  <tr>
+                    <th>Alumno</th>
+                    <th>Matrícula</th>
+                    <th>Fecha de falta</th>
+                    <th>Estado</th>
+                    <th>Asistencia total</th>
+                  </tr>
+                </thead>
+                <tbody>${
+                  filas.length
+                    ? filas.join("")
+                    : '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Sin faltas en el período seleccionado. 🎉</td></tr>'
+                }</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function cambiarVista(vista, btn) {
+        vistaActual = vista;
+        document
+          .querySelectorAll(".vista-tab")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        aplicarFiltroFechas();
+      }
+
+      function mostrarVacio() {
+        document.getElementById("statsRow").style.display = "none";
+        document.getElementById("vistaTabs").style.display = "none";
+        document.getElementById("mainContent").innerHTML =
+          `<div class="empty-state" id="emptyState">
+             <iconify-icon icon="lucide:calendar-search"></iconify-icon>
+             <p>Selecciona un grupo para ver el historial de asistencias.</p>
+           </div>`;
+      }
+
+      // ── Helpers ────────────────────────────────────────────────────
+      function getRegistro(matricula) {
+        try {
+          return (
+            JSON.parse(
+              localStorage.getItem(STORE(`${grupoActual}_${matricula}`)),
+            ) || {}
+          );
+        } catch {
+          return {};
+        }
+      }
+
+      function getPct(matricula, fechas) {
+        if (!fechas.length) return null;
+        const reg = getRegistro(matricula);
+        const pres = fechas.filter((f) => reg[f] === "presente").length;
+        return Math.round((pres / fechas.length) * 100);
+      }
+
+      function fmtFechaCorta(f) {
+        // f = YYYY-MM-DD → DD/MM
+        const [, m, d] = f.split("-");
+        return `${d}/${m}`;
+      }
+
+      function fmtFechaLarga(f) {
+        if (typeof fmtFecha === "function") return fmtFecha(f);
+        const [a, m, d] = f.split("-");
+        return `${d}/${m}/${a}`;
+      }
+
+      function exportarCSV() {
+        if (!alumnosGrupo.length) {
+          if (typeof showToast === "function")
+            showToast("Sin datos para exportar", "info");
+          return;
+        }
+        const fechas = todasFechas;
+        const header = ["Matricula", "Nombre", ...fechas, "% Asistencia"];
+        const rows = alumnosGrupo.map((a) => {
+          const reg = getRegistro(a.matricula);
+          const celdas = fechas.map((f) =>
+            reg[f] === "presente" ? "P" : reg[f] === "falta" ? "F" : "",
+          );
+          const pct = getPct(a.matricula, fechas);
+          return [
+            `"${a.matricula}"`,
+            `"${a.nombre}"`,
+            ...celdas,
+            pct !== null ? pct + "%" : "",
+          ];
+        });
+        const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `historial_asist_g${grupoActual}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        if (typeof showToast === "function")
+          showToast("CSV exportado", "success");
+      }
+    </script>
+  </body>
+</html>

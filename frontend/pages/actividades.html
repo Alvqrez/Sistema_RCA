@@ -70,6 +70,42 @@
           </h1>
         </div>
 
+        <!-- Dashboard de ponderaciones (plegable) -->
+        <div class="card card-collapsible" id="cardResumenActividades">
+          <div class="card-title">
+            <iconify-icon icon="mdi:chart-donut"></iconify-icon>
+            Resumen de ponderaciones por unidad
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body">
+            <div
+              id="resumenCards"
+              style="
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                padding-bottom: 4px;
+              "
+            >
+              <div
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.85rem;
+                  padding: 8px 0;
+                "
+              >
+                Cargando datos…
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Registrar actividad -->
         <div class="card card-collapsible" id="cardRegistrarActividad">
           <div class="card-title">
@@ -194,17 +230,6 @@
               </button>
             </div>
           </div>
-        </div>
-
-        <!-- Panel de resumen rápido -->
-        <div
-          id="panelResumenActividades"
-          style="display: none; margin-bottom: 20px"
-        >
-          <div
-            id="resumenCards"
-            style="display: flex; gap: 14px; flex-wrap: wrap"
-          ></div>
         </div>
 
         <!-- Lista de actividades -->

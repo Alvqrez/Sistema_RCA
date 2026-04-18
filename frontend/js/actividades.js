@@ -231,10 +231,11 @@ async function cargarActividades() {
 
 // ── RESUMEN DE PONDERACIONES POR GRUPO/UNIDAD ─────────────────────
 function renderResumenActividades() {
-  const panel = document.getElementById("panelResumenActividades");
   const cont = document.getElementById("resumenCards");
-  if (!panel || !cont || !todasActividades.length) {
-    if (panel) panel.style.display = "none";
+  if (!cont) return;
+  if (!todasActividades.length) {
+    cont.innerHTML =
+      '<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">Sin actividades registradas aún.</div>';
     return;
   }
 
@@ -288,8 +289,6 @@ function renderResumenActividades() {
         </div>`;
     })
     .join("");
-
-  panel.style.display = "block";
 }
 
 function filtrarActividades() {
@@ -512,7 +511,7 @@ async function abrirPanelCalificaciones(id_actividad) {
   `;
 
   const panel = document.getElementById("panelCalActividad");
-  panel.style.display = "block";
+
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const tbody = document.getElementById("tbodyCal");

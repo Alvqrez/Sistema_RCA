@@ -568,12 +568,55 @@ function resetConfigUnidad(id_grupo, id_unidad) {
   showToast("Rubros restablecidos a valores predeterminados", "info");
 }
 
-function agregarRubroGrupo(id_grupo) {
-  const nombre = prompt(
-    "Nombre del nuevo rubro\n(ej: Participación, Proyecto, Práctica, etc.):",
-  );
-  if (!nombre || !nombre.trim()) return;
+/* ── Modal para agregar rubro ─────────────────────────────────────── */
+const ICONOS_RUBRO = [
+  "lucide:star",
+  "lucide:book-open",
+  "lucide:clipboard-list",
+  "lucide:pencil",
+  "lucide:flask-conical",
+  "lucide:presentation",
+  "lucide:users",
+  "lucide:check-square",
+  "lucide:award",
+  "lucide:file-text",
+  "lucide:target",
+  "lucide:activity",
+];
 
+function agregarRubroGrupo(id_grupo) {
+  document.getElementById("rubroGrupoId").value = id_grupo;
+  document.getElementById("rubroNombre").value = "";
+  document.getElementById("rubroKeyPreview").textContent = "—";
+  document.getElementById("rubroError").style.display = "none";
+
+  // Render icon picker
+  const picker = document.getElementById("iconPicker");
+  if (picker) {
+    picker.innerHTML = ICONOS_RUBRO.map(
+      (ic) => `
+      <button type="button" class="icon-opt${ic === "lucide:star" ? " selected" : ""}"
+              onclick="seleccionarIconoRubro(this,'${ic}')" title="${ic}">
+        <iconify-icon icon="${ic}"></iconify-icon>
+      </button>`,
+    ).join("");
+    document.getElementById("rubroIcono").value = "lucide:star";
+  }
+
+  document.getElementById("modalAgregarRubro").classList.add("visible");
+  setTimeout(() => document.getElementById("rubroNombre").focus(), 80);
+}
+
+function seleccionarIconoRubro(btn, icono) {
+  document
+    .querySelectorAll("#iconPicker .icon-opt")
+    .forEach((b) => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  document.getElementById("rubroIcono").value = icono;
+}
+
+function previewRubroKey() {
+  const nombre = document.getElementById("rubroNombre").value;
   const key =
     "custom_" +
     nombre
@@ -581,20 +624,56 @@ function agregarRubroGrupo(id_grupo) {
       .toLowerCase()
       .replace(/\s+/g, "_")
       .replace(/[^a-z0-9_]/g, "");
-  const extras = getRubrosExtra(id_grupo);
+  document.getElementById("rubroKeyPreview").textContent = nombre.trim()
+    ? key
+    : "—";
+}
 
+function cerrarModalRubro() {
+  document.getElementById("modalAgregarRubro").classList.remove("visible");
+}
+
+function confirmarAgregarRubro() {
+  const id_grupo = parseInt(document.getElementById("rubroGrupoId").value);
+  const nombre = document.getElementById("rubroNombre").value.trim();
+  const icono = document.getElementById("rubroIcono").value || "lucide:star";
+  const errEl = document.getElementById("rubroError");
+  errEl.style.display = "none";
+
+  if (!nombre) {
+    errEl.textContent = "El nombre del rubro no puede estar vacío.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  const key =
+    "custom_" +
+    nombre
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
+
+  const extras = getRubrosExtra(id_grupo);
   if (
     extras.find((r) => r.key === key) ||
     RUBROS_DEFAULT.find((r) => r.key === key)
   ) {
-    showToast("Ya existe un rubro con ese nombre", "error");
+    errEl.textContent = "Ya existe un rubro con ese nombre en este grupo.";
+    errEl.style.display = "block";
     return;
   }
-  extras.push({ key, nombre: nombre.trim(), icono: "lucide:star" });
+
+  extras.push({ key, nombre, icono });
   setRubrosExtra(id_grupo, extras);
+  cerrarModalRubro();
   rerenderGrupoBody(id_grupo);
-  showToast(`Rubro "${nombre.trim()}" agregado`, "success");
+  showToast(`Rubro "${nombre}" agregado`, "success");
 }
+
+// Cierra modal al hacer clic fuera
+document.addEventListener("click", (e) => {
+  if (e.target.id === "modalAgregarRubro") cerrarModalRubro();
+});
 
 function eliminarRubroGrupo(id_grupo, key) {
   if (getRubrosGrupo(id_grupo).length <= 1) {

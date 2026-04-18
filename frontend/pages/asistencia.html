@@ -83,12 +83,56 @@
             </p>
           </div>
           <div class="header-actions">
+            <a
+              href="lista_asistencia.html"
+              class="btn btn-outline"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:calendar-clock"></iconify-icon> Ver
+              historial
+            </a>
             <button class="btn btn-outline" onclick="exportarCSV()">
               <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
             </button>
             <button class="btn btn-primary" onclick="guardarAsistencia()">
               <iconify-icon icon="lucide:save"></iconify-icon> Guardar
             </button>
+          </div>
+        </div>
+
+        <!-- Stats — siempre arriba, ocultos hasta seleccionar grupo -->
+        <div
+          id="resumenAsist"
+          class="stats-row"
+          style="display: none; margin-bottom: 18px"
+        >
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:user-check"></iconify-icon>
+            <div>
+              <p id="statPresentes">—</p>
+              <span>Presentes hoy</span>
+            </div>
+          </div>
+          <div class="stat-card stat-danger">
+            <iconify-icon icon="lucide:user-x"></iconify-icon>
+            <div>
+              <p id="statFaltas">—</p>
+              <span>Faltas hoy</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <iconify-icon icon="lucide:percent"></iconify-icon>
+            <div>
+              <p id="statPct">—</p>
+              <span>Asistencia</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:calendar-days"></iconify-icon>
+            <div>
+              <p id="statSinRegistrar">—</p>
+              <span>Sin registrar</span>
+            </div>
           </div>
         </div>
 
@@ -113,37 +157,11 @@
             </div>
             <div class="form-group" style="margin: 0">
               <label>Fecha</label>
-              <input type="date" id="fechaAsistencia" onchange="onFechaChange()" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Info: pct promedio -->
-        <div
-          id="resumenAsist"
-          style="display: none"
-          class="stats-row"
-          style="margin-bottom: 18px"
-        >
-          <div class="stat-card stat-success">
-            <iconify-icon icon="lucide:user-check"></iconify-icon>
-            <div>
-              <p id="statPresentes">—</p>
-              <span>Presentes</span>
-            </div>
-          </div>
-          <div class="stat-card stat-purple">
-            <iconify-icon icon="lucide:user-x"></iconify-icon>
-            <div>
-              <p id="statFaltas">—</p>
-              <span>Faltas</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <iconify-icon icon="lucide:percent"></iconify-icon>
-            <div>
-              <p id="statPct">—</p>
-              <span>Asistencia</span>
+              <input
+                type="date"
+                id="fechaAsistencia"
+                onchange="onFechaChange()"
+              />
             </div>
           </div>
         </div>
@@ -407,13 +425,14 @@
       function actualizarResumen() {
         const fecha = getFecha();
         let presentes = 0,
-          faltas = 0;
+          faltas = 0,
+          sinRegistrar = 0;
         alumnos.forEach((a) => {
           const reg = getRegistro(a.matricula);
           if (reg[fecha] === "presente") presentes++;
           else if (reg[fecha] === "falta") faltas++;
+          else sinRegistrar++;
         });
-        const total = alumnos.length;
         const pct =
           presentes + faltas > 0
             ? Math.round((presentes / (presentes + faltas)) * 100)
@@ -421,6 +440,8 @@
         document.getElementById("statPresentes").textContent = presentes;
         document.getElementById("statFaltas").textContent = faltas;
         document.getElementById("statPct").textContent = `${pct}%`;
+        const srEl = document.getElementById("statSinRegistrar");
+        if (srEl) srEl.textContent = sinRegistrar;
       }
 
       function guardarAsistencia() {

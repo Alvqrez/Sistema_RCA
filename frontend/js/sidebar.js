@@ -63,6 +63,11 @@
             texto: "Asistencia",
             icono: "lucide:calendar-check",
           },
+          {
+            href: "lista_asistencia.html",
+            texto: "Historial de asistencia",
+            icono: "lucide:calendar-clock",
+          },
         ],
       },
       {

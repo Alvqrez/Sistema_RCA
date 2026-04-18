@@ -76,44 +76,96 @@ async function cargarGrupos() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     grupos = await response.json();
   } catch (err) {
-    if (tabla) tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">
+    if (tabla)
+      tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">
       <iconify-icon icon="lucide:wifi-off" style="font-size:1.4rem;display:block;margin:0 auto 8px"></iconify-icon>
       Error al cargar grupos. Verifica la conexión con el servidor.
     </td></tr>`;
     return;
   }
 
+  todosGrupos = grupos;
+  filtrarGrupos();
+}
+
+let todosGrupos = [];
+
+function filtrarGrupos() {
+  const texto = (
+    document.getElementById("filtroTexto")?.value || ""
+  ).toLowerCase();
+  const estatus = document.getElementById("filtroEstatus")?.value || "";
+  const rol = localStorage.getItem("rol");
+  const tabla = document.getElementById("tablaGrupos");
+  if (!tabla) return;
+
+  const filtrados = todosGrupos.filter((g) => {
+    const matchText =
+      !texto ||
+      (g.nombre_materia || "").toLowerCase().includes(texto) ||
+      (g.nombre_maestro || "").toLowerCase().includes(texto) ||
+      (g.aula || "").toLowerCase().includes(texto) ||
+      (g.clave_materia || "").toLowerCase().includes(texto);
+    const matchEst = !estatus || g.estatus === estatus;
+    return matchText && matchEst;
+  });
+
+  // Badge de total
+  const badge = document.getElementById("badgeTotal");
+  if (badge)
+    badge.textContent =
+      filtrados.length === todosGrupos.length
+        ? `${todosGrupos.length} grupos`
+        : `${filtrados.length} / ${todosGrupos.length}`;
+
   tabla.innerHTML = "";
 
-  if (!grupos || grupos.length === 0) {
-    tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">No hay grupos registrados</td></tr>`;
+  if (!filtrados.length) {
+    tabla.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">
+      <iconify-icon icon="lucide:search-x" style="font-size:2rem;display:block;margin:0 auto 8px;opacity:.4"></iconify-icon>
+      Sin resultados
+    </td></tr>`;
     return;
   }
 
-  grupos.forEach((g) => {
-    // FIX 7: mostrar descripcion_periodo en lugar del id crudo
+  filtrados.forEach((g) => {
     const periodoLabel = g.descripcion_periodo
       ? `${g.descripcion_periodo} ${g.anio || ""}`
       : `Periodo ${g.id_periodo}`;
 
-    tabla.innerHTML += `
-      <tr>
-        <td>${g.id_grupo}</td>
-        <td><strong>${g.nombre_materia}</strong><br><span style="font-size:0.75rem;color:#94a3b8">${g.clave_materia}</span></td>
-        <td>${g.nombre_maestro}</td>
-        <td style="font-size:0.82rem">${periodoLabel}</td>
-        <td>${g.aula ?? "—"}</td>
-        <td>${g.horario ?? "—"}</td>
-        <td><span class="badge ${g.estatus === "Activo" ? "badge-verde" : "badge-gris"}">${g.estatus}</span></td>
-        <td>
+    const badgeEst =
+      g.estatus === "Activo"
+        ? "badge-success"
+        : g.estatus === "Cerrado"
+          ? "badge-warning"
+          : g.estatus === "Cancelado"
+            ? "badge-danger"
+            : "badge-info";
+
+    tabla.innerHTML += `<tr>
+      <td style="font-size:0.78rem;color:var(--text-muted);font-weight:600">#${g.id_grupo}</td>
+      <td>
+        <div style="font-weight:600;font-size:0.88rem">${g.nombre_materia}</div>
+        <div style="font-size:0.73rem;color:var(--text-muted)">${g.clave_materia}</div>
+      </td>
+      <td style="font-size:0.85rem">${g.nombre_maestro}</td>
+      <td style="font-size:0.8rem;color:var(--text-muted)">${periodoLabel}</td>
+      <td style="text-align:center;font-size:0.85rem">${g.limite_alumnos ?? "—"}</td>
+      <td style="font-size:0.82rem">${g.aula ?? "—"}</td>
+      <td style="font-size:0.78rem;color:var(--text-muted)">${g.horario ?? "—"}</td>
+      <td><span class="badge ${badgeEst}">${g.estatus ?? "—"}</span></td>
+      <td style="text-align:right">
+        <div class="table-actions">
           ${
             rol === "administrador"
-              ? `<button class="btn-eliminar" onclick="eliminarGrupo(${g.id_grupo})">Eliminar</button>`
+              ? `<button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
+                 <iconify-icon icon="lucide:trash-2"></iconify-icon>
+               </button>`
               : "—"
           }
-        </td>
-      </tr>
-    `;
+        </div>
+      </td>
+    </tr>`;
   });
 }
 

@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <title>Grupos - RCA</title>
     <script>
-      if (localStorage.getItem("tema") === "oscuro") {
+      if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      }
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
@@ -15,7 +14,7 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
@@ -24,10 +23,15 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <!-- HEADER con botones (mismo patrón que maestros.html) -->
         <div class="page-header-v2">
           <div>
-            <h1>Grupos</h1>
+            <h1 style="display: flex; align-items: center; gap: 10px">
+              <iconify-icon
+                icon="lucide:library"
+                style="color: var(--primary)"
+              ></iconify-icon>
+              Grupos
+            </h1>
             <p class="page-subtitle">Gestión de grupos por periodo escolar</p>
           </div>
           <div class="header-actions">
@@ -40,80 +44,166 @@
           </div>
         </div>
 
-        <!-- Formulario registrar grupo -->
-        <div class="card" id="cardRegistroGrupo">
-          <h2>Registrar Grupo</h2>
-          <form id="formGrupo" class="form-grid">
-            <div>
-              <label>Materia</label>
-              <select id="claveMateria" required>
-                <option value="">-- Selecciona una materia --</option>
-              </select>
-            </div>
-            <div>
-              <label>Maestro</label>
-              <select id="numeroEmpleado" required>
-                <option value="">-- Selecciona un maestro --</option>
-              </select>
-            </div>
-            <!-- FIX: era input[type=number], grupos.js espera <select> para poblar periodos -->
-            <div>
-              <label>Periodo escolar</label>
-              <select id="idPeriodo" required>
-                <option value="">-- Selecciona un periodo --</option>
-              </select>
-            </div>
-            <div>
-              <label>Límite de alumnos</label>
-              <input type="number" id="limiteAlumnos" value="30" />
-            </div>
-            <div>
-              <label>Horario</label>
-              <input
-                type="text"
-                id="horario"
-                placeholder="Ej. Lun-Mie-Vie 07:00-08:00"
-              />
-            </div>
-            <div>
-              <label>Aula</label>
-              <input type="text" id="aula" placeholder="Ej. S1" />
-            </div>
-            <div class="botones">
-              <button type="submit" class="btn btn-primary">
-                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-                Guardar
-              </button>
-              <button type="reset" class="btn btn-outline">
-                <iconify-icon icon="mdi:close"></iconify-icon> Cancelar
-              </button>
-            </div>
-          </form>
+        <!-- Formulario (plegable) -->
+        <div class="card card-collapsible" id="cardRegistroGrupo">
+          <div class="card-title">
+            <iconify-icon icon="lucide:plus-circle"></iconify-icon>
+            Registrar grupo
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body">
+            <form id="formGrupo">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  gap: 16px;
+                  margin-bottom: 16px;
+                "
+              >
+                <div class="form-group">
+                  <label>Materia *</label>
+                  <select id="claveMateria" required>
+                    <option value="">— Selecciona —</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Maestro *</label>
+                  <select id="numeroEmpleado" required>
+                    <option value="">— Selecciona —</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Periodo escolar *</label>
+                  <select id="idPeriodo" required>
+                    <option value="">— Selecciona —</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Límite de alumnos</label>
+                  <input
+                    type="number"
+                    id="limiteAlumnos"
+                    value="30"
+                    min="1"
+                    max="200"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Horario</label>
+                  <input
+                    type="text"
+                    id="horario"
+                    placeholder="Ej. Lun-Mie-Vie 07:00-08:00"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Aula</label>
+                  <input type="text" id="aula" placeholder="Ej. S1-104" />
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <button type="submit" class="btn btn-primary">
+                  <iconify-icon icon="lucide:save"></iconify-icon> Guardar grupo
+                </button>
+                <button type="reset" class="btn btn-outline">
+                  <iconify-icon icon="lucide:x"></iconify-icon> Limpiar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <!-- Lista de grupos -->
-        <div class="card">
-          <h2>Lista de Grupos</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Materia</th>
-                <th>Maestro</th>
-                <th>Periodo</th>
-                <th>Aula</th>
-                <th>Horario</th>
-                <th>Estatus</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaGrupos"></tbody>
-          </table>
+        <!-- Lista de grupos (plegable) -->
+        <div class="card card-collapsible" id="cardListaGrupos">
+          <div class="card-title">
+            <iconify-icon icon="lucide:list"></iconify-icon>
+            Lista de grupos
+            <span
+              id="badgeTotal"
+              class="badge badge-info"
+              style="margin-left: 6px; font-size: 0.72rem"
+            ></span>
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+              style="margin-left: auto"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="card-filter-bar" style="margin-bottom: 14px">
+              <input
+                type="text"
+                id="filtroTexto"
+                placeholder="Buscar materia, maestro, aula…"
+                oninput="filtrarGrupos()"
+                style="flex: 1; min-width: 200px"
+              />
+              <select
+                id="filtroEstatus"
+                onchange="filtrarGrupos()"
+                style="min-width: 130px"
+              >
+                <option value="">Todos los estatus</option>
+                <option value="Activo">Activo</option>
+                <option value="Cerrado">Cerrado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div style="overflow-x: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Materia</th>
+                    <th>Maestro</th>
+                    <th>Periodo</th>
+                    <th style="text-align: center">Límite</th>
+                    <th>Aula</th>
+                    <th>Horario</th>
+                    <th>Estatus</th>
+                    <th style="text-align: right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaGrupos">
+                  <tr>
+                    <td
+                      colspan="9"
+                      style="
+                        text-align: center;
+                        padding: 32px;
+                        color: var(--text-muted);
+                      "
+                    >
+                      <iconify-icon
+                        icon="lucide:loader-2"
+                        style="
+                          font-size: 1.6rem;
+                          display: block;
+                          margin: 0 auto 8px;
+                        "
+                      ></iconify-icon>
+                      Cargando grupos…
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
     </div>
 
-    <!-- Modal Importar CSV Grupos -->
+    <!-- Modal CSV -->
     <div class="modal-overlay" id="modalImportGrupos">
       <div class="modal-panel">
         <div class="modal-header">
@@ -133,22 +223,27 @@
               color: var(--text-muted);
             "
           >
-            <strong>Columnas requeridas:</strong>
+            <strong style="color: var(--text-main)"
+              >Columnas requeridas:</strong
+            >
             <code style="display: block; margin-top: 4px"
               >clave_materia, numero_empleado, id_periodo</code
             >
-            <strong style="margin-top: 6px; display: block"
+            <strong
+              style="margin-top: 6px; display: block; color: var(--text-main)"
               >Columnas opcionales:</strong
             >
             <code style="display: block; margin-top: 4px"
               >limite_alumnos, horario, aula</code
             >
-            <strong style="margin-top: 6px; display: block">Ejemplo:</strong>
+            <strong
+              style="margin-top: 6px; display: block; color: var(--text-main)"
+              >Ejemplo:</strong
+            >
             <code style="display: block; margin-top: 4px"
               >FBD001,EMP001,1,35,Lun-Mie-Vie 07:00-08:00,Aula 101</code
             >
           </div>
-          <!-- FIX: era "drop-zone", CSS define "csv-drop-zone" -->
           <div
             id="dropZoneGrupos"
             class="csv-drop-zone"
@@ -194,5 +289,14 @@
     <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/grupos.js"></script>
+    <script>
+      function toggleCard(btn) {
+        const card = btn.closest(".card-collapsible");
+        card.classList.toggle("collapsed");
+        btn.title = card.classList.contains("collapsed")
+          ? "Expandir"
+          : "Contraer";
+      }
+    </script>
   </body>
 </html>

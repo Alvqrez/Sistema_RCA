@@ -394,19 +394,7 @@
         </div>
 
         <!-- Info banner -->
-        <div
-          style="
-            background: var(--primary-light);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 0.83rem;
-            color: var(--primary);
-          "
-        >
+        <div class="info-banner">
           <iconify-icon
             icon="lucide:info"
             style="font-size: 1.1rem; flex-shrink: 0; margin-top: 1px"
@@ -506,5 +494,102 @@
     <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/gruposMaestro.js"></script>
+
+    <!-- Modal Agregar Rubro -->
+    <div class="modal-overlay" id="modalAgregarRubro">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2 style="display: flex; align-items: center; gap: 8px">
+            <iconify-icon
+              icon="lucide:layers"
+              style="color: var(--primary)"
+            ></iconify-icon>
+            Agregar rubro de evaluación
+          </h2>
+          <button class="modal-close" onclick="cerrarModalRubro()">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="rubroGrupoId" />
+
+          <div class="form-group" style="margin-bottom: 14px">
+            <label>Nombre del rubro *</label>
+            <input
+              type="text"
+              id="rubroNombre"
+              placeholder="Ej: Participación, Proyecto, Práctica…"
+              maxlength="40"
+              oninput="previewRubroKey()"
+            />
+            <span
+              style="
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                margin-top: 4px;
+                display: block;
+              "
+            >
+              Clave generada:
+              <code id="rubroKeyPreview" style="color: var(--primary)">—</code>
+            </span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px">
+            <label>Ícono</label>
+            <div
+              style="display: flex; gap: 8px; flex-wrap: wrap"
+              id="iconPicker"
+            >
+              <!-- se rellena con JS -->
+            </div>
+            <input type="hidden" id="rubroIcono" value="lucide:star" />
+          </div>
+
+          <p
+            id="rubroError"
+            style="
+              color: var(--danger);
+              font-size: 0.83rem;
+              margin: 8px 0 0;
+              display: none;
+            "
+          ></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalRubro()">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="confirmarAgregarRubro()">
+            <iconify-icon icon="lucide:plus-circle"></iconify-icon> Agregar
+            rubro
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .icon-opt {
+        width: 38px;
+        height: 38px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-app);
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.15s;
+      }
+      .icon-opt:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+      .icon-opt.selected {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+    </style>
   </body>
 </html>

@@ -34,12 +34,21 @@
   --bg-app: #0f172a;
   --bg-alt: #1e293b;
   --card-bg: #1e293b;
+
+  /* Azul marino #1e40af es ilegible sobre fondos oscuros.
+     Redefinimos las variables de azul a tonos claros legibles. */
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
   --primary-light: rgba(59, 130, 246, 0.15);
 
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
 
   --border: #334155;
+  --success-light: rgba(5, 150, 105, 0.18);
+  --danger-light: rgba(220, 38, 38, 0.18);
+  --warning-light: rgba(217, 119, 6, 0.18);
+  --bonus-light: rgba(124, 58, 237, 0.18);
 }
 
 /* ESTO ES PARA CELULARES O TABLETS */
@@ -2781,6 +2790,49 @@ th.col-final {
 }
 
 /* ── Print styles ────────────────────────────────────────────────────── */
+
+/* ── Info banner (dark-mode legible) ───────────────────────────────── */
+.info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  margin-bottom: 20px;
+}
+
+.info-banner strong {
+  color: inherit;
+}
+
+/* Botones outline activos sobre fondo primary-light — siempre legibles */
+.dark-mode .btn-outline:hover,
+.dark-mode .btn-gear:hover,
+.dark-mode .tab-btn:hover:not(.active),
+.dark-mode .tab-unidad:hover:not(.active) {
+  color: #93c5fd;
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+/* quick-link hover en dark mode */
+.dark-mode .quick-link:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: #60a5fa;
+  color: #93c5fd;
+}
+.dark-mode .quick-link:hover div p {
+  color: #93c5fd;
+  opacity: 0.8;
+}
+.dark-mode .quick-link:hover .ql-arrow,
+.dark-mode .quick-link:hover > iconify-icon:first-child {
+  color: #93c5fd;
+}
 @media print {
   .sidebar,
   .page-header button,
