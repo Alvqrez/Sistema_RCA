@@ -196,6 +196,7 @@
   }
 
   aside.innerHTML = `
+    <div class="sidebar-accent-bar"></div>
     <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar / expandir menú">
       <iconify-icon icon="lucide:chevron-left"></iconify-icon>
     </button>
