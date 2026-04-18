@@ -122,6 +122,20 @@
               </div>
 
               <div class="field-group">
+                <label>Tipo de evaluación</label>
+                <select id="tipoEvaluacion">
+                  <option value="Sumativa">Sumativa</option>
+                  <option value="Formativa">Formativa</option>
+                  <option value="Diagnostica">Diagnóstica</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label>Fecha de entrega</label>
+                <input type="date" id="fechaEntrega" />
+              </div>
+
+              <div class="field-group" style="grid-column: span 2">
                 <label>Disponible en esta unidad</label>
                 <div class="pond-indicator" id="indicadorPonderacion">
                   <span class="pond-big" style="color: var(--text-muted)"
@@ -138,12 +152,6 @@
                     </div>
                   </div>
                 </div>
-                <input type="hidden" id="tipoEvaluacion" value="Sumativa" />
-              </div>
-
-              <div class="field-group">
-                <label>Fecha de entrega</label>
-                <input type="date" id="fechaEntrega" />
               </div>
             </div>
 
@@ -258,6 +266,7 @@
                     <th>Grupo / Materia</th>
                     <th>Unidad</th>
                     <th>Ponderación</th>
+                    <th>Tipo</th>
                     <th>Entrega</th>
                     <th>Alumnos calificados</th>
                     <th>Acciones</th>
@@ -409,6 +418,80 @@
             onclick="cerrarModal('modalEliminar')"
           >
             Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal editar actividad -->
+    <div class="modal-overlay" id="modalEditar">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Editar actividad</h2>
+          <button class="modal-close" onclick="cerrarModal('modalEditar')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editIdActividad" />
+          <div class="form-grid-2">
+            <div class="form-group span-2">
+              <label>Nombre de la actividad</label>
+              <input type="text" id="editNombre" placeholder="Nombre…" />
+            </div>
+            <div class="form-group">
+              <label>Ponderación (%)</label>
+              <input
+                type="number"
+                id="editPonderacion"
+                min="1"
+                max="100"
+                placeholder="0–100"
+              />
+              <span
+                id="editPondHint"
+                style="
+                  font-size: 0.75rem;
+                  color: var(--text-muted);
+                  margin-top: 4px;
+                  display: block;
+                "
+              ></span>
+            </div>
+            <div class="form-group">
+              <label>Tipo de evaluación</label>
+              <select id="editTipo">
+                <option value="Sumativa">Sumativa</option>
+                <option value="Formativa">Formativa</option>
+                <option value="Diagnostica">Diagnóstica</option>
+              </select>
+            </div>
+            <div class="form-group span-2">
+              <label>Fecha de entrega</label>
+              <input type="date" id="editFecha" />
+            </div>
+          </div>
+          <p
+            id="editError"
+            style="
+              color: var(--danger);
+              font-size: 0.85rem;
+              margin: 10px 0 0;
+              display: none;
+            "
+          ></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalEditar')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnGuardarEdicion"
+            onclick="guardarEdicionActividad()"
+          >
+            <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+            Guardar cambios
           </button>
         </div>
       </div>

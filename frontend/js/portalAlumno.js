@@ -120,21 +120,35 @@ function renderMateriasCursando() {
 
   if (!cursando.length) {
     grid.innerHTML = `<div class="empty-state"><iconify-icon icon="mdi:book-off-outline"></iconify-icon><p>No tienes materias activas actualmente.</p></div>`;
-    // Obtener periodo del más reciente
     const ultimoPeriodo = todasInscripciones[0]?.periodo;
     if (ultimoPeriodo)
       document.getElementById("periodoActualBadge").textContent = ultimoPeriodo;
     return;
   }
 
-  // Mostrar periodo vigente
   const periodos = [...new Set(cursando.map((i) => i.periodo).filter(Boolean))];
   if (periodos[0])
     document.getElementById("periodoActualBadge").textContent = periodos[0];
 
   grid.innerHTML = cursando
-    .map(
-      (i) => `
+    .map((i) => {
+      const cal = i.calificacion_oficial;
+      const hasCal = cal !== null && cal !== undefined;
+      const pct = hasCal ? Math.min(100, Math.max(0, parseFloat(cal))) : 0;
+      const isAprobado = hasCal && parseFloat(cal) >= 70;
+      const barColor = !hasCal
+        ? "var(--border)"
+        : isAprobado
+          ? "var(--success)"
+          : "var(--danger)";
+      const calLabel = hasCal ? parseFloat(cal).toFixed(1) : "—";
+      const calColor = !hasCal
+        ? "var(--text-muted)"
+        : isAprobado
+          ? "var(--success)"
+          : "var(--danger)";
+
+      return `
     <div class="materia-card" onclick="seleccionarGrupo(${i.id_grupo})">
       <div class="materia-card-header">
         <iconify-icon icon="mdi:book-outline"></iconify-icon>
@@ -144,13 +158,23 @@ function renderMateriasCursando() {
       <div class="materia-card-info">
         <iconify-icon icon="lucide:graduation-cap"></iconify-icon> ${i.nombre_maestro}
       </div>
-      <div class="materia-card-footer">
-        <span class="badge-estatus badge-pendiente">${i.tipo_curso}</span>
+      <!-- barra de progreso de calificación -->
+      <div style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:0.72rem;font-weight:600;color:var(--text-muted)">CALIFICACIÓN ACTUAL</span>
+          <span style="font-size:0.82rem;font-weight:700;color:${calColor}">${calLabel}</span>
+        </div>
+        <div style="height:5px;background:var(--border);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.5s ease"></div>
+        </div>
+      </div>
+      <div class="materia-card-footer" style="margin-top:8px">
+        <span class="badge-estatus badge-pendiente">${i.tipo_curso || "Ordinario"}</span>
         <iconify-icon icon="lucide:chevron-right" style="margin-left:auto;color:var(--text-muted)"></iconify-icon>
       </div>
     </div>
-  `,
-    )
+  `;
+    })
     .join("");
 }
 
@@ -244,6 +268,8 @@ async function cargarUnidades() {
     const filas = delGrupo
       .map((c) => {
         const cal = c.calificacion_unidad_final;
+        const hasCal = cal !== null && cal !== undefined;
+        const pct = hasCal ? Math.min(100, Math.max(0, parseFloat(cal))) : 0;
         const color =
           c.estatus_unidad === "Aprobada"
             ? "aprobado"
@@ -256,12 +282,25 @@ async function cargarUnidades() {
             : c.estatus_unidad === "Reprobada"
               ? "badge-reprobado"
               : "badge-pendiente";
+        const barColor =
+          c.estatus_unidad === "Aprobada"
+            ? "var(--success)"
+            : c.estatus_unidad === "Reprobada"
+              ? "var(--danger)"
+              : "var(--border)";
         return `<tr style="cursor:pointer" onclick="toggleDesglose('${c.id_unidad}','${id_grupo}',this)">
           <td>
-            <span style="margin-right:6px">▶</span>
-            ${c.nombre_unidad}
+            <span style="margin-right:6px;font-size:0.7rem;color:var(--text-muted)">▶</span>
+            <strong>${c.nombre_unidad}</strong>
           </td>
-          <td><div class="cal-final ${color}" style="display:inline-flex">${cal ?? "—"}</div></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;min-width:120px">
+              <div class="cal-final ${color}" style="display:inline-flex;min-width:44px">${hasCal ? parseFloat(cal).toFixed(1) : "—"}</div>
+              <div style="flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden;min-width:60px">
+                <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.5s ease"></div>
+              </div>
+            </div>
+          </td>
           <td><span class="badge-estatus ${badgeClass}">${c.estatus_unidad}</span></td>
         </tr>
         <tr id="desglose-${c.id_unidad}" style="display:none">
@@ -324,20 +363,20 @@ async function toggleDesglose(id_unidad, id_grupo, rowEl) {
       })
       .join("");
     wrap.innerHTML = `
-      <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px;font-weight:600">DESGLOSE DE ACTIVIDADES</p>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Desglose de actividades</p>
       <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
         <thead>
           <tr style="border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 8px;font-weight:600">Actividad</th>
-            <th style="text-align:center;padding:4px 8px;font-weight:600">Peso</th>
-            <th style="text-align:center;padding:4px 8px;font-weight:600">Calificación</th>
-            <th style="text-align:center;padding:4px 8px;font-weight:600">Aporte</th>
+            <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted)">Actividad</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600;color:var(--text-muted)">Peso</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600;color:var(--text-muted)">Calificación</th>
+            <th style="text-align:center;padding:4px 8px;font-weight:600;color:var(--text-muted)">Aporte</th>
           </tr>
         </thead>
         <tbody>${filas}</tbody>
         <tfoot>
           <tr style="border-top:2px solid var(--border)">
-            <td colspan="3" style="padding:6px 8px;font-weight:700;font-size:0.82rem">Promedio ponderado calculado</td>
+            <td colspan="3" style="padding:6px 8px;font-weight:700;font-size:0.82rem;color:var(--text-main)">Promedio ponderado calculado</td>
             <td style="text-align:center;font-weight:700;color:${data.promedioCalculado >= 70 ? "var(--success)" : "var(--danger)"}">
               ${data.promedioCalculado.toFixed(1)}
             </td>

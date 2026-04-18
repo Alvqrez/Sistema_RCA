@@ -19,6 +19,7 @@
 
   /* INTERFAZ */
   --bg-app: #f1f5f9;
+  --bg-alt: #f8fafc;
   --card-bg: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
@@ -31,6 +32,7 @@
 
 .dark-mode {
   --bg-app: #0f172a;
+  --bg-alt: #1e293b;
   --card-bg: #1e293b;
   --primary-light: rgba(59, 130, 246, 0.15);
 
@@ -629,6 +631,14 @@ button:hover {
   border-radius: 6px;
 }
 
+.dark-mode .btn-editar {
+  color: #60a5fa;
+}
+.dark-mode .btn-editar:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+
 .btn-eliminar {
   background: transparent;
   color: var(--danger);
@@ -637,6 +647,14 @@ button:hover {
 .btn-eliminar:hover {
   background: #fee2e2;
   border-radius: 6px;
+}
+
+.dark-mode .btn-eliminar {
+  color: #f87171;
+}
+.dark-mode .btn-eliminar:hover {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
 }
 
 .theme-btn:hover {
@@ -667,6 +685,24 @@ button:hover {
 .badge-azul {
   background: #dbeafe;
   color: #1e40af;
+}
+
+/* Dark mode variants */
+.dark-mode .badge-verde {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+.dark-mode .badge-rojo {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+.dark-mode .badge-gris {
+  background: rgba(255, 255, 255, 0.07);
+  color: #94a3b8;
+}
+.dark-mode .badge-azul {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
 }
 
 /* ── MENSAJES ─────────────────────────────────────────────────────── */
@@ -1835,13 +1871,13 @@ th.col-final {
   background: rgba(59, 130, 246, 0.1);
 }
 
-/* ── Botones guardar/cancelar básicos ───────────────────────────────── */
-.dark-mode .btn-guardar,
+/* ── Botón cancelar en dark mode ───────────────────────────────────── */
 .dark-mode .btn-cancelar {
-  background: var(--input-bg);
-  color: var(--text-main);
-  border: 1px solid var(--border);
+  background: transparent;
+  color: #94a3b8;
+  border: 1.5px solid #334155;
 }
+/* btn-guardar conserva su azul — no se sobreescribe aquí */
 
 /* ── Suma bar ──────────────────────────────────────────────────────── */
 .dark-mode .suma-bar.ok {

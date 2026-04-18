@@ -338,6 +338,18 @@ function renderTablaActividades(actividades) {
     tr.id = `fila-act-${a.id_actividad}`;
     if (esActiva) tr.classList.add("fila-activa");
 
+    const tipoMap = {
+      Sumativa: "tipo-sum",
+      Formativa: "tipo-for",
+      Diagnostica: "tipo-dia",
+    };
+    const tipoLabel = {
+      Sumativa: "Sumativa",
+      Formativa: "Formativa",
+      Diagnostica: "Diagnóstica",
+    };
+    const tipoClass = tipoMap[a.tipo_evaluacion] || "tipo-sum";
+
     tr.innerHTML = `
       <td><span style="font-weight:600">${a.nombre_actividad}</span></td>
       <td>${grupoLabel}</td>
@@ -347,6 +359,9 @@ function renderTablaActividades(actividades) {
         </span>
       </td>
       <td><span class="pond-chip chip-act">${a.ponderacion}%</span></td>
+      <td>
+        <span class="tipo-badge ${tipoClass}">${tipoLabel[a.tipo_evaluacion] || a.tipo_evaluacion || "—"}</span>
+      </td>
       <td style="font-size:0.82rem;color:var(--text-muted)">${a.fecha_entrega ? formatFecha(a.fecha_entrega) : "—"}</td>
       <td id="conteo-${a.id_actividad}">
         <span style="font-size:0.8rem;color:var(--text-muted)">—</span>
@@ -358,6 +373,11 @@ function renderTablaActividades(actividades) {
                   title="Ver / calificar alumnos">
             <iconify-icon icon="mdi:account-group-outline"></iconify-icon>
             Calificar
+          </button>
+          <button class="btn btn-sm btn-outline"
+                  onclick="editarActividad(${a.id_actividad})"
+                  title="Editar actividad">
+            <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
           </button>
           <button class="btn btn-sm btn-danger-outline"
                   onclick="pedirEliminar(${a.id_actividad})"
@@ -412,7 +432,8 @@ async function registrarActividad() {
     id_unidad,
     nombre_actividad,
     ponderacion,
-    tipo_evaluacion: "Sumativa",
+    tipo_evaluacion:
+      document.getElementById("tipoEvaluacion")?.value || "Sumativa",
     fecha_entrega,
   };
 
@@ -764,38 +785,137 @@ function formatFecha(f) {
   return `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${anio}`;
 }
 
-function mostrarToast(msg, tipo = "success") {
-  if (typeof showToast === "function") {
-    showToast(msg, tipo);
-  } else {
-    // Fallback independiente por si sidebar no cargó
-    let t = document.getElementById("rca-toast");
-    if (!t) {
-      t = document.createElement("div");
-      t.id = "rca-toast";
-      Object.assign(t.style, {
-        position: "fixed",
-        bottom: "24px",
-        right: "24px",
-        padding: "12px 20px",
-        borderRadius: "8px",
-        fontFamily: "Inter,sans-serif",
-        fontSize: "0.9rem",
-        fontWeight: "600",
-        zIndex: "9999",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-        transition: "opacity 0.3s",
-      });
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.background =
-      tipo === "success" ? "#059669" : tipo === "error" ? "#dc2626" : "#1e40af";
-    t.style.color = "#fff";
-    t.style.opacity = "1";
-    clearTimeout(t._t);
-    t._t = setTimeout(() => {
-      t.style.opacity = "0";
-    }, 3000);
+function editarActividad(id) {
+  const act = todasActividades.find((a) => a.id_actividad === id);
+  if (!act) return;
+
+  document.getElementById("editIdActividad").value = id;
+  document.getElementById("editNombre").value = act.nombre_actividad;
+  document.getElementById("editPonderacion").value = act.ponderacion;
+  document.getElementById("editFecha").value = act.fecha_entrega
+    ? act.fecha_entrega.toString().split("T")[0]
+    : "";
+
+  const sel = document.getElementById("editTipo");
+  if (sel) sel.value = act.tipo_evaluacion || "Sumativa";
+
+  // Mostrar cuánto disponible sin contar la actividad actual
+  const usadoSinEsta = todasActividades
+    .filter(
+      (a) =>
+        String(a.id_grupo) === String(act.id_grupo) &&
+        String(a.id_unidad) === String(act.id_unidad) &&
+        a.id_actividad !== id,
+    )
+    .reduce((s, a) => s + parseFloat(a.ponderacion), 0);
+  const disponible = 100 - usadoSinEsta;
+  const hint = document.getElementById("editPondHint");
+  if (hint)
+    hint.textContent = `Máximo disponible: ${disponible}% (otras actividades usan ${usadoSinEsta}%)`;
+
+  const errEl = document.getElementById("editError");
+  if (errEl) errEl.style.display = "none";
+
+  document.getElementById("modalEditar").classList.add("visible");
+}
+
+async function guardarEdicionActividad() {
+  const token = localStorage.getItem("token");
+  const id = document.getElementById("editIdActividad").value;
+  const nombre_actividad = document.getElementById("editNombre").value.trim();
+  const ponderacion = parseFloat(
+    document.getElementById("editPonderacion").value,
+  );
+  const tipo_evaluacion =
+    document.getElementById("editTipo")?.value || "Sumativa";
+  const fecha_entrega = document.getElementById("editFecha").value || null;
+  const errEl = document.getElementById("editError");
+
+  errEl.style.display = "none";
+
+  if (!nombre_actividad) {
+    errEl.textContent = "El nombre no puede estar vacío.";
+    errEl.style.display = "block";
+    return;
   }
+  if (isNaN(ponderacion) || ponderacion <= 0 || ponderacion > 100) {
+    errEl.textContent = "La ponderación debe ser un número entre 1 y 100.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  const btn = document.getElementById("btnGuardarEdicion");
+  btn.disabled = true;
+  btn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite"></span> Guardando…`;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/actividades/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        nombre_actividad,
+        ponderacion,
+        tipo_evaluacion,
+        fecha_entrega,
+      }),
+    });
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: "Error del servidor" };
+    }
+
+    if (res.ok && (data.success || data.message)) {
+      mostrarToast("Actividad actualizada correctamente", "success");
+      cerrarModal("modalEditar");
+      await cargarActividades();
+    } else {
+      errEl.textContent = data.error || "No se pudo actualizar la actividad.";
+      errEl.style.display = "block";
+    }
+  } catch {
+    errEl.textContent = "Error de conexión con el servidor.";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<iconify-icon icon="mdi:content-save-outline"></iconify-icon> Guardar cambios`;
+  }
+}
+
+if (typeof showToast === "function") {
+  showToast(msg, tipo);
+} else {
+  // Fallback independiente por si sidebar no cargó
+  let t = document.getElementById("rca-toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "rca-toast";
+    Object.assign(t.style, {
+      position: "fixed",
+      bottom: "24px",
+      right: "24px",
+      padding: "12px 20px",
+      borderRadius: "8px",
+      fontFamily: "Inter,sans-serif",
+      fontSize: "0.9rem",
+      fontWeight: "600",
+      zIndex: "9999",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+      transition: "opacity 0.3s",
+    });
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background =
+    tipo === "success" ? "#059669" : tipo === "error" ? "#dc2626" : "#1e40af";
+  t.style.color = "#fff";
+  t.style.opacity = "1";
+  clearTimeout(t._t);
+  t._t = setTimeout(() => {
+    t.style.opacity = "0";
+  }, 3000);
 }

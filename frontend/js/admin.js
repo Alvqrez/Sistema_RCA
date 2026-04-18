@@ -59,40 +59,82 @@ function renderStats(s) {
       icon: "lucide:users",
       val: s.alumnos,
       label: "Alumnos registrados",
-      cls: "",
+      cls: "blue",
     },
     {
       icon: "lucide:graduation-cap",
       val: s.maestros,
       label: "Maestros activos",
-      cls: "stat-success",
+      cls: "green",
     },
     {
       icon: "lucide:library",
       val: s.grupos_activos,
       label: "Grupos activos",
-      cls: "stat-purple",
+      cls: "purple",
     },
-    { icon: "lucide:book-open", val: s.materias, label: "Materias", cls: "" },
+    {
+      icon: "lucide:book-open",
+      val: s.materias,
+      label: "Materias",
+      cls: "amber",
+    },
     {
       icon: "lucide:clipboard-list",
       val: s.inscripciones,
       label: "Inscripciones activas",
-      cls: "stat-success",
+      cls: "rose",
     },
-    
-    
-    
   ];
   statsRow.innerHTML = items
     .map(
       (i) => `
-    <div class="stat-card ${i.cls}">
-      <iconify-icon icon="${i.icon}"></iconify-icon>
-      <div><p>${i.val}</p><span>${i.label}</span></div>
+    <div class="stat-card-v2">
+      <div class="stat-icon-wrap ${i.cls}">
+        <iconify-icon icon="${i.icon}"></iconify-icon>
+      </div>
+      <div>
+        <div class="stat-val">${i.val ?? "—"}</div>
+        <div class="stat-lbl">${i.label}</div>
+      </div>
     </div>`,
     )
     .join("");
+
+  /* distribución de roles */
+  renderDistribucion(s);
+}
+
+function renderDistribucion(s) {
+  const cont = document.getElementById("distBars");
+  if (!cont) return;
+  const total = (s.alumnos ?? 0) + (s.maestros ?? 0);
+  if (!total) {
+    cont.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted)">Sin datos</p>`;
+    return;
+  }
+  const grupos = [
+    { label: "Alumnos", val: s.alumnos ?? 0, color: "#3b82f6" },
+    { label: "Maestros", val: s.maestros ?? 0, color: "#10b981" },
+  ];
+  cont.innerHTML =
+    grupos
+      .map((g) => {
+        const pct = total > 0 ? Math.round((g.val / total) * 100) : 0;
+        return `
+      <div class="dist-bar-row">
+        <div class="dist-bar-label">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${g.color};flex-shrink:0"></span>
+          ${g.label}
+        </div>
+        <div class="dist-bar-track">
+          <div class="dist-bar-fill" style="width:${pct}%;background:${g.color}"></div>
+        </div>
+        <div class="dist-bar-count">${g.val}</div>
+      </div>`;
+      })
+      .join("") +
+    `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:8px;text-align:right">Total usuarios: ${total}</div>`;
 }
 
 async function cargarUsuarios() {
@@ -216,7 +258,8 @@ function limpiarModalUser() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  document.getElementById("uRol").value = "administrador";
+  const rol = document.getElementById("rolUsuario");
+  if (rol) rol.value = "administrador";
   const e = document.getElementById("modalUserError");
   if (e) e.style.display = "none";
 }

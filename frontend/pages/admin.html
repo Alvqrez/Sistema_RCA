@@ -1,116 +1,282 @@
 <!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Panel de Administración — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .dist-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .dist-bar-label {
+        width: 96px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dist-bar-track {
+        flex: 1;
+        height: 8px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .dist-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.5s ease;
+      }
+      .dist-bar-count {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-main);
+        min-width: 28px;
+        text-align: right;
+      }
+      .stat-card-v2 {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: var(--shadow);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .stat-card-v2:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+      .stat-icon-wrap {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .stat-icon-wrap.blue {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+      }
+      .stat-icon-wrap.green {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+      }
+      .stat-icon-wrap.purple {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
+      }
+      .stat-icon-wrap.amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+      }
+      .stat-icon-wrap.rose {
+        background: rgba(244, 63, 94, 0.12);
+        color: #f43f5e;
+      }
+      .stat-val {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+        margin-bottom: 3px;
+      }
+      .stat-lbl {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <title>Panel de Administración — RCA</title>
-  <script>
-    if (localStorage.getItem("tema") === "oscuro")
-      document.documentElement.classList.add("dark-mode");
-  </script>
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-  <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/styles.css" />
-</head>
-
-<body>
-  <div class="layout">
-    <aside class="sidebar"></aside>
-    <main class="content">
-      <div class="page-header-v2">
-        <div>
-          <h1>Panel de Administración</h1>
-          <p class="page-subtitle">Vista general del sistema RCA</p>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-primary" onclick="abrirModal('modalUsuario')">
-            <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo
-            usuario
-          </button>
-        </div>
-      </div>
-
-      <!-- Stats principales -->
-      <div class="stats-row" id="statsRow">
-        <div class="stat-card">
-          <iconify-icon icon="lucide:loader-2"></iconify-icon>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
           <div>
-            <p>—</p>
-            <span>Cargando…</span>
+            <h1>Panel de Administración</h1>
+            <p class="page-subtitle">Vista general del sistema RCA</p>
+          </div>
+          <div class="header-actions">
+            <button
+              class="btn btn-primary"
+              onclick="abrirModal('modalUsuario')"
+            >
+              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo
+              usuario
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Fila inferior: usuarios + accesos rápidos -->
-      <div style="
+        <!-- Stats mejorados -->
+        <div
+          id="statsRow"
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+          "
+        >
+          <div class="stat-card-v2">
+            <div class="stat-icon-wrap blue">
+              <iconify-icon icon="lucide:loader-2"></iconify-icon>
+            </div>
+            <div>
+              <div class="stat-val">—</div>
+              <div class="stat-lbl">Cargando…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila inferior: 3 columnas -->
+        <div
+          style="
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-top: 4px;
-          ">
-        <!-- Accesos rápidos -->
-        <div class="card">
-          <h2 style="margin: 0 0 16px; font-size: 1rem; font-weight: 600">
-            Accesos rápidos
-          </h2>
-          <div style="display: flex; flex-direction: column; gap: 10px">
-            <a href="alumnos.html" class="quick-link">
-              <iconify-icon icon="lucide:users"></iconify-icon>
-              <div>
-                <strong>Gestionar alumnos</strong>
-                <p>Registro, edición e importación CSV</p>
-              </div>
-              <iconify-icon icon="lucide:chevron-right" class="ql-arrow"></iconify-icon>
-            </a>
-            <a href="maestros.html" class="quick-link">
-              <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-              <div>
-                <strong>Gestionar maestros</strong>
-                <p>Alta, baja y modificación de docentes</p>
-              </div>
-              <iconify-icon icon="lucide:chevron-right" class="ql-arrow"></iconify-icon>
-            </a>
-            <a href="inscripcion.html" class="quick-link">
-              <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
-              <div>
-                <strong>Inscripciones</strong>
-                <p>Asignar alumnos a grupos</p>
-              </div>
-              <iconify-icon icon="lucide:chevron-right" class="ql-arrow"></iconify-icon>
-            </a>
-            <a href="grupos.html" class="quick-link">
-              <iconify-icon icon="lucide:library"></iconify-icon>
-              <div>
-                <strong>Grupos</strong>
-                <p>Crear y administrar grupos académicos</p>
-              </div>
-              <iconify-icon icon="lucide:chevron-right" class="ql-arrow"></iconify-icon>
-            </a>
-            <a href="reportes.html" class="quick-link">
-              <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
-              <div>
-                <strong>Reportes</strong>
-                <p>Ver calificaciones y resultados por grupo</p>
-              </div>
-              <iconify-icon icon="lucide:chevron-right" class="ql-arrow"></iconify-icon>
-            </a>
-          </div>
-        </div>
-
-        <!-- Gestión de usuarios -->
-        <div class="card">
-          <div style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 14px;
-              ">
-            <h2 style="margin: 0; font-size: 1rem; font-weight: 600">
-              Usuarios del sistema
+          "
+          id="gridInferior"
+        >
+          <!-- Accesos rápidos -->
+          <div class="card">
+            <h2 style="margin: 0 0 16px; font-size: 1rem; font-weight: 600">
+              Accesos rápidos
             </h2>
-            <div style="display: flex; gap: 8px">
-              <input type="text" id="filtroUsuarios" placeholder="Buscar…" oninput="filtrarUsuarios()" style="
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <a href="alumnos.html" class="quick-link">
+                <iconify-icon icon="lucide:users"></iconify-icon>
+                <div>
+                  <strong>Gestionar alumnos</strong>
+                  <p>Registro, edición e importación CSV</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="maestros.html" class="quick-link">
+                <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
+                <div>
+                  <strong>Gestionar maestros</strong>
+                  <p>Alta, baja y modificación de docentes</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="inscripcion.html" class="quick-link">
+                <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
+                <div>
+                  <strong>Inscripciones</strong>
+                  <p>Asignar alumnos a grupos</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="grupos.html" class="quick-link">
+                <iconify-icon icon="lucide:library"></iconify-icon>
+                <div>
+                  <strong>Grupos</strong>
+                  <p>Crear y administrar grupos académicos</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="reportes.html" class="quick-link">
+                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+                <div>
+                  <strong>Reportes</strong>
+                  <p>Ver calificaciones y resultados por grupo</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Panel derecho: distribución + usuarios -->
+          <div style="display: flex; flex-direction: column; gap: 20px">
+            <!-- Distribución de roles -->
+            <div class="card" id="cardDistribucion" style="padding: 20px 22px">
+              <h2
+                style="
+                  margin: 0 0 16px;
+                  font-size: 1rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <iconify-icon
+                  icon="lucide:pie-chart"
+                  style="color: var(--primary)"
+                ></iconify-icon>
+                Distribución de usuarios
+              </h2>
+              <div id="distBars">
+                <div style="color: var(--text-muted); font-size: 0.85rem">
+                  Cargando…
+                </div>
+              </div>
+            </div>
+
+            <!-- Gestión de usuarios -->
+            <div class="card" style="flex: 1">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 14px;
+                "
+              >
+                <h2 style="margin: 0; font-size: 1rem; font-weight: 600">
+                  Usuarios del sistema
+                </h2>
+                <input
+                  type="text"
+                  id="filtroUsuarios"
+                  placeholder="Buscar…"
+                  oninput="filtrarUsuarios()"
+                  style="
                     padding: 6px 10px;
                     border: 1.5px solid var(--border);
                     border-radius: 8px;
@@ -118,128 +284,155 @@
                     background: var(--bg-app);
                     color: var(--text-main);
                     font-family: inherit;
-                    width: 140px;
-                  " />
+                    width: 130px;
+                  "
+                />
+              </div>
+              <div
+                style="overflow-x: auto; max-height: 320px; overflow-y: auto"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Rol</th>
+                      <th>Último acceso</th>
+                      <th>Estado</th>
+                      <th style="text-align: right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaUsuarios">
+                    <tr>
+                      <td colspan="5">
+                        <div class="empty-state" style="padding: 20px">
+                          <iconify-icon icon="lucide:loader-2"></iconify-icon>
+                          <p>Cargando…</p>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-          <div style="overflow-x: auto; max-height: 380px; overflow-y: auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>Usuario</th>
-                  <th>Rol</th>
-                  <th>Último acceso</th>
-                  <th>Estado</th>
-                  <th style="text-align: right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tablaUsuarios">
-                <tr>
-                  <td colspan="5">
-                    <div class="empty-state" style="padding: 20px">
-                      <iconify-icon icon="lucide:loader-2"></iconify-icon>
-                      <p>Cargando…</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
-    </main>
-  </div>
+        <!-- /grid -->
+      </main>
+    </div>
 
-  <!-- MODAL NUEVO USUARIO -->
-  <div id="modalUsuario" class="modal-overlay">
-    <div class="modal-panel modal-sm">
-      <div class="modal-header">
-        <h2>Nuevo usuario</h2>
-        <button class="modal-close" onclick="cerrarModal('modalUsuario')">
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid-2">
-          <div class="form-group span-2">
-            <label>Username *</label>
-            <input type="text" id="uUsername" placeholder="nombre_usuario" />
-          </div>
-          <div class="form-group span-2">
-            <label>Contraseña *</label>
-            <input type="password" id="uPassword" />
-          </div>
-          <div class="form-group">
-            <label>Rol *</label>
-            <select id="rolUsuario" disabled>
-              <option value="Administrador" selected>Administrador</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>ID de referencia *</label>
-            <input type="text" id="uReferencia" placeholder="Matrícula / No. empleado" />
-          </div>
+    <!-- MODAL NUEVO USUARIO -->
+    <div id="modalUsuario" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Nuevo usuario</h2>
+          <button class="modal-close" onclick="cerrarModal('modalUsuario')">
+            ✕
+          </button>
         </div>
-        <p id="modalUserError" style="
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group span-2">
+              <label>Username *</label>
+              <input type="text" id="uUsername" placeholder="nombre_usuario" />
+            </div>
+            <div class="form-group span-2">
+              <label>Contraseña *</label>
+              <input type="password" id="uPassword" />
+            </div>
+            <div class="form-group">
+              <label>Rol *</label>
+              <select id="rolUsuario" disabled>
+                <option value="administrador" selected>Administrador</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ID de referencia *</label>
+              <input
+                type="text"
+                id="uReferencia"
+                placeholder="Matrícula / No. empleado"
+              />
+            </div>
+          </div>
+          <p
+            id="modalUserError"
+            style="
               color: var(--danger);
               font-size: 0.85rem;
               margin: 10px 0 0;
               display: none;
-            "></p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalUsuario')">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" id="btnCrearUser" onclick="crearUsuario()">
-          <iconify-icon icon="lucide:user-plus"></iconify-icon> Crear usuario
-        </button>
+            "
+          ></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalUsuario')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnCrearUser"
+            onclick="crearUsuario()"
+          >
+            <iconify-icon icon="lucide:user-plus"></iconify-icon> Crear usuario
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL RESETEAR CONTRASEÑA -->
-  <div id="modalReset" class="modal-overlay">
-    <div class="modal-panel modal-sm">
-      <div class="modal-header">
-        <h2>Resetear contraseña</h2>
-        <button class="modal-close" onclick="cerrarModal('modalReset')">
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
-        <p style="
+    <!-- MODAL RESETEAR CONTRASEÑA -->
+    <div id="modalReset" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Resetear contraseña</h2>
+          <button class="modal-close" onclick="cerrarModal('modalReset')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
               font-size: 0.875rem;
               color: var(--text-muted);
               margin: 0 0 14px;
-            ">
-          Usuario: <strong id="resetUsername">—</strong>
-        </p>
-        <div class="form-group">
-          <label>Nueva contraseña *</label>
-          <input type="password" id="resetPassword" placeholder="Mín. 6 caracteres" />
-        </div>
-        <p id="modalResetError" style="
+            "
+          >
+            Usuario: <strong id="resetUsername">—</strong>
+          </p>
+          <div class="form-group">
+            <label>Nueva contraseña *</label>
+            <input
+              type="password"
+              id="resetPassword"
+              placeholder="Mín. 6 caracteres"
+            />
+          </div>
+          <p
+            id="modalResetError"
+            style="
               color: var(--danger);
               font-size: 0.85rem;
               margin: 10px 0 0;
               display: none;
-            "></p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalReset')">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" id="btnReset" onclick="confirmarReset()">
-          <iconify-icon icon="lucide:key"></iconify-icon> Actualizar
-        </button>
+            "
+          ></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalReset')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnReset"
+            onclick="confirmarReset()"
+          >
+            <iconify-icon icon="lucide:key"></iconify-icon> Actualizar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast-container"></div>
-  <script src="../js/sidebar.js"></script>
-  <script src="../js/admin.js"></script>
-</body>
-
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/admin.js"></script>
+  </body>
 </html>
