@@ -279,16 +279,25 @@
 
     <!-- MODAL CURSOS -->
     <div id="modalCursos" class="modal-overlay">
-      <div class="modal-panel" style="max-width:720px">
+      <div class="modal-panel" style="max-width: 720px">
         <div class="modal-header">
           <div>
             <h2>Cursos inscritos</h2>
-            <p style="font-size:0.82rem;color:var(--text-muted);margin:2px 0 0" id="cursosNombreAlumno"></p>
+            <p
+              style="
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                margin: 2px 0 0;
+              "
+              id="cursosNombreAlumno"
+            ></p>
           </div>
-          <button class="modal-close" onclick="cerrarModal('modalCursos')">✕</button>
+          <button class="modal-close" onclick="cerrarModal('modalCursos')">
+            ✕
+          </button>
         </div>
-        <div class="modal-body" style="padding:0">
-          <div style="overflow-x:auto">
+        <div class="modal-body" style="padding: 0">
+          <div style="overflow-x: auto">
             <table>
               <thead>
                 <tr>
@@ -296,7 +305,7 @@
                   <th>Maestro</th>
                   <th>Periodo</th>
                   <th>Estatus</th>
-                  <th style="text-align:center">Calificación</th>
+                  <th style="text-align: center">Calificación</th>
                 </tr>
               </thead>
               <tbody id="cursosBody"></tbody>
@@ -304,7 +313,9 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModal('modalCursos')">Cerrar</button>
+          <button class="btn btn-outline" onclick="cerrarModal('modalCursos')">
+            Cerrar
+          </button>
         </div>
       </div>
     </div>

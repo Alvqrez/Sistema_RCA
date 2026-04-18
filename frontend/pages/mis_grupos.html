@@ -55,95 +55,66 @@
           </div>
         </div>
 
-        <!-- Accesos rápidos -->
-        <div
-          style="
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 24px;
-          "
-        >
-          <div class="card">
-            <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 600">
-              Accesos rápidos
-            </h2>
-            <div style="display: flex; flex-direction: column; gap: 10px">
-              <a href="gruposMaestro.html" class="quick-link">
-                <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
-                <div>
-                  <strong>Configurar evaluación</strong>
-                  <p>Rubros, ponderaciones y pesos por unidad</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-              <a href="actividades.html" class="quick-link">
-                <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
-                <div>
-                  <strong>Actividades</strong>
-                  <p>Gestionar tareas, exámenes y prácticas</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-              <a href="formulario.html" class="quick-link">
-                <iconify-icon icon="lucide:pencil"></iconify-icon>
-                <div>
-                  <strong>Capturar calificaciones</strong>
-                  <p>Registrar y editar resultados de alumnos</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-              <a href="reportes.html" class="quick-link">
-                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
-                <div>
-                  <strong>Reportes</strong>
-                  <p>Promedios, avances y resultados del grupo</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 600">
-              Herramientas
-            </h2>
-            <div style="display: flex; flex-direction: column; gap: 10px">
-              <a href="alumnosMaestro.html" class="quick-link">
-                <iconify-icon icon="lucide:search"></iconify-icon>
-                <div>
-                  <strong>Buscar alumnos</strong>
-                  <p>Consultar alumnos y su historial</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-              <a href="asistencia.html" class="quick-link">
-                <iconify-icon icon="lucide:calendar-check"></iconify-icon>
-                <div>
-                  <strong>Asistencia</strong>
-                  <p>Registrar asistencia por grupo y unidad</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
-            </div>
+        <!-- Accesos rápidos — barra compacta -->
+        <div class="card" style="padding: 14px 18px; margin-bottom: 20px">
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              flex-wrap: wrap;
+              align-items: center;
+            "
+          >
+            <span
+              style="
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                margin-right: 4px;
+              "
+              >Ir a:</span
+            >
+            <a
+              href="gruposMaestro.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+              Configurar evaluación
+            </a>
+            <a
+              href="actividades.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
+              Actividades
+            </a>
+            <a
+              href="formulario.html"
+              class="btn btn-primary btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:pencil"></iconify-icon> Capturar
+              calificaciones
+            </a>
+            <a
+              href="asistencia.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:calendar-check"></iconify-icon>
+              Asistencia
+            </a>
+            <a
+              href="reportes.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:bar-chart-2"></iconify-icon> Reportes
+            </a>
           </div>
         </div>
 

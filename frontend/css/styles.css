@@ -424,18 +424,27 @@ span {
   padding: 24px;
   margin-bottom: 24px;
   border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  border: 1px solid var(--border);
   box-shadow:
-    0 1px 3px 0 rgb(0 0 0 / 0.1),
-    0 1px 2px -1px rgb(0 0 0 / 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    transform 0.22s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
   box-shadow:
-    0 20px 25px -5px rgb(0 0 0 / 0.1),
-    0 8px 10px -6px rgb(0 0 0 / 0.1);
+    0 6px 24px rgba(0, 0, 0, 0.09),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(30, 64, 175, 0.18);
+  transform: translateY(-2px);
+}
+
+.dark-mode .card:hover {
+  border-color: rgba(96, 165, 250, 0.22);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* ── TABLA ────────────────────────────────────────────────────────── */
@@ -582,22 +591,25 @@ textarea:focus {
 button {
   padding: 9px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #3b82f6;
   color: white;
   font-size: 14px;
   cursor: pointer;
   transition:
     background 0.15s,
-    transform 0.1s;
+    transform 0.12s,
+    box-shadow 0.15s;
+  font-family: "Inter", sans-serif;
 }
 
 button:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 
 button:hover {
   background: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
 }
 
 .btn-guardar {
@@ -3703,4 +3715,335 @@ body.sidebar-collapsed .content {
   border-color: var(--primary);
   color: #60a5fa;
   background: rgba(59, 130, 246, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v2 — Animaciones, micro-interacciones y consistencia
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Botón .btn — mejorado con sombras de color ───────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    transform 0.14s,
+    box-shadow 0.18s,
+    border-color 0.18s,
+    color 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.15s;
+  border-radius: inherit;
+}
+.btn:hover::after {
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 6px 18px rgba(30, 64, 175, 0.38);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+.btn-success:hover {
+  background: #047857;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+.btn-danger:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+}
+.btn-warning:hover {
+  background: #b45309;
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  box-shadow: none;
+}
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: none;
+  transform: none;
+}
+
+.dark-mode .btn-outline:hover {
+  border-color: #60a5fa;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.btn:disabled::after {
+  display: none;
+}
+
+/* ── stat-card: icono con fondo de color ──────────────────────────── */
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+}
+.stat-card.stat-success::before {
+  background: var(--success);
+}
+.stat-card.stat-danger::before {
+  background: var(--danger);
+}
+.stat-card.stat-warning::before {
+  background: var(--warning);
+}
+.stat-card.stat-purple::before {
+  background: var(--bonus);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card iconify-icon {
+  font-size: 28px;
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: transform 0.22s ease;
+}
+.stat-card:hover iconify-icon {
+  transform: scale(1.12);
+}
+.stat-card.stat-success iconify-icon {
+  color: var(--success);
+}
+.stat-card.stat-danger iconify-icon {
+  color: var(--danger);
+}
+.stat-card.stat-warning iconify-icon {
+  color: var(--warning);
+}
+.stat-card.stat-purple iconify-icon {
+  color: var(--bonus);
+}
+
+.stat-card p {
+  margin: 0 0 2px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+}
+.stat-card span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: block;
+}
+
+/* ── Inputs: focus más limpio y coherente ─────────────────────────── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s,
+    background 0.18s;
+}
+
+/* ── Table rows: animación de hover ───────────────────────────────── */
+tbody tr {
+  transition: background 0.14s;
+}
+
+/* ── quick-link: animación del icono de flecha ────────────────────── */
+.quick-link .ql-arrow {
+  transition: transform 0.18s ease;
+}
+.quick-link:hover .ql-arrow {
+  transform: translateX(4px);
+}
+
+/* ── badge: transición suave ──────────────────────────────────────── */
+.badge {
+  transition: filter 0.15s;
+}
+.badge:hover {
+  filter: brightness(0.92);
+}
+
+/* ── card-title: línea decorativa izquierda ───────────────────────── */
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--border);
+  position: relative;
+}
+
+.card-title::before {
+  content: "";
+  display: none; /* se puede activar por clase */
+}
+
+/* ── Page header h1: icono animado ────────────────────────────────── */
+.page-header-v2 h1 iconify-icon,
+.page-header h1 iconify-icon {
+  transition: transform 0.22s ease;
+}
+.page-header-v2:hover h1 iconify-icon {
+  transform: scale(1.1) rotate(-3deg);
+}
+
+/* ── materia-card: hover elevado ──────────────────────────────────── */
+.materia-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.materia-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.12);
+}
+
+/* ── btn-icon: efecto ripple en click ─────────────────────────────── */
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: all 0.16s;
+}
+.btn-icon:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+  transform: scale(1.08);
+}
+.btn-icon.btn-del:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-light);
+}
+
+/* ── Loading skeleton animation ───────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-app) 50%,
+    var(--border) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+
+/* ── Focus-visible accesible ──────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Scroll suave en toda la app ──────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Dark mode: stat-card accent bars ────────────────────────────── */
+.dark-mode .stat-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
