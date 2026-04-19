@@ -117,39 +117,54 @@
         </div>
 
         <!-- Filtros -->
-        <div class="card" style="padding: 14px 18px; margin-bottom: 18px">
-          <div
-            style="
-              display: flex;
-              gap: 10px;
-              flex-wrap: wrap;
-              align-items: center;
-            "
-          >
-            <input
-              type="text"
-              id="filtroBusqueda"
-              placeholder="🔍 Buscar por nombre o matrícula…"
-              oninput="filtrar()"
-              style="flex: 1; min-width: 200px"
-            />
-            <select
-              id="filtroGrupo"
-              onchange="filtrar()"
-              style="min-width: 200px"
+        <div
+          class="card card-collapsible"
+          data-open="true"
+          style="padding: 14px 18px; margin-bottom: 18px"
+        >
+          <div class="card-title">
+            Filtrar alumnos
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
             >
-              <option value="">Todos los grupos</option>
-            </select>
-            <select id="filtroEstatus" onchange="filtrar()">
-              <option value="">Todos los estados</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Reprobado">Reprobado</option>
-              <option value="Pendiente">Pendiente</option>
-            </select>
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+
+          <div class="card-body" style="padding-top: 12px">
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+              "
+            >
+              <input
+                type="text"
+                id="filtroBusqueda"
+                placeholder="🔍 Buscar por nombre o matrícula…"
+                oninput="filtrar()"
+                style="flex: 1; min-width: 200px"
+              />
+              <select
+                id="filtroGrupo"
+                onchange="filtrar()"
+                style="min-width: 200px"
+              >
+                <option value="">Todos los grupos</option>
+              </select>
+              <select id="filtroEstatus" onchange="filtrar()">
+                <option value="">Todos los estados</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Reprobado">Reprobado</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </div>
           </div>
         </div>
-
-        <!-- Lista -->
         <div
           id="loadingState"
           style="text-align: center; padding: 48px; color: var(--text-muted)"
@@ -160,7 +175,9 @@
           ></iconify-icon>
           <p>Cargando alumnos…</p>
         </div>
+
         <div id="gridAlumnos" class="grid-alumnos" style="display: none"></div>
+
         <div
           id="emptyState"
           style="

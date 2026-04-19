@@ -87,7 +87,7 @@
         </div>
 
         <!-- MATERIAS ACTUALES (Cursando) -->
-        <div class="card" id="cardCursando">
+        <div class="card card-collapsible" id="cardCursando" data-open="true">
           <div class="card-title">
             <iconify-icon icon="mdi:book-open-outline"></iconify-icon>
             Materias que cursa actualmente
@@ -96,12 +96,19 @@
               id="periodoActualBadge"
               style="margin-left: auto"
             ></span>
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
           </div>
           <div id="gridMaterias" class="materias-grid"></div>
         </div>
 
         <!-- HISTORIAL DE CALIFICACIONES -->
-        <div class="card">
+        <div class="card card-collapsible" data-open="true">
           <div class="card-title">
             <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
             Historial de calificaciones
@@ -123,6 +130,13 @@
               <button class="btn btn-outline btn-sm" onclick="window.print()">
                 <iconify-icon icon="mdi:printer-outline"></iconify-icon>
                 Imprimir
+              </button>
+              <button
+                class="card-toggle-btn"
+                onclick="toggleCard(this)"
+                title="Contraer"
+              >
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
               </button>
             </div>
           </div>
@@ -157,6 +171,13 @@
               >
                 <option value="">Selecciona una materia...</option>
               </select>
+              <button
+                class="card-toggle-btn"
+                onclick="toggleCard(this)"
+                title="Contraer"
+              >
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+              </button>
             </div>
           </div>
           <div id="tablaUnidadesWrap">

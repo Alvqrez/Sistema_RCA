@@ -90,7 +90,6 @@
 
     administrador: [
       { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
-      { separador: "Gestión" },
       {
         texto: "Alumnos",
         icono: "lucide:users",
@@ -119,7 +118,6 @@
         ],
       },
 
-      { separador: "Catálogo" },
       {
         texto: "Catálogo",
         icono: "lucide:folder-open",
@@ -142,7 +140,6 @@
         ],
       },
 
-      { separador: "Sistema" },
       { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
       {
         href: "utilerias.html",
@@ -202,6 +199,7 @@
   }
 
   aside.innerHTML = `
+    <div class="sidebar-accent-bar"></div>
     <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar / expandir menú">
       <iconify-icon icon="lucide:chevron-left"></iconify-icon>
     </button>
@@ -312,3 +310,24 @@ function showToast(msg, tipo = "success") {
   c.appendChild(t);
   setTimeout(() => t.remove(), 3200);
 }
+
+// ── CARDS PLEGABLES ───────────────────────────────────────────────────
+// Función global para el botón toggle de cada card
+function toggleCard(btn) {
+  const card = btn.closest(".card-collapsible");
+  if (!card) return;
+  const collapsed = card.classList.toggle("collapsed");
+  btn.title = collapsed ? "Expandir" : "Contraer";
+}
+
+// Al cargar la página, colapsa todas las cards que tengan
+// la clase card-collapsible (excepto las que tengan data-open="true")
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .querySelectorAll(".card-collapsible:not([data-open])")
+    .forEach((card) => {
+      card.classList.add("collapsed");
+      const btn = card.querySelector(".card-toggle-btn");
+      if (btn) btn.title = "Expandir";
+    });
+});

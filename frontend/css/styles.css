@@ -3553,7 +3553,7 @@ th.col-final {
   transition:
     max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.25s ease;
-  max-height: 1200px;
+  max-height: 3000px;
   opacity: 1;
 }
 
@@ -3604,36 +3604,37 @@ th.col-final {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid #334155;
-  background: #1e293b;
-  color: #94a3b8;
+  border: 2px solid #1a2e52;
+  background: #0a1628;
+  color: #4d6484;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 400;
   transition:
-    background 0.15s,
-    color 0.15s,
-    border-color 0.15s;
+    background 0.18s,
+    color 0.18s,
+    border-color 0.18s,
+    transform 0.25s;
   padding: 0;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .sidebar-toggle-btn:hover {
-  background: var(--primary);
+  background: #3b82f6;
   color: white;
-  border-color: var(--primary);
+  border-color: #3b82f6;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
 }
 
 .sidebar.collapsed .sidebar-toggle-btn {
   transform: translateY(-50%) rotate(180deg);
 }
 
-/* Asegura que el ícono dentro sea el correcto */
 .sidebar-toggle-btn iconify-icon {
-  font-size: 16px;
+  font-size: 14px;
   display: flex;
 }
 .sidebar.collapsed {
@@ -3659,6 +3660,10 @@ th.col-final {
 .sidebar.collapsed .theme-icon-btn {
   justify-content: center;
   padding: 14px;
+}
+.sidebar.collapsed nav a:hover,
+.sidebar.collapsed .nav-group-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
 }
 .sidebar.collapsed .submenu {
   display: none !important;
@@ -3856,17 +3861,7 @@ body.sidebar-collapsed .content {
   color: #dce9ff !important;
 }
 
-/* Toggle btn siempre */
-.sidebar-toggle-btn {
-  background: #0a1628 !important;
-  border-color: #1a2e52 !important;
-  color: #4a6280 !important;
-}
-.sidebar-toggle-btn:hover {
-  background: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  color: white !important;
-}
+/* sidebar-toggle-btn: definición única arriba */
 
 /* ── SCROLLBAR GLOBAL ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
@@ -5235,4 +5230,259 @@ body {
 .sidebar.collapsed .nav-group-btn {
   justify-content: center;
   padding: 14px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR — Match exacto al Estilo A Deep Ocean
+   ══════════════════════════════════════════════════════════════ */
+
+/* Sidebar siempre oscuro en ambos modos */
+.sidebar,
+.dark-mode .sidebar {
+  background: #0a1628 !important;
+  border-right: 1px solid #1a2e52 !important;
+}
+
+/* Accent bar siempre visible */
+.sidebar-accent-bar,
+.dark-mode .sidebar-accent-bar {
+  height: 3px !important;
+  background: linear-gradient(
+    90deg,
+    #3b82f6 0%,
+    #60a5fa 55%,
+    #818cf8 100%
+  ) !important;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.5) !important;
+  flex-shrink: 0;
+}
+
+/* Logo / perfil */
+.sidebar-logo,
+.dark-mode .sidebar-logo {
+  border-bottom-color: #1a2e52 !important;
+  padding: 22px 18px 18px !important;
+}
+
+/* Avatar: cuadrado redondeado con gradiente */
+.sidebar-avatar,
+.dark-mode .sidebar-avatar {
+  background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%) !important;
+  border-radius: 14px !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.28) !important;
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 1.35rem !important;
+}
+
+/* Textos perfil */
+.sidebar-bienvenida {
+  color: #334d6e !important;
+  font-size: 0.64rem !important;
+}
+.sidebar-nombre {
+  color: #dce9ff !important;
+  font-size: 0.9rem !important;
+}
+
+/* Badge rol */
+.sidebar-rol-badge.rol-administrador {
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: #c4b5fd !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+.sidebar-rol-badge.rol-maestro {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(52, 211, 153, 0.25) !important;
+}
+.sidebar-rol-badge.rol-alumno {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Nav padding */
+.sidebar nav {
+  padding: 10px 10px !important;
+}
+
+/* Nav links — siempre sobre fondo oscuro */
+.sidebar nav a,
+.dark-mode .sidebar nav a {
+  color: #4a6280 !important;
+  font-size: 0.83rem !important;
+  padding: 9px 12px !important;
+  border-radius: 8px !important;
+  border-left: 3px solid transparent !important;
+  margin-bottom: 2px !important;
+}
+.sidebar nav a:hover,
+.dark-mode .sidebar nav a:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: #dce9ff !important;
+}
+.sidebar nav a.active,
+.dark-mode .sidebar nav a.active {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border-left-color: #3b82f6 !important;
+  font-weight: 600 !important;
+}
+.sidebar nav a iconify-icon,
+.dark-mode .sidebar nav a iconify-icon {
+  font-size: 1.05rem !important;
+}
+
+/* Nav group btn */
+.nav-group-btn,
+.dark-mode .nav-group-btn {
+  color: #4a6280 !important;
+  font-size: 0.83rem !important;
+  padding: 9px 12px !important;
+  border-radius: 8px !important;
+}
+.nav-group-btn:hover,
+.dark-mode .nav-group-btn:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: #dce9ff !important;
+}
+.nav-group.open .nav-group-btn,
+.dark-mode .nav-group.open .nav-group-btn {
+  color: #dce9ff !important;
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+.nav-group-btn iconify-icon:first-child {
+  font-size: 1.05rem !important;
+}
+.nav-group-btn .chevron {
+  font-size: 0.82rem !important;
+}
+
+/* Submenu */
+.submenu,
+.dark-mode .submenu {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0 0 8px 8px !important;
+}
+.submenu-item,
+.dark-mode .submenu-item {
+  color: #2d4a78 !important;
+  font-size: 0.8rem !important;
+  padding: 8px 12px 8px 36px !important;
+  border-radius: 6px !important;
+}
+.submenu-item:hover,
+.dark-mode .submenu-item:hover {
+  color: #dce9ff !important;
+  background: rgba(59, 130, 246, 0.07) !important;
+}
+.submenu-item.active,
+.dark-mode .submenu-item.active {
+  color: #60a5fa !important;
+  border-left-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Theme btn */
+.theme-icon-btn,
+.dark-mode .theme-icon-btn {
+  color: #4a6280 !important;
+  border-top-color: #1a2e52 !important;
+  font-size: 0.82rem !important;
+  padding: 9px 12px !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+}
+.theme-icon-btn:hover,
+.dark-mode .theme-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #dce9ff !important;
+}
+.theme-icon-btn iconify-icon {
+  font-size: 1.05rem !important;
+}
+
+/* nav-group-label (separadores — sólo para rol maestro/alumno) */
+.nav-group-label {
+  font-size: 0.6rem !important;
+  font-weight: 700 !important;
+  color: #1e3a60 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  padding: 14px 12px 4px !important;
+}
+
+/* Scrollbar del nav */
+.sidebar nav::-webkit-scrollbar {
+  width: 3px;
+}
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: #1a2e52;
+  border-radius: 99px;
+}
+.sidebar nav::-webkit-scrollbar-thumb:hover {
+  background: #1e4080;
+}
+
+/* Logout siempre rojo translúcido */
+.logout-btn,
+.dark-mode .logout-btn {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.22) !important;
+  border-radius: 8px !important;
+  width: calc(100% - 20px) !important;
+  margin: 0 10px 10px !important;
+  font-size: 0.83rem !important;
+  padding: 10px 14px !important;
+}
+.logout-btn:hover,
+.dark-mode .logout-btn:hover {
+  background: rgba(244, 63, 94, 0.22) !important;
+  color: #fca5a5 !important;
+}
+
+/* Toggle btn: un único estilo limpio */
+.sidebar-toggle-btn,
+.dark-mode .sidebar-toggle-btn {
+  background: #0a1628 !important;
+  border-color: #1a2e52 !important;
+  color: #4d6484 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
+}
+.sidebar-toggle-btn:hover,
+.dark-mode .sidebar-toggle-btn:hover {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Dark mode page bg */
+.dark-mode body {
+  background: #060e1f !important;
+}
+.dark-mode .content {
+  background: #060e1f !important;
+}
+.dark-mode .card {
+  background: #0f1f3d !important;
+  border-color: #1a2e52 !important;
+}
+.dark-mode .card:hover {
+  border-color: #1e4080 !important;
+}
+
+/* card-filter-bar en dark */
+.dark-mode .card-filter-bar {
+  background: #0a1628;
+  border-color: #1a2e52;
+}
+.dark-mode .card-filter-bar input,
+.dark-mode .card-filter-bar select {
+  background: #060e1f;
+  border-color: #1a2e52;
+  color: #dce9ff;
 }

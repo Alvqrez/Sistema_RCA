@@ -137,33 +137,50 @@
         </div>
 
         <!-- Selectores -->
-        <div class="card" style="padding: 16px 20px; margin-bottom: 18px">
-          <div
-            style="
-              display: flex;
-              gap: 14px;
-              flex-wrap: wrap;
-              align-items: flex-end;
-            "
-          >
-            <div
-              class="form-group"
-              style="margin: 0; flex: 1; min-width: 180px"
+        <div
+          class="card card-collapsible"
+          data-open="true"
+          style="margin-bottom: 18px"
+        >
+          <div class="card-title">
+            Seleccionar grupo y fecha
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
             >
-              <label>Grupo</label>
-              <select id="selGrupo" onchange="cargarAlumnosGrupo()">
-                <option value="">— Selecciona grupo —</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin: 0">
-              <label>Fecha</label>
-              <input
-                type="date"
-                id="fechaAsistencia"
-                onchange="onFechaChange()"
-              />
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body" style="padding: 14px 20px 18px">
+            <div
+              style="
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                align-items: flex-end;
+              "
+            >
+              <div
+                class="form-group"
+                style="margin: 0; flex: 1; min-width: 180px"
+              >
+                <label>Grupo</label>
+                <select id="selGrupo" onchange="cargarAlumnosGrupo()">
+                  <option value="">— Selecciona grupo —</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin: 0">
+                <label>Fecha</label>
+                <input
+                  type="date"
+                  id="fechaAsistencia"
+                  onchange="onFechaChange()"
+                />
+              </div>
             </div>
           </div>
+          <!-- /card-body -->
         </div>
 
         <!-- Tabla -->

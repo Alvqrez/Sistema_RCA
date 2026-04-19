@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Historial de Asistencias — RCA</title>
+    <title>Lista de Asistencia — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
@@ -14,161 +14,91 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
-      /* ── Tabla historial ── */
-      .hist-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
+      /* ── Selector de grupo/rango ─────────────────────────────── */
+      .selector-bar {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: flex-end;
       }
-      .hist-table th {
-        background: var(--bg-app);
-        color: var(--text-muted);
-        font-size: 0.74rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 10px 12px;
-        text-align: left;
-        border-bottom: 2px solid var(--border);
-        white-space: nowrap;
+      .selector-bar .form-group {
+        margin: 0;
+        flex: 1;
+        min-width: 180px;
       }
-      .hist-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--border);
-        color: var(--text-main);
-        vertical-align: middle;
-      }
-      .hist-table tr:last-child td {
-        border-bottom: none;
-      }
-      .hist-table tbody tr:hover td {
-        background: var(--bg-app);
+      .selector-bar .form-group.narrow {
+        flex: 0 0 150px;
       }
 
-      /* Celdas de fecha — compactas */
-      .fecha-col {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        white-space: nowrap;
-      }
-
-      /* Badge de estado */
-      .est-presente {
-        background: var(--success-light);
-        color: var(--success);
-      }
-      .est-falta {
-        background: var(--danger-light);
-        color: var(--danger);
-      }
-      .est-sin {
-        background: var(--border);
-        color: var(--text-muted);
-      }
-
-      /* Barra de asistencia por alumno */
-      .pct-bar-wrap {
+      /* ── Leyenda ─────────────────────────────────────────────── */
+      .leyenda {
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-width: 120px;
+        gap: 18px;
+        flex-wrap: wrap;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        padding: 10px 16px;
+        background: var(--bg-alt);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 18px;
       }
-      .pct-bar-track {
-        flex: 1;
-        height: 6px;
-        background: var(--border);
-        border-radius: 99px;
-        overflow: hidden;
-      }
-      .pct-bar-fill {
-        height: 100%;
-        border-radius: 99px;
-        transition: width 0.4s ease;
-      }
-      .pct-num {
-        font-size: 0.8rem;
-        font-weight: 700;
-        min-width: 36px;
-        text-align: right;
-      }
-
-      /* Chips de resumen por fecha */
-      .fecha-summary {
+      .leyenda-item {
         display: flex;
         align-items: center;
         gap: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
       }
-
-      /* Vista tabular de fechas (grid) */
-      .grid-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.78rem;
-        table-layout: auto;
-      }
-      .grid-table th {
-        background: var(--bg-app);
-        color: var(--text-muted);
-        font-size: 0.72rem;
+      .leyenda-dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        padding: 8px 10px;
-        border-bottom: 2px solid var(--border);
-        white-space: nowrap;
+        flex-shrink: 0;
       }
-      .grid-table td {
-        padding: 8px 10px;
-        border-bottom: 1px solid var(--border);
-        color: var(--text-main);
-      }
-      .grid-table tr:last-child td {
-        border-bottom: none;
-      }
-      .grid-table tbody tr:hover td {
-        background: var(--bg-app);
-      }
-
-      .cell-p {
-        text-align: center;
-        font-size: 1rem;
+      .ld-p {
+        background: var(--success-light);
         color: var(--success);
       }
-      .cell-f {
-        text-align: center;
-        font-size: 1rem;
+      .ld-f {
+        background: var(--danger-light);
         color: var(--danger);
       }
-      .cell-n {
-        text-align: center;
-        font-size: 1rem;
-        color: var(--border);
+      .ld-n {
+        background: var(--border);
+        color: var(--text-muted);
       }
 
-      /* Tabs de vista */
+      /* ── Tabs de vista ───────────────────────────────────────── */
       .vista-tabs {
         display: flex;
         gap: 8px;
         margin-bottom: 18px;
+        flex-wrap: wrap;
       }
       .vista-tab {
-        padding: 7px 18px;
+        padding: 7px 16px;
         border: 1.5px solid var(--border);
         border-radius: 20px;
-        font-size: 0.82rem;
+        font-size: 0.81rem;
         font-weight: 600;
         cursor: pointer;
-        background: var(--bg-app);
+        background: var(--bg-alt);
         color: var(--text-muted);
         font-family: "Inter", sans-serif;
         transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
       .vista-tab.active {
         background: var(--primary);
@@ -180,18 +110,217 @@
         color: var(--primary);
       }
 
+      /* ── Stats de resumen ────────────────────────────────────── */
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      /* ── Tabla principal ─────────────────────────────────────── */
+      .la-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+      }
+      .la-table th {
+        background: var(--bg-alt);
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 9px 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+      .la-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+        vertical-align: middle;
+      }
+      .la-table tr:last-child td {
+        border-bottom: none;
+      }
+      .la-table tbody tr:hover td {
+        background: var(--bg-alt);
+      }
+
+      /* ── Tabla de grilla (modo calendario) ───────────────────── */
+      .grid-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+      .grid-table th {
+        background: var(--bg-alt);
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 8px 6px;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+        text-align: center;
+      }
+      .grid-table th.col-nombre {
+        text-align: left;
+        padding-left: 12px;
+        min-width: 160px;
+      }
+      .grid-table td {
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+        text-align: center;
+      }
+      .grid-table td.col-nombre {
+        text-align: left;
+        padding-left: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        position: sticky;
+        left: 0;
+        background: var(--card-bg);
+        z-index: 1;
+      }
+      .grid-table tbody tr:hover td {
+        background: var(--bg-alt);
+      }
+      .grid-table tbody tr:hover td.col-nombre {
+        background: var(--bg-alt);
+      }
+
+      /* Celda P / F / — */
+      .cp {
+        color: var(--success);
+        font-weight: 700;
+        font-size: 1rem;
+      }
+      .cf {
+        color: var(--danger);
+        font-weight: 700;
+        font-size: 1rem;
+      }
+      .cn {
+        color: var(--border);
+        font-size: 1rem;
+      }
+
+      /* ── Barra de % asistencia ───────────────────────────────── */
+      .pct-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 130px;
+      }
+      .pct-track {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .pct-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.45s ease;
+      }
+      .pct-num {
+        font-size: 0.8rem;
+        font-weight: 700;
+        min-width: 36px;
+        text-align: right;
+      }
+
+      /* ── Chip riesgo ─────────────────────────────────────────── */
+      .chip-riesgo {
+        font-size: 0.62rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 99px;
+        background: var(--danger-light);
+        color: var(--danger);
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+
+      /* ── Tabla solo-faltas ───────────────────────────────────── */
+      .faltas-alumno-header {
+        background: var(--bg-alt);
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+      }
+
+      /* ── Empty state ─────────────────────────────────────────── */
+      .la-empty {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-muted);
+      }
+      .la-empty iconify-icon {
+        font-size: 3rem;
+        display: block;
+        margin: 0 auto 14px;
+        opacity: 0.4;
+      }
+      .la-empty p {
+        font-size: 0.9rem;
+      }
+      .la-empty small {
+        font-size: 0.78rem;
+        opacity: 0.7;
+        display: block;
+        margin-top: 4px;
+      }
+
+      /* ── Info banner ─────────────────────────────────────────── */
+      .la-info {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: var(--primary-light);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        padding: 11px 14px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+      }
+      .la-info iconify-icon {
+        color: var(--primary);
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
       @media print {
         .sidebar,
-        .page-header-v2 button,
         .header-actions,
         .vista-tabs,
-        .card-filter-bar,
-        .btn {
+        .leyenda,
+        .selector-bar,
+        .btn,
+        .page-header-v2 .btn {
           display: none !important;
         }
         .content {
           margin-left: 0 !important;
           width: 100% !important;
+        }
+        .la-table th {
+          background: #eee !important;
+          color: #333 !important;
         }
       }
     </style>
@@ -200,19 +329,11 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <!-- Header -->
+        <!-- ── Encabezado ────────────────────────────────────────── -->
         <div class="page-header-v2">
           <div>
-            <h1 style="display: flex; align-items: center; gap: 10px">
-              <iconify-icon
-                icon="lucide:calendar-clock"
-                style="color: var(--primary)"
-              ></iconify-icon>
-              Historial de Asistencias
-            </h1>
-            <p class="page-subtitle">
-              Consulta el registro acumulado por grupo
-            </p>
+            <h1>Lista de Asistencia</h1>
+            <p class="page-subtitle">Historial acumulado por grupo</p>
           </div>
           <div class="header-actions">
             <a
@@ -220,7 +341,8 @@
               class="btn btn-outline"
               style="text-decoration: none"
             >
-              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Tomar lista
+              <iconify-icon icon="lucide:clipboard-check"></iconify-icon> Tomar
+              lista hoy
             </a>
             <button class="btn btn-outline" onclick="exportarCSV()">
               <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
@@ -231,50 +353,36 @@
           </div>
         </div>
 
-        <!-- Selector de grupo -->
-        <div class="card" style="padding: 16px 20px; margin-bottom: 18px">
-          <div
-            style="
-              display: flex;
-              gap: 14px;
-              flex-wrap: wrap;
-              align-items: flex-end;
-            "
-          >
-            <div
-              class="form-group"
-              style="margin: 0; flex: 1; min-width: 200px"
-            >
+        <!-- ── Card selector ─────────────────────────────────────── -->
+        <div class="card" style="margin-bottom: 18px; padding: 18px 22px">
+          <div class="selector-bar">
+            <div class="form-group">
               <label>Grupo</label>
               <select id="selGrupo" onchange="cargarHistorial()">
                 <option value="">— Selecciona un grupo —</option>
               </select>
             </div>
-            <div class="form-group" style="margin: 0">
+            <div class="form-group narrow">
               <label>Desde</label>
-              <input
-                type="date"
-                id="fechaDesde"
-                onchange="aplicarFiltroFechas()"
-              />
+              <input type="date" id="fechaDesde" onchange="aplicarFiltro()" />
             </div>
-            <div class="form-group" style="margin: 0">
+            <div class="form-group narrow">
               <label>Hasta</label>
-              <input
-                type="date"
-                id="fechaHasta"
-                onchange="aplicarFiltroFechas()"
-              />
+              <input type="date" id="fechaHasta" onchange="aplicarFiltro()" />
+            </div>
+            <div style="padding-bottom: 2px">
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="limpiarFiltroFechas()"
+              >
+                <iconify-icon icon="lucide:x"></iconify-icon> Limpiar fechas
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Stats -->
-        <div
-          id="statsRow"
-          class="stats-row"
-          style="display: none; margin-bottom: 18px"
-        >
+        <!-- ── Stats ─────────────────────────────────────────────── -->
+        <div class="stats-row" id="statsRow" style="display: none">
           <div class="stat-card stat-success">
             <iconify-icon icon="lucide:calendar-check"></iconify-icon>
             <div>
@@ -290,44 +398,71 @@
             </div>
           </div>
           <div class="stat-card stat-success">
-            <iconify-icon icon="lucide:user-check"></iconify-icon>
+            <iconify-icon icon="lucide:trending-up"></iconify-icon>
             <div>
-              <p id="stPctGrupo">—</p>
+              <p id="stPromedio">—</p>
               <span>Asistencia promedio</span>
             </div>
           </div>
           <div class="stat-card stat-danger">
-            <iconify-icon icon="lucide:user-x"></iconify-icon>
+            <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
             <div>
-              <p id="stAlRiesgo">—</p>
-              <span>Alumnos en riesgo (&lt;80%)</span>
+              <p id="stRiesgo">—</p>
+              <span>En riesgo (&lt;80%)</span>
             </div>
           </div>
         </div>
 
-        <!-- Tabs de vista -->
-        <div class="vista-tabs" id="vistaTabs" style="display: none">
-          <button
-            class="vista-tab active"
-            onclick="cambiarVista('resumen', this)"
-          >
-            <iconify-icon icon="lucide:layout-list"></iconify-icon> Resumen por
-            alumno
-          </button>
-          <button class="vista-tab" onclick="cambiarVista('grid', this)">
-            <iconify-icon icon="lucide:table"></iconify-icon> Tabla de fechas
-          </button>
-          <button class="vista-tab" onclick="cambiarVista('faltas', this)">
-            <iconify-icon icon="lucide:alert-triangle"></iconify-icon> Solo
-            faltas
-          </button>
+        <!-- ── Leyenda + tabs ────────────────────────────────────── -->
+        <div id="controlesVista" style="display: none">
+          <div class="leyenda">
+            <strong style="color: var(--text-main); margin-right: 4px"
+              >Simbología:</strong
+            >
+            <div class="leyenda-item">
+              <div class="leyenda-dot ld-p">P</div>
+              <span>Presente</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-dot ld-f">F</div>
+              <span>Falta</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-dot ld-n">—</div>
+              <span>Sin registro</span>
+            </div>
+            <span style="margin-left: auto; opacity: 0.6">
+              Los registros se guardan localmente en este dispositivo.
+            </span>
+          </div>
+
+          <div class="vista-tabs">
+            <button
+              class="vista-tab active"
+              onclick="cambiarVista('resumen', this)"
+            >
+              <iconify-icon icon="lucide:layout-list"></iconify-icon> Resumen
+              por alumno
+            </button>
+            <button class="vista-tab" onclick="cambiarVista('grid', this)">
+              <iconify-icon icon="lucide:table-2"></iconify-icon> Tabla de
+              fechas
+            </button>
+            <button class="vista-tab" onclick="cambiarVista('faltas', this)">
+              <iconify-icon icon="lucide:user-x"></iconify-icon> Solo faltas
+            </button>
+          </div>
         </div>
 
-        <!-- Contenido principal -->
+        <!-- ── Contenido dinámico ────────────────────────────────── -->
         <div id="mainContent">
-          <div class="empty-state" id="emptyState">
+          <div class="la-empty">
             <iconify-icon icon="lucide:calendar-search"></iconify-icon>
-            <p>Selecciona un grupo para ver el historial de asistencias.</p>
+            <p>Selecciona un grupo para ver su lista de asistencia.</p>
+            <small
+              >Los datos se obtienen del dispositivo donde se tomó la
+              lista.</small
+            >
           </div>
         </div>
       </main>
@@ -342,15 +477,14 @@
 
       let grupoActual = null;
       let alumnosGrupo = [];
-      let todasFechas = []; // ordenadas
+      let todasFechas = [];
       let vistaActual = "resumen";
 
       soloPermitido("maestro", "administrador");
 
-      // ── Init ──────────────────────────────────────────────────────
+      /* ── Init ──────────────────────────────────────────────────── */
       (async function init() {
         await cargarGrupos();
-        // Restaurar último grupo de asistencia.html
         const ug = localStorage.getItem("asist_ultimo_grupo");
         if (ug) {
           const sel = document.getElementById("selGrupo");
@@ -361,6 +495,7 @@
         }
       })();
 
+      /* ── Cargar grupos ─────────────────────────────────────────── */
       async function cargarGrupos() {
         let grupos = [];
         try {
@@ -383,15 +518,16 @@
         });
       }
 
+      /* ── Cargar historial del grupo seleccionado ───────────────── */
       async function cargarHistorial() {
         grupoActual = document.getElementById("selGrupo").value;
         if (!grupoActual) {
           mostrarVacio();
           return;
         }
+
         localStorage.setItem("asist_ultimo_grupo", grupoActual);
 
-        // Cargar lista de alumnos del grupo
         try {
           const r = await fetch(
             `${BASE}/api/inscripciones/grupo/${grupoActual}`,
@@ -400,30 +536,31 @@
             },
           );
           const data = await r.json();
-          alumnosGrupo = (data || []).map((a) => ({
-            matricula: a.matricula,
-            nombre:
-              `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
-          }));
+          alumnosGrupo = (data || [])
+            .map((a) => ({
+              matricula: a.matricula,
+              nombre:
+                `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
+            }))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
         } catch (_) {
           alumnosGrupo = [];
         }
 
         construirFechas();
-        aplicarFiltroFechas();
+        aplicarFiltro();
       }
 
       function construirFechas() {
-        // Recopilar todas las fechas registradas en localStorage para este grupo
-        const fechasSet = new Set();
+        const set = new Set();
         alumnosGrupo.forEach((a) => {
           const reg = getRegistro(a.matricula);
-          Object.keys(reg).forEach((f) => fechasSet.add(f));
+          Object.keys(reg).forEach((f) => set.add(f));
         });
-        todasFechas = [...fechasSet].sort();
+        todasFechas = [...set].sort();
       }
 
-      function aplicarFiltroFechas() {
+      function aplicarFiltro() {
         const desde = document.getElementById("fechaDesde").value;
         const hasta = document.getElementById("fechaHasta").value;
         const fechas = todasFechas.filter(
@@ -432,44 +569,56 @@
         renderVista(fechas);
       }
 
+      function limpiarFiltroFechas() {
+        document.getElementById("fechaDesde").value = "";
+        document.getElementById("fechaHasta").value = "";
+        aplicarFiltro();
+      }
+
+      /* ── Render principal ──────────────────────────────────────── */
       function renderVista(fechas) {
-        if (!alumnosGrupo.length && !fechas.length) {
+        if (!alumnosGrupo.length) {
           mostrarVacio();
           return;
         }
 
         document.getElementById("statsRow").style.display = "grid";
-        document.getElementById("vistaTabs").style.display = "flex";
-        document.getElementById("emptyState").style.display = "none";
+        document.getElementById("controlesVista").style.display = "block";
 
-        calcularStats(fechas);
+        actualizarStats(fechas);
 
         if (vistaActual === "resumen") renderResumen(fechas);
         else if (vistaActual === "grid") renderGrid(fechas);
         else renderFaltas(fechas);
       }
 
-      function calcularStats(fechas) {
+      /* ── Stats ─────────────────────────────────────────────────── */
+      function actualizarStats(fechas) {
         document.getElementById("stClases").textContent = fechas.length;
         document.getElementById("stAlumnos").textContent = alumnosGrupo.length;
 
-        let totalPct = 0,
-          enRiesgo = 0;
+        let suma = 0,
+          riesgo = 0;
         alumnosGrupo.forEach((a) => {
           const pct = getPct(a.matricula, fechas);
           if (pct !== null) {
-            totalPct += pct;
-            if (pct < 80) enRiesgo++;
+            suma += pct;
+            if (pct < 80) riesgo++;
           }
         });
-        const promedio = alumnosGrupo.length
-          ? Math.round(totalPct / alumnosGrupo.length)
+        const prom = alumnosGrupo.length
+          ? Math.round(suma / alumnosGrupo.length)
           : 0;
-        document.getElementById("stPctGrupo").textContent = promedio + "%";
-        document.getElementById("stAlRiesgo").textContent = enRiesgo;
+        document.getElementById("stPromedio").textContent = prom + "%";
+        document.getElementById("stRiesgo").textContent = riesgo;
       }
 
+      /* ── Vista: Resumen por alumno (tabla simple) ──────────────── */
       function renderResumen(fechas) {
+        if (!fechas.length) {
+          document.getElementById("mainContent").innerHTML = sinFechasHTML();
+          return;
+        }
         const rows = alumnosGrupo
           .map((a) => {
             const reg = getRegistro(a.matricula);
@@ -479,184 +628,220 @@
             const pct = fechas.length
               ? Math.round((pres / fechas.length) * 100)
               : null;
-            const color =
-              pct === null
-                ? "#94a3b8"
-                : pct >= 80
-                  ? "var(--success)"
-                  : pct >= 60
-                    ? "var(--warning)"
-                    : "var(--danger)";
+            const col = pctColor(pct);
             const riesgo =
               pct !== null && pct < 80
-                ? `<span class="badge badge-danger" style="font-size:0.68rem;margin-left:6px">RIESGO</span>`
+                ? `<span class="chip-riesgo">RIESGO</span>`
                 : "";
 
             return `<tr>
-            <td style="font-weight:600">${a.nombre} ${riesgo}</td>
-            <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
-            <td style="text-align:center;color:var(--success);font-weight:600">${pres}</td>
-            <td style="text-align:center;color:var(--danger);font-weight:600">${falt}</td>
-            <td style="text-align:center;color:var(--text-muted)">${sinR}</td>
-            <td>
-              <div class="pct-bar-wrap">
-                <div class="pct-bar-track">
-                  <div class="pct-bar-fill" style="width:${pct ?? 0}%;background:${color}"></div>
-                </div>
-                <span class="pct-num" style="color:${color}">${pct !== null ? pct + "%" : "—"}</span>
-              </div>
-            </td>
-          </tr>`;
+        <td style="font-weight:600">${a.nombre}${riesgo}</td>
+        <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+        <td style="text-align:center;font-weight:700;color:var(--success)">${pres}</td>
+        <td style="text-align:center;font-weight:700;color:var(--danger)">${falt}</td>
+        <td style="text-align:center;color:var(--text-muted)">${sinR}</td>
+        <td>
+          <div class="pct-wrap">
+            <div class="pct-track"><div class="pct-fill" style="width:${pct ?? 0}%;background:${col}"></div></div>
+            <span class="pct-num" style="color:${col}">${pct !== null ? pct + "%" : "—"}</span>
+          </div>
+        </td>
+      </tr>`;
           })
           .join("");
 
         document.getElementById("mainContent").innerHTML = `
-          <div class="card" style="padding:0;overflow:hidden">
-            <div style="overflow-x:auto">
-              <table class="hist-table">
-                <thead>
-                  <tr>
-                    <th>Alumno</th>
-                    <th>Matrícula</th>
-                    <th style="text-align:center">✓ Presentes</th>
-                    <th style="text-align:center">✗ Faltas</th>
-                    <th style="text-align:center">— Sin reg.</th>
-                    <th style="min-width:160px">% Asistencia</th>
-                  </tr>
-                </thead>
-                <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Sin registros en el período seleccionado.</td></tr>'}</tbody>
-              </table>
-            </div>
-          </div>`;
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto">
+          <table class="la-table">
+            <thead>
+              <tr>
+                <th>Alumno</th>
+                <th>Matrícula</th>
+                <th style="text-align:center">Presentes</th>
+                <th style="text-align:center">Faltas</th>
+                <th style="text-align:center">Sin reg.</th>
+                <th style="min-width:150px">% Asistencia</th>
+              </tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted)">Sin registros en el período.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
       }
 
+      /* ── Vista: Tabla de fechas (tipo hoja de asistencia) ──────── */
       function renderGrid(fechas) {
         if (!fechas.length) {
-          document.getElementById("mainContent").innerHTML =
-            `<div class="empty-state"><iconify-icon icon="lucide:calendar-x"></iconify-icon><p>No hay fechas registradas en el período.</p></div>`;
+          document.getElementById("mainContent").innerHTML = sinFechasHTML();
           return;
         }
 
-        const headerCells = fechas
-          .map(
-            (f) =>
-              `<th title="${f}" style="text-align:center;font-size:0.68rem">${fmtFechaCorta(f)}</th>`,
-          )
+        // Cabeceras de fecha: DD/MM con día de semana abreviado
+        const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        const headerCols = fechas
+          .map((f) => {
+            const [y, m, d] = f.split("-");
+            const wd = dias[new Date(+y, +m - 1, +d).getDay()];
+            return `<th title="${f}" style="min-width:48px">
+        <div style="font-size:0.7rem;opacity:.7">${wd}</div>
+        <div>${d}/${m}</div>
+      </th>`;
+          })
           .join("");
 
         const rows = alumnosGrupo
           .map((a) => {
             const reg = getRegistro(a.matricula);
             const pct = getPct(a.matricula, fechas);
-            const color =
-              pct === null
-                ? "#94a3b8"
-                : pct >= 80
-                  ? "var(--success)"
-                  : pct >= 60
-                    ? "var(--warning)"
-                    : "var(--danger)";
+            const col = pctColor(pct);
             const cells = fechas
               .map((f) => {
                 const est = reg[f];
                 if (est === "presente")
-                  return `<td class="cell-p" title="Presente ${f}">✓</td>`;
+                  return `<td class="cp" title="Presente — ${f}">P</td>`;
                 if (est === "falta")
-                  return `<td class="cell-f" title="Falta ${f}">✗</td>`;
-                return `<td class="cell-n" title="Sin registro ${f}">—</td>`;
+                  return `<td class="cf" title="Falta — ${f}">F</td>`;
+                return `<td class="cn" title="Sin registro — ${f}">—</td>`;
               })
               .join("");
+
             return `<tr>
-            <td style="font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--card-bg);z-index:1">${a.nombre}</td>
-            <td style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap">${a.matricula}</td>
-            ${cells}
-            <td style="text-align:center;font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
-          </tr>`;
+        <td class="col-nombre">${a.nombre}</td>
+        ${cells}
+        <td style="text-align:center;font-weight:700;color:${col};white-space:nowrap">
+          ${pct !== null ? pct + "%" : "—"}
+        </td>
+      </tr>`;
           })
           .join("");
 
         document.getElementById("mainContent").innerHTML = `
-          <div class="card" style="padding:0;overflow:hidden">
-            <div style="overflow-x:auto;max-width:100%">
-              <table class="grid-table">
-                <thead>
-                  <tr>
-                    <th style="position:sticky;left:0;background:var(--bg-app);z-index:2">Alumno</th>
-                    <th>Matrícula</th>
-                    ${headerCells}
-                    <th style="text-align:center">Total %</th>
-                  </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>
-          </div>`;
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto;max-width:100%">
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th class="col-nombre">Alumno</th>
+                ${headerCols}
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
       }
 
+      /* ── Vista: Solo faltas (lista por alumno) ─────────────────── */
       function renderFaltas(fechas) {
-        // Solo muestra alumnos con al menos una falta en el período
-        const filas = [];
-        alumnosGrupo.forEach((a) => {
-          const reg = getRegistro(a.matricula);
-          const faltasFechas = fechas.filter((f) => reg[f] === "falta");
-          if (!faltasFechas.length) return;
-          const pct = getPct(a.matricula, fechas);
-          const color =
-            pct !== null && pct < 80 ? "var(--danger)" : "var(--warning)";
-          faltasFechas.forEach((f) => {
-            filas.push(`<tr>
-              <td style="font-weight:600">${a.nombre}</td>
-              <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
-              <td class="fecha-col">${fmtFechaLarga(f)}</td>
-              <td><span class="badge badge-danger">Falta</span></td>
-              <td style="font-weight:700;color:${color}">${pct !== null ? pct + "%" : "—"}</td>
-            </tr>`);
-          });
-        });
+        const conFaltas = alumnosGrupo
+          .map((a) => {
+            const reg = getRegistro(a.matricula);
+            const faltas = fechas.filter((f) => reg[f] === "falta");
+            return { ...a, faltas, pct: getPct(a.matricula, fechas) };
+          })
+          .filter((a) => a.faltas.length > 0)
+          .sort((a, b) => a.faltas.length - b.faltas.length) // más faltas al final
+          .reverse();
+
+        if (!conFaltas.length) {
+          document.getElementById("mainContent").innerHTML = `
+        <div class="card">
+          <div class="la-empty" style="padding:36px">
+            <iconify-icon icon="lucide:party-popper"></iconify-icon>
+            <p>¡Sin faltas en el período seleccionado!</p>
+            <small>Todos los alumnos tienen asistencia perfecta.</small>
+          </div>
+        </div>`;
+          return;
+        }
+
+        const grupos = conFaltas
+          .map((a) => {
+            const col = pctColor(a.pct);
+            const filas = a.faltas
+              .map((f) => {
+                const [y, m, d] = f.split("-");
+                const fecha = new Date(+y, +m - 1, +d);
+                const dias = [
+                  "Domingo",
+                  "Lunes",
+                  "Martes",
+                  "Miércoles",
+                  "Jueves",
+                  "Viernes",
+                  "Sábado",
+                ];
+                return `<tr>
+          <td style="padding-left:24px;font-size:0.82rem;color:var(--text-muted)">
+            ${dias[fecha.getDay()]} ${d}/${m}/${y}
+          </td>
+          <td><span class="badge badge-danger">Falta</span></td>
+        </tr>`;
+              })
+              .join("");
+
+            return `
+        <div class="faltas-alumno-header">
+          <span style="font-weight:700;color:var(--text-main)">${a.nombre}</span>
+          <span style="margin-left:8px;font-size:0.72rem;color:var(--text-muted)">${a.matricula}</span>
+          <span style="margin-left:12px;font-weight:700;color:${col}">${a.faltas.length} falta${a.faltas.length > 1 ? "s" : ""}</span>
+          ${a.pct !== null && a.pct < 80 ? '<span class="chip-riesgo">RIESGO</span>' : ""}
+        </div>
+        ${filas}`;
+          })
+          .join("");
 
         document.getElementById("mainContent").innerHTML = `
-          <div class="card" style="padding:0;overflow:hidden">
-            <div style="overflow-x:auto">
-              <table class="hist-table">
-                <thead>
-                  <tr>
-                    <th>Alumno</th>
-                    <th>Matrícula</th>
-                    <th>Fecha de falta</th>
-                    <th>Estado</th>
-                    <th>Asistencia total</th>
-                  </tr>
-                </thead>
-                <tbody>${
-                  filas.length
-                    ? filas.join("")
-                    : '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Sin faltas en el período seleccionado. 🎉</td></tr>'
-                }</tbody>
-              </table>
-            </div>
-          </div>`;
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto">
+          <table class="la-table">
+            <thead>
+              <tr>
+                <th>Alumno / Fecha de falta</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>${grupos}</tbody>
+          </table>
+        </div>
+      </div>`;
       }
 
+      /* ── Cambiar vista ─────────────────────────────────────────── */
       function cambiarVista(vista, btn) {
         vistaActual = vista;
         document
           .querySelectorAll(".vista-tab")
           .forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        aplicarFiltroFechas();
+        aplicarFiltro();
       }
 
+      /* ── Vacío ─────────────────────────────────────────────────── */
       function mostrarVacio() {
         document.getElementById("statsRow").style.display = "none";
-        document.getElementById("vistaTabs").style.display = "none";
-        document.getElementById("mainContent").innerHTML =
-          `<div class="empty-state" id="emptyState">
-             <iconify-icon icon="lucide:calendar-search"></iconify-icon>
-             <p>Selecciona un grupo para ver el historial de asistencias.</p>
-           </div>`;
+        document.getElementById("controlesVista").style.display = "none";
+        document.getElementById("mainContent").innerHTML = `
+      <div class="la-empty">
+        <iconify-icon icon="lucide:calendar-search"></iconify-icon>
+        <p>Selecciona un grupo para ver su lista de asistencia.</p>
+        <small>Los registros se guardan en este dispositivo al tomar lista.</small>
+      </div>`;
       }
 
-      // ── Helpers ────────────────────────────────────────────────────
+      function sinFechasHTML() {
+        return `<div class="card">
+      <div class="la-empty" style="padding:36px">
+        <iconify-icon icon="lucide:calendar-x"></iconify-icon>
+        <p>No hay fechas registradas para este grupo.</p>
+        <small>Ve a <strong>Tomar lista hoy</strong> para comenzar a registrar asistencia.</small>
+      </div>
+    </div>`;
+      }
+
+      /* ── Helpers ───────────────────────────────────────────────── */
       function getRegistro(matricula) {
         try {
           return (
@@ -676,22 +861,17 @@
         return Math.round((pres / fechas.length) * 100);
       }
 
-      function fmtFechaCorta(f) {
-        // f = YYYY-MM-DD → DD/MM
-        const [, m, d] = f.split("-");
-        return `${d}/${m}`;
+      function pctColor(pct) {
+        if (pct === null) return "var(--text-muted)";
+        if (pct >= 80) return "var(--success)";
+        if (pct >= 60) return "var(--warning)";
+        return "var(--danger)";
       }
 
-      function fmtFechaLarga(f) {
-        if (typeof fmtFecha === "function") return fmtFecha(f);
-        const [a, m, d] = f.split("-");
-        return `${d}/${m}/${a}`;
-      }
-
+      /* ── Exportar CSV ──────────────────────────────────────────── */
       function exportarCSV() {
         if (!alumnosGrupo.length) {
-          if (typeof showToast === "function")
-            showToast("Sin datos para exportar", "info");
+          showToast("Sin datos para exportar", "info");
           return;
         }
         const fechas = todasFechas;
@@ -714,11 +894,10 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `historial_asist_g${grupoActual}.csv`;
+        link.download = `asistencia_g${grupoActual}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-        if (typeof showToast === "function")
-          showToast("CSV exportado", "success");
+        showToast("CSV exportado correctamente");
       }
     </script>
   </body>

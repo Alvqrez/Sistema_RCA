@@ -121,26 +121,35 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card card-collapsible">
           <div class="card-title">
             <iconify-icon icon="mdi:calendar-multiple"></iconify-icon>
             Lista de periodos
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
           </div>
-          <div class="tabla-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Descripción</th>
-                  <th>Año</th>
-                  <th>Inicio</th>
-                  <th>Fin</th>
-                  <th>Estatus</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tablaPeriodos"></tbody>
-            </table>
+          <div class="card-body">
+            <div class="tabla-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Descripción</th>
+                    <th>Año</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaPeriodos"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>

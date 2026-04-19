@@ -45,20 +45,31 @@
         </div>
 
         <!-- Tabla -->
-        <div class="card">
-          <h2>Lista de materias</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Clave</th>
-                <th>Nombre</th>
-                <th>Créditos</th>
-                <th>Unidades</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaMaterias"></tbody>
-          </table>
+        <div class="card card-collapsible">
+          <div class="card-title">
+            Lista de materias
+            <button
+              class="card-toggle-btn"
+              onclick="toggleCard(this)"
+              title="Contraer"
+            >
+              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+            </button>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Clave</th>
+                  <th>Nombre</th>
+                  <th>Créditos</th>
+                  <th>Unidades</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaMaterias"></tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>

@@ -274,34 +274,32 @@
             </button>
           </div>
 
-          <div class="table-filters">
-            <div style="display: flex; gap: 12px; flex-wrap: wrap">
-              <div class="field-group" style="flex: 1; min-width: 160px">
-                <label>Filtrar por grupo</label>
-                <select id="filtroGrupoInsc" onchange="filtrarTablaInsc()">
-                  <option value="">Todos</option>
-                </select>
-              </div>
-              <div class="field-group" style="flex: 1; min-width: 120px">
-                <label>Estatus</label>
-                <select id="filtroEstatusInsc" onchange="filtrarTablaInsc()">
-                  <option value="">Todos</option>
-                  <option value="Cursando">Cursando</option>
-                  <option value="Baja">Baja</option>
-                  <option value="Aprobado">Aprobado</option>
-                  <option value="Reprobado">Reprobado</option>
-                </select>
-              </div>
-              <div class="field-group" style="flex: 2; min-width: 180px">
-                <label>Buscar</label>
-                <input
-                  type="text"
-                  id="buscarInsc"
-                  placeholder="Nombre o matrícula..."
-                  oninput="filtrarTablaInsc()"
-                />
-              </div>
-            </div>
+          <div class="card-filter-bar" style="margin-bottom: 16px">
+            <input
+              type="text"
+              id="buscarInsc"
+              placeholder="Buscar por nombre o matrícula…"
+              oninput="filtrarTablaInsc()"
+              style="flex: 2; min-width: 200px"
+            />
+            <select
+              id="filtroGrupoInsc"
+              onchange="filtrarTablaInsc()"
+              style="min-width: 180px"
+            >
+              <option value="">Todos los grupos</option>
+            </select>
+            <select
+              id="filtroEstatusInsc"
+              onchange="filtrarTablaInsc()"
+              style="min-width: 130px"
+            >
+              <option value="">Todos los estatus</option>
+              <option value="Cursando">Cursando</option>
+              <option value="Baja">Baja</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Reprobado">Reprobado</option>
+            </select>
           </div>
 
           <div class="tabla-wrapper">
