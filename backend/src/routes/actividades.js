@@ -120,8 +120,7 @@ router.post("/", maestroOAdmin, (req, res) => {
           id_unidad,
           nombre_actividad,
           pond,
-          tipo_evaluacion ?? "Sumativa",
-          fecha_entrega ?? null,
+          tipo_evaluacion ?? "Sumativa",          fecha_entrega ?? null,
         ],
         (err2, result2) => {
           if (err2)

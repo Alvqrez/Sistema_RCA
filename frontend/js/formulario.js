@@ -1508,10 +1508,13 @@ async function renderBonusFinalTabla() {
 }
 
 function abrirModalBonusFinal(matricula, nombre, calActual) {
+  const maxBonus = Math.max(0, parseFloat((100 - calActual).toFixed(2)));
   document.getElementById("bonusFinalMatricula").value  = matricula;
   document.getElementById("bonusFinalNombreAlumno").textContent = nombre;
   document.getElementById("bonusFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
   document.getElementById("bonusFinalPuntos").value       = "";
+  document.getElementById("bonusFinalPuntos").max         = maxBonus;
+  document.getElementById("bonusFinalPuntos").placeholder = `Máx: ${maxBonus} pts`;
   document.getElementById("bonusFinalJustificacion").value = "";
   document.getElementById("modalBonusFinal").style.display = "flex";
 }
@@ -1522,10 +1525,13 @@ function cerrarModalBonusFinal() {
 
 async function guardarBonusFinal() {
   const matricula     = document.getElementById("bonusFinalMatricula").value;
-  const puntos        = parseFloat(document.getElementById("bonusFinalPuntos").value);
+  const inputPuntos   = document.getElementById("bonusFinalPuntos");
+  const puntos        = parseFloat(inputPuntos.value);
+  const maxBonus      = parseFloat(inputPuntos.max) || 100;
   const justificacion = document.getElementById("bonusFinalJustificacion").value.trim();
 
   if (!puntos || puntos <= 0) return mostrarToast("Ingresa puntos válidos", "error");
+  if (puntos > maxBonus)      return mostrarToast(`El máximo de puntos disponible es ${maxBonus}`, "error");
   if (!justificacion)         return mostrarToast("La justificación es obligatoria", "error");
 
   try {

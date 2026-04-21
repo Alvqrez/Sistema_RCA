@@ -433,7 +433,13 @@ function actualizarSumaRubros(id_grupo, id_unidad) {
     .querySelectorAll(
       `.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`,
     )
-    .forEach((inp) => (suma += parseFloat(inp.value) || 0));
+    .forEach((inp) => {
+      // clamp: no permite valores negativos ni mayores a 100
+      let v = parseFloat(inp.value);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > 100) { v = 100; inp.value = 100; }
+      suma += v;
+    });
   const badge = document.getElementById(`suma-badge-${id_grupo}-${id_unidad}`);
   if (!badge) return;
   const ok = Math.abs(suma - 100) < 0.01;
@@ -675,12 +681,29 @@ document.addEventListener("click", (e) => {
   if (e.target.id === "modalAgregarRubro") cerrarModalRubro();
 });
 
+let _pendingEliminarRubro = null;
+
 function eliminarRubroGrupo(id_grupo, key) {
   if (getRubrosGrupo(id_grupo).length <= 1) {
     showToast("Debe quedar al menos un rubro", "error");
     return;
   }
-  if (!confirm("¿Eliminar este rubro de todas las unidades del grupo?")) return;
+  const rubro = getRubrosGrupo(id_grupo).find((r) => r.key === key);
+  _pendingEliminarRubro = { id_grupo, key };
+  document.getElementById("eliminarRubroNombre").textContent =
+    rubro ? rubro.nombre : key;
+  document.getElementById("modalEliminarRubro").classList.add("visible");
+}
+
+function cerrarModalEliminarRubro() {
+  document.getElementById("modalEliminarRubro").classList.remove("visible");
+  _pendingEliminarRubro = null;
+}
+
+function ejecutarEliminarRubro() {
+  if (!_pendingEliminarRubro) return;
+  const { id_grupo, key } = _pendingEliminarRubro;
+  cerrarModalEliminarRubro();
   const esDefault = RUBROS_DEFAULT.find((r) => r.key === key);
   if (esDefault) {
     const ocultos = getDefaultsOcultos(id_grupo);
@@ -695,9 +718,35 @@ function eliminarRubroGrupo(id_grupo, key) {
   showToast("Rubro eliminado", "info");
 }
 
+
 async function rerenderGrupoBody(id_grupo) {
   const bodyEl = document.getElementById(`body-${id_grupo}`);
   if (!bodyEl) return;
+
+  // actualizar chips del toolbar síncronamente (sin esperar fetch)
+  const rubrosActuales = getRubrosGrupo(id_grupo);
+  const cnt = document.getElementById(`rubros-count-${id_grupo}`);
+  if (cnt) cnt.textContent = rubrosActuales.length;
+  const toolbarInfo = bodyEl.querySelector(".rubros-toolbar-info");
+  if (toolbarInfo) {
+    // reconstruir solo los chips dentro del toolbar
+    const chipsHtml = rubrosActuales
+      .map(
+        (r) =>
+          `<span class="rubro-chip">${r.nombre} <button onclick="eliminarRubroGrupo(${id_grupo},'${r.key}')">×</button></span>`,
+      )
+      .join("");
+    // preservar el span del conteo y agregar chips
+    const spanConteo = toolbarInfo.querySelector("span");
+    if (spanConteo) {
+      // quitar chips viejos
+      Array.from(toolbarInfo.querySelectorAll(".rubro-chip")).forEach((el) =>
+        el.remove(),
+      );
+      toolbarInfo.insertAdjacentHTML("beforeend", chipsHtml);
+    }
+  }
+
   const grupo = misGrupos.find((g) => g.id_grupo === id_grupo);
   const unidades =
     unidadesPorGrupo[id_grupo] ||
@@ -706,8 +755,8 @@ async function rerenderGrupoBody(id_grupo) {
     grupo || { id_grupo, nombre_materia: "" },
     unidades,
   );
-  const cnt = document.getElementById(`rubros-count-${id_grupo}`);
-  if (cnt) cnt.textContent = getRubrosGrupo(id_grupo).length;
+  const cnt2 = document.getElementById(`rubros-count-${id_grupo}`);
+  if (cnt2) cnt2.textContent = getRubrosGrupo(id_grupo).length;
 }
 
 function actualizarBadgeGrupo(id_grupo) {

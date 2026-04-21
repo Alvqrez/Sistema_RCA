@@ -282,7 +282,7 @@ function limpiarForm() {
    "f_curp","f_fnac","f_genero","f_direccion","f_celular","f_tel_casa",
    "f_correo_personal","f_username","f_password"].forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.value = "";
+    if (el) { el.value = ""; delete el.dataset.editado; }
   });
   const errEl = document.getElementById("modalError");
   if (errEl) errEl.style.display = "none";

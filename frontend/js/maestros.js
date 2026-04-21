@@ -356,7 +356,7 @@ function limpiarForm() {
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.value = "";
+    if (el) { el.value = ""; delete el.dataset.editado; }
   });
   const estEl = document.getElementById("f_estatus");
   if (estEl) estEl.value = "Activo";

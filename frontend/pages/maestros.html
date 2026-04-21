@@ -290,7 +290,8 @@
             <div class="form-grid-2">
               <div class="form-group">
                 <label>No. de Empleado *</label>
-                <input type="text" id="f_num_emp" placeholder="Ej: E001" />
+                <input type="text" id="f_num_emp" placeholder="Ej: E001"
+                       oninput="const u=document.getElementById('f_username');if(!u.dataset.editado)u.value=this.value.toUpperCase()" />
               </div>
               <div class="form-group">
                 <label>Correo institucional *</label>
@@ -343,6 +344,7 @@
                   id="f_username"
                   placeholder="Ej: jgarcia"
                   autocomplete="off"
+                  oninput="this.dataset.editado='1'"
                 />
               </div>
               <div class="form-group" id="grupoPassword">

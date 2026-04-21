@@ -337,17 +337,7 @@ function renderTablaActividades(actividades) {
     tr.id = `fila-act-${a.id_actividad}`;
     if (esActiva) tr.classList.add("fila-activa");
 
-    const tipoMap = {
-      Sumativa: "tipo-sum",
-      Formativa: "tipo-for",
-      Diagnostica: "tipo-dia",
-    };
-    const tipoLabel = {
-      Sumativa: "Sumativa",
-      Formativa: "Formativa",
-      Diagnostica: "Diagnóstica",
-    };
-    const tipoClass = tipoMap[a.tipo_evaluacion] || "tipo-sum";
+    const tipoClass = "";
 
     tr.innerHTML = `
       <td><span style="font-weight:600">${a.nombre_actividad}</span></td>
@@ -358,9 +348,6 @@ function renderTablaActividades(actividades) {
         </span>
       </td>
       <td><span class="pond-chip chip-act">${a.ponderacion}%</span></td>
-      <td>
-        <span class="tipo-badge ${tipoClass}">${tipoLabel[a.tipo_evaluacion] || a.tipo_evaluacion || "—"}</span>
-      </td>
       <td style="font-size:0.82rem;color:var(--text-muted)">${a.fecha_entrega ? formatFecha(a.fecha_entrega) : "—"}</td>
       <td id="conteo-${a.id_actividad}">
         <span style="font-size:0.8rem;color:var(--text-muted)">—</span>
@@ -431,8 +418,7 @@ async function registrarActividad() {
     id_unidad,
     nombre_actividad,
     ponderacion,
-    tipo_evaluacion:
-      document.getElementById("tipoEvaluacion")?.value || "Sumativa",
+    tipo_evaluacion: "Sumativa",
     fecha_entrega,
   };
 
@@ -825,8 +811,7 @@ async function guardarEdicionActividad() {
   const ponderacion = parseFloat(
     document.getElementById("editPonderacion").value,
   );
-  const tipo_evaluacion =
-    document.getElementById("editTipo")?.value || "Sumativa";
+  const tipo_evaluacion = "Sumativa";
   const fecha_entrega = document.getElementById("editFecha").value || null;
   const errEl = document.getElementById("editError");
 

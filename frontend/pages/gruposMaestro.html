@@ -566,6 +566,33 @@
       </div>
     </div>
 
+    <!-- Modal confirmar eliminar rubro -->
+    <div class="modal-overlay" id="modalEliminarRubro">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2 style="display:flex;align-items:center;gap:8px">
+            <iconify-icon icon="lucide:trash-2" style="color:var(--danger)"></iconify-icon>
+            Eliminar rubro
+          </h2>
+          <button class="modal-close" onclick="cerrarModalEliminarRubro()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin:0;font-size:0.95rem">
+            ¿Eliminar el rubro <strong id="eliminarRubroNombre"></strong> de todas las unidades de este grupo?
+          </p>
+          <p style="margin:10px 0 0;font-size:0.85rem;color:var(--text-muted)">
+            Los porcentajes guardados para ese rubro se perderán.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalEliminarRubro()">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarEliminarRubro" onclick="ejecutarEliminarRubro()">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon> Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <style>
       .icon-opt {
         width: 38px;

@@ -119,7 +119,8 @@
           <div class="form-grid-2">
             <div class="form-group">
               <label>No. de Control *</label>
-              <input type="text" id="f_matricula" placeholder="Ej: 21VE0001" />
+              <input type="text" id="f_matricula" placeholder="Ej: 21VE0001" maxlength="8"
+                     oninput="const u=document.getElementById('f_username');if(!u.dataset.editado)u.value=this.value.toUpperCase()" />
             </div>
             <div class="form-group">
               <label>Carrera *</label>
@@ -129,7 +130,7 @@
             </div>
             <div class="form-group">
               <label>Usuario (login) *</label>
-              <input type="text" id="f_username" />
+              <input type="text" id="f_username" oninput="this.dataset.editado='1'" />
             </div>
             <div class="form-group" id="grupoPassword">
               <label>Contraseña inicial *</label>
@@ -185,11 +186,11 @@
             </div>
             <div class="form-group">
               <label>Tel. celular</label>
-              <input type="text" id="f_celular" />
+              <input type="tel" id="f_celular" inputmode="numeric" pattern="[0-9]*" maxlength="10" />
             </div>
             <div class="form-group">
               <label>Tel. casa</label>
-              <input type="text" id="f_tel_casa" />
+              <input type="tel" id="f_tel_casa" inputmode="numeric" pattern="[0-9]*" maxlength="10" />
             </div>
             <div class="form-group span-2">
               <label>Correo personal</label>

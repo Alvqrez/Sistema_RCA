@@ -80,6 +80,27 @@ router.post("/", soloAdmin, (req, res) => {
   if (!matricula || !id_grupo)
     return res.status(400).json({ error: "Matrícula y grupo son requeridos" });
 
+  // Verificar que el alumno no esté ya inscrito en otro grupo de la misma materia en el mismo periodo
+  const sqlDuplicado = `
+    SELECT i.id_grupo
+    FROM inscripcion i
+    JOIN grupo g_dest ON g_dest.id_grupo = ?
+    JOIN grupo g_actual ON g_actual.id_grupo = i.id_grupo
+    WHERE i.matricula = ?
+      AND g_actual.clave_materia = g_dest.clave_materia
+      AND g_actual.id_periodo    = g_dest.id_periodo
+      AND i.estatus != 'Baja'
+    LIMIT 1
+  `;
+  db.query(sqlDuplicado, [id_grupo, matricula], (errDup, dupRows) => {
+    if (errDup)
+      return res.status(500).json({ error: "Error interno del servidor" });
+
+    if (dupRows.length > 0)
+      return res.status(409).json({
+        error: `El alumno ya está inscrito en un grupo de esta materia en el mismo periodo (Grupo #${dupRows[0].id_grupo}).`,
+      });
+
   // BUG 3 FIX: verificar capacidad máxima antes de insertar
   const sqlCapacidad = `
     SELECT g.limite_alumnos,
@@ -129,6 +150,7 @@ router.post("/", soloAdmin, (req, res) => {
       },
     );
   });
+  }); // cierre sqlDuplicado
 });
 
 // POST — inscripción masiva (varios alumnos a un grupo)
