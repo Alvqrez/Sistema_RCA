@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
-      /* ── Tarjeta de grupo ───────────────────────────────────────── */
+      /* ── Tarjeta de grupo ─────────────────────────────────────────────── */
       .grupo-card {
         border: 1px solid var(--border);
         border-radius: 12px;
@@ -24,8 +24,7 @@
       .grupo-card-header {
         display: flex; align-items: center; gap: 14px;
         padding: 16px 20px;
-        cursor: pointer;
-        user-select: none;
+        cursor: pointer; user-select: none;
         transition: background .15s;
       }
       .grupo-card-header:hover { background: var(--bg-secondary); }
@@ -41,40 +40,38 @@
       .grupo-meta   { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
       .grupo-body   { display: none; border-top: 1px solid var(--border); }
       .grupo-body.open { display: block; }
-      /* Padding around the units list */
-      #contenedorGrupos .grupo-body > div[id^="gunidades"] {
-        padding: 14px 16px !important;
-      }
 
-      /* ── Accordion de unidad ────────────────────────────────────── */
+      /* ── Acordeón de unidad ───────────────────────────────────────────── */
+      .gunidades-wrap { padding: 14px 16px; display: grid; gap: 10px; }
+
       .unidad-accordion {
         border: 1px solid var(--border);
         border-radius: 10px;
-        margin-bottom: 10px;
         overflow: hidden;
         background: var(--card-bg);
       }
-      .unidad-accordion:last-child { margin-bottom: 0; }
-
       .unidad-header {
         display: flex; align-items: center; gap: 12px;
-        padding: 13px 20px;
-        cursor: pointer;
-        user-select: none;
+        padding: 13px 16px;
+        cursor: pointer; user-select: none;
         transition: background .15s;
       }
       .unidad-header:hover { background: var(--bg-secondary); }
       .unidad-num {
-        min-width: 28px; height: 28px;
-        border-radius: 50%;
+        min-width: 30px; height: 30px; border-radius: 50%;
         background: var(--primary, #3b82f6);
-        color: #fff; font-weight: 700; font-size: .78rem;
+        color: #fff; font-weight: 700; font-size: .8rem;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
       }
       .unidad-title { font-weight: 600; font-size: .93rem; flex: 1; }
+      .unidad-chevron {
+        font-size: 1.1rem; color: var(--text-muted);
+        transition: transform .2s;
+      }
+      .unidad-accordion.open .unidad-chevron { transform: rotate(180deg); }
 
-      /* ── Badge de porcentaje ─────────────────────────────────────── */
+      /* ── Badge de porcentaje ─────────────────────────────────────────── */
       .pct-badge {
         display: inline-flex; align-items: center; gap: 4px;
         padding: 3px 10px; border-radius: 999px;
@@ -85,124 +82,234 @@
       .pct-badge.pendiente { background: #fef3c7; color: #92400e; }
       .pct-badge.excedida  { background: #fee2e2; color: #991b1b; }
 
-      .unidad-chevron { font-size: 1.1rem; color: var(--text-muted); transition: transform .2s; }
-      .unidad-accordion.open .unidad-chevron { transform: rotate(180deg); }
-
-      /* ── Cuerpo de unidad ───────────────────────────────────────── */
-      .unidad-body { display: none; padding: 0 20px 16px; }
+      /* ── Cuerpo de unidad ────────────────────────────────────────────── */
+      .unidad-body { display: none; padding: 0 16px 16px; }
       .unidad-accordion.open .unidad-body { display: block; }
 
-      /* ── Lista de actividades existentes ────────────────────────── */
-      .act-list { display: grid; gap: 6px; margin-bottom: 14px; }
+      /* ── Lista de actividades ─────────────────────────────────────────── */
+      .act-list { display: grid; gap: 6px; margin-bottom: 12px; }
       .act-item {
         display: flex; align-items: center; gap: 10px;
-        padding: 8px 12px;
+        padding: 9px 12px;
         background: var(--bg-secondary);
         border: 1px solid var(--border);
         border-radius: 8px;
         font-size: .87rem;
       }
       .act-nombre { flex: 1; font-weight: 500; }
-      .act-pct    { font-weight: 700; color: var(--primary); min-width: 45px; text-align: right; }
+      .act-pct    { font-weight: 700; color: var(--primary); min-width: 38px; text-align: right; }
       .act-del    {
         width: 26px; height: 26px; border-radius: 6px;
         background: transparent; border: none; cursor: pointer;
-        color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-        font-size: .9rem; transition: background .15s, color .15s;
+        color: var(--text-muted);
+        display: flex; align-items: center; justify-content: center;
+        transition: background .15s, color .15s;
       }
       .act-del:hover { background: #fee2e2; color: #991b1b; }
 
-      /* ── Barra de progreso de porcentaje ────────────────────────── */
+      /* ── Barra de progreso ───────────────────────────────────────────── */
       .pct-track {
         height: 6px; border-radius: 3px;
-        background: var(--border); margin: 10px 0;
+        background: var(--border); margin: 8px 0;
         overflow: hidden;
       }
       .pct-fill {
         height: 100%; border-radius: 3px;
-        background: var(--primary, #3b82f6);
-        transition: width .3s, background .3s;
+        background: var(--primary); transition: width .3s, background .3s;
       }
       .pct-fill.completa { background: #16a34a; }
       .pct-fill.excedida { background: #dc2626; }
-
       .pct-label {
         font-size: .78rem; color: var(--text-muted);
-        display: flex; justify-content: space-between; margin-bottom: 12px;
+        display: flex; justify-content: space-between;
+        margin-bottom: 12px;
       }
-      .pct-label strong { color: var(--text-primary); }
 
-      /* ── Presets de actividad (chips rápidos) ──────────────────── */
-      .presets-label {
-        font-size: .75rem; font-weight: 600;
-        color: var(--text-secondary); text-transform: uppercase;
-        letter-spacing: .05em; margin-bottom: 7px;
-      }
-      .presets-chips {
-        display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
-      }
-      .preset-chip {
-        padding: 4px 12px; border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--card-bg);
+      /* ── Botón agregar actividad ──────────────────────────────────────── */
+      .btn-agregar-act {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        border: 1.5px dashed var(--border);
+        border-radius: 8px;
+        background: transparent;
         color: var(--text-secondary);
-        font-size: .78rem; font-weight: 600;
-        cursor: pointer; transition: all .15s;
-        user-select: none;
+        font-size: .84rem; font-weight: 600;
+        cursor: pointer;
+        transition: all .15s;
+        width: 100%;
+        justify-content: center;
       }
-      .preset-chip:hover {
+      .btn-agregar-act:hover {
         border-color: var(--primary);
         color: var(--primary);
         background: var(--primary-light, #eff6ff);
       }
 
-      /* ── Formulario agregar actividad ────────────────────────────── */
-      .add-act-form {
+      /* ── Footer guardar unidad ───────────────────────────────────────── */
+      .unidad-footer {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      }
+
+      /* ── Footer guardar grupo ────────────────────────────────────────── */
+      .grupo-footer {
+        padding: 12px 20px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-secondary);
+        display: none;
+      }
+
+      /* ── Botón success ───────────────────────────────────────────────── */
+      .btn-success {
+        background: var(--success, #16a34a); color: #fff; border: none;
+      }
+      .btn-success:hover { background: #15803d; }
+      .btn-success:disabled {
+        background: var(--border); color: var(--text-muted); cursor: not-allowed;
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+         MODAL DE AGREGAR ACTIVIDAD
+      ══════════════════════════════════════════════════════════════════ */
+      .modal-overlay {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,.5);
+        z-index: 1000;
+        align-items: center; justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.active { display: flex; }
+
+      .modal-box {
+        background: var(--card-bg);
+        border-radius: 14px;
+        width: min(520px, 100%);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 80px rgba(0,0,0,.3);
+        animation: modalIn .18s ease;
+      }
+      @keyframes modalIn {
+        from { opacity:0; transform: translateY(12px) scale(.97); }
+        to   { opacity:1; transform: none; }
+      }
+
+      .modal-header {
+        padding: 18px 20px 0;
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 10px;
+      }
+      .modal-header-info h3 {
+        margin: 0; font-size: 1rem; font-weight: 700;
+        color: var(--text-primary);
+      }
+      .modal-header-info p {
+        margin: 3px 0 0;
+        font-size: .78rem; color: var(--text-muted);
+      }
+      .modal-close {
+        width: 30px; height: 30px; border-radius: 8px;
+        border: none; background: var(--bg-secondary);
+        cursor: pointer; color: var(--text-muted);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; flex-shrink: 0;
+        transition: background .15s;
+      }
+      .modal-close:hover { background: #fee2e2; color: #991b1b; }
+
+      /* ── Sección de tipos ────────────────────────────────────────────── */
+      .modal-section { padding: 16px 20px 0; }
+      .modal-section-label {
+        font-size: .72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .06em;
+        color: var(--text-muted); margin-bottom: 10px;
+      }
+
+      /* ── Grid de tipos ───────────────────────────────────────────────── */
+      .tipos-grid {
         display: grid;
-        grid-template-columns: 1fr 90px auto;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
         gap: 8px;
+      }
+      .tipo-card {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 6px;
+        padding: 12px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        transition: all .15s;
+        user-select: none;
+      }
+      .tipo-card:hover {
+        border-color: var(--primary);
+        background: var(--primary-light, #eff6ff);
+      }
+      .tipo-card.selected {
+        border-color: var(--primary);
+        background: var(--primary-light, #eff6ff);
+        box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+      }
+      .tipo-card .tipo-card-icon {
+        font-size: 1.3rem;
+        color: var(--text-secondary);
+        transition: color .15s;
+      }
+      .tipo-card.selected .tipo-card-icon,
+      .tipo-card:hover .tipo-card-icon { color: var(--primary); }
+      .tipo-card .tipo-card-nombre {
+        font-size: .72rem; font-weight: 600;
+        color: var(--text-secondary);
+        text-align: center; line-height: 1.2;
+        transition: color .15s;
+      }
+      .tipo-card.selected .tipo-card-nombre,
+      .tipo-card:hover .tipo-card-nombre { color: var(--primary); }
+
+      /* ── Formulario dentro del modal ─────────────────────────────────── */
+      .modal-form {
+        padding: 16px 20px;
+        display: grid;
+        grid-template-columns: 1fr 100px;
+        gap: 10px;
         align-items: flex-end;
       }
-      .add-act-form input {
-        padding: 8px 10px;
-        border: 1px solid var(--border);
-        border-radius: 7px;
-        background: var(--card-bg);
-        color: var(--text-primary);
-        font-size: .88rem;
-        font-family: inherit;
+      .modal-form .field-lbl {
+        font-size: .75rem; font-weight: 600;
+        color: var(--text-secondary); margin-bottom: 4px;
       }
-      .add-act-form input:focus {
+      .modal-form input {
+        width: 100%; padding: 9px 12px;
+        border: 1px solid var(--border); border-radius: 8px;
+        background: var(--card-bg); color: var(--text-primary);
+        font-size: .9rem; font-family: inherit;
+        box-sizing: border-box;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .modal-form input:focus {
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(59,130,246,.12);
       }
-      .add-act-form .field-label {
-        font-size: .75rem; font-weight: 600;
-        color: var(--text-secondary); margin-bottom: 4px;
-      }
 
-      /* ── Línea separadora ────────────────────────────────────────── */
-      .add-section {
-        border-top: 1px dashed var(--border);
-        padding-top: 14px; margin-top: 4px;
+      /* ── Disponible chip ─────────────────────────────────────────────── */
+      .disponible-chip {
+        margin: 0 20px 4px;
+        font-size: .78rem; color: var(--text-muted);
+        display: flex; align-items: center; gap: 6px;
       }
+      .disponible-chip strong { color: var(--text-primary); }
 
-      /* ── Botón success ────────────────────────────────────── */
-      .btn-success {
-        background: var(--success, #16a34a);
-        color: #fff;
-        border: none;
-      }
-      .btn-success:hover { background: #15803d; }
-      .btn-success:disabled {
-        background: var(--border);
-        color: var(--text-muted);
-        cursor: not-allowed;
-      }
-
-      @media (max-width: 520px) {
-        .add-act-form { grid-template-columns: 1fr 70px auto; }
+      /* ── Footer del modal ────────────────────────────────────────────── */
+      .modal-footer {
+        padding: 12px 20px 18px;
+        display: flex; justify-content: flex-end; gap: 8px;
+        border-top: 1px solid var(--border);
       }
     </style>
   </head>
@@ -218,8 +325,8 @@
           </div>
         </div>
 
-        <!-- Stats rápidas -->
-        <div class="stats-row" id="statsRow" style="margin-bottom:20px">
+        <!-- Stats -->
+        <div class="stats-row" style="margin-bottom:20px">
           <div class="stat-card">
             <iconify-icon icon="lucide:library" class="stat-icon"></iconify-icon>
             <div class="stat-info">
@@ -243,16 +350,74 @@
           </div>
         </div>
 
-        <!-- Mensaje de carga -->
         <div id="msgCargando" style="text-align:center;padding:40px;color:var(--text-muted)">
           <iconify-icon icon="lucide:loader-2" style="font-size:2rem;animation:spin 1s linear infinite"></iconify-icon>
           <p style="margin-top:10px">Cargando tus grupos...</p>
         </div>
 
-        <!-- Contenedor de grupos -->
         <div id="contenedorGrupos"></div>
 
       </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         MODAL AGREGAR ACTIVIDAD
+    ══════════════════════════════════════════════════════════════════ -->
+    <div id="modalAgregar" class="modal-overlay" onclick="modalClickFuera(event)">
+      <div class="modal-box">
+
+        <!-- Header -->
+        <div class="modal-header">
+          <div class="modal-header-info">
+            <h3 id="modalTitulo">Agregar actividad</h3>
+            <p id="modalSubtitulo"></p>
+          </div>
+          <button class="modal-close" onclick="cerrarModal()">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+
+        <!-- Tipos -->
+        <div class="modal-section">
+          <div class="modal-section-label">Selecciona el tipo de actividad</div>
+          <div class="tipos-grid" id="tiposGrid">
+            <!-- Se rellena dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="modal-form">
+          <div>
+            <div class="field-lbl">Nombre de la actividad</div>
+            <input type="text" id="modalNombre"
+              placeholder="Ej. Examen parcial 1"
+              maxlength="100"
+              onkeydown="if(event.key==='Enter') confirmarAgregar()" />
+          </div>
+          <div>
+            <div class="field-lbl">% Ponderación</div>
+            <input type="number" id="modalPct"
+              placeholder="0–100" min="1" max="100"
+              onkeydown="if(event.key==='Enter') confirmarAgregar()" />
+          </div>
+        </div>
+
+        <!-- Disponible -->
+        <div class="disponible-chip" id="disponibleChip">
+          <iconify-icon icon="lucide:info" style="font-size:.85rem"></iconify-icon>
+          Disponible en esta unidad: <strong id="disponibleVal">—%</strong>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmarAgregar()">
+            <iconify-icon icon="mdi:plus"></iconify-icon>
+            Agregar actividad
+          </button>
+        </div>
+
+      </div>
     </div>
 
     <div id="toast-container"></div>

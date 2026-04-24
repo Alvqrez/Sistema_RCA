@@ -1,33 +1,27 @@
-// frontend/js/configurar_actividades.js
-// Maestro: configura actividades por unidad de sus grupos
-// v2: iconify icons, guardar unidad (bloquea), guardar configuración de grupo
+// frontend/js/configurar_actividades.js  v3
+// Flujo: botón "+ Agregar actividad" en cada unidad → modal con tipos → nombre + % → guardar
 
 const BASE = "http://localhost:3000";
 
-// Presets con iconos Iconify (acordes al resto del sistema)
-const PRESETS = [
-  { nombre: "Examen",        icono: "mdi:file-document-outline"   },
-  { nombre: "Tarea",         icono: "mdi:pencil-outline"          },
-  { nombre: "Práctica",      icono: "mdi:flask-outline"           },
-  { nombre: "Exposición",    icono: "mdi:presentation"            },
-  { nombre: "Proyecto",      icono: "lucide:folder"               },
-  { nombre: "Cuestionario",  icono: "mdi:clipboard-list-outline"  },
-  { nombre: "Asistencia",    icono: "mdi:calendar-check-outline"  },
-  { nombre: "Investigación", icono: "lucide:search"               },
-];
+// ─── Caché de datos ────────────────────────────────────────────────────────
+const cacheUnidades    = {};  // grupoId  → [unidad]
+const cacheActividades = {};  // `gId_uId` → [actividad]
+let   tiposActividad   = [];  // catálogo del admin
 
-// Caché de datos
-const cacheUnidades    = {};   // grupoId → [unidad]
-const cacheActividades = {};   // `grupoId_unidadId` → [actividad]
+// ─── Estado del modal ──────────────────────────────────────────────────────
+let _modalGrupo   = null;
+let _modalUnidad  = null;
+let _modalTipoId  = null;
+let _modalTipoNom = null;
 
-// Estado de guardado de grupos (persiste en localStorage)
-function getGrupoGuardado(idGrupo)        { return localStorage.getItem(`cfg_guardado_${idGrupo}`) === "1"; }
-function setGrupoGuardado(idGrupo, val)   { localStorage.setItem(`cfg_guardado_${idGrupo}`, val ? "1" : "0"); }
+// ─── localStorage: grupo guardado ─────────────────────────────────────────
+const getGrupoGuardado = (id) => localStorage.getItem(`cfg_guardado_${id}`) === "1";
+const setGrupoGuardado = (id, v) => localStorage.setItem(`cfg_guardado_${id}`, v ? "1" : "0");
 
 function tk()  { return localStorage.getItem("token"); }
 function rol() { return localStorage.getItem("rol"); }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// ─── Toast ─────────────────────────────────────────────────────────────────
 function toast(msg, tipo = "success") {
   const tc = document.getElementById("toast-container");
   if (!tc) return;
@@ -39,13 +33,63 @@ function toast(msg, tipo = "success") {
   setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 400); }, 3500);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ─── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   if (rol() !== "maestro") { window.location.href = "login.html"; return; }
+  await cargarTiposActividad();
   await cargarGrupos();
 });
 
-// ─── Cargar grupos ────────────────────────────────────────────────────────────
+// ─── Tipos de actividad (del catálogo admin) ───────────────────────────────
+const ICONOS_TIPO = {
+  "Examen":        "mdi:file-document-outline",
+  "Tarea":         "mdi:pencil-outline",
+  "Práctica":      "mdi:flask-outline",
+  "Exposición":    "mdi:presentation",
+  "Proyecto":      "lucide:folder",
+  "Cuestionario":  "mdi:clipboard-list-outline",
+  "Asistencia":    "mdi:calendar-check-outline",
+  "Investigación": "lucide:search",
+};
+const ICONO_DEFAULT = "mdi:tag-outline";
+
+async function cargarTiposActividad() {
+  try {
+    const res = await fetch(`${BASE}/api/tipo-actividades`, {
+      headers: { Authorization: `Bearer ${tk()}` }
+    });
+    if (res.ok) tiposActividad = await res.json();
+  } catch (_) {}
+
+  // Fallback si el endpoint no existe o falla
+  if (!tiposActividad.length) {
+    tiposActividad = [
+      { id_tipo: 0, nombre: "Examen" },
+      { id_tipo: 0, nombre: "Tarea" },
+      { id_tipo: 0, nombre: "Práctica" },
+      { id_tipo: 0, nombre: "Exposición" },
+      { id_tipo: 0, nombre: "Proyecto" },
+      { id_tipo: 0, nombre: "Cuestionario" },
+      { id_tipo: 0, nombre: "Asistencia" },
+      { id_tipo: 0, nombre: "Investigación" },
+    ];
+  }
+
+  // Construir el grid de tipos (se reutiliza en cada apertura del modal)
+  const grid = document.getElementById("tiposGrid");
+  if (!grid) return;
+  grid.innerHTML = tiposActividad.map(t => {
+    const icono = ICONOS_TIPO[t.nombre] || ICONO_DEFAULT;
+    return `
+      <div class="tipo-card" id="tipo-card-${t.id_tipo}-${esc(t.nombre)}"
+           onclick="seleccionarTipo(${t.id_tipo}, '${esc(t.nombre)}')">
+        <iconify-icon icon="${icono}" class="tipo-card-icon"></iconify-icon>
+        <span class="tipo-card-nombre">${esc(t.nombre)}</span>
+      </div>`;
+  }).join("");
+}
+
+// ─── Cargar grupos ─────────────────────────────────────────────────────────
 async function cargarGrupos() {
   const contenedor  = document.getElementById("contenedorGrupos");
   const msgCargando = document.getElementById("msgCargando");
@@ -68,45 +112,40 @@ async function cargarGrupos() {
       return;
     }
 
-    // Pre-cargar unidades y actividades para calcular stats
-    let totalConfiguradas = 0, totalPendientes = 0;
+    // Pre-cargar datos para stats
+    let configuradas = 0, pendientes = 0;
     for (const g of grupos) {
-      const unidades = await fetchUnidades(g.id_grupo, g.clave_materia);
-      for (const u of unidades) {
+      const uns = await fetchUnidades(g.id_grupo, g.clave_materia);
+      for (const u of uns) {
         const acts = await fetchActividades(g.id_grupo, u.id_unidad);
-        if (esUnidadGuardada(acts)) totalConfiguradas++;
-        else totalPendientes++;
+        esUnidadGuardada(acts) ? configuradas++ : pendientes++;
       }
     }
-
-    actualizarStats(grupos.length, totalConfiguradas, totalPendientes);
+    actualizarStats(grupos.length, configuradas, pendientes);
     contenedor.innerHTML = grupos.map(g => renderGrupoCard(g)).join("");
 
   } catch (e) {
     msgCargando.style.display = "none";
     contenedor.innerHTML = `<div class="card" style="text-align:center;padding:30px;color:var(--danger)">
-      Error al cargar grupos. Recarga la página.
+      Error al cargar grupos.
     </div>`;
   }
 }
 
-function actualizarStats(grupos, configuradas, pendientes) {
-  document.getElementById("statGrupos").textContent       = grupos;
-  document.getElementById("statCompletas").textContent    = configuradas;
-  document.getElementById("statPendientes").textContent   = pendientes;
+function actualizarStats(grupos, conf, pend) {
+  document.getElementById("statGrupos").textContent    = grupos;
+  document.getElementById("statCompletas").textContent = conf;
+  document.getElementById("statPendientes").textContent= pend;
 }
 
-// Una unidad está "guardada" si tiene actividades Y todas están bloqueadas
 function esUnidadGuardada(acts) {
   return acts.length > 0 && acts.every(a => a.bloqueado === 1 || a.bloqueado === true);
 }
 
-// ─── Tarjeta de grupo ─────────────────────────────────────────────────────────
+// ─── Tarjeta de grupo ──────────────────────────────────────────────────────
 function renderGrupoCard(g) {
   const periodo  = g.descripcion_periodo || `Periodo ${g.id_periodo}`;
-  const horario  = g.horario || "Sin horario";
   const guardado = getGrupoGuardado(g.id_grupo);
-
   return `
   <div class="grupo-card" id="gcard-${g.id_grupo}">
     <div class="grupo-card-header"
@@ -117,26 +156,23 @@ function renderGrupoCard(g) {
       <div class="grupo-info">
         <div class="grupo-nombre">
           ${esc(g.nombre_materia)}
-          ${guardado
-            ? `<span class="pct-badge completa" style="margin-left:8px;font-size:.7rem">
-                 <iconify-icon icon="mdi:lock-outline"></iconify-icon> Configurado
-               </span>`
-            : ""}
+          ${guardado ? `<span class="pct-badge completa" style="margin-left:8px;font-size:.7rem">
+            <iconify-icon icon="mdi:lock-outline"></iconify-icon> Configurado</span>` : ""}
         </div>
-        <div class="grupo-meta">Grupo #${g.id_grupo} &middot; ${esc(periodo)} &middot; ${esc(horario)}</div>
+        <div class="grupo-meta">Grupo #${g.id_grupo} &middot; ${esc(periodo)} &middot; ${esc(g.horario || "Sin horario")}</div>
       </div>
-      <iconify-icon icon="lucide:chevron-down" id="chevron-g-${g.id_grupo}"
+      <iconify-icon icon="lucide:chevron-down" id="chev-g-${g.id_grupo}"
         style="font-size:1.2rem;color:var(--text-muted);transition:transform .2s"></iconify-icon>
     </div>
+
     <div class="grupo-body" id="gbody-${g.id_grupo}">
-      <div id="gunidades-${g.id_grupo}" style="padding:4px 0">
-        <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:.85rem">
+      <div id="gunidades-${g.id_grupo}" class="gunidades-wrap">
+        <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:.85rem">
           <iconify-icon icon="lucide:loader-2" style="animation:spin 1s linear infinite"></iconify-icon>
           Cargando unidades...
         </div>
       </div>
-      <!-- Botón guardar configuración del grupo -->
-      <div id="gfooter-${g.id_grupo}" style="display:none;padding:12px 20px;border-top:1px solid var(--border);background:var(--bg-secondary)">
+      <div id="gfooter-${g.id_grupo}" class="grupo-footer">
         <button class="btn btn-primary" onclick="guardarConfiguracion(${g.id_grupo})">
           <iconify-icon icon="mdi:check-decagram-outline"></iconify-icon>
           Guardar configuración del grupo
@@ -149,22 +185,19 @@ function renderGrupoCard(g) {
   </div>`;
 }
 
-// ─── Toggle grupo ─────────────────────────────────────────────────────────────
+// ─── Toggle grupo ──────────────────────────────────────────────────────────
 async function toggleGrupo(idGrupo, claveMateria) {
-  const body    = document.getElementById(`gbody-${idGrupo}`);
-  const chevron = document.getElementById(`chevron-g-${idGrupo}`);
-  const isOpen  = body.classList.contains("open");
-
-  body.classList.toggle("open");
-  chevron.style.transform = isOpen ? "" : "rotate(180deg)";
-
-  if (!isOpen) {
+  const body = document.getElementById(`gbody-${idGrupo}`);
+  const chev = document.getElementById(`chev-g-${idGrupo}`);
+  const open = body.classList.toggle("open");
+  chev.style.transform = open ? "rotate(180deg)" : "";
+  if (open) {
     await renderUnidades(idGrupo, claveMateria);
     actualizarFooterGrupo(idGrupo);
   }
 }
 
-// ─── Fetch unidades ───────────────────────────────────────────────────────────
+// ─── Fetch unidades ────────────────────────────────────────────────────────
 async function fetchUnidades(idGrupo, claveMateria) {
   if (cacheUnidades[idGrupo]) return cacheUnidades[idGrupo];
   try {
@@ -178,41 +211,36 @@ async function fetchUnidades(idGrupo, claveMateria) {
 }
 
 async function renderUnidades(idGrupo, claveMateria) {
-  const contenedor = document.getElementById(`gunidades-${idGrupo}`);
-  const unidades   = await fetchUnidades(idGrupo, claveMateria);
+  const wrap    = document.getElementById(`gunidades-${idGrupo}`);
+  const unidades = await fetchUnidades(idGrupo, claveMateria);
 
   if (!unidades.length) {
-    contenedor.innerHTML = `<div style="padding:20px 24px;color:var(--text-muted);font-size:.85rem">
+    wrap.innerHTML = `<div style="padding:12px 4px;color:var(--text-muted);font-size:.85rem">
       <iconify-icon icon="lucide:alert-triangle" style="color:var(--warning)"></iconify-icon>
       Esta materia no tiene unidades configuradas. El administrador debe registrarlas primero.
     </div>`;
     return;
   }
 
-  for (const u of unidades) {
-    await fetchActividades(idGrupo, u.id_unidad);
-  }
+  for (const u of unidades) await fetchActividades(idGrupo, u.id_unidad);
 
-  contenedor.innerHTML = unidades.map((u, i) =>
-    renderUnidadAccordion(idGrupo, u, i + 1)
-  ).join("");
+  wrap.innerHTML = unidades.map((u, i) => renderUnidadAccordion(idGrupo, u, i + 1)).join("");
 }
 
-// ─── Fetch actividades ────────────────────────────────────────────────────────
+// ─── Fetch actividades ─────────────────────────────────────────────────────
 async function fetchActividades(idGrupo, idUnidad) {
   const key = `${idGrupo}_${idUnidad}`;
   if (cacheActividades[key]) return cacheActividades[key];
   try {
-    const res = await fetch(`${BASE}/api/actividades`, {
+    const res  = await fetch(`${BASE}/api/actividades`, {
       headers: { Authorization: `Bearer ${tk()}` }
     });
     if (!res.ok) { cacheActividades[key] = []; return []; }
-    const todas    = await res.json();
-    const filtradas = todas.filter(
+    const todas = await res.json();
+    cacheActividades[key] = todas.filter(
       a => String(a.id_grupo) === String(idGrupo) && String(a.id_unidad) === String(idUnidad)
     );
-    cacheActividades[key] = filtradas;
-    return filtradas;
+    return cacheActividades[key];
   } catch { cacheActividades[key] = []; return []; }
 }
 
@@ -220,21 +248,19 @@ function getActs(idGrupo, idUnidad) {
   return cacheActividades[`${idGrupo}_${idUnidad}`] || [];
 }
 
-// ─── Acordeón de unidad ───────────────────────────────────────────────────────
+// ─── Render acordeón de unidad ─────────────────────────────────────────────
 function renderUnidadAccordion(idGrupo, unidad, numero) {
-  const acts     = getActs(idGrupo, unidad.id_unidad);
-  const total    = calcTotal(acts);
+  const acts    = getActs(idGrupo, unidad.id_unidad);
+  const total   = calcTotal(acts);
   const guardada = esUnidadGuardada(acts);
   const { cls, label } = badgeInfo(total, guardada);
 
   return `
   <div class="unidad-accordion" id="uacc-${idGrupo}-${unidad.id_unidad}">
-    <div class="unidad-header"
-         onclick="toggleUnidad(${idGrupo}, ${unidad.id_unidad})">
+    <div class="unidad-header" onclick="toggleUnidad(${idGrupo}, ${unidad.id_unidad})">
       <div class="unidad-num">${numero}</div>
       <div class="unidad-title">${esc(unidad.nombre_unidad)}</div>
-      <span class="pct-badge ${cls}"
-            id="badge-${idGrupo}-${unidad.id_unidad}">${label}</span>
+      <span class="pct-badge ${cls}" id="badge-${idGrupo}-${unidad.id_unidad}">${label}</span>
       <iconify-icon icon="lucide:chevron-down" class="unidad-chevron"
         id="chev-${idGrupo}-${unidad.id_unidad}"></iconify-icon>
     </div>
@@ -249,94 +275,75 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
   const disponible = Math.max(0, 100 - total);
   const { cls }    = badgeInfo(total, guardada);
 
-  // Si la unidad está guardada → vista de solo lectura
+  // ── Vista bloqueada (guardada) ──────────────────────────────────────────
   if (guardada) {
     return `
-    <div style="padding:0 0 8px">
-      <div class="act-list">
-        ${acts.map(a => renderActItemLocked(a)).join("")}
-      </div>
-      <div class="pct-track">
-        <div class="pct-fill completa" style="width:100%"></div>
-      </div>
-      <div class="pct-label">
-        <span>Total: <strong>100%</strong></span>
-        <span style="color:var(--success,#16a34a)">
-          <iconify-icon icon="mdi:lock-outline"></iconify-icon> Unidad guardada
-        </span>
-      </div>
-      <div style="margin-top:8px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text-muted)">
-        <iconify-icon icon="lucide:info" style="vertical-align:middle"></iconify-icon>
-        Esta unidad está bloqueada. Para modificarla contacta al administrador.
-      </div>
+    <div class="act-list">
+      ${acts.map(a => `
+        <div class="act-item">
+          <iconify-icon icon="mdi:lock-outline" style="color:var(--text-muted);flex-shrink:0;font-size:.9rem"></iconify-icon>
+          <span class="act-nombre">${esc(a.nombre_actividad)}</span>
+          <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
+        </div>`).join("")}
+    </div>
+    <div class="pct-track"><div class="pct-fill completa" style="width:100%"></div></div>
+    <div class="pct-label">
+      <span>Total: <strong>100%</strong></span>
+      <span style="color:var(--success,#16a34a)">
+        <iconify-icon icon="mdi:lock-check-outline"></iconify-icon> Unidad guardada
+      </span>
+    </div>
+    <div style="margin-top:6px;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text-muted)">
+      <iconify-icon icon="lucide:info" style="vertical-align:middle"></iconify-icon>
+      Esta unidad está bloqueada. Contacta al administrador si necesitas modificarla.
     </div>`;
   }
 
-  // Vista editable
+  // ── Vista editable ──────────────────────────────────────────────────────
   const puedeGuardar = Math.round(total) === 100 && acts.length > 0;
 
   return `
     <div class="act-list" id="actlist-${idGrupo}-${idUnidad}">
       ${acts.length
-        ? acts.map(a => renderActItem(idGrupo, idUnidad, a)).join("")
-        : `<div style="color:var(--text-muted);font-size:.83rem;padding:6px 0">
+        ? acts.map(a => `
+            <div class="act-item" id="act-item-${a.id_actividad}">
+              <span class="act-nombre">${esc(a.nombre_actividad)}</span>
+              <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
+              <button class="act-del"
+                      onclick="eliminarActividad(${idGrupo}, ${idUnidad}, ${a.id_actividad})"
+                      title="Eliminar">
+                <iconify-icon icon="mdi:close"></iconify-icon>
+              </button>
+            </div>`).join("")
+        : `<div style="color:var(--text-muted);font-size:.83rem;padding:4px 0">
              Sin actividades. Agrega al menos una para completar el 100%.
            </div>`
       }
     </div>
 
     <div class="pct-track">
-      <div class="pct-fill ${cls}" id="pctbar-${idGrupo}-${idUnidad}"
-           style="width:${pctFill}%"></div>
+      <div class="pct-fill ${cls}" id="pctbar-${idGrupo}-${idUnidad}" style="width:${pctFill}%"></div>
     </div>
     <div class="pct-label">
       <span>Total asignado: <strong id="pctnum-${idGrupo}-${idUnidad}">${total.toFixed(0)}%</strong></span>
       <span id="pctdisp-${idGrupo}-${idUnidad}">
-        ${disponible > 0 ? `Disponible: ${disponible.toFixed(0)}%`
-          : total > 100   ? "⚠️ Excede 100%"
-          : '<span style="color:var(--success,#16a34a)">✓ Completo</span>'}
+        ${disponible > 0
+          ? `Disponible: ${disponible.toFixed(0)}%`
+          : total > 100
+            ? "⚠️ Excede 100%"
+            : '<span style="color:var(--success,#16a34a)">✓ Completo</span>'}
       </span>
     </div>
 
-    <!-- Sección agregar -->
-    <div class="add-section">
-      <div class="presets-label">Agregar rápido:</div>
-      <div class="presets-chips">
-        ${PRESETS.map(p => `
-          <span class="preset-chip"
-                onclick="usarPreset(${idGrupo}, ${idUnidad}, '${esc(p.nombre)}')">
-            <iconify-icon icon="${p.icono}" style="font-size:.85rem;vertical-align:middle"></iconify-icon>
-            ${p.nombre}
-          </span>`).join("")}
-      </div>
-      <div class="add-act-form">
-        <div>
-          <div class="field-label">Nombre de la actividad</div>
-          <input type="text"
-                 id="inpNombre-${idGrupo}-${idUnidad}"
-                 placeholder="Ej. Examen parcial 1"
-                 maxlength="100"
-                 onkeydown="if(event.key==='Enter') agregarActividad(${idGrupo}, ${idUnidad})" />
-        </div>
-        <div>
-          <div class="field-label">% Ponderación</div>
-          <input type="number"
-                 id="inpPct-${idGrupo}-${idUnidad}"
-                 placeholder="0–100"
-                 min="1" max="100"
-                 onkeydown="if(event.key==='Enter') agregarActividad(${idGrupo}, ${idUnidad})" />
-        </div>
-        <button class="btn btn-primary btn-sm"
-                onclick="agregarActividad(${idGrupo}, ${idUnidad})"
-                style="height:38px;margin-top:20px">
-          <iconify-icon icon="mdi:plus"></iconify-icon>
-          Agregar
-        </button>
-      </div>
-    </div>
+    <!-- Botón abrir modal -->
+    <button class="btn-agregar-act"
+            onclick="abrirModal(${idGrupo}, ${idUnidad}, '${esc(getUnidadNombre(idGrupo, idUnidad))}')">
+      <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
+      Agregar actividad
+    </button>
 
-    <!-- Botón guardar unidad -->
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <!-- Footer guardar unidad -->
+    <div class="unidad-footer">
       <button class="btn ${puedeGuardar ? 'btn-success' : 'btn-outline'}"
               id="btnGuardarUnidad-${idGrupo}-${idUnidad}"
               onclick="guardarUnidad(${idGrupo}, ${idUnidad})"
@@ -344,69 +351,113 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
         <iconify-icon icon="mdi:lock-check-outline"></iconify-icon>
         Guardar unidad
       </button>
-      ${puedeGuardar
-        ? `<span style="font-size:.78rem;color:var(--text-muted)">
-             Al guardar, ya no se podrán agregar, eliminar ni modificar actividades en esta unidad.
-           </span>`
-        : `<span style="font-size:.78rem;color:var(--text-muted)">
-             Completa el 100% para poder guardar la unidad.
-           </span>`
-      }
+      <span style="font-size:.78rem;color:var(--text-muted)">
+        ${puedeGuardar
+          ? "Al guardar, ya no se podrán modificar las actividades de esta unidad."
+          : "Completa el 100% para poder guardar la unidad."}
+      </span>
     </div>`;
 }
 
-// Actividad en vista bloqueada (sin botón eliminar)
-function renderActItemLocked(a) {
-  return `
-  <div class="act-item">
-    <iconify-icon icon="mdi:lock-outline" style="color:var(--text-muted);font-size:.9rem;flex-shrink:0"></iconify-icon>
-    <span class="act-nombre">${esc(a.nombre_actividad)}</span>
-    <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
-  </div>`;
+function getUnidadNombre(idGrupo, idUnidad) {
+  const uns = cacheUnidades[idGrupo] || [];
+  return uns.find(u => String(u.id_unidad) === String(idUnidad))?.nombre_unidad || `Unidad ${idUnidad}`;
 }
 
-// Actividad editable
-function renderActItem(idGrupo, idUnidad, a) {
-  return `
-  <div class="act-item" id="act-item-${a.id_actividad}">
-    <span class="act-nombre">${esc(a.nombre_actividad)}</span>
-    <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
-    <button class="act-del"
-            onclick="eliminarActividad(${idGrupo}, ${idUnidad}, ${a.id_actividad})"
-            title="Eliminar actividad">
-      <iconify-icon icon="mdi:close"></iconify-icon>
-    </button>
-  </div>`;
-}
-
-// ─── Toggle unidad ────────────────────────────────────────────────────────────
 function toggleUnidad(idGrupo, idUnidad) {
   document.getElementById(`uacc-${idGrupo}-${idUnidad}`)?.classList.toggle("open");
 }
 
-// ─── Preset chip → pre-rellenar nombre ───────────────────────────────────────
-function usarPreset(idGrupo, idUnidad, nombre) {
-  const inpNombre = document.getElementById(`inpNombre-${idGrupo}-${idUnidad}`);
-  const inpPct    = document.getElementById(`inpPct-${idGrupo}-${idUnidad}`);
-  if (inpNombre) { inpNombre.value = nombre; }
-  inpPct?.focus();
+// ══════════════════════════════════════════════════════════════════════════════
+//  MODAL — Agregar actividad
+// ══════════════════════════════════════════════════════════════════════════════
+
+function abrirModal(idGrupo, idUnidad, nombreUnidad) {
+  _modalGrupo   = idGrupo;
+  _modalUnidad  = idUnidad;
+  _modalTipoId  = null;
+  _modalTipoNom = null;
+
+  // Actualizar textos del modal
+  document.getElementById("modalTitulo").textContent    = "Agregar actividad";
+  document.getElementById("modalSubtitulo").textContent = nombreUnidad;
+
+  // Limpiar selección previa de tipos
+  document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
+
+  // Limpiar campos
+  document.getElementById("modalNombre").value = "";
+  document.getElementById("modalPct").value    = "";
+
+  // Mostrar disponible
+  const acts = getActs(idGrupo, idUnidad);
+  const disp = Math.max(0, 100 - calcTotal(acts));
+  document.getElementById("disponibleVal").textContent = `${disp.toFixed(0)}%`;
+
+  // Abrir
+  document.getElementById("modalAgregar").classList.add("active");
+
+  // Enfocar primer campo
+  setTimeout(() => document.getElementById("modalNombre").focus(), 100);
 }
 
-// ─── Agregar actividad ────────────────────────────────────────────────────────
-async function agregarActividad(idGrupo, idUnidad) {
-  const inpNombre = document.getElementById(`inpNombre-${idGrupo}-${idUnidad}`);
-  const inpPct    = document.getElementById(`inpPct-${idGrupo}-${idUnidad}`);
+function cerrarModal() {
+  document.getElementById("modalAgregar").classList.remove("active");
+  _modalGrupo = _modalUnidad = _modalTipoId = _modalTipoNom = null;
+}
 
-  const nombre = inpNombre?.value.trim();
-  const pct    = parseFloat(inpPct?.value);
+// Cerrar al hacer click fuera del modal-box
+function modalClickFuera(e) {
+  if (e.target === document.getElementById("modalAgregar")) cerrarModal();
+}
 
-  if (!nombre) { toast("Escribe el nombre de la actividad", "error"); inpNombre?.focus(); return; }
-  if (isNaN(pct) || pct <= 0 || pct > 100) { toast("El porcentaje debe ser entre 1 y 100", "error"); inpPct?.focus(); return; }
+// Seleccionar tipo en el modal
+function seleccionarTipo(idTipo, nombre) {
+  _modalTipoId  = idTipo;
+  _modalTipoNom = nombre;
 
-  const acts       = getActs(idGrupo, idUnidad);
+  // Highlight
+  document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
+  const card = document.getElementById(`tipo-card-${idTipo}-${nombre}`);
+  if (card) card.classList.add("selected");
+
+  // Pre-rellenar nombre si está vacío
+  const inpNombre = document.getElementById("modalNombre");
+  if (inpNombre && !inpNombre.value.trim()) {
+    inpNombre.value = nombre;
+  }
+
+  // Ir al % ponderación
+  document.getElementById("modalPct").focus();
+}
+
+// Confirmar y guardar
+async function confirmarAgregar() {
+  const nombre = document.getElementById("modalNombre").value.trim();
+  const pct    = parseFloat(document.getElementById("modalPct").value);
+
+  if (!_modalTipoNom && !nombre) {
+    toast("Selecciona un tipo o escribe el nombre de la actividad", "error");
+    return;
+  }
+  const nombreFinal = nombre || _modalTipoNom;
+
+  if (!nombreFinal) {
+    toast("Escribe el nombre de la actividad", "error");
+    document.getElementById("modalNombre").focus();
+    return;
+  }
+  if (isNaN(pct) || pct <= 0 || pct > 100) {
+    toast("El porcentaje debe ser entre 1 y 100", "error");
+    document.getElementById("modalPct").focus();
+    return;
+  }
+
+  const acts        = getActs(_modalGrupo, _modalUnidad);
   const totalActual = calcTotal(acts);
   if (totalActual + pct > 100) {
-    toast(`Solo quedan ${(100 - totalActual).toFixed(0)}% disponibles en esta unidad`, "error");
+    toast(`Solo quedan ${(100 - totalActual).toFixed(0)}% disponibles`, "error");
+    document.getElementById("modalPct").focus();
     return;
   }
 
@@ -414,30 +465,44 @@ async function agregarActividad(idGrupo, idUnidad) {
     const res = await fetch(`${BASE}/api/actividades`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk()}` },
-      body: JSON.stringify({ id_grupo: idGrupo, id_unidad: idUnidad, nombre_actividad: nombre, ponderacion: pct })
+      body: JSON.stringify({
+        id_grupo: _modalGrupo,
+        id_unidad: _modalUnidad,
+        nombre_actividad: nombreFinal,
+        ponderacion: pct,
+      })
     });
     const data = await res.json();
     if (!res.ok) { toast(data.error || "Error al agregar", "error"); return; }
 
-    const key = `${idGrupo}_${idUnidad}`;
+    // Actualizar caché
+    const key = `${_modalGrupo}_${_modalUnidad}`;
     cacheActividades[key] = [...acts, {
       id_actividad: data.id_actividad,
-      nombre_actividad: nombre,
+      nombre_actividad: nombreFinal,
       ponderacion: pct,
       bloqueado: 0
     }];
 
-    if (inpNombre) inpNombre.value = "";
-    if (inpPct)    inpPct.value    = "";
-
-    refrescarUnidad(idGrupo, idUnidad);
+    // Capturar IDs ANTES de cerrar (cerrarModal limpia las vars globales)
+    const idGr = _modalGrupo, idUn = _modalUnidad;
+    cerrarModal();
+    refrescarUnidad(idGr, idUn);
+    actualizarBadge(idGr, idUn);
+    actualizarFooterGrupo(idGr);
+    recalcularStats();
 
     const restante = 100 - (totalActual + pct);
-    toast(restante <= 0 ? "✓ ¡100%! Ya puedes guardar la unidad." : `Actividad agregada. Disponible: ${restante.toFixed(0)}%`, "success");
+    toast(
+      restante <= 0
+        ? "✓ ¡100%! Ya puedes guardar la unidad."
+        : `Actividad agregada. Disponible: ${restante.toFixed(0)}%`,
+      "success"
+    );
   } catch { toast("Error de conexión", "error"); }
 }
 
-// ─── Eliminar actividad ───────────────────────────────────────────────────────
+// ─── Eliminar actividad ────────────────────────────────────────────────────
 async function eliminarActividad(idGrupo, idUnidad, idActividad) {
   const acts = getActs(idGrupo, idUnidad);
   const act  = acts.find(a => a.id_actividad === idActividad);
@@ -446,31 +511,28 @@ async function eliminarActividad(idGrupo, idUnidad, idActividad) {
 
   try {
     const res = await fetch(`${BASE}/api/actividades/${idActividad}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${tk()}` }
+      method: "DELETE", headers: { Authorization: `Bearer ${tk()}` }
     });
     const data = await res.json();
     if (!res.ok) { toast(data.error || "Error al eliminar", "error"); return; }
 
     cacheActividades[`${idGrupo}_${idUnidad}`] = acts.filter(a => a.id_actividad !== idActividad);
     refrescarUnidad(idGrupo, idUnidad);
+    actualizarBadge(idGrupo, idUnidad);
     toast("Actividad eliminada", "success");
   } catch { toast("Error de conexión", "error"); }
 }
 
-// ─── Guardar unidad (bloquear) ────────────────────────────────────────────────
+// ─── Guardar unidad (bloquear) ─────────────────────────────────────────────
 async function guardarUnidad(idGrupo, idUnidad) {
   const acts  = getActs(idGrupo, idUnidad);
-  const total = calcTotal(acts);
-
-  if (Math.round(total) !== 100) {
-    toast(`La suma debe ser 100%. Actualmente: ${total.toFixed(0)}%`, "error");
+  if (Math.round(calcTotal(acts)) !== 100) {
+    toast("La suma debe ser 100% para guardar la unidad", "error");
     return;
   }
-
   const ok = confirm(
     "⚠️ ¿Guardar y bloquear esta unidad?\n\n" +
-    "Una vez guardada, ya NO podrás agregar, eliminar ni modificar las actividades de esta unidad.\n\n" +
+    "Una vez guardada, ya no podrás agregar, eliminar ni modificar actividades.\n\n" +
     "Esta acción no se puede deshacer desde aquí."
   );
   if (!ok) return;
@@ -484,83 +546,60 @@ async function guardarUnidad(idGrupo, idUnidad) {
     const data = await res.json();
     if (!res.ok) { toast(data.error || "Error al guardar", "error"); return; }
 
-    // Actualizar caché: marcar todas como bloqueadas
-    const key = `${idGrupo}_${idUnidad}`;
-    cacheActividades[key] = acts.map(a => ({ ...a, bloqueado: 1 }));
-
+    cacheActividades[`${idGrupo}_${idUnidad}`] = acts.map(a => ({ ...a, bloqueado: 1 }));
     refrescarUnidad(idGrupo, idUnidad);
     actualizarBadge(idGrupo, idUnidad);
     actualizarFooterGrupo(idGrupo);
     recalcularStats();
-
     toast("✓ Unidad guardada y bloqueada.", "success");
   } catch { toast("Error de conexión", "error"); }
 }
 
-// ─── Guardar configuración completa del grupo ─────────────────────────────────
+// ─── Guardar configuración del grupo ──────────────────────────────────────
 async function guardarConfiguracion(idGrupo) {
   const unidades = cacheUnidades[idGrupo] || [];
-
-  if (!unidades.length) {
-    toast("No hay unidades cargadas para este grupo", "error");
-    return;
-  }
-
-  // Verificar que TODAS las unidades estén guardadas
-  const sinGuardar = unidades.filter(u => {
-    const acts = getActs(idGrupo, u.id_unidad);
-    return !esUnidadGuardada(acts);
-  });
+  const sinGuardar = unidades.filter(u => !esUnidadGuardada(getActs(idGrupo, u.id_unidad)));
 
   if (sinGuardar.length > 0) {
-    const nombres = sinGuardar.map((u, i) => `Unidad ${i + 1}: ${u.nombre_unidad}`).join("\n");
-    toast(`Guarda primero todas las unidades:\n${nombres}`, "error");
     alert(
-      `Aún hay unidades sin guardar:\n\n${nombres}\n\nGuarda cada unidad antes de guardar la configuración del grupo.`
+      "Aún hay unidades sin guardar:\n\n" +
+      sinGuardar.map((u, i) => `• Unidad ${i + 1}: ${u.nombre_unidad}`).join("\n") +
+      "\n\nGuarda cada unidad antes de continuar."
     );
     return;
   }
-
-  const ok = confirm(
+  if (!confirm(
     "✓ Todas las unidades están guardadas.\n\n" +
     "¿Marcar este grupo como completamente configurado?\n\n" +
-    "Esto indica que el grupo está listo para comenzar a registrar calificaciones."
-  );
-  if (!ok) return;
+    "Indica que el grupo está listo para registrar calificaciones."
+  )) return;
 
   setGrupoGuardado(idGrupo, true);
-
-  // Actualizar UI del grupo card
-  const gcard = document.getElementById(`gcard-${idGrupo}`);
-  if (gcard) {
-    const nombreEl = gcard.querySelector(".grupo-nombre");
-    if (nombreEl && !nombreEl.querySelector(".pct-badge")) {
-      const badge = document.createElement("span");
-      badge.className = "pct-badge completa";
-      badge.style.cssText = "margin-left:8px;font-size:.7rem";
-      badge.innerHTML = `<iconify-icon icon="mdi:lock-outline"></iconify-icon> Configurado`;
-      nombreEl.appendChild(badge);
-    }
-  }
-
   document.getElementById(`gfooter-${idGrupo}`).style.display = "none";
+
+  // Añadir badge al nombre del grupo
+  const nombreEl = document.querySelector(`#gcard-${idGrupo} .grupo-nombre`);
+  if (nombreEl && !nombreEl.querySelector(".pct-badge")) {
+    const badge = document.createElement("span");
+    badge.className = "pct-badge completa";
+    badge.style.cssText = "margin-left:8px;font-size:.7rem";
+    badge.innerHTML = `<iconify-icon icon="mdi:lock-outline"></iconify-icon> Configurado`;
+    nombreEl.appendChild(badge);
+  }
   recalcularStats();
   toast("✓ Configuración del grupo guardada.", "success");
 }
 
-// ─── Footer del grupo (botón guardar configuración) ───────────────────────────
+// ─── Footer del grupo ──────────────────────────────────────────────────────
 function actualizarFooterGrupo(idGrupo) {
   const footer   = document.getElementById(`gfooter-${idGrupo}`);
   const unidades = cacheUnidades[idGrupo] || [];
   if (!footer || !unidades.length) return;
-
   const todasGuardadas = unidades.every(u => esUnidadGuardada(getActs(idGrupo, u.id_unidad)));
-  const grupoGuardado  = getGrupoGuardado(idGrupo);
-
-  footer.style.display = (todasGuardadas && !grupoGuardado) ? "block" : "none";
+  footer.style.display = (todasGuardadas && !getGrupoGuardado(idGrupo)) ? "block" : "none";
 }
 
-// ─── Refrescar unidad ─────────────────────────────────────────────────────────
+// ─── Refrescar UI de unidad ────────────────────────────────────────────────
 function refrescarUnidad(idGrupo, idUnidad) {
   const body = document.getElementById(`ubody-${idGrupo}-${idUnidad}`);
   if (!body) return;
@@ -568,7 +607,6 @@ function refrescarUnidad(idGrupo, idUnidad) {
   const total   = calcTotal(acts);
   const guardada = esUnidadGuardada(acts);
   body.innerHTML = renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada);
-  actualizarBadge(idGrupo, idUnidad);
 }
 
 function actualizarBadge(idGrupo, idUnidad) {
@@ -578,32 +616,29 @@ function actualizarBadge(idGrupo, idUnidad) {
   const total   = calcTotal(acts);
   const guardada = esUnidadGuardada(acts);
   const { cls, label } = badgeInfo(total, guardada);
-  badge.className   = `pct-badge ${cls}`;
-  badge.innerHTML   = label;
+  badge.className = `pct-badge ${cls}`;
+  badge.innerHTML = label;
 }
 
-// ─── Recalcular stats globales ────────────────────────────────────────────────
 function recalcularStats() {
-  let configuradas = 0, pendientes = 0;
+  let conf = 0, pend = 0;
   for (const idGrupo in cacheUnidades) {
     for (const u of cacheUnidades[idGrupo]) {
-      const acts = getActs(idGrupo, u.id_unidad);
-      if (esUnidadGuardada(acts)) configuradas++;
-      else pendientes++;
+      esUnidadGuardada(getActs(idGrupo, u.id_unidad)) ? conf++ : pend++;
     }
   }
-  document.getElementById("statCompletas").textContent  = configuradas;
-  document.getElementById("statPendientes").textContent = pendientes;
+  document.getElementById("statCompletas").textContent  = conf;
+  document.getElementById("statPendientes").textContent = pend;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────
 function calcTotal(acts) {
   return acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
 }
 
 function badgeInfo(total, guardada = false) {
   if (guardada) return {
-    cls:   "completa",
+    cls: "completa",
     label: `<iconify-icon icon="mdi:lock-check-outline" style="vertical-align:middle"></iconify-icon> Guardada`
   };
   const r = Math.round(total);
@@ -614,9 +649,6 @@ function badgeInfo(total, guardada = false) {
 
 function esc(str) {
   return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
