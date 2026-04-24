@@ -1042,35 +1042,31 @@ async function _ejecutarGuardado() {
 
 async function guardarYCerrarUnidad() {
   const vacios = hayAlumnosSinDatos();
-  if (vacios.length > 0) {
-    const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
-    const _procederCierre = async () => {
+
+  const _procederCierre = () => {
     mostrarConfirm(
       "Confirmar cierre de unidad",
-      "¿Cerrar definitivamente esta unidad para todos los alumnos?
-
-Esta acción calculará el promedio final y no se podrá deshacer fácilmente.",
+      "¿Cerrar definitivamente esta unidad para todos los alumnos?" +
+      "\n\nEsta acción calculará el promedio final y no se podrá deshacer fácilmente.",
       async () => { await _ejecutarCierre(); }
     );
   };
 
   if (vacios.length > 0) {
-    const nombres2 = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
+    const nombres = vacios.slice(0, 3).join(", ") +
+      (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
     mostrarConfirm(
       "⚠️ Campos sin calificar",
-      `Los siguientes alumnos tienen actividades sin calificar:
-${nombres2}.
-
-Al cerrar la unidad, los campos vacíos se calcularán con valor 0 y no podrán modificarse fácilmente.
-
-¿Cerrar de todas formas?`,
-      async () => { await _ejecutarGuardado(); await _procederCierre(); }
+      "Los siguientes alumnos tienen actividades sin calificar:\n" + nombres +
+      ".\n\nAl cerrar la unidad, los campos vacíos se calcularán con valor 0" +
+      " y no podrán modificarse fácilmente.\n\n¿Cerrar de todas formas?",
+      async () => { await _ejecutarGuardado(); _procederCierre(); }
     );
     return;
   }
+
   await _ejecutarGuardado();
-  await _procederCierre();
-  return;
+  _procederCierre();
 }
 
 async function _ejecutarCierre() {
