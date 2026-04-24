@@ -188,6 +188,18 @@ document
       return;
     }
 
+    // Verificar que la materia tenga unidades configuradas
+    try {
+      const resU = await fetch(`${BASE_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const unidades = resU.ok ? await resU.json() : [];
+      if (!unidades.length) {
+        toastGrupo("Esta materia no tiene unidades configuradas. El administrador debe registrarlas primero.", "error");
+        return;
+      }
+    } catch (_) {}
+
     const res = await fetch(`${BASE_URL}/api/grupos`, {
       method: "POST",
       headers: {

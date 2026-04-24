@@ -203,4 +203,47 @@ router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
   });
 });
 
+
+// ─── Tipos de actividad habilitados por unidad ────────────────────────────────
+
+// GET /:id/tipos — retorna los tipos que el admin habilitó para esta unidad
+// Si no hay ninguno configurado, retorna lista vacía (el maestro verá todos)
+router.get('/:id/tipos', verificarToken, (req, res) => {
+  db.query(
+    `SELECT ta.*
+       FROM unidad_tipo_actividad uta
+       JOIN tipo_actividad ta ON uta.id_tipo = ta.id_tipo
+      WHERE uta.id_unidad = ?
+      ORDER BY ta.nombre`,
+    [req.params.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Error interno del servidor' });
+      res.json(rows);
+    }
+  );
+});
+
+// POST /:id/tipos — admin reemplaza los tipos habilitados para la unidad
+router.post('/:id/tipos', soloAdmin, (req, res) => {
+  const { id_tipos } = req.body;
+
+  db.query('DELETE FROM unidad_tipo_actividad WHERE id_unidad = ?', [req.params.id], (errD) => {
+    if (errD) return res.status(500).json({ error: 'Error interno del servidor' });
+
+    if (!Array.isArray(id_tipos) || id_tipos.length === 0) {
+      return res.json({ success: true, mensaje: 'Sin tipos seleccionados' });
+    }
+
+    const values = id_tipos.map(t => [parseInt(req.params.id), parseInt(t)]);
+    db.query(
+      'INSERT INTO unidad_tipo_actividad (id_unidad, id_tipo) VALUES ?',
+      [values],
+      (errI) => {
+        if (errI) return res.status(500).json({ error: 'Error interno del servidor' });
+        res.json({ success: true, guardados: values.length });
+      }
+    );
+  });
+});
+
 module.exports = router;

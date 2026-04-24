@@ -8,8 +8,9 @@ let estado = {
   alumnos: [], // [{ matricula, nombre }]
   resultados: {}, // matricula → { id_actividad → { cal, estatus } }
   unidadesGrupo: [], // [{ id_unidad, nombre_unidad, numero_unidad, ponderacion }]
-  rubros: [], // config activa: [{ key, nombre, pct, tipo }]
-  rubrosState: {}, // matricula → { key → grade }  (examen, asistencia, custom)
+  rubros: [], // config activa (legacy)
+  rubrosState: {}, // (legacy)
+  unidadCerrada: false, // true cuando la unidad fue cerrada y no se puede modificar
 };
 let bonusState = {}; // matricula → { puntos, justificacion }
 let _modalMatricula = null; // alumno activo en modal de actividades
@@ -288,55 +289,17 @@ async function cargarUnidadesGrupo() {
     estado.unidadesGrupo = [];
   }
 
-  // ─── Filtrar solo unidades con actividades guardadas (bloqueado=1) ──────────
-  // Cargar todas las actividades del grupo para saber cuáles tienen config
-  let actividadesGrupo = [];
-  try {
-    const resA = await fetch(`${BASE_URL_FORM}/api/actividades`, {
-      headers: { Authorization: `Bearer ${token()}` }
-    });
-    if (resA.ok) {
-      const todasActs = await resA.json();
-      actividadesGrupo = todasActs.filter(a => String(a.id_grupo) === String(estado.grupoId));
-    }
-  } catch (_) {}
-
-  // Una unidad está "configurada" si tiene al menos 1 actividad con bloqueado=1
-  function unidadConfigurada(id_unidad) {
-    const acts = actividadesGrupo.filter(a => String(a.id_unidad) === String(id_unidad));
-    return acts.length > 0 && acts.some(a => a.bloqueado === 1 || a.bloqueado === true);
-  }
-
-  const unidadesConf  = estado.unidadesGrupo.filter(u => unidadConfigurada(u.id_unidad));
-  const unidadesSinConf = estado.unidadesGrupo.filter(u => !unidadConfigurada(u.id_unidad));
-
-  // Render unit tabs — solo las configuradas son clickeables
+  // Render unit tabs
   const tabsEl = document.getElementById("unitTabs");
-  const tabsConf = unidadesConf.map(u =>
-    `<button class="unit-tab" data-uid="${u.id_unidad}"
+  tabsEl.innerHTML = estado.unidadesGrupo
+    .map(
+      (u) =>
+        `<button class="unit-tab" data-uid="${u.id_unidad}"
        onclick="seleccionarUnidadTab(${u.id_unidad})">
        Unidad ${u.numero_unidad}
-     </button>`
-  ).join("");
-
-  const tabsSinConf = unidadesSinConf.map(u =>
-    `<button class="unit-tab" data-uid="${u.id_unidad}" disabled
-       title="Esta unidad aún no tiene actividades configuradas"
-       style="opacity:.45;cursor:not-allowed">
-       Unidad ${u.numero_unidad}
-       <iconify-icon icon="mdi:lock-outline" style="font-size:.7rem;margin-left:3px"></iconify-icon>
-     </button>`
-  ).join("");
-
-  tabsEl.innerHTML = tabsConf + tabsSinConf;
-
-  if (!unidadesConf.length) {
-    // No hay ninguna unidad configurada — mostrar aviso
-    tabsEl.innerHTML = `<span style="color:var(--warning,#d97706);font-size:.85rem;padding:6px 0">
-      <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
-      Ninguna unidad tiene actividades configuradas. Ve a <strong>Clases → Configurar actividades</strong>.
-    </span>`;
-  }
+     </button>`,
+    )
+    .join("");
 
   // Update "número de unidades" field
   const nu = document.getElementById("numUnidades");
@@ -418,6 +381,8 @@ function marcarUnidadCerradaUI(cerrada) {
   const banner = document.getElementById("bannerUnidadCerrada");
   const btnCerrar = document.querySelector('.btn-success[onclick="guardarYCerrarUnidad()"]');
 
+  estado.unidadCerrada = cerrada;
+
   if (cerrada) {
     if (banner) banner.style.display = "flex";
     if (btnCerrar) {
@@ -426,6 +391,12 @@ function marcarUnidadCerradaUI(cerrada) {
       btnCerrar.style.borderColor = "var(--danger, #ef4444)";
       btnCerrar.disabled = true;
     }
+    // Deshabilitar todos los inputs de calificación de la tabla
+    document.querySelectorAll(".grade-input").forEach(inp => {
+      inp.disabled = true;
+      inp.style.cursor = "not-allowed";
+      inp.style.opacity = ".7";
+    });
   } else {
     if (banner) banner.style.display = "none";
     if (btnCerrar) {
@@ -434,22 +405,24 @@ function marcarUnidadCerradaUI(cerrada) {
       btnCerrar.style.borderColor = "";
       btnCerrar.disabled = false;
     }
+    document.querySelectorAll(".grade-input").forEach(inp => {
+      inp.disabled = false;
+      inp.style.cursor = "";
+      inp.style.opacity = "";
+    });
   }
 }
 
 function hayAlumnosSinDatos() {
   const vacios = [];
   estado.alumnos.forEach((al) => {
-    const rubrosDirectosFaltantes = estado.rubros
-      .filter((r) => r.tipo === "directo")
-      .some((r) => {
-        const v = getRubroEstado(al.matricula, r.key);
-        return v === "" || v === undefined || v === null;
-      });
-    const actFaltantes =
-      estado.rubros.some((r) => r.tipo === "actividades") &&
-      calcularPromedioActividades(al.matricula) === null;
-    if (rubrosDirectosFaltantes || actFaltantes) vacios.push(al.nombre);
+    const sinDatos = estado.actividades.some(a => {
+      const inp = document.querySelector(
+        `input[data-actividad="${a.id_actividad}"][data-matricula="${al.matricula}"]`
+      );
+      return !inp || inp.value.trim() === "";
+    });
+    if (sinDatos) vacios.push(al.nombre);
   });
   return vacios;
 }
@@ -534,14 +507,7 @@ async function cargarBonusUnidad() {
 
 function renderRubrosBar() {
   const bar = document.getElementById("rubrosBar");
-  const unidad = estado.unidadesGrupo.find(
-    (u) => u.id_unidad === estado.unidadId,
-  );
-  const chipColors = {
-    pct_actividades: "rchip-act",
-    pct_examen: "rchip-exam",
-    pct_asistencia: "rchip-asist",
-  };
+  const unidad = estado.unidadesGrupo.find(u => u.id_unidad === estado.unidadId);
 
   let html = "";
   if (unidad) {
@@ -551,10 +517,14 @@ function renderRubrosBar() {
     </span><span class="chip-sep"></span>`;
   }
 
-  estado.rubros.forEach((r) => {
-    const cls = chipColors[r.key] || "rchip-custom";
-    html += `<span class="rchip ${cls}">${r.nombre} ${r.pct}%</span>`;
-  });
+  // Mostrar las actividades reales del maestro como chips
+  if (estado.actividades.length) {
+    estado.actividades.forEach(a => {
+      html += `<span class="rchip rchip-act">${a.nombre_actividad} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
+    });
+  } else {
+    html += `<span style="font-size:.78rem;color:var(--text-muted)">Sin actividades configuradas</span>`;
+  }
 
   html += `<span class="chip-sep"></span>
     <span class="rchip rchip-bonus">
@@ -573,25 +543,24 @@ function renderTablaCalificaciones() {
     wrap.innerHTML = `<div class="empty-wrap"><iconify-icon icon="mdi:account-off-outline"></iconify-icon><p>No hay alumnos inscritos.</p></div>`;
     return;
   }
-  if (!estado.rubros.length) {
-    wrap.innerHTML = `<div class="empty-wrap"><iconify-icon icon="lucide:settings-2"></iconify-icon><p>Sin rubros configurados. Ve a <a href="gruposMaestro.html">Configurar grupo</a>.</p></div>`;
+  if (!estado.actividades.length) {
+    wrap.innerHTML = `<div class="empty-wrap">
+      <iconify-icon icon="lucide:settings-2"></iconify-icon>
+      <p>Esta unidad no tiene actividades configuradas.<br>
+      Ve a <a href="configurar_actividades.html">Configurar actividades</a> primero.</p>
+    </div>`;
     return;
   }
 
-  const chipColors = {
-    pct_actividades: "#2563eb",
-    pct_examen: "#b45309",
-    pct_asistencia: "#065f46",
-  };
+  // Thead: una columna por actividad
   let thead = `<tr>
     <th class="th-alumno" style="text-align:left">Alumno</th>
     <th style="text-align:left">Matrícula</th>`;
 
-  estado.rubros.forEach((r) => {
-    const color = chipColors[r.key] || "#6d28d9";
-    thead += `<th style="min-width:90px">
-      <span style="color:${color}">${r.nombre}</span>
-      <small>${r.pct}%</small>
+  estado.actividades.forEach(a => {
+    thead += `<th style="min-width:100px">
+      <span style="color:#2563eb">${a.nombre_actividad}</span>
+      <small>${parseFloat(a.ponderacion).toFixed(0)}%</small>
     </th>`;
   });
 
@@ -611,37 +580,18 @@ function renderTablaCalificaciones() {
       <td>${al.nombre}</td>
       <td style="font-size:0.75rem;color:var(--text-muted)">${al.matricula}</td>`;
 
-    estado.rubros.forEach((r) => {
-      if (r.tipo === "actividades") {
-        // Auto-calculated from activities + button to see detail
-        const avg = calcularPromedioActividades(al.matricula);
-        const color =
-          avg === null
-            ? "var(--text-muted)"
-            : avg >= 70
-              ? "var(--success)"
-              : "var(--danger)";
-        tbody += `<td>
-          <div class="act-cell">
-            <span class="act-val" id="act-val-${al.matricula}"
-              style="color:${color}">${avg !== null ? avg.toFixed(1) : "—"}</span>
-            <button class="btn-ver" onclick="abrirModalActividades('${al.matricula}')"
-              title="Ver actividades individuales">
-              <iconify-icon icon="lucide:list" style="font-size:.75rem"></iconify-icon>
-            </button>
-          </div>
-        </td>`;
-      } else {
-        // Direct input
-        const val = getRubroEstado(al.matricula, r.key);
-        tbody += `<td>
-          <input class="grade-input rubro-direct-input"
-            type="number" min="0" max="100"
-            data-matricula="${al.matricula}" data-key="${r.key}"
-            value="${val}" placeholder="—"
-            oninput="onCalInput(this);onRubroInput('${al.matricula}','${r.key}',this.value)" />
-        </td>`;
-      }
+    // Una celda por actividad — input directo
+    estado.actividades.forEach(a => {
+      const r      = estado.resultados[al.matricula]?.[a.id_actividad];
+      const val    = r?.estatus === "NP" ? "" : (r?.cal ?? "");
+      tbody += `<td>
+        <input class="grade-input" type="number" min="0" max="100"
+          data-actividad="${a.id_actividad}"
+          data-matricula="${al.matricula}"
+          data-ponderacion="${a.ponderacion}"
+          value="${val}" placeholder="—"
+          oninput="onCalInput(this);recalcularFila('${al.matricula}')" />
+      </td>`;
     });
 
     // Base (sin bonus) — req. Etapa 2 §3.2: mostrar diferencia antes/después del bonus
@@ -687,6 +637,9 @@ function renderTablaCalificaciones() {
     <thead>${thead}</thead>
     <tbody>${tbody}</tbody>
   </table>`;
+
+  // Recalcular BASE y FINAL para todos los alumnos con los datos ya cargados
+  estado.alumnos.forEach(al => recalcularFila(al.matricula));
 }
 
 function clampCal(val) {
@@ -725,46 +678,24 @@ function calcularPromedioActividades(matricula) {
 }
 
 function calcularCalFinal(matricula) {
-  if (!estado.rubros.length) return null;
-  let total = 0;
-  let hasSomeData = false;
-
-  for (const r of estado.rubros) {
-    let grade;
-    if (r.tipo === "actividades") {
-      grade = calcularPromedioActividades(matricula);
-    } else {
-      const raw = getRubroEstado(matricula, r.key);
-      grade = raw !== "" ? parseFloat(raw) : null;
-    }
-    if (grade === null) continue;
-    hasSomeData = true;
-    total += grade * (r.pct / 100);
-  }
-  if (!hasSomeData) return null;
-
-  // Add bonus
+  const base = calcularBaseScore(matricula);
+  if (base === null) return null;
   const bonus = parseFloat(getBonus(matricula).puntos) || 0;
-  const conBonus = Math.min(100, total + bonus);
-  // Institutional rounding
+  const conBonus = Math.min(100, base + bonus);
   return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
 }
 
 function calcularBaseScore(matricula) {
-  if (!estado.rubros.length) return null;
-  let total = 0;
-  let haySomething = false;
-  for (const r of estado.rubros) {
-    let grade =
-      r.tipo === "actividades"
-        ? calcularPromedioActividades(matricula)
-        : (() => {
-            const v = getRubroEstado(matricula, r.key);
-            return v !== "" ? parseFloat(v) : null;
-          })();
-    if (grade === null) continue;
+  if (!estado.actividades.length) return null;
+  let total = 0; let haySomething = false;
+  for (const a of estado.actividades) {
+    const inp = document.querySelector(
+      `input[data-actividad="${a.id_actividad}"][data-matricula="${matricula}"]`
+    );
+    const val = inp ? inp.value.trim() : "";
+    if (val === "") continue;
     haySomething = true;
-    total += grade * (r.pct / 100);
+    total += parseFloat(val) * (parseFloat(a.ponderacion) / 100);
   }
   if (!haySomething) return null;
   return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
@@ -1050,17 +981,22 @@ async function guardarCalificaciones() {
   const vacios = hayAlumnosSinDatos();
   if (vacios.length > 0) {
     const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
-    const continuar = confirm(
-      `⚠️ Los siguientes alumnos tienen campos sin calificar: ${nombres}.
+    mostrarConfirm(
+      "Campos sin calificar",
+      `Los siguientes alumnos tienen actividades sin calificar:
+${nombres}.
 
-` +
-      `Los campos vacíos se guardarán como "sin dato" y usarán el valor 0 al calcular la unidad.
+Los campos vacíos se guardarán como "sin dato" y usarán el valor 0 al calcular la unidad.
 
-` +
-      `¿Deseas continuar de todas formas?`
+¿Deseas continuar de todas formas?`,
+      async () => { await _ejecutarGuardado(); }
     );
-    if (!continuar) return;
+    return;
   }
+  await _ejecutarGuardado();
+}
+
+async function _ejecutarGuardado() {
 
   let total = 0;
   // 1. Save activity grades for all alumnos
@@ -1108,24 +1044,39 @@ async function guardarYCerrarUnidad() {
   const vacios = hayAlumnosSinDatos();
   if (vacios.length > 0) {
     const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
-    const continuar = confirm(
-      `⚠️ ATENCIÓN: Los siguientes alumnos tienen campos sin calificar: ${nombres}.
+    const _procederCierre = async () => {
+    mostrarConfirm(
+      "Confirmar cierre de unidad",
+      "¿Cerrar definitivamente esta unidad para todos los alumnos?
 
-` +
-      `Al cerrar la unidad, los campos vacíos se calcularán con valor 0 y NO podrán modificarse fácilmente.
-
-` +
-      `¿Deseas cerrar la unidad de todas formas?`
+Esta acción calculará el promedio final y no se podrá deshacer fácilmente.",
+      async () => { await _ejecutarCierre(); }
     );
-    if (!continuar) return;
-  }
+  };
 
-  await guardarCalificaciones();
-  if (!confirm("¿Confirmar cierre de la unidad para todos los alumnos? Esta acción calculará el promedio final de la unidad.")) return;
+  if (vacios.length > 0) {
+    const nombres2 = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
+    mostrarConfirm(
+      "⚠️ Campos sin calificar",
+      `Los siguientes alumnos tienen actividades sin calificar:
+${nombres2}.
+
+Al cerrar la unidad, los campos vacíos se calcularán con valor 0 y no podrán modificarse fácilmente.
+
+¿Cerrar de todas formas?`,
+      async () => { await _ejecutarGuardado(); await _procederCierre(); }
+    );
+    return;
+  }
+  await _ejecutarGuardado();
+  await _procederCierre();
+  return;
+}
+
+async function _ejecutarCierre() {
 
   let errores = 0;
   for (const al of estado.alumnos) {
-    // Leer los rubros directos (examen, asistencia y custom) del estado en memoria
     const rubrosDirectos = {};
     estado.rubros
       .filter((r) => r.tipo === "directo")
@@ -1693,6 +1644,63 @@ function actualizarEstadoBadge(activo) {
   if (!badge) return;
   badge.className = `status-pill ${activo ? "ok" : "warn"}`;
   badge.innerHTML = `<span class="dot-pulse"></span> ${activo ? "Configurado" : "Sin configurar"}`;
+}
+
+
+// ─── Modal de confirmación personalizado ──────────────────────────────────────
+function mostrarConfirm(titulo, cuerpo, onAceptar, onCancelar = null) {
+  // Crear modal si no existe
+  let overlay = document.getElementById("rca-confirm-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "rca-confirm-overlay";
+    overlay.style.cssText = `
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+      z-index:9999;align-items:center;justify-content:center;padding:20px`;
+    overlay.innerHTML = `
+      <div id="rca-confirm-box" style="
+        background:var(--card-bg,#fff);border-radius:14px;padding:28px;
+        width:min(460px,100%);box-shadow:0 24px 80px rgba(0,0,0,.3);
+        animation:modalIn .18s ease">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <iconify-icon id="rca-confirm-icon" icon="lucide:alert-triangle"
+            style="font-size:1.5rem;color:var(--warning,#d97706);flex-shrink:0;margin-top:2px">
+          </iconify-icon>
+          <div>
+            <h3 id="rca-confirm-titulo" style="margin:0 0 6px;font-size:1rem;font-weight:700;
+              color:var(--text-primary)"></h3>
+            <p id="rca-confirm-cuerpo" style="margin:0;font-size:.88rem;
+              color:var(--text-secondary);line-height:1.5;white-space:pre-line"></p>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+          <button id="rca-confirm-cancelar" class="btn btn-outline">Cancelar</button>
+          <button id="rca-confirm-aceptar" class="btn btn-primary">Aceptar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  document.getElementById("rca-confirm-titulo").textContent = titulo;
+  document.getElementById("rca-confirm-cuerpo").textContent = cuerpo;
+  overlay.style.display = "flex";
+
+  const btnAceptar  = document.getElementById("rca-confirm-aceptar");
+  const btnCancelar = document.getElementById("rca-confirm-cancelar");
+
+  // Clonar para limpiar event listeners previos
+  const newAceptar  = btnAceptar.cloneNode(true);
+  const newCancelar = btnCancelar.cloneNode(true);
+  btnAceptar.replaceWith(newAceptar);
+  btnCancelar.replaceWith(newCancelar);
+
+  function cerrar() { overlay.style.display = "none"; }
+
+  newAceptar.addEventListener("click", () => { cerrar(); onAceptar(); });
+  newCancelar.addEventListener("click", () => { cerrar(); if (onCancelar) onCancelar(); });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) { cerrar(); if (onCancelar) onCancelar(); }
+  });
 }
 
 function mostrarToast(msg, tipo = "success") {

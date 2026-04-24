@@ -26,22 +26,6 @@
       #cardResumen        { display: none; margin-top: 20px; }
 
       .unidades-grid { display: grid; gap: 10px; }
-
-      .unidad-row {
-        display: grid;
-        grid-template-columns: 44px 1fr;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 9px;
-        transition: border-color .2s, background .2s;
-      }
-      .unidad-row:focus-within {
-        border-color: var(--primary);
-        background: var(--card-bg);
-      }
       .unidad-numero {
         width: 38px; height: 38px;
         border-radius: 50%;
@@ -92,6 +76,68 @@
       .resumen-tabla tr:last-child td { border-bottom: none; }
       .badge-ok  { background:#d1fae5; color:#065f46; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
       .badge-pnd { background:#fef3c7; color:#92400e; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
+    
+      /* ── Unidad row: solo número + input grande ─────────── */
+      .unidad-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        transition: border-color .2s, background .2s;
+      }
+      .unidad-row:focus-within {
+        border-color: var(--primary);
+        background: var(--card-bg);
+      }
+
+      /* ── Bloque de opciones (nivel materia) ─────────────── */
+      .bloque-opciones {
+        padding: 14px 16px;
+        background: var(--bg-secondary);
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 14px;
+      }
+      .opciones-label {
+        font-size: .78rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .05em;
+        color: var(--text-secondary); margin-bottom: 10px;
+      }
+      .opciones-sublabel {
+        font-weight: 400; text-transform: none; letter-spacing: 0;
+        color: var(--text-muted); font-size: .72rem;
+      }
+      .tipos-chips {
+        display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px;
+      }
+      .tipo-chip-toggle {
+        padding: 5px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 999px;
+        background: var(--card-bg);
+        color: var(--text-secondary);
+        font-size: .8rem; font-weight: 600;
+        cursor: pointer;
+        transition: all .15s;
+        font-family: inherit;
+      }
+      .tipo-chip-toggle:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light, #eff6ff);
+      }
+      .tipo-chip-toggle.activo {
+        background: var(--primary, #3b82f6);
+        border-color: var(--primary, #3b82f6);
+        color: #fff;
+      }
+      .opciones-hint {
+        font-size: .75rem; color: var(--text-muted);
+      }
     </style>
   </head>
   <body>
@@ -145,14 +191,11 @@
             <p id="instruccionesConfig" style="font-size:.84rem;color:var(--text-muted);margin-bottom:16px"></p>
             <div class="unidades-grid" id="gridUnidades"></div>
             <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
-              <button class="btn btn-primary" onclick="guardarUnidades()">
+              <button class="btn btn-primary" id="btnGuardar" onclick="guardarUnidades()">
                 <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
                 Guardar unidades
               </button>
-              <button class="btn btn-outline" onclick="cancelarConfig()">
-                <iconify-icon icon="mdi:close"></iconify-icon>
-                Cancelar
-              </button>
+
               <span id="estadoGuardado" style="font-size:.82rem;color:var(--success,#16a34a)"></span>
             </div>
           </div>
@@ -171,7 +214,7 @@
                   <th>#</th>
                   <th>Materia</th>
                   <th>Nombre de la unidad</th>
-                  <th>Estado</th>
+                  <th>Tipos habilitados para el maestro</th>
                 </tr>
               </thead>
               <tbody id="cuerpoResumen"></tbody>

@@ -89,6 +89,49 @@ async function cargarTiposActividad() {
   }).join("");
 }
 
+// ─── Tipos habilitados para una unidad ────────────────────────────────────────
+// Carga del admin qué tipos puede usar el maestro. Si no hay, usa el catálogo completo.
+async function cargarTiposParaUnidad(idUnidad) {
+  const grid = document.getElementById("tiposGrid");
+  if (!grid) return;
+
+  let tiposUnidad = [];
+  try {
+    const res = await fetch(`${BASE}/api/unidades/${idUnidad}/tipos`, {
+      headers: { Authorization: `Bearer ${tk()}` }
+    });
+    if (res.ok) tiposUnidad = await res.json();
+  } catch (_) {}
+
+  // Si el admin no configuró tipos para esta unidad → mostrar todos
+  const tiposAMostrar = tiposUnidad.length > 0 ? tiposUnidad : tiposActividad;
+
+  grid.innerHTML = tiposAMostrar.map(t => {
+    const icono = ICONOS_TIPO[t.nombre] || ICONO_DEFAULT;
+    return `
+      <div class="tipo-card" id="tipo-card-${t.id_tipo}-${esc(t.nombre)}"
+           onclick="seleccionarTipo(${t.id_tipo}, '${esc(t.nombre)}')">
+        <iconify-icon icon="${icono}" class="tipo-card-icon"></iconify-icon>
+        <span class="tipo-card-nombre">${esc(t.nombre)}</span>
+      </div>`;
+  }).join("");
+
+  // Mostrar nota si el admin restringió los tipos
+  const hint = document.getElementById("modalHint");
+  if (hint && tiposUnidad.length > 0) {
+    hint.innerHTML = `
+      <iconify-icon icon="mdi:shield-check-outline" style="vertical-align:middle;color:var(--success,#16a34a)"></iconify-icon>
+      Selecciona un tipo de actividad para continuar
+      <span style="font-size:.7rem;color:var(--text-muted);margin-left:4px">
+        (${tiposUnidad.length} tipo(s) habilitados por el administrador)
+      </span>`;
+  } else if (hint) {
+    hint.innerHTML = `
+      <iconify-icon icon="lucide:arrow-up" style="vertical-align:middle"></iconify-icon>
+      Selecciona un tipo de actividad para continuar`;
+  }
+}
+
 // ─── Cargar grupos ─────────────────────────────────────────────────────────
 async function cargarGrupos() {
   const contenedor  = document.getElementById("contenedorGrupos");
@@ -372,7 +415,7 @@ function toggleUnidad(idGrupo, idUnidad) {
 //  MODAL — Agregar actividad
 // ══════════════════════════════════════════════════════════════════════════════
 
-function abrirModal(idGrupo, idUnidad, nombreUnidad) {
+async function abrirModal(idGrupo, idUnidad, nombreUnidad) {
   _modalGrupo   = idGrupo;
   _modalUnidad  = idUnidad;
   _modalTipoId  = null;
@@ -385,20 +428,25 @@ function abrirModal(idGrupo, idUnidad, nombreUnidad) {
   // Limpiar selección previa de tipos
   document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
 
-  // Limpiar campos
-  document.getElementById("modalNombre").value = "";
-  document.getElementById("modalPct").value    = "";
+  // Limpiar estado
+  _modalTipoId  = null;
+  _modalTipoNom = null;
+  document.getElementById("modalPct").value = "";
 
   // Mostrar disponible
   const acts = getActs(idGrupo, idUnidad);
   const disp = Math.max(0, 100 - calcTotal(acts));
   document.getElementById("disponibleVal").textContent = `${disp.toFixed(0)}%`;
 
+  // Mostrar hint, ocultar panel de selección
+  document.getElementById("modalSeleccion").style.display = "none";
+  document.getElementById("modalHint").style.display      = "block";
+
+  // Cargar tipos habilitados para esta unidad (configurados por el admin)
+  await cargarTiposParaUnidad(idUnidad);
+
   // Abrir
   document.getElementById("modalAgregar").classList.add("active");
-
-  // Enfocar primer campo
-  setTimeout(() => document.getElementById("modalNombre").focus(), 100);
 }
 
 function cerrarModal() {
@@ -416,37 +464,32 @@ function seleccionarTipo(idTipo, nombre) {
   _modalTipoId  = idTipo;
   _modalTipoNom = nombre;
 
-  // Highlight
+  // Highlight tarjeta seleccionada
   document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
-  const card = document.getElementById(`tipo-card-${idTipo}-${nombre}`);
+  const card = document.getElementById(`tipo-card-${idTipo}-${esc(nombre)}`);
   if (card) card.classList.add("selected");
 
-  // Pre-rellenar nombre si está vacío
-  const inpNombre = document.getElementById("modalNombre");
-  if (inpNombre && !inpNombre.value.trim()) {
-    inpNombre.value = nombre;
-  }
+  // Mostrar panel de selección con el tipo elegido
+  const icono = ICONOS_TIPO[nombre] || ICONO_DEFAULT;
+  document.getElementById("modalTipoLabel").innerHTML =
+    `<iconify-icon icon="${icono}" style="font-size:1.1rem"></iconify-icon> ${esc(nombre)}`;
+  document.getElementById("modalSeleccion").style.display = "block";
+  document.getElementById("modalHint").style.display      = "none";
 
-  // Ir al % ponderación
-  document.getElementById("modalPct").focus();
+  // Enfocar el campo de %
+  setTimeout(() => document.getElementById("modalPct").focus(), 60);
 }
 
 // Confirmar y guardar
 async function confirmarAgregar() {
-  const nombre = document.getElementById("modalNombre").value.trim();
-  const pct    = parseFloat(document.getElementById("modalPct").value);
+  const pct = parseFloat(document.getElementById("modalPct").value);
 
-  if (!_modalTipoNom && !nombre) {
-    toast("Selecciona un tipo o escribe el nombre de la actividad", "error");
+  if (!_modalTipoNom) {
+    toast("Selecciona un tipo de actividad primero", "error");
     return;
   }
-  const nombreFinal = nombre || _modalTipoNom;
+  const nombreFinal = _modalTipoNom;
 
-  if (!nombreFinal) {
-    toast("Escribe el nombre de la actividad", "error");
-    document.getElementById("modalNombre").focus();
-    return;
-  }
   if (isNaN(pct) || pct <= 0 || pct > 100) {
     toast("El porcentaje debe ser entre 1 y 100", "error");
     document.getElementById("modalPct").focus();
