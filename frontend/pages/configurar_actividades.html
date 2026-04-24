@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configurar Actividades — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      /* ── Tarjeta de grupo ───────────────────────────────────────── */
+      .grupo-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card-bg);
+        margin-bottom: 18px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+      .grupo-card-header {
+        display: flex; align-items: center; gap: 14px;
+        padding: 16px 20px;
+        cursor: pointer;
+        user-select: none;
+        transition: background .15s;
+      }
+      .grupo-card-header:hover { background: var(--bg-secondary); }
+      .grupo-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        background: var(--primary-light, #eff6ff);
+        color: var(--primary, #3b82f6);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+      }
+      .grupo-info { flex: 1; min-width: 0; }
+      .grupo-nombre { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
+      .grupo-meta   { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+      .grupo-body   { display: none; border-top: 1px solid var(--border); }
+      .grupo-body.open { display: block; }
+      /* Padding around the units list */
+      #contenedorGrupos .grupo-body > div[id^="gunidades"] {
+        padding: 14px 16px !important;
+      }
+
+      /* ── Accordion de unidad ────────────────────────────────────── */
+      .unidad-accordion {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        background: var(--card-bg);
+      }
+      .unidad-accordion:last-child { margin-bottom: 0; }
+
+      .unidad-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 13px 20px;
+        cursor: pointer;
+        user-select: none;
+        transition: background .15s;
+      }
+      .unidad-header:hover { background: var(--bg-secondary); }
+      .unidad-num {
+        min-width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--primary, #3b82f6);
+        color: #fff; font-weight: 700; font-size: .78rem;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .unidad-title { font-weight: 600; font-size: .93rem; flex: 1; }
+
+      /* ── Badge de porcentaje ─────────────────────────────────────── */
+      .pct-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: .75rem; font-weight: 700;
+        transition: background .2s, color .2s;
+      }
+      .pct-badge.completa  { background: #d1fae5; color: #065f46; }
+      .pct-badge.pendiente { background: #fef3c7; color: #92400e; }
+      .pct-badge.excedida  { background: #fee2e2; color: #991b1b; }
+
+      .unidad-chevron { font-size: 1.1rem; color: var(--text-muted); transition: transform .2s; }
+      .unidad-accordion.open .unidad-chevron { transform: rotate(180deg); }
+
+      /* ── Cuerpo de unidad ───────────────────────────────────────── */
+      .unidad-body { display: none; padding: 0 20px 16px; }
+      .unidad-accordion.open .unidad-body { display: block; }
+
+      /* ── Lista de actividades existentes ────────────────────────── */
+      .act-list { display: grid; gap: 6px; margin-bottom: 14px; }
+      .act-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: .87rem;
+      }
+      .act-nombre { flex: 1; font-weight: 500; }
+      .act-pct    { font-weight: 700; color: var(--primary); min-width: 45px; text-align: right; }
+      .act-del    {
+        width: 26px; height: 26px; border-radius: 6px;
+        background: transparent; border: none; cursor: pointer;
+        color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+        font-size: .9rem; transition: background .15s, color .15s;
+      }
+      .act-del:hover { background: #fee2e2; color: #991b1b; }
+
+      /* ── Barra de progreso de porcentaje ────────────────────────── */
+      .pct-track {
+        height: 6px; border-radius: 3px;
+        background: var(--border); margin: 10px 0;
+        overflow: hidden;
+      }
+      .pct-fill {
+        height: 100%; border-radius: 3px;
+        background: var(--primary, #3b82f6);
+        transition: width .3s, background .3s;
+      }
+      .pct-fill.completa { background: #16a34a; }
+      .pct-fill.excedida { background: #dc2626; }
+
+      .pct-label {
+        font-size: .78rem; color: var(--text-muted);
+        display: flex; justify-content: space-between; margin-bottom: 12px;
+      }
+      .pct-label strong { color: var(--text-primary); }
+
+      /* ── Presets de actividad (chips rápidos) ──────────────────── */
+      .presets-label {
+        font-size: .75rem; font-weight: 600;
+        color: var(--text-secondary); text-transform: uppercase;
+        letter-spacing: .05em; margin-bottom: 7px;
+      }
+      .presets-chips {
+        display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+      }
+      .preset-chip {
+        padding: 4px 12px; border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text-secondary);
+        font-size: .78rem; font-weight: 600;
+        cursor: pointer; transition: all .15s;
+        user-select: none;
+      }
+      .preset-chip:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light, #eff6ff);
+      }
+
+      /* ── Formulario agregar actividad ────────────────────────────── */
+      .add-act-form {
+        display: grid;
+        grid-template-columns: 1fr 90px auto;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .add-act-form input {
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: .88rem;
+        font-family: inherit;
+      }
+      .add-act-form input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+      }
+      .add-act-form .field-label {
+        font-size: .75rem; font-weight: 600;
+        color: var(--text-secondary); margin-bottom: 4px;
+      }
+
+      /* ── Línea separadora ────────────────────────────────────────── */
+      .add-section {
+        border-top: 1px dashed var(--border);
+        padding-top: 14px; margin-top: 4px;
+      }
+
+      /* ── Botón success ────────────────────────────────────── */
+      .btn-success {
+        background: var(--success, #16a34a);
+        color: #fff;
+        border: none;
+      }
+      .btn-success:hover { background: #15803d; }
+      .btn-success:disabled {
+        background: var(--border);
+        color: var(--text-muted);
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 520px) {
+        .add-act-form { grid-template-columns: 1fr 70px auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+
+        <div class="page-header-v2">
+          <div>
+            <h1>Configurar actividades</h1>
+            <p class="page-subtitle">Define qué se evalúa en cada unidad de tus grupos</p>
+          </div>
+        </div>
+
+        <!-- Stats rápidas -->
+        <div class="stats-row" id="statsRow" style="margin-bottom:20px">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:library" class="stat-icon"></iconify-icon>
+            <div class="stat-info">
+              <span class="stat-value" id="statGrupos">—</span>
+              <span class="stat-label">Mis grupos</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <iconify-icon icon="lucide:check-circle" class="stat-icon" style="color:var(--success,#16a34a)"></iconify-icon>
+            <div class="stat-info">
+              <span class="stat-value" id="statCompletas">—</span>
+              <span class="stat-label">Unidades configuradas</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <iconify-icon icon="lucide:alert-circle" class="stat-icon" style="color:var(--warning,#d97706)"></iconify-icon>
+            <div class="stat-info">
+              <span class="stat-value" id="statPendientes">—</span>
+              <span class="stat-label">Pendientes</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje de carga -->
+        <div id="msgCargando" style="text-align:center;padding:40px;color:var(--text-muted)">
+          <iconify-icon icon="lucide:loader-2" style="font-size:2rem;animation:spin 1s linear infinite"></iconify-icon>
+          <p style="margin-top:10px">Cargando tus grupos...</p>
+        </div>
+
+        <!-- Contenedor de grupos -->
+        <div id="contenedorGrupos"></div>
+
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/configurar_actividades.js"></script>
+  </body>
+</html>

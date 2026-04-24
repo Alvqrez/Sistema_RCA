@@ -288,17 +288,55 @@ async function cargarUnidadesGrupo() {
     estado.unidadesGrupo = [];
   }
 
-  // Render unit tabs
+  // ─── Filtrar solo unidades con actividades guardadas (bloqueado=1) ──────────
+  // Cargar todas las actividades del grupo para saber cuáles tienen config
+  let actividadesGrupo = [];
+  try {
+    const resA = await fetch(`${BASE_URL_FORM}/api/actividades`, {
+      headers: { Authorization: `Bearer ${token()}` }
+    });
+    if (resA.ok) {
+      const todasActs = await resA.json();
+      actividadesGrupo = todasActs.filter(a => String(a.id_grupo) === String(estado.grupoId));
+    }
+  } catch (_) {}
+
+  // Una unidad está "configurada" si tiene al menos 1 actividad con bloqueado=1
+  function unidadConfigurada(id_unidad) {
+    const acts = actividadesGrupo.filter(a => String(a.id_unidad) === String(id_unidad));
+    return acts.length > 0 && acts.some(a => a.bloqueado === 1 || a.bloqueado === true);
+  }
+
+  const unidadesConf  = estado.unidadesGrupo.filter(u => unidadConfigurada(u.id_unidad));
+  const unidadesSinConf = estado.unidadesGrupo.filter(u => !unidadConfigurada(u.id_unidad));
+
+  // Render unit tabs — solo las configuradas son clickeables
   const tabsEl = document.getElementById("unitTabs");
-  tabsEl.innerHTML = estado.unidadesGrupo
-    .map(
-      (u) =>
-        `<button class="unit-tab" data-uid="${u.id_unidad}"
+  const tabsConf = unidadesConf.map(u =>
+    `<button class="unit-tab" data-uid="${u.id_unidad}"
        onclick="seleccionarUnidadTab(${u.id_unidad})">
        Unidad ${u.numero_unidad}
-     </button>`,
-    )
-    .join("");
+     </button>`
+  ).join("");
+
+  const tabsSinConf = unidadesSinConf.map(u =>
+    `<button class="unit-tab" data-uid="${u.id_unidad}" disabled
+       title="Esta unidad aún no tiene actividades configuradas"
+       style="opacity:.45;cursor:not-allowed">
+       Unidad ${u.numero_unidad}
+       <iconify-icon icon="mdi:lock-outline" style="font-size:.7rem;margin-left:3px"></iconify-icon>
+     </button>`
+  ).join("");
+
+  tabsEl.innerHTML = tabsConf + tabsSinConf;
+
+  if (!unidadesConf.length) {
+    // No hay ninguna unidad configurada — mostrar aviso
+    tabsEl.innerHTML = `<span style="color:var(--warning,#d97706);font-size:.85rem;padding:6px 0">
+      <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
+      Ninguna unidad tiene actividades configuradas. Ve a <strong>Clases → Configurar actividades</strong>.
+    </span>`;
+  }
 
   // Update "número de unidades" field
   const nu = document.getElementById("numUnidades");

@@ -137,12 +137,21 @@
               </div>
 
               <div class="field-group">
-                <label>Nombre de la actividad</label>
+                <label>Tipo de actividad <span style="color:red">*</span></label>
+                <select id="tipoActividad" onchange="alCambiarTipo()">
+                  <option value="">-- Selecciona un tipo --</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label>Nombre personalizado <span style="color:var(--text-muted);font-weight:400;font-size:.8rem">(opcional)</span></label>
                 <input
                   type="text"
                   id="nombreActividad"
-                  placeholder="Ej. Práctica 1"
+                  placeholder="Ej. Tarea 1, Práctica de laboratorio..."
+                  title="Si no escribes un nombre, se usará el nombre del tipo seleccionado"
                 />
+                <small style="color:var(--text-muted);font-size:.75rem">Si lo dejas vacío se usará el nombre del tipo</small>
               </div>
 
               <div class="field-group">

@@ -232,4 +232,50 @@ router.delete("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
+
+// POST /bloquear-unidad — Bloquea (guarda definitivamente) todas las actividades de un grupo-unidad
+// Una vez bloqueadas, no se pueden agregar ni eliminar actividades en esa unidad
+router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
+  const { id_grupo, id_unidad } = req.body;
+
+  if (!id_grupo || !id_unidad) {
+    return res.status(400).json({ error: "Se requiere id_grupo e id_unidad" });
+  }
+
+  // Verificar que la suma sea exactamente 100% antes de bloquear
+  db.query(
+    "SELECT COALESCE(SUM(ponderacion), 0) AS total, COUNT(*) AS cantidad FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
+    [id_grupo, id_unidad],
+    (errC, rowsC) => {
+      if (errC) return res.status(500).json({ error: "Error interno del servidor" });
+
+      const total    = parseFloat(rowsC[0].total);
+      const cantidad = parseInt(rowsC[0].cantidad);
+
+      if (cantidad === 0) {
+        return res.status(400).json({ error: "La unidad no tiene actividades configuradas." });
+      }
+      if (Math.round(total) !== 100) {
+        return res.status(400).json({
+          error: `La suma de ponderaciones debe ser exactamente 100%. Actualmente: ${total.toFixed(0)}%.`
+        });
+      }
+
+      // Bloquear todas las actividades de este grupo-unidad
+      db.query(
+        "UPDATE actividad SET bloqueado = 1 WHERE id_grupo = ? AND id_unidad = ?",
+        [id_grupo, id_unidad],
+        (errU, result) => {
+          if (errU) return res.status(500).json({ error: "Error interno del servidor" });
+          res.json({
+            success: true,
+            mensaje: "Unidad guardada y bloqueada correctamente.",
+            actividades_bloqueadas: result.affectedRows
+          });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;

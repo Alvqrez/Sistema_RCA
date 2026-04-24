@@ -98,19 +98,19 @@ async function seed() {
     // ── grupo_unidad (ponderaciones distintas entre grupos) ───────────────
     // Grupo 1 FBD: U1=30%, U2=40%, U3=30%
     await q(
-      `INSERT IGNORE INTO grupo_unidad VALUES (1,1,30),(1,2,40),(1,3,30)`,
+      `INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (1,1,30),(1,2,40),(1,3,30)`,
     );
     // Grupo 2 FBD: U1=25%, U2=35%, U3=40%  ← estructura diferente
     await q(
-      `INSERT IGNORE INTO grupo_unidad VALUES (2,1,25),(2,2,35),(2,3,40)`,
+      `INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (2,1,25),(2,2,35),(2,3,40)`,
     );
     // Grupo 3 POO: U4=33%, U5=33%, U6=34%
     await q(
-      `INSERT IGNORE INTO grupo_unidad VALUES (3,4,33),(3,5,33),(3,6,34)`,
+      `INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (3,4,33),(3,5,33),(3,6,34)`,
     );
     // Grupo 4 POO: U4=40%, U5=40%, U6=20%
     await q(
-      `INSERT IGNORE INTO grupo_unidad VALUES (4,4,40),(4,5,40),(4,6,20)`,
+      `INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (4,4,40),(4,5,40),(4,6,20)`,
     );
     console.log("✓ Pesos    →  distintos entre grupos (demostración RN3)");
 

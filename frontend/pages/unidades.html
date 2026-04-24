@@ -2,338 +2,187 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Unidades - RCA</title>
+    <title>Unidades — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link
-      rel="icon"
-      type="image/png"
-      href="../assets/images/icons/rca-icon.png"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css" />
     <style>
-      /* ── Lista visual de unidades ─────────────────────────── */
-      .unidad-lista {
+      /* ── Selector de materia ─────────────────────────── */
+      .materia-selector {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 12px;
+        align-items: flex-end;
+        gap: 14px;
+        flex-wrap: wrap;
       }
+      .materia-selector .field-group { flex: 1; min-width: 240px; margin: 0; }
 
-      .unidad-item {
-        display: flex;
+      /* ── Card de configuración ───────────────────────── */
+      #cardConfigUnidades { display: none; margin-top: 20px; }
+      #cardResumen        { display: none; margin-top: 20px; }
+
+      .unidades-grid { display: grid; gap: 10px; }
+
+      .unidad-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
         align-items: center;
         gap: 12px;
         padding: 12px 16px;
-        border-radius: 10px;
-        border: 2px solid transparent;
-        background: var(--bg-app);
-        cursor: pointer;
-        transition:
-          border-color 0.15s,
-          box-shadow 0.15s;
-        position: relative;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        transition: border-color .2s, background .2s;
       }
-      .unidad-item:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      .unidad-row:focus-within {
+        border-color: var(--primary);
+        background: var(--card-bg);
       }
-
-      /* Colores según tipo */
-      .unidad-item.tipo-original {
-        border-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.07);
-      }
-      .unidad-item.tipo-fusionada {
-        border-color: #8b5cf6;
-        background: rgba(139, 92, 246, 0.07);
-      }
-      .unidad-item.tipo-dividida {
-        border-color: #f59e0b;
-        background: rgba(245, 158, 11, 0.07);
-      }
-
-      .unidad-num {
-        width: 32px;
-        height: 32px;
+      .unidad-numero {
+        width: 38px; height: 38px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background: var(--primary, #3b82f6);
+        color: #fff;
         font-weight: 700;
-        font-size: 0.9rem;
+        font-size: .9rem;
+        display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
       }
-      .tipo-original .unidad-num {
-        background: #3b82f6;
-        color: white;
+      .unidad-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: .9rem;
+        box-sizing: border-box;
+        font-family: inherit;
       }
-      .tipo-fusionada .unidad-num {
-        background: #8b5cf6;
-        color: white;
-      }
-      .tipo-dividida .unidad-num {
-        background: var(--warning);
-        color: white;
-      }
-
-      .unidad-info {
-        flex: 1;
-      }
-      .unidad-info strong {
-        font-size: 0.95rem;
-        color: var(--text-main);
-      }
-      .unidad-info small {
-        color: var(--text-muted);
-        font-size: 0.78rem;
+      .unidad-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59,130,246,.15);
       }
 
-      .unidad-badge {
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-size: 0.72rem;
-        font-weight: 600;
-      }
-      .badge-original {
-        background: rgba(59, 130, 246, 0.15);
-        color: #1d4ed8;
-      }
-      .badge-fusionada {
-        background: rgba(139, 92, 246, 0.15);
-        color: #6d28d9;
-      }
-      .badge-dividida {
-        background: rgba(245, 158, 11, 0.15);
-        color: #b45309;
+      /* ── Chip de info ────────────────────────────────── */
+      .chip-info {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 12px; border-radius: 999px;
+        font-size: .78rem; font-weight: 600;
+        background: var(--info-light, #eff6ff);
+        color: var(--info-text, #1d4ed8);
+        border: 1px solid var(--info-border, #bfdbfe);
       }
 
-      .unidad-acciones {
-        display: flex;
-        gap: 6px;
+      /* ── Tabla resumen ───────────────────────────────── */
+      .resumen-tabla { width: 100%; border-collapse: collapse; font-size: .88rem; }
+      .resumen-tabla th {
+        text-align: left; padding: 8px 12px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: .75rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .05em;
       }
-
-      /* Leyenda */
-      .leyenda-unidades {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        font-size: 0.78rem;
-        margin-bottom: 14px;
-        color: var(--text-muted);
-      }
-      .leyenda-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .leyenda-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
+      .resumen-tabla td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+      .resumen-tabla tr:last-child td { border-bottom: none; }
+      .badge-ok  { background:#d1fae5; color:#065f46; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
+      .badge-pnd { background:#fef3c7; color:#92400e; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
     </style>
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <div class="page-header">
-          <h1>
-            <iconify-icon icon="lucide:clipboard-list"></iconify-icon> Unidades
-          </h1>
+
+        <!-- Encabezado -->
+        <div class="page-header-v2">
+          <div>
+            <h1>Unidades académicas</h1>
+            <p class="page-subtitle">Configura los nombres de las unidades de cada materia</p>
+          </div>
         </div>
 
-        <!-- Registrar Unidad — PLEGABLE -->
-        <div class="card card-collapsible" id="cardRegistrarUnidad">
-          <div class="card-title">
-            <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
-            Registrar unidad
-            <button
-              class="card-toggle-btn"
-              onclick="toggleCardLocal(this)"
-              title="Contraer"
-            >
-              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-            </button>
+        <!-- ① Seleccionar materia -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="padding-bottom:0">
+            <iconify-icon icon="lucide:book-open"></iconify-icon>
+            Selecciona una materia
           </div>
           <div class="card-body">
-            <form id="formUnidad" class="form-grid">
+            <div class="materia-selector">
               <div class="field-group">
-                <label
-                  >Materia <span style="color: var(--danger)">*</span></label
-                >
-                <select id="claveMateria" required>
-                  <option value="">-- Selecciona una materia --</option>
-                </select>
-                <small
-                  id="hintUnidades"
-                  style="
-                    color: var(--text-muted);
-                    display: block;
-                    margin-top: 4px;
-                  "
-                ></small>
-              </div>
-              <div class="field-group">
-                <label
-                  >Nombre de la unidad
-                  <span style="color: var(--danger)">*</span></label
-                >
-                <input
-                  type="text"
-                  id="nombreUnidad"
-                  placeholder="Ej. Unidad 1: Introducción"
-                  required
-                />
-              </div>
-              <div class="field-group">
-                <label>Estatus</label>
-                <select id="estatus">
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En curso">En curso</option>
-                  <option value="Cerrada">Cerrada</option>
+                <label>Materia</label>
+                <select id="selMateria">
+                  <option value="">— Selecciona una materia —</option>
                 </select>
               </div>
-              <div class="field-group">
-                <label>Fecha de cierre</label>
-                <input type="date" id="fechaCierre" />
-              </div>
-              <div class="field-group" style="grid-column: 1/-1">
-                <label>Temario</label>
-                <textarea
-                  id="temario"
-                  rows="3"
-                  placeholder="Contenido de la unidad..."
-                ></textarea>
-              </div>
-              <div class="acciones-row" style="margin-top: 8px">
-                <button type="submit" class="btn btn-primary">
-                  <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-                  Guardar
-                </button>
-                <button type="reset" class="btn btn-outline">
-                  <iconify-icon icon="mdi:close"></iconify-icon> Cancelar
-                </button>
-              </div>
-            </form>
+              <button class="btn btn-primary" onclick="cargarConfiguracion()">
+                <iconify-icon icon="lucide:settings-2"></iconify-icon>
+                Configurar unidades
+              </button>
+            </div>
+            <div id="infoMateria" style="display:none;margin-top:12px">
+              <span class="chip-info">
+                <iconify-icon icon="lucide:info"></iconify-icon>
+                <span id="textoInfoMateria"></span>
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- Lista visual de unidades por grupo -->
-        <div class="card" id="cardListaUnidades">
+        <!-- ② Configurar nombres -->
+        <div class="card" id="cardConfigUnidades">
           <div class="card-title">
-            <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
-            Unidades del grupo
+            <iconify-icon icon="lucide:edit-3"></iconify-icon>
+            <span id="tituloConfig">Configurar unidades</span>
           </div>
-
-          <!-- Selector de grupo -->
-          <div class="config-grid" style="margin-bottom: 16px">
-            <div class="field-group">
-              <label>Selecciona un grupo</label>
-              <select
-                id="selGrupoUnidades"
-                onchange="cargarUnidadesGrupoVisual()"
-              >
-                <option value="">-- Elige un grupo --</option>
-              </select>
+          <div class="card-body">
+            <p id="instruccionesConfig" style="font-size:.84rem;color:var(--text-muted);margin-bottom:16px"></p>
+            <div class="unidades-grid" id="gridUnidades"></div>
+            <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
+              <button class="btn btn-primary" onclick="guardarUnidades()">
+                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+                Guardar unidades
+              </button>
+              <button class="btn btn-outline" onclick="cancelarConfig()">
+                <iconify-icon icon="mdi:close"></iconify-icon>
+                Cancelar
+              </button>
+              <span id="estadoGuardado" style="font-size:.82rem;color:var(--success,#16a34a)"></span>
             </div>
-          </div>
-
-          <!-- Leyenda de colores -->
-          <div class="leyenda-unidades">
-            <div class="leyenda-item">
-              <div class="leyenda-dot" style="background: #3b82f6"></div>
-              Original (sin modificar)
-            </div>
-            <div class="leyenda-item">
-              <div class="leyenda-dot" style="background: #8b5cf6"></div>
-              Fusionadas (unidas)
-            </div>
-            <div class="leyenda-item">
-              <div class="leyenda-dot" style="background: #f59e0b"></div>
-              Divididas
-            </div>
-          </div>
-
-          <!-- Lista -->
-          <div id="listaUnidades" class="unidad-lista">
-            <div
-              class="empty-state"
-              style="
-                padding: 32px;
-                text-align: center;
-                color: var(--text-muted);
-              "
-            >
-              <iconify-icon
-                icon="lucide:mouse-pointer-click"
-                style="font-size: 2rem; display: block; margin: 0 auto 8px"
-              ></iconify-icon>
-              <p>Selecciona un grupo para ver y configurar sus unidades</p>
-            </div>
-          </div>
-
-          <!-- Botón de guardar configuración -->
-          <div
-            id="accionesUnidadConfig"
-            style="display: none"
-            class="acciones-row"
-            style="margin-top: 16px"
-          >
-            <button class="btn btn-success" onclick="guardarConfigAgrupacion()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-              Guardar configuración de unidades
-            </button>
-            <button
-              class="btn btn-outline"
-              onclick="cargarUnidadesGrupoVisual()"
-            >
-              <iconify-icon icon="mdi:refresh"></iconify-icon>
-              Deshacer cambios
-            </button>
           </div>
         </div>
 
-        <!-- Tabla clásica de todas las unidades -->
-        <div class="card card-collapsible collapsed" id="cardTablaUnidades">
+        <!-- ③ Resumen -->
+        <div class="card" id="cardResumen">
           <div class="card-title">
             <iconify-icon icon="mdi:table"></iconify-icon>
-            Todas las unidades (tabla)
-            <button
-              class="card-toggle-btn"
-              onclick="toggleCardLocal(this)"
-              title="Expandir"
-            >
-              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-            </button>
+            Unidades registradas
           </div>
-          <div class="card-body">
-            <table>
+          <div class="card-body" style="padding-top:0">
+            <table class="resumen-tabla">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>#</th>
                   <th>Materia</th>
-                  <th>Nombre</th>
-                  <th>Estatus</th>
-                  <th>Fecha cierre</th>
-                  <th>Acciones</th>
+                  <th>Nombre de la unidad</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
-              <tbody id="tablaUnidades"></tbody>
+              <tbody id="cuerpoResumen"></tbody>
             </table>
           </div>
         </div>
+
       </main>
     </div>
 
+    <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script src="../js/unidades.js"></script>
   </body>

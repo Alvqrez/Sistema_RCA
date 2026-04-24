@@ -80,8 +80,9 @@ router.post("/", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
+      // FIX: null !== undefined, parseFloat(null) = NaN → must check both
       const cal =
-        calificacion_obtenida === undefined
+        (calificacion_obtenida === undefined || calificacion_obtenida === null)
           ? null
           : parseFloat(calificacion_obtenida);
 
@@ -147,8 +148,9 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
         return res.status(404).json({ error: "Actividad no encontrada" });
 
       const values = resultados.map((r) => {
+        // FIX: parseFloat(null) = NaN — treat null and undefined the same way
         const cal =
-          r.calificacion_obtenida === undefined
+          (r.calificacion_obtenida === undefined || r.calificacion_obtenida === null)
             ? null
             : parseFloat(r.calificacion_obtenida);
         // Clamp al rango institucional 0–100

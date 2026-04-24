@@ -49,14 +49,9 @@
         icono: "lucide:book-open",
         hijos: [
           {
-            href: "gruposMaestro.html",
-            texto: "Configurar evaluación",
+            href: "configurar_actividades.html",
+            texto: "Configurar actividades",
             icono: "lucide:sliders-horizontal",
-          },
-          {
-            href: "actividades.html",
-            texto: "Actividades",
-            icono: "lucide:clipboard-pen",
           },
           {
             href: "asistencia.html",
@@ -126,6 +121,11 @@
             href: "materias.html",
             texto: "Materias",
             icono: "lucide:book",
+          },
+          {
+            href: "unidades.html",
+            texto: "Unidades",
+            icono: "lucide:layers",
           },
           {
             href: "grupos.html",

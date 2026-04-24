@@ -4,15 +4,49 @@ let todasActividades = [];
 let actividadActiva = null;
 let gruposMap = {}; // id_grupo → grupo completo
 let unidadesGrupoMap = {}; // id_grupo → [{ id_unidad, nombre_unidad, numero_unidad }]
+let tiposActividad   = []; // catálogo cargado del servidor
 
 (async function init() {
   const hoy = new Date().toISOString().split("T")[0];
   const fechaInput = document.getElementById("fechaEntrega");
   if (fechaInput) fechaInput.min = hoy;
 
+  await cargarTiposActividad();   // ← cargar catálogo ANTES del resto
   await cargarGruposSelect();
   await cargarActividades();
 })();
+
+// ─── Cargar catálogo de tipos de actividad ────────────────────────────────────
+async function cargarTiposActividad() {
+  const token = localStorage.getItem("token");
+  try {
+    const res  = await fetch(`${BASE_URL}/api/tipo-actividades`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    tiposActividad = await res.json();
+
+    const sel = document.getElementById("tipoActividad");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Selecciona un tipo --</option>';
+    tiposActividad.forEach(t => {
+      sel.innerHTML += `<option value="${t.id_tipo}">${t.nombre}</option>`;
+    });
+  } catch (e) {
+    console.warn("No se pudo cargar el catálogo de tipos:", e);
+  }
+}
+
+// Cuando el maestro cambia el tipo, pre-rellena el nombre si está vacío
+function alCambiarTipo() {
+  const sel    = document.getElementById("tipoActividad");
+  const input  = document.getElementById("nombreActividad");
+  if (!sel || !input) return;
+  const tipo   = tiposActividad.find(t => String(t.id_tipo) === String(sel.value));
+  if (tipo && !input.value.trim()) {
+    input.placeholder = `Ej. ${tipo.nombre} 1 (dejar vacío = "${tipo.nombre}")`;
+  }
+}
 
 async function cargarGruposSelect() {
   const token = localStorage.getItem("token");
@@ -380,13 +414,12 @@ function renderTablaActividades(actividades) {
 async function registrarActividad() {
   const token = localStorage.getItem("token");
 
-  const id_grupo = document.getElementById("grupoActividad").value;
-  const id_unidad = document.getElementById("unidadActividad").value;
-  const nombre_actividad = document
-    .getElementById("nombreActividad")
-    .value.trim();
-  const ponderacion = document.getElementById("ponderacion").value;
-  const fecha_entrega = document.getElementById("fechaEntrega").value || null;
+  const id_grupo          = document.getElementById("grupoActividad").value;
+  const id_unidad         = document.getElementById("unidadActividad").value;
+  const id_tipo_actividad = document.getElementById("tipoActividad")?.value;
+  const nombre_actividad  = document.getElementById("nombreActividad")?.value.trim() || "";
+  const ponderacion       = document.getElementById("ponderacion").value;
+  const fecha_entrega     = document.getElementById("fechaEntrega").value || null;
 
   if (!id_grupo) {
     mostrarToast("Selecciona un grupo", "error");
@@ -396,8 +429,8 @@ async function registrarActividad() {
     mostrarToast("Selecciona una unidad", "error");
     return;
   }
-  if (!nombre_actividad) {
-    mostrarToast("Escribe el nombre de la actividad", "error");
+  if (!id_tipo_actividad) {
+    mostrarToast("Selecciona un tipo de actividad", "error");
     return;
   }
   if (!ponderacion || parseFloat(ponderacion) <= 0) {
@@ -416,9 +449,9 @@ async function registrarActividad() {
   const actividad = {
     id_grupo,
     id_unidad,
-    nombre_actividad,
+    id_tipo_actividad,
+    nombre_actividad: nombre_actividad || undefined, // backend usará el nombre del tipo si es vacío
     ponderacion,
-    tipo_evaluacion: "Sumativa",
     fecha_entrega,
   };
 
@@ -461,7 +494,10 @@ function limpiarFormActividad() {
   document.getElementById("grupoActividad").value = "";
   document.getElementById("unidadActividad").innerHTML =
     `<option value="">-- Selecciona unidad --</option>`;
-  document.getElementById("nombreActividad").value = "";
+  const selTipo = document.getElementById("tipoActividad");
+  if (selTipo) selTipo.value = "";
+  const inputNombre = document.getElementById("nombreActividad");
+  if (inputNombre) { inputNombre.value = ""; inputNombre.placeholder = "Ej. Tarea 1, Práctica de laboratorio..."; }
   document.getElementById("ponderacion").value = "";
   document.getElementById("fechaEntrega").value = "";
   actualizarIndicadorPonderacion();

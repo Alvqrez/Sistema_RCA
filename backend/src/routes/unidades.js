@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+const { verificarToken, soloAdmin } = require("../middleware/auth");
 
 router.get("/", verificarToken, (req, res) => {
   db.query(
@@ -61,7 +61,7 @@ router.get("/:id", verificarToken, (req, res) => {
   );
 });
 
-router.post("/", maestroOAdmin, (req, res) => {
+router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, nombre_unidad, temario, estatus, fecha_cierre } =
     req.body;
 
@@ -95,7 +95,7 @@ router.post("/", maestroOAdmin, (req, res) => {
   );
 });
 
-router.put("/:id", maestroOAdmin, (req, res) => {
+router.put("/:id", soloAdmin, (req, res) => {
   const { nombre_unidad, temario, estatus, fecha_cierre } = req.body;
 
   db.query(
@@ -117,7 +117,7 @@ router.put("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
-router.delete("/:id", maestroOAdmin, (req, res) => {
+router.delete("/:id", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM unidad WHERE id_unidad = ?",
     [req.params.id],
@@ -129,6 +129,78 @@ router.delete("/:id", maestroOAdmin, (req, res) => {
       res.json({ success: true, mensaje: "Unidad eliminada" });
     },
   );
+});
+
+
+// POST /materia/:clave/configurar — Crea o actualiza las N unidades de una materia en un solo paso
+// Body: [ { id_unidad?, nombre_unidad, temario? }, ... ]  — un objeto por unidad
+router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
+  const clave = req.params.clave;
+  const unidades = req.body; // array
+
+  if (!Array.isArray(unidades) || unidades.length === 0) {
+    return res.status(400).json({ error: "Se requiere un arreglo de unidades" });
+  }
+
+  // Verificar que la materia existe y obtener no_unidades
+  db.query("SELECT no_unidades FROM materia WHERE clave_materia = ?", [clave], (errM, rowsM) => {
+    if (errM) return res.status(500).json({ error: "Error interno del servidor" });
+    if (!rowsM.length) return res.status(404).json({ error: "Materia no encontrada" });
+
+    const noUnidades = rowsM[0].no_unidades;
+    if (unidades.length !== noUnidades) {
+      return res.status(400).json({
+        error: `La materia tiene ${noUnidades} unidad(es). Se enviaron ${unidades.length}.`
+      });
+    }
+
+    // Validar que todos tengan nombre
+    for (let i = 0; i < unidades.length; i++) {
+      if (!unidades[i].nombre_unidad || !unidades[i].nombre_unidad.trim()) {
+        return res.status(400).json({ error: `La unidad ${i + 1} no tiene nombre.` });
+      }
+    }
+
+    // Obtener unidades existentes de la materia (ordenadas por id_unidad)
+    db.query(
+      "SELECT id_unidad FROM unidad WHERE clave_materia = ? ORDER BY id_unidad",
+      [clave],
+      (errE, existentes) => {
+        if (errE) return res.status(500).json({ error: "Error interno del servidor" });
+
+        const ops = [];
+        for (let i = 0; i < unidades.length; i++) {
+          const u = unidades[i];
+          const nombre = u.nombre_unidad.trim();
+          const temario = u.temario ?? null;
+
+          if (existentes[i]) {
+            // Actualizar la unidad ya existente en esa posición
+            ops.push(new Promise((resolve, reject) => {
+              db.query(
+                "UPDATE unidad SET nombre_unidad = ?, temario = ? WHERE id_unidad = ?",
+                [nombre, temario, existentes[i].id_unidad],
+                (err) => err ? reject(err) : resolve({ accion: "actualizada", id: existentes[i].id_unidad })
+              );
+            }));
+          } else {
+            // Crear unidad nueva
+            ops.push(new Promise((resolve, reject) => {
+              db.query(
+                "INSERT INTO unidad (clave_materia, nombre_unidad, temario) VALUES (?, ?, ?)",
+                [clave, nombre, temario],
+                (err, result) => err ? reject(err) : resolve({ accion: "creada", id: result.insertId })
+              );
+            }));
+          }
+        }
+
+        Promise.all(ops)
+          .then(resultados => res.json({ success: true, resultados }))
+          .catch(() => res.status(500).json({ error: "Error al guardar las unidades" }));
+      }
+    );
+  });
 });
 
 module.exports = router;
