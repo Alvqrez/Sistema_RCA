@@ -37,7 +37,7 @@ router.get("/mis-materias", verificarToken, (req, res) => {
     `SELECT DISTINCT m.clave_materia, m.nombre_materia, m.no_unidades
      FROM grupo g
      JOIN materia m ON g.clave_materia = m.clave_materia
-     WHERE g.numero_empleado = ?
+     WHERE g.rfc = ?
      ORDER BY m.nombre_materia`,
     [req.usuario.id_referencia],
     (err, results) => {

@@ -10,7 +10,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     SELECT mf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM modificacionfinal mf
-    JOIN maestro mae ON mf.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON mf.rfc = mae.rfc
     WHERE mf.id_grupo = ?
     ORDER BY mf.matricula
   `;
@@ -26,7 +26,7 @@ router.get("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
     SELECT mf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM modificacionfinal mf
-    JOIN maestro mae ON mf.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON mf.rfc = mae.rfc
     WHERE mf.matricula = ? AND mf.id_grupo = ?
   `;
   db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
@@ -39,7 +39,7 @@ router.get("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
 // POST — aplicar modificación final manual (RN6)
 router.post("/", maestroOAdmin, (req, res) => {
   const { matricula, id_grupo, calif_modificada, justificacion } = req.body;
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
 
   if (
     !matricula ||
@@ -81,16 +81,16 @@ router.post("/", maestroOAdmin, (req, res) => {
       // Upsert de modificacion_final (PK compuesta — solo una por alumno-grupo)
       db.query(
         `INSERT INTO modificacionfinal
-           (matricula, id_grupo, numero_empleado, calif_original, calif_modificada, justificacion, fecha_modificacion, estatus)
+           (matricula, id_grupo, rfc, calif_original, calif_modificada, justificacion, fecha_modificacion, estatus)
          VALUES (?, ?, ?, ?, ?, ?, NOW(), 'Aplicado')
          ON DUPLICATE KEY UPDATE
            calif_original    = VALUES(calif_original),
            calif_modificada  = VALUES(calif_modificada),
            justificacion     = VALUES(justificacion),
-           numero_empleado   = VALUES(numero_empleado),
+           rfc   = VALUES(rfc),
            fecha_modificacion = NOW(),
            estatus            = 'Aplicado'`,
-        [matricula, id_grupo, numero_empleado, original, nueva, justificacion],
+        [matricula, id_grupo, rfc, original, nueva, justificacion],
         (err2) => {
           if (err2)
             return res

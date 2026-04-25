@@ -21,7 +21,7 @@ router.get("/", verificarToken, (req, res) => {
     JOIN alumno a  ON i.matricula = a.matricula
     JOIN grupo  g  ON i.id_grupo  = g.id_grupo
     JOIN materia m ON g.clave_materia = m.clave_materia
-    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON g.rfc = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     ORDER BY i.fecha_inscripcion DESC
   `;
@@ -43,7 +43,7 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
     FROM inscripcion i
     JOIN grupo g   ON i.id_grupo = g.id_grupo
     JOIN materia m ON g.clave_materia = m.clave_materia
-    JOIN maestro mae ON g.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON g.rfc = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
     WHERE i.matricula = ?

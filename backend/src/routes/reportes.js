@@ -17,12 +17,12 @@ router.get("/grupos", verificarToken, (req, res) => {
            p.descripcion AS periodo, p.anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
-    JOIN maestro mae    ON g.numero_empleado  = mae.numero_empleado
+    JOIN maestro mae    ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
   `;
   const params = [];
   if (rol === "maestro") {
-    sql += " WHERE g.numero_empleado = ?";
+    sql += " WHERE g.rfc = ?";
     params.push(id_ref);
   }
   sql += " ORDER BY p.fecha_inicio DESC, m.nombre_materia ASC";
@@ -44,7 +44,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
            p.descripcion AS periodo, p.anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
-    JOIN maestro mae    ON g.numero_empleado  = mae.numero_empleado
+    JOIN maestro mae    ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     WHERE g.id_grupo = ?
   `;
@@ -160,7 +160,7 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
     FROM inscripcion i
     JOIN grupo g         ON i.id_grupo         = g.id_grupo
     JOIN materia m       ON g.clave_materia     = m.clave_materia
-    JOIN maestro mae     ON g.numero_empleado   = mae.numero_empleado
+    JOIN maestro mae     ON g.rfc   = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     LEFT JOIN calificacion_final cf
            ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo

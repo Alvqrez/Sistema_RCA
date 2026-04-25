@@ -233,7 +233,7 @@ router.get("/backup", soloAdmin, (req, res) => {
     alumnos:
       "SELECT matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional FROM alumno",
     maestros:
-      "SELECT numero_empleado, nombre, apellido_paterno, apellido_materno, correo_institucional, departamento, estatus FROM maestro",
+      "SELECT rfc, nombre, apellido_paterno, apellido_materno, correo_institucional, departamento, estatus FROM maestro",
     carreras: "SELECT * FROM carrera",
     materias: "SELECT * FROM materia",
     periodos: "SELECT * FROM periodo_escolar",

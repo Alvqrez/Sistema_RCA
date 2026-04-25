@@ -13,14 +13,14 @@ router.get("/", verificarToken, (req, res) => {
   const query = `
     SELECT
       g.id_grupo, g.clave_materia, m.nombre_materia,
-      g.numero_empleado,
+      g.rfc,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo, pe.anio,
       g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
-    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    JOIN maestro  mae ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
     ORDER BY g.id_grupo DESC
   `;
@@ -39,23 +39,23 @@ router.get("/mis-grupos", verificarToken, (req, res) => {
   if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
     return res.status(403).json({ error: "Solo para maestros" });
   }
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
   const query = `
     SELECT
       g.id_grupo, g.clave_materia, m.nombre_materia,
-      g.numero_empleado,
+      g.rfc,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo, pe.anio,
       g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
-    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    JOIN maestro  mae ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
-    WHERE g.numero_empleado = ?
+    WHERE g.rfc = ?
     ORDER BY g.id_grupo DESC
   `;
-  db.query(query, [numero_empleado], (err, results) => {
+  db.query(query, [rfc], (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(results);
@@ -69,14 +69,14 @@ router.get("/:id", verificarToken, (req, res) => {
   const query = `
     SELECT
       g.id_grupo, g.clave_materia, m.nombre_materia,
-      g.numero_empleado,
+      g.rfc,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo,
       g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
-    JOIN maestro  mae ON g.numero_empleado  = mae.numero_empleado
+    JOIN maestro  mae ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
     WHERE g.id_grupo = ?
   `;
@@ -133,14 +133,14 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
 router.post("/", soloAdmin, (req, res) => {
   const {
     clave_materia,
-    numero_empleado,
+    rfc,
     id_periodo,
     limite_alumnos,
     horario,
     aula,
   } = req.body;
 
-  if (!clave_materia || !numero_empleado || !id_periodo) {
+  if (!clave_materia || !rfc || !id_periodo) {
     return res.status(400).json({
       error: "Clave de materia, número de empleado y periodo son requeridos",
     });
@@ -148,11 +148,11 @@ router.post("/", soloAdmin, (req, res) => {
 
   // Insertar el nuevo grupo directamente (un maestro puede tener varios grupos de la misma materia)
       db.query(
-        `INSERT INTO grupo (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
+        `INSERT INTO grupo (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
              VALUES (?, ?, ?, ?, ?, ?)`,
         [
           clave_materia,
-          numero_empleado,
+          rfc,
           id_periodo,
           limite_alumnos ?? 30,
           horario ?? null,
@@ -362,14 +362,14 @@ router.post("/csv", soloAdmin, async (req, res) => {
   let insertados = 0;
 
   for (const g of grupos) {
-    const { clave_materia, numero_empleado, id_periodo } = g;
+    const { clave_materia, rfc, id_periodo } = g;
 
     // Validar campos obligatorios
-    if (!clave_materia || !numero_empleado || !id_periodo) {
+    if (!clave_materia || !rfc || !id_periodo) {
       errores.push({
-        fila: `${clave_materia || "?"}/${numero_empleado || "?"}`,
+        fila: `${clave_materia || "?"}/${rfc || "?"}`,
         motivo:
-          "Faltan campos requeridos (clave_materia, numero_empleado, id_periodo)",
+          "Faltan campos requeridos (clave_materia, rfc, id_periodo)",
       });
       continue;
     }
@@ -378,7 +378,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
       await new Promise((ok, fail) => {
         db.query(
           `INSERT INTO grupo
-             (clave_materia, numero_empleado, id_periodo, limite_alumnos, horario, aula)
+             (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
            VALUES (?, ?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
              limite_alumnos = VALUES(limite_alumnos),
@@ -386,7 +386,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
              aula           = VALUES(aula)`,
           [
             clave_materia.trim(),
-            numero_empleado.trim(),
+            rfc.trim(),
             parseInt(id_periodo),
             parseInt(g.limite_alumnos) || 30,
             g.horario?.trim() || null,
@@ -398,7 +398,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
       insertados++;
     } catch (e) {
       errores.push({
-        fila: `${clave_materia}/${numero_empleado}`,
+        fila: `${clave_materia}/${rfc}`,
         motivo: e.message,
       });
     }

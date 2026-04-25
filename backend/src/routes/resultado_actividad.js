@@ -13,7 +13,7 @@ router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
       ra.calificacion_obtenida,
       ra.estatus,
       ra.fecha_registro,
-      ra.numero_empleado
+      ra.rfc
     FROM actividad act
     JOIN inscripcion i ON i.id_grupo = act.id_grupo AND i.estatus = 'Cursando'
     JOIN alumno a ON i.matricula = a.matricula
@@ -64,7 +64,7 @@ router.get(
 // POST — registrar / actualizar resultado (FIX 13: verifica bloqueado)
 router.post("/", maestroOAdmin, (req, res) => {
   const { matricula, id_actividad, calificacion_obtenida, estatus } = req.body;
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
 
   if (!matricula || !id_actividad) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
@@ -95,18 +95,18 @@ router.post("/", maestroOAdmin, (req, res) => {
       const est = estatus || (cal === null ? "NP" : "Validada");
 
       const sql = `
-      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
+      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, rfc)
       VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         calificacion_anterior = calificacion_obtenida,
         calificacion_obtenida = VALUES(calificacion_obtenida),
         estatus               = VALUES(estatus),
-        numero_empleado       = VALUES(numero_empleado),
+        rfc       = VALUES(rfc),
         fecha_registro        = NOW()
     `;
       db.query(
         sql,
-        [matricula, id_actividad, cal, est, numero_empleado],
+        [matricula, id_actividad, cal, est, rfc],
         (err2) => {
           if (err2)
             return res
@@ -131,7 +131,7 @@ router.post("/", maestroOAdmin, (req, res) => {
 // POST — guardar múltiples resultados en una sola llamada (FIX 13)
 router.post("/bulk", maestroOAdmin, (req, res) => {
   const { id_actividad, resultados } = req.body;
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
 
   if (!id_actividad || !Array.isArray(resultados) || resultados.length === 0) {
     return res.status(400).json({ error: "Faltan datos" });
@@ -160,18 +160,18 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
           id_actividad,
           calSegura,
           r.estatus || (calSegura === null ? "NP" : "Validada"),
-          numero_empleado,
+          rfc,
         ];
       });
 
       const sql = `
-      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, numero_empleado)
+      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, rfc)
       VALUES ?
       ON DUPLICATE KEY UPDATE
         calificacion_anterior = calificacion_obtenida,
         calificacion_obtenida = VALUES(calificacion_obtenida),
         estatus               = VALUES(estatus),
-        numero_empleado       = VALUES(numero_empleado),
+        rfc       = VALUES(rfc),
         fecha_registro        = NOW()
     `;
       db.query(sql, [values], (err2) => {

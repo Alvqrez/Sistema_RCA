@@ -20,7 +20,7 @@ router.get("/", verificarToken, (req, res) => {
             FROM actividad a
             JOIN grupo  g ON a.id_grupo  = g.id_grupo
             LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
-            WHERE g.numero_empleado = ?
+            WHERE g.rfc = ?
             ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
         `;
     db.query(sql, [id_referencia], (err, r) => {

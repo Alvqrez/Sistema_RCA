@@ -215,10 +215,11 @@ function editarMaestro(ne) {
 }
 
 async function guardarMaestro() {
-  const rfc = document.getElementById("f_rfc").value.trim().toUpperCase();
-  const nom = document.getElementById("f_nombre").value.trim();
-  const ap = document.getElementById("f_ap_pat").value.trim();
-  const pwd = document.getElementById("f_password").value;
+  const rfc    = document.getElementById("f_rfc").value.trim().toUpperCase();
+  const nom    = document.getElementById("f_nombre").value.trim();
+  const ap     = document.getElementById("f_ap_pat").value.trim();
+  const correo = document.getElementById("f_correo").value.trim();
+  const pwd    = document.getElementById("f_password").value;
 
   ocultarError();
 

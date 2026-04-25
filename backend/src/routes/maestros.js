@@ -17,7 +17,7 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
-// GET — un maestro por numero_empleado  ← NUEVO
+// GET — un maestro por rfc  ← NUEVO
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM maestro WHERE rfc = ?",
@@ -209,7 +209,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
   for (const m of maestros) {
     const {
-      numero_empleado,
+      rfc,
       nombre,
       apellido_paterno,
       correo_institucional,
@@ -226,9 +226,9 @@ router.post("/csv", soloAdmin, async (req, res) => {
       !password
     ) {
       errores.push({
-        numero_empleado: numero_empleado || "?",
+        rfc: rfc || "?",
         motivo:
-          "Faltan campos requeridos (numero_empleado, nombre, apellido_paterno, correo_institucional, username, password)",
+          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)",
       });
       continue;
     }
@@ -239,7 +239,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
       await new Promise((ok, fail) =>
         db.query(
           `INSERT INTO maestro
-             (numero_empleado, nombre, apellido_paterno, apellido_materno,
+             (rfc, nombre, apellido_paterno, apellido_materno,
               correo_institucional, departamento, especialidad,
               grado_academico, tipo_contrato, tel_celular, estatus)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')
