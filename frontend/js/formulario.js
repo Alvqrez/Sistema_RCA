@@ -608,14 +608,22 @@ function renderTablaCalificaciones() {
       </span>
     </td>`;
 
-    // Bonus
+    // Bonus — puntos + justificación inline
     const b = getBonus(al.matricula);
-    tbody += `<td class="td-bonus">
+    tbody += `<td class="td-bonus" style="min-width:140px">
       <input class="bonus-input bonus-pts-input"
         type="number" min="0" max="10" step="0.5"
         data-matricula="${al.matricula}"
-        value="${b.puntos ?? ""}" placeholder="0"
+        value="${b.puntos ?? ""}" placeholder="pts"
+        style="width:56px;margin-bottom:4px"
         oninput="onBonusInput('${al.matricula}',this.value)" />
+      <input class="bonus-just-input"
+        type="text"
+        data-matricula="${al.matricula}"
+        value="${(b.justificacion ?? '').replace(/"/g,'&quot;')}"
+        placeholder="Justificación *"
+        style="width:100%;font-size:.72rem"
+        oninput="if(!bonusState['${al.matricula}'])bonusState['${al.matricula}']={};bonusState['${al.matricula}'].justificacion=this.value" />
     </td>`;
 
     // Cal. Final
@@ -1270,6 +1278,44 @@ function intentarMostrarSeccionFinal() {
   calcularVistaFinal();
 }
 
+
+// ─── Recalcular calificaciones finales desde el backend ───────────────────────
+// Llama a calcular-final por cada alumno — el backend suma:
+// promedio de unidades + bonus_unidad ya guardados + bonus_final + modificacion_final
+async function recalcularCalificacionesFinal() {
+  if (!estado.grupoId) return;
+
+  let matriculas = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")]
+    .map(f => f.dataset.matricula).filter(Boolean);
+
+  if (!matriculas.length) {
+    mostrarToast("No hay alumnos con calificaciones para recalcular", "error");
+    return;
+  }
+
+  mostrarToast("Recalculando...", "info");
+  let ok = 0, err = 0;
+
+  for (const matricula of matriculas) {
+    try {
+      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/calcular-final`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
+      });
+      const d = await res.json();
+      d.success ? ok++ : err++;
+    } catch { err++; }
+  }
+
+  if (ok > 0) mostrarToast(`✓ Recalculado para ${ok} alumno(s)`, "success");
+  if (err > 0) mostrarToast(`${err} error(es) al recalcular`, "error");
+
+  await calcularVistaFinal();
+  await renderBonusFinalTabla();
+  await renderModificacionFinalTabla();
+}
+
 async function calcularVistaFinal() {
   const wrap = document.getElementById("tablaFinalWrap");
   if (!wrap || !estado.grupoId) return;
@@ -1479,11 +1525,18 @@ async function renderBonusFinalTabla() {
         ${bon ? `<span style="color:#7c3aed; font-weight:600;">+${parseFloat(bon.puntos_otorgados).toFixed(2)} pts</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
       </td>
       <td style="text-align:center;">
-        <button class="btn btn-sm" style="background:#7c3aed; color:#fff; padding:4px 10px; font-size:0.78rem;"
-                onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/'/g,"\\'")}', ${cal})">
-          <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
-          ${bon ? "Editar" : "Asignar"}
-        </button>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn btn-sm" style="background:#7c3aed;color:#fff;padding:4px 10px;font-size:.78rem"
+                  onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/\'/g,"\\'")}', ${cal})">
+            <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
+            ${bon ? "Editar" : "Asignar"}
+          </button>
+          ${bon ? `<button class="btn btn-sm" title="Eliminar bonus"
+                  style="background:var(--danger,#ef4444);color:#fff;padding:4px 8px;font-size:.78rem"
+                  onclick="revertirBonusFinal('${mat}')">
+            <iconify-icon icon="mdi:undo-variant"></iconify-icon>
+          </button>` : ""}
+        </div>
       </td>
     </tr>`;
   });
@@ -1581,11 +1634,19 @@ async function renderModificacionFinalTabla() {
         ${mod ? `<span style="color:#dc2626; font-weight:600;">${parseFloat(mod.calif_modificada).toFixed(2)}</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
       </td>
       <td style="text-align:center;">
-        <button class="btn btn-sm" style="background:#dc2626; color:#fff; padding:4px 10px; font-size:0.78rem;"
-                onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/'/g,"\\'")}', ${cal})">
-          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
-          ${mod ? "Editar" : "Modificar"}
-        </button>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn btn-sm" style="background:#dc2626;color:#fff;padding:4px 10px;font-size:.78rem"
+                  onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/\'/g,"\\'")}', ${cal})">
+            <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+            ${mod ? "Editar" : "Modificar"}
+          </button>
+          ${mod ? `<button class="btn btn-sm" title="Revertir modificación"
+                  style="background:var(--text-muted,#6b7280);color:#fff;padding:4px 8px;font-size:.78rem"
+                  onclick="revertirModificacionFinal('${mat}')">
+            <iconify-icon icon="mdi:undo-variant"></iconify-icon>
+            Revertir
+          </button>` : ""}
+        </div>
       </td>
     </tr>`;
   });
@@ -1633,6 +1694,51 @@ async function guardarModificacionFinal() {
   } catch {
     mostrarToast("Error de conexión", "error");
   }
+}
+
+
+// ─── Revertir bonus final ─────────────────────────────────────────────────────
+async function revertirBonusFinal(matricula) {
+  const nom = _cfCache[matricula]?.nombre_alumno || matricula;
+  mostrarConfirm(
+    "Revertir bonus final",
+    `¿Eliminar el bonus final de ${nom}?\n\nLa calificación volverá al promedio calculado sin bonus.`,
+    async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL_FORM}/api/bonus/final/${matricula}/${estado.grupoId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
+        );
+        const d = await res.json();
+        if (!res.ok) return mostrarToast(d.error || "Error al revertir", "error");
+        mostrarToast("Bonus final eliminado", "success");
+        await renderBonusFinalTabla();
+        await recalcularCalificacionesFinal();
+      } catch { mostrarToast("Error de conexión", "error"); }
+    }
+  );
+}
+
+// ─── Revertir modificación final ──────────────────────────────────────────────
+async function revertirModificacionFinal(matricula) {
+  const nom = _cfCache[matricula]?.nombre_alumno || matricula;
+  mostrarConfirm(
+    "Revertir modificación final",
+    `¿Revertir la modificación manual de ${nom}?\n\nLa calificación volverá al promedio calculado por el sistema.`,
+    async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL_FORM}/api/modificacion-final/${matricula}/${estado.grupoId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
+        );
+        const d = await res.json();
+        if (!res.ok) return mostrarToast(d.error || "Error al revertir", "error");
+        mostrarToast("Modificación revertida — calificación restaurada", "success");
+        await renderModificacionFinalTabla();
+        await recalcularCalificacionesFinal();
+      } catch { mostrarToast("Error de conexión", "error"); }
+    }
+  );
 }
 
 function actualizarEstadoBadge(activo) {

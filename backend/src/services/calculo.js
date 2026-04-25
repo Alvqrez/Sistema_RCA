@@ -136,23 +136,51 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
       }
 
       // Redondeo institucional TecNM: ≥ 0.5 → sube
-      const redondeado = Math.floor(promedio) + (promedio % 1 >= 0.5 ? 1 : 0);
-      // FIX 1: 70
-      const estatus =
-        redondeado >= CALIFICACION_APROBATORIA ? "Aprobado" : "Reprobado";
+      const promedioBase = Math.floor(promedio) + (promedio % 1 >= 0.5 ? 1 : 0);
 
-      // BUG 7 FIX: incluir calificacion_oficial en el INSERT/UPDATE
+      // Sumar bonus_final si existe
       db.query(
-        `INSERT INTO calificacion_final (matricula, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
-         VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-          promedio_unidades  = VALUES(promedio_unidades),
-          calificacion_oficial = VALUES(calificacion_oficial),
-          estatus_final      = VALUES(estatus_final)`,
-        [matricula, id_grupo, redondeado, redondeado, estatus],
-        (err2) => {
-          if (err2) return reject(err2);
-          resolve({ promedio: redondeado, estatus });
+        `SELECT COALESCE(puntos_otorgados, 0) AS bonus
+           FROM bonusfinal
+          WHERE matricula = ? AND id_grupo = ? AND estatus = 'Activo'
+          LIMIT 1`,
+        [matricula, id_grupo],
+        (errB, bonusRows) => {
+          if (errB) return reject(errB);
+          const bonusPts = parseFloat(bonusRows[0]?.bonus ?? 0);
+          const conBonus = Math.min(100, promedioBase + bonusPts);
+
+          // Verificar si existe modificacion_final (sobreescribe todo)
+          db.query(
+            `SELECT calif_modificada FROM modificacionfinal
+              WHERE matricula = ? AND id_grupo = ? AND estatus = 'Aplicado'
+              LIMIT 1`,
+            [matricula, id_grupo],
+            (errM, modRows) => {
+              if (errM) return reject(errM);
+
+              const calOficial = modRows.length
+                ? parseFloat(modRows[0].calif_modificada)
+                : conBonus;
+
+              const redondeado = Math.floor(calOficial) + (calOficial % 1 >= 0.5 ? 1 : 0);
+              const estatus = redondeado >= CALIFICACION_APROBATORIA ? "Aprobado" : "Reprobado";
+
+              db.query(
+                `INSERT INTO calificacion_final (matricula, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
+                 VALUES (?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                  promedio_unidades    = VALUES(promedio_unidades),
+                  calificacion_oficial = VALUES(calificacion_oficial),
+                  estatus_final        = VALUES(estatus_final)`,
+                [matricula, id_grupo, promedioBase, redondeado, estatus],
+                (err2) => {
+                  if (err2) return reject(err2);
+                  resolve({ promedio: redondeado, estatus });
+                },
+              );
+            },
+          );
         },
       );
     });

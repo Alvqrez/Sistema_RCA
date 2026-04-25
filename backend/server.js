@@ -118,6 +118,7 @@ app.use("/api/modificacion-final", require("./src/routes/modificacion_final"));
 app.use("/api/reportes", require("./src/routes/reportes"));
 app.use("/api/config-evaluacion", require("./src/routes/config_evaluacion"));
 app.use("/api/tipo-actividades", require("./src/routes/tipo_actividades"));
+app.use("/api/materia-actividades", require("./src/routes/materia_actividades"));
 
 app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),

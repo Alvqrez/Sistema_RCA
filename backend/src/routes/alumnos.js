@@ -61,6 +61,13 @@ router.post("/", soloAdmin, async (req, res) => {
     matricula,
     id_carrera,
     correo_institucional,
+    curp,
+    fecha_nacimiento,
+    genero,
+    tel_celular,
+    tel_casa,
+    direccion,
+    correo_personal,
     username,
     password,
   } = req.body;
@@ -80,28 +87,40 @@ router.post("/", soloAdmin, async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
 
     // 1. Inserta en alumno (sin usuario ni password — esos campos ya no se usan)
-    const queryAlumno = `
-            INSERT INTO alumno (matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `;
-
     db.query(
-      queryAlumno,
+      `INSERT INTO alumno
+         (matricula, nombre, apellido_paterno, apellido_materno, id_carrera,
+          correo_institucional, curp, fecha_nacimiento, genero,
+          tel_celular, tel_casa, direccion, correo_personal)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         matricula,
         nombre,
         apellido_paterno,
-        apellido_materno ?? null,
+        apellido_materno   ?? null,
         id_carrera,
         correo_institucional,
+        curp?.trim().toUpperCase() || null,
+        fecha_nacimiento   || null,
+        genero             || null,
+        tel_celular        || null,
+        tel_casa           || null,
+        direccion          || null,
+        correo_personal    || null,
       ],
       (err) => {
         if (err) {
-          // ESTA LÍNEA ES VITAL PARA SABER QUÉ PASA
-          console.error("❌ ERROR REAL EN TABLA ALUMNO:", err);
-          return res
-            .status(500)
-            .json({ error: "Error al insertar perfil", detalle: err.message });
+          if (err.code === "ER_DUP_ENTRY") {
+            if (err.message.includes("matricula") || err.message.includes("PRIMARY"))
+              return res.status(409).json({ error: "La matrícula ya está registrada en el sistema." });
+            if (err.message.includes("curp") || err.message.includes("CURP"))
+              return res.status(409).json({ error: "El CURP ya está registrado en otro alumno." });
+            return res.status(409).json({ error: "Ya existe un alumno con esos datos." });
+          }
+          if (err.code === "ER_NO_REFERENCED_ROW_2")
+            return res.status(400).json({ error: "La carrera seleccionada no existe." });
+          console.error("❌ ERROR ALUMNO:", err.message);
+          return res.status(500).json({ error: "Error al registrar alumno: " + err.message });
         }
         console.log(
           "✅ Perfil de alumno creado, procediendo a crear cuenta de usuario...",

@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -221,6 +221,24 @@
             </table>
           </div>
         </div>
+
+
+  <!-- ── Card: Actividades de la materia (Admin) ──────────────────────────── -->
+  <div class="card" id="cardActividades" style="display:none;margin-top:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;
+         padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px;
+         cursor:pointer" onclick="toggleActividades()">
+      <h2 style="margin:0;font-size:1.05rem;display:flex;align-items:center;gap:8px">
+        <iconify-icon icon="mdi:playlist-plus" style="color:var(--primary)"></iconify-icon>
+        Adición de Actividades de la Materia
+      </h2>
+      <iconify-icon id="actividadesToggleIcon" icon="mdi:chevron-up"
+        style="font-size:1.2rem;color:var(--text-muted)"></iconify-icon>
+    </div>
+    <div id="actividadesContent">
+      <!-- populated by renderActividadesCard() -->
+    </div>
+  </div>
 
       </main>
     </div>

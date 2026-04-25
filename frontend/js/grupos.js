@@ -54,7 +54,7 @@ async function cargarMaestrosSelect() {
   const maestros = await res.json();
   sel.innerHTML = `<option value="">-- Selecciona un maestro --</option>`;
   maestros.forEach((m) => {
-    sel.innerHTML += `<option value="${m.numero_empleado}">${m.nombre} ${m.apellido_paterno}</option>`;
+    sel.innerHTML += `<option value="${m.rfc}">${m.nombre} ${m.apellido_paterno}</option>`;
   });
 }
 
@@ -176,14 +176,14 @@ document
     const token = localStorage.getItem("token");
     const grupo = {
       clave_materia: document.getElementById("claveMateria").value,
-      numero_empleado: document.getElementById("numeroEmpleado").value,
+      rfc: document.getElementById("numeroEmpleado").value,
       id_periodo: document.getElementById("idPeriodo").value,
       limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
       horario: document.getElementById("horario").value || null,
       aula: document.getElementById("aula").value || null,
     };
 
-    if (!grupo.clave_materia || !grupo.numero_empleado || !grupo.id_periodo) {
+    if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
       toastGrupo("Selecciona materia, maestro y periodo.", "error");
       return;
     }
@@ -388,7 +388,7 @@ async function exportarCSVGrupos() {
       "id_grupo",
       "clave_materia",
       "nombre_materia",
-      "numero_empleado",
+      "rfc",
       "nombre_maestro",
       "id_periodo",
       "limite_alumnos",

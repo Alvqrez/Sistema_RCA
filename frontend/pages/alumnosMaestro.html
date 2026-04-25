@@ -231,7 +231,7 @@
             } catch (_) {}
             grupos = id_ref
               ? todos.filter(
-                  (g) => String(g.numero_empleado) === String(id_ref),
+                  (g) => String(g.rfc) === String(id_ref),
                 )
               : [];
           }

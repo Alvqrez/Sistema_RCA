@@ -122,4 +122,21 @@ router.post("/", maestroOAdmin, (req, res) => {
   );
 });
 
+
+
+// DELETE — revertir modificación final
+router.delete("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
+  const { matricula, id_grupo } = req.params;
+  db.query(
+    "DELETE FROM modificacionfinal WHERE matricula = ? AND id_grupo = ?",
+    [matricula, id_grupo],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: "Modificación no encontrada" });
+      res.json({ success: true, mensaje: "Modificación revertida" });
+    }
+  );
+});
+
 module.exports = router;

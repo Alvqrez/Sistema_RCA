@@ -35,7 +35,7 @@ router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusunidad bu
     JOIN unidad u ON bu.id_unidad = u.id_unidad
-    JOIN maestro mae ON bu.rfc = mae.rfc
+    JOIN maestro mae ON bu.numero_empleado = mae.numero_empleado
     WHERE bu.matricula = ? AND bu.id_grupo = ?
     ORDER BY bu.id_unidad
   `;
@@ -50,7 +50,7 @@ router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
 router.post("/unidad", maestroOAdmin, (req, res) => {
   const { matricula, id_unidad, id_grupo, puntos_otorgados, justificacion } =
     req.body;
-  const rfc = req.usuario.id_referencia;
+  const numero_empleado = req.usuario.id_referencia;
 
   if (
     !matricula ||
@@ -106,19 +106,19 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
               : puntos;
 
           db.query(
-            `INSERT INTO bonusunidad (matricula, id_unidad, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
+            `INSERT INTO bonusunidad (matricula, id_unidad, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
              VALUES (?, ?, ?, ?, ?, ?, CURDATE())
              ON DUPLICATE KEY UPDATE
                puntos_otorgados  = VALUES(puntos_otorgados),
                justificacion     = VALUES(justificacion),
-               rfc   = VALUES(rfc),
+               numero_empleado   = VALUES(numero_empleado),
                fecha_modificacion = CURDATE(),
                estatus           = 'Activo'`,
             [
               matricula,
               id_unidad,
               id_grupo,
-              rfc,
+              numero_empleado,
               puntosEfectivos,
               justificacion,
             ],
@@ -188,7 +188,7 @@ router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
     SELECT bf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusfinal bf
-    JOIN maestro mae ON bf.rfc = mae.rfc
+    JOIN maestro mae ON bf.numero_empleado = mae.numero_empleado
     WHERE bf.matricula = ? AND bf.id_grupo = ?
   `;
   db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
@@ -201,7 +201,7 @@ router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
 // POST — asignar bonus final (FIX 5)
 router.post("/final", maestroOAdmin, (req, res) => {
   const { matricula, id_grupo, puntos_otorgados, justificacion } = req.body;
-  const rfc = req.usuario.id_referencia;
+  const numero_empleado = req.usuario.id_referencia;
 
   if (
     !matricula ||
@@ -245,15 +245,15 @@ router.post("/final", maestroOAdmin, (req, res) => {
           : puntos;
 
       db.query(
-        `INSERT INTO bonusfinal (matricula, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
+        `INSERT INTO bonusfinal (matricula, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
          VALUES (?, ?, ?, ?, ?, CURDATE())
          ON DUPLICATE KEY UPDATE
            puntos_otorgados   = VALUES(puntos_otorgados),
            justificacion      = VALUES(justificacion),
-           rfc    = VALUES(rfc),
+           numero_empleado    = VALUES(numero_empleado),
            fecha_modificacion = CURDATE(),
            estatus            = 'Activo'`,
-        [matricula, id_grupo, rfc, puntosEfectivos, justificacion],
+        [matricula, id_grupo, numero_empleado, puntosEfectivos, justificacion],
         (err2) => {
           if (err2)
             return res
@@ -288,6 +288,23 @@ router.post("/final", maestroOAdmin, (req, res) => {
         },
       );
     },
+  );
+});
+
+
+
+// DELETE — revertir bonus final de materia
+router.delete("/final/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
+  const { matricula, id_grupo } = req.params;
+  db.query(
+    "DELETE FROM bonusfinal WHERE matricula = ? AND id_grupo = ?",
+    [matricula, id_grupo],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: "Bonus no encontrado" });
+      res.json({ success: true, mensaje: "Bonus final eliminado" });
+    }
   );
 });
 

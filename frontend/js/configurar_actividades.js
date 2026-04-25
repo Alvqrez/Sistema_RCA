@@ -378,8 +378,9 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
       </span>
     </div>
 
-    <!-- Botón abrir modal -->
+    <!-- Botón abrir modal — deshabilitado si ya se llegó al 100% -->
     <button class="btn-agregar-act"
+            ${Math.round(total) >= 100 ? 'disabled title="La unidad ya tiene 100% asignado"' : ''}
             onclick="abrirModal(${idGrupo}, ${idUnidad}, '${esc(getUnidadNombre(idGrupo, idUnidad))}')">
       <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
       Agregar actividad
@@ -420,67 +421,91 @@ async function abrirModal(idGrupo, idUnidad, nombreUnidad) {
   _modalUnidad  = idUnidad;
   _modalTipoId  = null;
   _modalTipoNom = null;
+  _modalActMateriaId = null;
 
-  // Actualizar textos del modal
-  document.getElementById("modalTitulo").textContent    = "Agregar actividad";
   document.getElementById("modalSubtitulo").textContent = nombreUnidad;
-
-  // Limpiar selección previa de tipos
-  document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
-
-  // Limpiar estado
-  _modalTipoId  = null;
-  _modalTipoNom = null;
-  document.getElementById("modalPct").value = "";
-
-  // Mostrar disponible
-  const acts = getActs(idGrupo, idUnidad);
-  const disp = Math.max(0, 100 - calcTotal(acts));
-  document.getElementById("disponibleVal").textContent = `${disp.toFixed(0)}%`;
-
-  // Mostrar hint, ocultar panel de selección
+  document.getElementById("modalPctInput").value    = "";
   document.getElementById("modalSeleccion").style.display = "none";
-  document.getElementById("modalHint").style.display      = "block";
+  document.getElementById("modalHint").style.display     = "block";
 
-  // Cargar tipos habilitados para esta unidad (configurados por el admin)
-  await cargarTiposParaUnidad(idUnidad);
+  // Cargar actividades definidas por el admin para esta unidad
+  await cargarActividadesAdmin(idUnidad);
 
-  // Abrir
   document.getElementById("modalAgregar").classList.add("active");
 }
 
-function cerrarModal() {
-  document.getElementById("modalAgregar").classList.remove("active");
-  _modalGrupo = _modalUnidad = _modalTipoId = _modalTipoNom = null;
+// Guarda el id de la materia_actividad seleccionada
+let _modalActMateriaId = null;
+
+async function cargarActividadesAdmin(idUnidad) {
+  const grid = document.getElementById("tiposGrid");
+  if (!grid) return;
+
+  let actsAdmin = [];
+  try {
+    const res = await fetch(`${BASE}/api/materia-actividades/unidad/${idUnidad}`, {
+      headers: { Authorization: `Bearer ${tk()}` }
+    });
+    if (res.ok) actsAdmin = await res.json();
+  } catch (_) {}
+
+  if (!actsAdmin.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;
+      color:var(--text-muted);font-size:.85rem">
+      <iconify-icon icon="mdi:information-outline" style="font-size:1.4rem;display:block;margin-bottom:6px"></iconify-icon>
+      El administrador no ha definido actividades para esta unidad.
+    </div>`;
+    document.getElementById("modalHint").innerHTML = `
+      <iconify-icon icon="lucide:arrow-up" style="vertical-align:middle"></iconify-icon>
+      Selecciona una actividad para continuar`;
+    return;
+  }
+
+  // Get unique icons per tipo
+  const ICONOS = {
+    "Examen": "mdi:file-document-edit-outline",
+    "Tarea": "mdi:pencil-outline",
+    "Práctica": "mdi:flask-outline",
+    "Exposición": "mdi:presentation",
+    "Proyecto": "mdi:folder-open-outline",
+    "Cuestionario": "mdi:help-circle-outline",
+    "Investigación": "mdi:magnify",
+    "Asistencia": "mdi:account-check-outline"
+  };
+
+  grid.innerHTML = actsAdmin.map(a => {
+    const icono = ICONOS[a.nombre_tipo] || "mdi:star-outline";
+    return `
+      <div class="tipo-card" onclick="seleccionarActividadAdmin(${a.id_mat_act},'${esc(a.nombre_actividad)}',${a.id_tipo || 'null'},'${esc(a.nombre_tipo || '')}')">
+        <iconify-icon icon="${icono}" class="tipo-card-icon"></iconify-icon>
+        <span class="tipo-card-nombre">${esc(a.nombre_actividad)}</span>
+        ${a.nombre_tipo ? `<span style="font-size:.65rem;color:var(--text-muted)">${esc(a.nombre_tipo)}</span>` : ""}
+      </div>`;
+  }).join("");
+
+  document.getElementById("modalHint").innerHTML = `
+    <iconify-icon icon="lucide:arrow-up" style="vertical-align:middle"></iconify-icon>
+    Selecciona una actividad para continuar`;
 }
 
-// Cerrar al hacer click fuera del modal-box
-function modalClickFuera(e) {
-  if (e.target === document.getElementById("modalAgregar")) cerrarModal();
-}
+function seleccionarActividadAdmin(idMatAct, nombre, idTipo, nombreTipo) {
+  _modalActMateriaId = idMatAct;
+  _modalTipoId       = idTipo;
+  _modalTipoNom      = nombre;
 
-// Seleccionar tipo en el modal
-function seleccionarTipo(idTipo, nombre) {
-  _modalTipoId  = idTipo;
-  _modalTipoNom = nombre;
-
-  // Highlight tarjeta seleccionada
+  // Resaltar seleccionada
   document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("selected"));
-  const card = document.getElementById(`tipo-card-${idTipo}-${esc(nombre)}`);
-  if (card) card.classList.add("selected");
+  event.currentTarget.classList.add("selected");
 
-  // Mostrar panel de selección con el tipo elegido
-  const icono = ICONOS_TIPO[nombre] || ICONO_DEFAULT;
-  document.getElementById("modalTipoLabel").innerHTML =
-    `<iconify-icon icon="${icono}" style="font-size:1.1rem"></iconify-icon> ${esc(nombre)}`;
+  // Mostrar panel con el nombre fijo y campo de %
   document.getElementById("modalSeleccion").style.display = "block";
   document.getElementById("modalHint").style.display      = "none";
-
-  // Enfocar el campo de %
-  setTimeout(() => document.getElementById("modalPct").focus(), 60);
+  const labelNombre = document.getElementById("modalNombreLabel");
+  if (labelNombre) labelNombre.textContent = nombre;
+  document.getElementById("modalPctInput").focus();
 }
 
-// Confirmar y guardar
+
 async function confirmarAgregar() {
   const pct = parseFloat(document.getElementById("modalPct").value);
 

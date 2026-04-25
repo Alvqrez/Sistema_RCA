@@ -284,7 +284,7 @@
             id_ref = JSON.parse(atob(tkn().split(".")[1])).id_referencia;
           } catch (_) {}
           grupos = id_ref
-            ? todos.filter((g) => String(g.numero_empleado) === String(id_ref))
+            ? todos.filter((g) => String(g.rfc) === String(id_ref))
             : [];
         }
         const sel = document.getElementById("selGrupo");

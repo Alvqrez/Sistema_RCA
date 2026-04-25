@@ -128,6 +128,12 @@ async function cargarConfiguracion() {
     renderizarFormulario(noUnidades, nombreMateria, unidadesGuardadas);
     renderizarResumen(unidadesGuardadas, clave, nombreMateria);
   }
+
+  // Cargar y mostrar actividades (siempre que haya unidades guardadas)
+  if (unidadesGuardadas.length > 0) {
+    await cargarActividadesMateria(clave);
+    renderActividadesCard();
+  }
 }
 
 // ─── Renderizar formulario ─────────────────────────────────────────────────────
@@ -388,6 +394,147 @@ function renderizarBloqueado(unidades, nombreMateria) {
 
   card.style.display = "block";
   card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
+
+// ─── Actividades de la materia (definidas por el Admin) ────────────────────────
+
+let actividadesMateria = []; // cache
+
+async function cargarActividadesMateria(clave) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/materia-actividades/materia/${encodeURIComponent(clave)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    actividadesMateria = res.ok ? await res.json() : [];
+  } catch (_) { actividadesMateria = []; }
+}
+
+function renderActividadesCard() {
+  const card = document.getElementById("cardActividades");
+  if (!card || !materiaActual) return;
+
+  const { clave_materia } = materiaActual;
+  const unidades = unidadesGuardadas;
+
+  if (!unidades.length) {
+    card.style.display = "none";
+    return;
+  }
+
+  // Group activities by unit
+  const porUnidad = {};
+  unidades.forEach(u => { porUnidad[u.id_unidad] = []; });
+  actividadesMateria.forEach(a => {
+    if (porUnidad[a.id_unidad]) porUnidad[a.id_unidad].push(a);
+  });
+
+  const tiposOptions = tiposCatalogo.map(t =>
+    `<option value="${t.id_tipo}">${escHtml(t.nombre)}</option>`
+  ).join("");
+
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">
+        Define las actividades evaluables de esta materia. El maestro las elegirá al configurar su grupo.
+      </div>`;
+
+  unidades.forEach((u, i) => {
+    const acts = porUnidad[u.id_unidad] || [];
+    html += `
+      <div style="margin-bottom:16px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--text-secondary);
+             text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">
+          Unidad ${i + 1} — ${escHtml(u.nombre_unidad)}
+        </div>
+        ${acts.length ? acts.map(a => `
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+               background:var(--bg-secondary);border:1px solid var(--border);
+               border-radius:7px;margin-bottom:6px">
+            <span style="flex:1;font-size:.85rem;font-weight:600">${escHtml(a.nombre_actividad)}</span>
+            <span style="font-size:.75rem;color:var(--text-muted);background:var(--card-bg);
+                  padding:2px 8px;border-radius:999px;border:1px solid var(--border)">
+              ${escHtml(a.nombre_tipo || "Sin tipo")}
+            </span>
+            <button type="button" onclick="eliminarActividadMateria(${a.id_mat_act},'${clave_materia}')"
+              style="background:none;border:none;cursor:pointer;color:var(--danger,#ef4444);padding:2px 6px">
+              <iconify-icon icon="mdi:close-circle-outline"></iconify-icon>
+            </button>
+          </div>`).join("") : `
+          <div style="font-size:.78rem;color:var(--text-muted);padding:6px 0">
+            Sin actividades definidas para esta unidad.
+          </div>`}
+        <div style="display:grid;grid-template-columns:1fr 130px 36px;gap:8px;margin-top:8px">
+          <input type="text" id="act-nombre-${u.id_unidad}"
+            placeholder="Nombre de la actividad *"
+            style="padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;
+                   font-size:.82rem;background:var(--card-bg);color:var(--text-primary)" />
+          <select id="act-tipo-${u.id_unidad}"
+            style="padding:7px 8px;border:1.5px solid var(--border);border-radius:7px;
+                   font-size:.82rem;background:var(--card-bg);color:var(--text-primary)">
+            <option value="">Sin tipo</option>
+            ${tiposOptions}
+          </select>
+          <button type="button"
+            onclick="agregarActividadMateria(${u.id_unidad},'${clave_materia}')"
+            style="background:var(--primary,#3b82f6);color:#fff;border:none;border-radius:7px;
+                   cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
+            <iconify-icon icon="mdi:plus"></iconify-icon>
+          </button>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById("actividadesContent").innerHTML = html;
+  card.style.display = "block";
+}
+
+async function agregarActividadMateria(idUnidad, claveMateria) {
+  const nombreEl = document.getElementById(`act-nombre-${idUnidad}`);
+  const tipoEl   = document.getElementById(`act-tipo-${idUnidad}`);
+  const nombre   = nombreEl?.value?.trim();
+  const idTipo   = tipoEl?.value || null;
+
+  if (!nombre) { toast("El nombre de la actividad es obligatorio", "error"); return; }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/materia-actividades`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ clave_materia: claveMateria, id_unidad: idUnidad,
+                             nombre_actividad: nombre, id_tipo: idTipo || null })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || "Error al agregar", "error"); return; }
+    nombreEl.value = "";
+    await cargarActividadesMateria(claveMateria);
+    renderActividadesCard();
+    toast("✓ Actividad agregada", "success");
+  } catch (_) { toast("Error de conexión", "error"); }
+}
+
+async function eliminarActividadMateria(id, claveMateria) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/materia-actividades/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) { toast("Error al eliminar", "error"); return; }
+    await cargarActividadesMateria(claveMateria);
+    renderActividadesCard();
+    toast("Actividad eliminada", "success");
+  } catch (_) { toast("Error de conexión", "error"); }
+}
+
+function toggleActividades() {
+  const content = document.getElementById("actividadesContent");
+  const icon    = document.getElementById("actividadesToggleIcon");
+  if (!content) return;
+  const open = content.style.display !== "none";
+  content.style.display = open ? "none" : "block";
+  if (icon) icon.setAttribute("icon", open ? "mdi:chevron-down" : "mdi:chevron-up");
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────────

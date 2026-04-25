@@ -141,7 +141,7 @@ async function cargarGruposGM() {
         } catch (__) {}
         const rol = localStorage.getItem("rol");
         grupos = id_ref
-          ? todos.filter((g) => String(g.numero_empleado) === String(id_ref))
+          ? todos.filter((g) => String(g.rfc) === String(id_ref))
           : rol === "administrador"
             ? todos
             : [];

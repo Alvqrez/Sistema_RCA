@@ -266,6 +266,30 @@ CREATE TABLE `unidad_tipo_actividad` (
   COMMENT='Tipos de actividad permitidos por el Admin para cada unidad. Si vacío, el Maestro ve todos.';
 
 
+
+-- Actividades predefinidas por el Admin para cada materia/unidad
+-- El Maestro las elige al configurar su grupo (no puede crear sus propias actividades)
+CREATE TABLE `materia_actividad` (
+  `id_mat_act`      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `clave_materia`   VARCHAR(15)   NOT NULL  COMMENT 'FK → Materia',
+  `id_unidad`       INT UNSIGNED  NOT NULL  COMMENT 'FK → Unidad',
+  `nombre_actividad` VARCHAR(100) NOT NULL  COMMENT 'Nombre de la actividad evaluable',
+  `id_tipo`         INT UNSIGNED  NULL DEFAULT NULL  COMMENT 'FK → tipo_actividad',
+  PRIMARY KEY (`id_mat_act`),
+  INDEX `fk_MActiv_Mat`   (`clave_materia`),
+  INDEX `fk_MActiv_Unidad` (`id_unidad`),
+  INDEX `fk_MActiv_Tipo`  (`id_tipo`),
+  CONSTRAINT `fk_MActiv_Mat`
+    FOREIGN KEY (`clave_materia`) REFERENCES `materia` (`clave_materia`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_MActiv_Unidad`
+    FOREIGN KEY (`id_unidad`)     REFERENCES `unidad`  (`id_unidad`)     ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_MActiv_Tipo`
+    FOREIGN KEY (`id_tipo`)       REFERENCES `tipo_actividad` (`id_tipo`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_spanish_ci
+  COMMENT='Actividades definidas por el Admin para cada materia. El Maestro las selecciona al configurar su grupo.';
+
 -- Grupo-Unidad  (ponderación de cada unidad en el grupo)
 CREATE TABLE `grupo_unidad` (
   `id_grupo`      INT UNSIGNED NOT NULL  COMMENT 'FK → Grupo',
@@ -519,6 +543,6 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 
 -- ============================================================
---  FIN DEL ESQUEMA v4
+--  FIN DEL ESQUEMA v5
 --  Después de ejecutar este archivo correr: node backend/seed.js
 -- ============================================================
