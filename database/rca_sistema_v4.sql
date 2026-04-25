@@ -4,7 +4,10 @@
 --  Instituto Tecnológico de Veracruz
 --
 --  Cambios respecto a v2:
---  + Tabla unidad_tipo_actividad (Admin define qué tipos puede
+--  + RFC como PK de Maestro (era numero_empleado)
+--  + RFC = username automático del maestro
+--  + Se eliminó UNIQUE(clave_materia, rfc, id_periodo) en Grupo
+--    (un maestro puede tener varios grupos de la misma materia) (Admin define qué tipos puede
 --    elegir el Maestro para cada unidad)
 -- ============================================================
 
@@ -43,12 +46,11 @@ CREATE TABLE `administrador` (
 
 -- Maestro  (sin columnas usuario/password — autenticación va en tabla usuario)
 CREATE TABLE `maestro` (
-  `numero_empleado`   VARCHAR(15)   NOT NULL  COMMENT 'Identificador único del docente',
+  `rfc`               VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del docente',
   `nombre`            VARCHAR(80)   NOT NULL,
   `apellido_paterno`  VARCHAR(50)   NOT NULL,
   `apellido_materno`  VARCHAR(50)   NULL DEFAULT NULL,
   `curp`              CHAR(18)      NULL DEFAULT NULL,
-  `rfc`               VARCHAR(13)   NULL DEFAULT NULL,
   `fecha_nacimiento`  DATE          NULL DEFAULT NULL,
   `genero`            ENUM('M','F','Otro') NULL DEFAULT NULL,
   `correo_institucional` VARCHAR(100) NOT NULL,
@@ -62,7 +64,7 @@ CREATE TABLE `maestro` (
   `grado_academico`   VARCHAR(40)   NULL DEFAULT NULL  COMMENT 'Ej. Maestría, Doctorado',
   `especialidad`      VARCHAR(100)  NULL DEFAULT NULL,
   `departamento`      VARCHAR(80)   NULL DEFAULT NULL,
-  PRIMARY KEY (`numero_empleado`),
+  PRIMARY KEY (`rfc`),
   UNIQUE INDEX `uq_Maestro_CURP` (`curp`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
@@ -154,7 +156,7 @@ CREATE TABLE `usuario` (
   `pwd`            VARCHAR(255)  NOT NULL  COMMENT 'BCrypt. Nunca texto plano.',
   `rol`            ENUM('administrador','maestro','alumno') NOT NULL,
   `id_referencia`  VARCHAR(20)   NOT NULL
-    COMMENT 'matricula / numero_empleado / id_admin según rol',
+    COMMENT 'matricula / rfc / id_admin según rol',
   `activo`         TINYINT       NOT NULL DEFAULT 1,
   `fecha_creacion` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ultimo_acceso`  DATETIME      NULL DEFAULT NULL,
@@ -208,21 +210,20 @@ CREATE TABLE `reticula` (
 CREATE TABLE `grupo` (
   `id_grupo`        INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `clave_materia`   VARCHAR(15)   NOT NULL  COMMENT 'FK → Materia',
-  `numero_empleado` VARCHAR(15)   NOT NULL  COMMENT 'FK → Maestro',
+  `rfc`             VARCHAR(13)   NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `id_periodo`      INT UNSIGNED  NOT NULL  COMMENT 'FK → PeriodoEscolar',
   `limite_alumnos`  TINYINT UNSIGNED NOT NULL DEFAULT 30,
   `horario`         VARCHAR(100)  NULL DEFAULT NULL,
   `aula`            VARCHAR(40)   NULL DEFAULT NULL,
   `estatus`         ENUM('Activo','Cerrado','Cancelado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`id_grupo`),
-  UNIQUE INDEX `uq_grupo_maestro_periodo` (`clave_materia`, `numero_empleado`, `id_periodo`),
   INDEX `fk_Grupo_Mat`      (`clave_materia`),
-  INDEX `fk_Grupo_Mae`      (`numero_empleado`),
+  INDEX `fk_Grupo_Mae`      (`rfc`),
   INDEX `idx_grupo_periodo`  (`id_periodo`),
   CONSTRAINT `fk_Grupo_Mat`
     FOREIGN KEY (`clave_materia`)   REFERENCES `materia`         (`clave_materia`)  ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_Grupo_Mae`
-    FOREIGN KEY (`numero_empleado`) REFERENCES `maestro`         (`numero_empleado`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`rfc`)             REFERENCES `maestro`         (`rfc`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_Grupo_Per`
     FOREIGN KEY (`id_periodo`)      REFERENCES `periodo_escolar` (`id_periodo`)      ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -359,16 +360,16 @@ CREATE TABLE `resultado_actividad` (
   `calificacion_anterior` DECIMAL(5,2) NULL DEFAULT NULL  COMMENT 'Valor previo (auditoría)',
   `fecha_registro`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `estatus`               ENUM('Pendiente','Validada','NP') NOT NULL DEFAULT 'Pendiente',
-  `numero_empleado`       VARCHAR(15)  NOT NULL  COMMENT 'FK → Maestro que registró',
+  `rfc`                   VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro que registró (RFC)',
   PRIMARY KEY (`matricula`, `id_actividad`),
   INDEX `fk_RA_Actividad` (`id_actividad`),
-  INDEX `fk_RA_Maestro`   (`numero_empleado`),
+  INDEX `fk_RA_Maestro`   (`rfc`),
   CONSTRAINT `fk_RA_Alumno`
     FOREIGN KEY (`matricula`)       REFERENCES `alumno`    (`matricula`)    ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Actividad`
     FOREIGN KEY (`id_actividad`)    REFERENCES `actividad` (`id_actividad`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Maestro`
-    FOREIGN KEY (`numero_empleado`) REFERENCES `maestro`   (`numero_empleado`) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`rfc`)             REFERENCES `maestro`   (`rfc`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
@@ -422,7 +423,7 @@ CREATE TABLE `bonusunidad` (
   `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_unidad`          INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Unidad',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
-  `numero_empleado`    VARCHAR(15)  NOT NULL  COMMENT 'FK → Maestro',
+  `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `puntos_otorgados`   DECIMAL(4,2) NOT NULL,
   `justificacion`      TEXT         NOT NULL,
   `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
@@ -431,7 +432,7 @@ CREATE TABLE `bonusunidad` (
   PRIMARY KEY (`matricula`, `id_unidad`, `id_grupo`),
   INDEX `fk_BU_Unidad`  (`id_unidad`),
   INDEX `fk_BU_Grupo`   (`id_grupo`),
-  INDEX `fk_BU_Maestro` (`numero_empleado`),
+  INDEX `fk_BU_Maestro` (`rfc`),
   CONSTRAINT `fk_BU_Alumno`
     FOREIGN KEY (`matricula`)       REFERENCES `alumno`  (`matricula`)       ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BU_Unidad`
@@ -439,7 +440,7 @@ CREATE TABLE `bonusunidad` (
   CONSTRAINT `fk_BU_Grupo`
     FOREIGN KEY (`id_grupo`)        REFERENCES `grupo`   (`id_grupo`)        ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BU_Maestro`
-    FOREIGN KEY (`numero_empleado`) REFERENCES `maestro` (`numero_empleado`) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`rfc`)             REFERENCES `maestro` (`rfc`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
@@ -450,19 +451,19 @@ CREATE TABLE `bonusunidad` (
 CREATE TABLE `bonusfinal` (
   `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
-  `numero_empleado`    VARCHAR(15)  NOT NULL  COMMENT 'FK → Maestro',
+  `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `puntos_otorgados`   DECIMAL(4,2) NOT NULL,
   `justificacion`      TEXT         NOT NULL,
   `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
   `fecha_modificacion` DATE         NULL DEFAULT NULL,
   `estatus`            ENUM('Activo','Aplicado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`matricula`, `id_grupo`),
-  INDEX `fk_BF_Maestro` (`numero_empleado`),
+  INDEX `fk_BF_Maestro` (`rfc`),
   CONSTRAINT `fk_BF_CalFinal`
     FOREIGN KEY (`matricula`, `id_grupo`) REFERENCES `calificacion_final` (`matricula`, `id_grupo`)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BF_Maestro`
-    FOREIGN KEY (`numero_empleado`) REFERENCES `maestro` (`numero_empleado`)
+    FOREIGN KEY (`rfc`)             REFERENCES `maestro` (`rfc`)
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
@@ -474,19 +475,19 @@ CREATE TABLE `bonusfinal` (
 CREATE TABLE `modificacionfinal` (
   `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
-  `numero_empleado`    VARCHAR(15)  NOT NULL  COMMENT 'FK → Maestro',
+  `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `calif_original`     DECIMAL(5,2) NOT NULL,
   `calif_modificada`   DECIMAL(5,2) NOT NULL,
   `justificacion`      TEXT         NOT NULL,
   `fecha_modificacion` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `estatus`            ENUM('Aplicado','Auditado') NOT NULL DEFAULT 'Aplicado',
   PRIMARY KEY (`matricula`, `id_grupo`),
-  INDEX `fk_MF_Maestro` (`numero_empleado`),
+  INDEX `fk_MF_Maestro` (`rfc`),
   CONSTRAINT `fk_MF_CalFinal`
     FOREIGN KEY (`matricula`, `id_grupo`) REFERENCES `calificacion_final` (`matricula`, `id_grupo`)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_MF_Maestro`
-    FOREIGN KEY (`numero_empleado`) REFERENCES `maestro` (`numero_empleado`)
+    FOREIGN KEY (`rfc`)             REFERENCES `maestro` (`rfc`)
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
@@ -518,6 +519,6 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 
 -- ============================================================
---  FIN DEL ESQUEMA v3
+--  FIN DEL ESQUEMA v4
 --  Después de ejecutar este archivo correr: node backend/seed.js
 -- ============================================================
