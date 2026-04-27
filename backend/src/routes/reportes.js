@@ -52,7 +52,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   // 2) Alumnos inscritos con calificaciones de unidad y final
   const sqlAlumnos = `
     SELECT
-      a.matricula,
+      a.no_control,
       CONCAT(a.apellido_paterno,' ',COALESCE(a.apellido_materno,''),', ',a.nombre) AS nombre_completo,
       i.estatus AS estatus_inscripcion,
       i.tipo_curso,
@@ -60,9 +60,9 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
       cf.calificacion_oficial,
       cf.estatus_final
     FROM inscripcion i
-    JOIN alumno a ON i.matricula = a.matricula
+    JOIN alumno a ON i.no_control = a.no_control
     LEFT JOIN calificacion_final cf
-           ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+           ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
     WHERE i.id_grupo = ?
     ORDER BY a.apellido_paterno ASC
   `;
@@ -79,7 +79,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 
   // 4) Calificaciones por unidad de todos los alumnos del grupo
   const sqlUnidadCalif = `
-    SELECT cu.matricula, cu.id_unidad, cu.calificacion_unidad_final, cu.estatus_unidad
+    SELECT cu.no_control, cu.id_unidad, cu.calificacion_unidad_final, cu.estatus_unidad
     FROM calificacion_unidad cu
     WHERE cu.id_grupo = ?
   `;
@@ -103,8 +103,8 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
           // Mapear califs de unidad por alumno
           const califMap = {};
           califUnidad.forEach((c) => {
-            if (!califMap[c.matricula]) califMap[c.matricula] = {};
-            califMap[c.matricula][c.id_unidad] = {
+            if (!califMap[c.no_control]) califMap[c.no_control] = {};
+            califMap[c.no_control][c.id_unidad] = {
               calificacion: c.calificacion_unidad_final,
               estatus: c.estatus_unidad,
             };
@@ -112,7 +112,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 
           const alumnosConCalif = alumnos.map((a) => ({
             ...a,
-            unidades: califMap[a.matricula] || {},
+            unidades: califMap[a.no_control] || {},
           }));
 
           const total = alumnosConCalif.length;
@@ -148,8 +148,8 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-// GET /api/reportes/alumno/:matricula — historial académico del alumno
-router.get("/alumno/:matricula", verificarToken, (req, res) => {
+// GET /api/reportes/alumno/:no_control — historial académico del alumno
+router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const sql = `
     SELECT
       i.id_grupo, i.tipo_curso, i.estatus AS estatus_inscripcion,
@@ -163,11 +163,11 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
     JOIN maestro mae     ON g.rfc   = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     LEFT JOIN calificacion_final cf
-           ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
-    WHERE i.matricula = ?
+           ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
+    WHERE i.no_control = ?
     ORDER BY p.fecha_inicio DESC
   `;
-  db.query(sql, [req.params.matricula], (err, rows) => {
+  db.query(sql, [req.params.no_control], (err, rows) => {
     if (err) return res.status(500).json({ error: "Error interno" });
     res.json(rows);
   });

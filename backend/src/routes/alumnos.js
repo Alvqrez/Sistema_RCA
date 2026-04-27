@@ -8,7 +8,7 @@ const { verificarToken, soloAdmin } = require("../middleware/auth");
 // GET — todos los alumnos
 router.get("/", verificarToken, (req, res) => {
   db.query(
-    "SELECT matricula, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno",
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno",
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -20,10 +20,10 @@ router.get("/", verificarToken, (req, res) => {
 
 router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   const sql = `
-        SELECT a.matricula, a.nombre, a.apellido_paterno, a.apellido_materno,
+        SELECT a.no_control, a.nombre, a.apellido_paterno, a.apellido_materno,
                a.correo_institucional, a.id_carrera
         FROM inscripcion i
-        JOIN alumno a ON i.matricula = a.matricula
+        JOIN alumno a ON i.no_control = a.no_control
         WHERE i.id_grupo = ? AND i.estatus = 'Cursando'
         ORDER BY a.apellido_paterno, a.nombre
     `;
@@ -35,11 +35,11 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-// GET — un alumno por matrícula
-router.get("/:matricula", verificarToken, (req, res) => {
+// GET — un alumno por no_control
+router.get("/:no_control", verificarToken, (req, res) => {
   db.query(
-    "SELECT matricula, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno WHERE matricula = ?",
-    [req.params.matricula],
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno WHERE no_control = ?",
+    [req.params.no_control],
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -58,7 +58,7 @@ router.post("/", soloAdmin, async (req, res) => {
     nombre,
     apellido_paterno,
     apellido_materno,
-    matricula,
+    no_control,
     id_carrera,
     correo_institucional,
     curp,
@@ -74,7 +74,7 @@ router.post("/", soloAdmin, async (req, res) => {
 
   if (
     !nombre ||
-    !matricula ||
+    !no_control ||
     !id_carrera ||
     !correo_institucional ||
     !username ||
@@ -89,12 +89,12 @@ router.post("/", soloAdmin, async (req, res) => {
     // 1. Inserta en alumno (sin usuario ni password — esos campos ya no se usan)
     db.query(
       `INSERT INTO alumno
-         (matricula, nombre, apellido_paterno, apellido_materno, id_carrera,
+         (no_control, nombre, apellido_paterno, apellido_materno, id_carrera,
           correo_institucional, curp, fecha_nacimiento, genero,
           tel_celular, tel_casa, direccion, correo_personal)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        matricula,
+        no_control,
         nombre,
         apellido_paterno,
         apellido_materno   ?? null,
@@ -111,8 +111,8 @@ router.post("/", soloAdmin, async (req, res) => {
       (err) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") {
-            if (err.message.includes("matricula") || err.message.includes("PRIMARY"))
-              return res.status(409).json({ error: "La matrícula ya está registrada en el sistema." });
+            if (err.message.includes("no_control") || err.message.includes("PRIMARY"))
+              return res.status(409).json({ error: "La no_control ya está registrada en el sistema." });
             if (err.message.includes("curp") || err.message.includes("CURP"))
               return res.status(409).json({ error: "El CURP ya está registrado en otro alumno." });
             return res.status(409).json({ error: "Ya existe un alumno con esos datos." });
@@ -129,7 +129,7 @@ router.post("/", soloAdmin, async (req, res) => {
         // 2. Crea el acceso en la tabla usuario
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?, ?, 'alumno', ?, 1)`,
-          [username, hash, matricula],
+          [username, hash, no_control],
           (err2) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY")
@@ -151,7 +151,7 @@ router.post("/", soloAdmin, async (req, res) => {
 });
 
 // PUT — editar alumno (solo maestro)
-router.put("/:matricula", soloAdmin, (req, res) => {
+router.put("/:no_control", soloAdmin, (req, res) => {
   const {
     nombre,
     apellido_paterno,
@@ -167,7 +167,7 @@ router.put("/:matricula", soloAdmin, (req, res) => {
   const query = `
         UPDATE alumno
         SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, correo_institucional = ?, id_carrera = ?
-        WHERE matricula = ?
+        WHERE no_control = ?
     `;
 
   db.query(
@@ -178,7 +178,7 @@ router.put("/:matricula", soloAdmin, (req, res) => {
       apellido_materno ?? null,
       correo_institucional,
       id_carrera,
-      req.params.matricula,
+      req.params.no_control,
     ],
     (err, result) => {
       if (err)
@@ -204,7 +204,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
   for (const alumno of alumnos) {
     const {
-      matricula,
+      no_control,
       nombre,
       apellido_paterno,
       apellido_materno,
@@ -213,9 +213,9 @@ router.post("/csv", soloAdmin, async (req, res) => {
       username,
       password,
     } = alumno;
-    if (!matricula || !nombre || !id_carrera || !username || !password) {
+    if (!no_control || !nombre || !id_carrera || !username || !password) {
       errores.push({
-        matricula: matricula || "?",
+        no_control: no_control || "?",
         motivo: "Campos requeridos faltantes",
       });
       continue;
@@ -224,10 +224,10 @@ router.post("/csv", soloAdmin, async (req, res) => {
       const hash = await bcrypt.hash(password, 10);
       await new Promise((ok, fail) => {
         db.query(
-          `INSERT INTO alumno (matricula, id_carrera, nombre, apellido_paterno, apellido_materno, correo_institucional)
+          `INSERT INTO alumno (no_control, id_carrera, nombre, apellido_paterno, apellido_materno, correo_institucional)
            VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)`,
           [
-            matricula,
+            no_control,
             id_carrera,
             nombre,
             apellido_paterno || "",
@@ -244,7 +244,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?,?,'alumno',?,1)
            ON DUPLICATE KEY UPDATE pwd=VALUES(pwd)`,
-          [username, hash, matricula],
+          [username, hash, no_control],
           (err) => {
             if (err) fail(err);
             else ok();
@@ -253,17 +253,17 @@ router.post("/csv", soloAdmin, async (req, res) => {
       });
       insertados++;
     } catch (e) {
-      errores.push({ matricula, motivo: e.message });
+      errores.push({ no_control, motivo: e.message });
     }
   }
   res.json({ success: true, insertados, errores });
 });
 
 // DELETE — eliminar alumno (solo maestro)
-router.delete("/:matricula", soloAdmin, (req, res) => {
+router.delete("/:no_control", soloAdmin, (req, res) => {
   db.query(
-    "DELETE FROM alumno WHERE matricula = ?",
-    [req.params.matricula],
+    "DELETE FROM alumno WHERE no_control = ?",
+    [req.params.no_control],
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

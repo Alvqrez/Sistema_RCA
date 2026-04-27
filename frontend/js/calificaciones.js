@@ -21,7 +21,7 @@ async function cargarCalificaciones() {
         const estatusClass = c.estatus_unidad === "Aprobada" ? "badge-verde" : c.estatus_unidad === "Reprobada" ? "badge-rojo" : "badge-gris";
         tabla.innerHTML += `
             <tr>
-                <td>${c.matricula}</td>
+                <td>${c.no_control}</td>
                 <td>${c.nombre_alumno}</td>
                 <td>${c.nombre_unidad}</td>
                 <td>${c.id_grupo}</td>
@@ -41,7 +41,7 @@ document.getElementById("formCalificacion").addEventListener("submit", async fun
     const token = localStorage.getItem("token");
 
     const data = {
-        matricula:                 document.getElementById("matricula").value,
+        no_control:                 document.getElementById("no_control").value,
         id_grupo:                  document.getElementById("idGrupo").value,
         id_unidad:                 document.getElementById("idUnidad").value,
         calificacion_unidad_final: document.getElementById("calificacion").value

@@ -11,14 +11,14 @@ const {
 // GET — todas las inscripciones (con datos del alumno y grupo)
 router.get("/", verificarToken, (req, res) => {
   const sql = `
-    SELECT i.matricula, i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
+    SELECT i.no_control, i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
            CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
            a.id_carrera,
            m.nombre_materia,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo
     FROM inscripcion i
-    JOIN alumno a  ON i.matricula = a.matricula
+    JOIN alumno a  ON i.no_control = a.no_control
     JOIN grupo  g  ON i.id_grupo  = g.id_grupo
     JOIN materia m ON g.clave_materia = m.clave_materia
     JOIN maestro mae ON g.rfc = mae.rfc
@@ -33,7 +33,7 @@ router.get("/", verificarToken, (req, res) => {
 });
 
 // GET — inscripciones de un alumno específico
-router.get("/alumno/:matricula", verificarToken, (req, res) => {
+router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const sql = `
     SELECT i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
            m.nombre_materia, m.clave_materia,
@@ -45,11 +45,11 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
     JOIN materia m ON g.clave_materia = m.clave_materia
     JOIN maestro mae ON g.rfc = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
-    LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
-    WHERE i.matricula = ?
+    LEFT JOIN calificacion_final cf ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
+    WHERE i.no_control = ?
     ORDER BY p.fecha_inicio DESC
   `;
-  db.query(sql, [req.params.matricula], (err, r) => {
+  db.query(sql, [req.params.no_control], (err, r) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r);
@@ -59,11 +59,11 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
 // GET — alumnos inscritos en un grupo
 router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   const sql = `
-    SELECT i.matricula, i.fecha_inscripcion, i.estatus, i.tipo_curso,
+    SELECT i.no_control, i.fecha_inscripcion, i.estatus, i.tipo_curso,
            a.nombre, a.apellido_paterno, a.apellido_materno,
            a.correo_institucional, a.id_carrera
     FROM inscripcion i
-    JOIN alumno a ON i.matricula = a.matricula
+    JOIN alumno a ON i.no_control = a.no_control
     WHERE i.id_grupo = ?
     ORDER BY a.apellido_paterno, a.nombre
   `;
@@ -76,9 +76,9 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 
 // POST — inscribir alumno a grupo
 router.post("/", soloAdmin, (req, res) => {
-  const { matricula, id_grupo, tipo_curso } = req.body;
-  if (!matricula || !id_grupo)
-    return res.status(400).json({ error: "Matrícula y grupo son requeridos" });
+  const { no_control, id_grupo, tipo_curso } = req.body;
+  if (!no_control || !id_grupo)
+    return res.status(400).json({ error: "No. Control y grupo son requeridos" });
 
   // Verificar que el alumno no esté ya inscrito en otro grupo de la misma materia en el mismo periodo
   const sqlDuplicado = `
@@ -86,13 +86,13 @@ router.post("/", soloAdmin, (req, res) => {
     FROM inscripcion i
     JOIN grupo g_dest ON g_dest.id_grupo = ?
     JOIN grupo g_actual ON g_actual.id_grupo = i.id_grupo
-    WHERE i.matricula = ?
+    WHERE i.no_control = ?
       AND g_actual.clave_materia = g_dest.clave_materia
       AND g_actual.id_periodo    = g_dest.id_periodo
       AND i.estatus != 'Baja'
     LIMIT 1
   `;
-  db.query(sqlDuplicado, [id_grupo, matricula], (errDup, dupRows) => {
+  db.query(sqlDuplicado, [id_grupo, no_control], (errDup, dupRows) => {
     if (errDup)
       return res.status(500).json({ error: "Error interno del servidor" });
 
@@ -104,7 +104,7 @@ router.post("/", soloAdmin, (req, res) => {
   // BUG 3 FIX: verificar capacidad máxima antes de insertar
   const sqlCapacidad = `
     SELECT g.limite_alumnos,
-           COUNT(i.matricula) AS inscritos_actuales
+           COUNT(i.no_control) AS inscritos_actuales
     FROM grupo g
     LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
     WHERE g.id_grupo = ?
@@ -126,12 +126,12 @@ router.post("/", soloAdmin, (req, res) => {
 
     // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
     const sql = `
-      INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso)
+      INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso)
       VALUES (?, ?, CURDATE(), 'Cursando', ?)
     `;
     db.query(
       sql,
-      [matricula, id_grupo, tipo_curso || "Ordinario"],
+      [no_control, id_grupo, tipo_curso || "Ordinario"],
       (err, result) => {
         if (err)
           return res
@@ -155,14 +155,14 @@ router.post("/", soloAdmin, (req, res) => {
 
 // POST — inscripción masiva (varios alumnos a un grupo)
 router.post("/bulk", soloAdmin, (req, res) => {
-  const { matriculas, id_grupo, tipo_curso } = req.body;
-  if (!matriculas?.length || !id_grupo)
-    return res.status(400).json({ error: "Matriculas y grupo son requeridos" });
+  const { no_controls, id_grupo, tipo_curso } = req.body;
+  if (!no_controls?.length || !id_grupo)
+    return res.status(400).json({ error: "No_controls y grupo son requeridos" });
 
   // BUG 3 FIX: verificar capacidad antes de inserción masiva
   const sqlCapacidad = `
     SELECT g.limite_alumnos,
-           COUNT(i.matricula) AS inscritos_actuales
+           COUNT(i.no_control) AS inscritos_actuales
     FROM grupo g
     LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
     WHERE g.id_grupo = ?
@@ -174,7 +174,7 @@ router.post("/bulk", soloAdmin, (req, res) => {
 
     if (capRows.length > 0) {
       const { limite_alumnos, inscritos_actuales } = capRows[0];
-      if (limite_alumnos && inscritos_actuales + matriculas.length > limite_alumnos) {
+      if (limite_alumnos && inscritos_actuales + no_controls.length > limite_alumnos) {
         const disponibles = Math.max(0, limite_alumnos - inscritos_actuales);
         return res.status(400).json({
           error: `Capacidad insuficiente. El grupo tiene espacio para ${disponibles} alumno(s) más (límite: ${limite_alumnos}).`,
@@ -182,7 +182,7 @@ router.post("/bulk", soloAdmin, (req, res) => {
       }
     }
 
-    const vals = matriculas.map((m) => [
+    const vals = no_controls.map((m) => [
       m,
       id_grupo,
       new Date().toISOString().split("T")[0],
@@ -190,7 +190,7 @@ router.post("/bulk", soloAdmin, (req, res) => {
       tipo_curso || "Ordinario",
     ]);
     db.query(
-      "INSERT IGNORE INTO inscripcion (matricula, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+      "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
       [vals],
       (err, r) => {
         if (err)
@@ -204,12 +204,12 @@ router.post("/bulk", soloAdmin, (req, res) => {
 });
 
 // PUT — cambiar estatus de inscripción
-router.put("/:matricula/:id_grupo/estatus", soloAdmin, (req, res) => {
+router.put("/:no_control/:id_grupo/estatus", soloAdmin, (req, res) => {
   const { estatus } = req.body;
   if (!estatus) return res.status(400).json({ error: "Estatus requerido" });
   db.query(
-    "UPDATE inscripcion SET estatus = ? WHERE matricula = ? AND id_grupo = ?",
-    [estatus, req.params.matricula, req.params.id_grupo],
+    "UPDATE inscripcion SET estatus = ? WHERE no_control = ? AND id_grupo = ?",
+    [estatus, req.params.no_control, req.params.id_grupo],
     (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -221,10 +221,10 @@ router.put("/:matricula/:id_grupo/estatus", soloAdmin, (req, res) => {
 });
 
 // DELETE — dar de baja inscripción
-router.delete("/:matricula/:id_grupo", soloAdmin, (req, res) => {
+router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
   db.query(
-    "DELETE FROM inscripcion WHERE matricula = ? AND id_grupo = ?",
-    [req.params.matricula, req.params.id_grupo],
+    "DELETE FROM inscripcion WHERE no_control = ? AND id_grupo = ?",
+    [req.params.no_control, req.params.id_grupo],
     (err, r) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

@@ -14,7 +14,7 @@ const CALIFICACION_APROBATORIA = 70; // sección 1.3.1
  * Si las ponderaciones no suman 100 se normaliza.
  * NP equivale a 0.
  */
-async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
+async function calcularPromedioUnidad(no_control, id_unidad, id_grupo) {
   return new Promise((resolve, reject) => {
     const sql = `
       SELECT
@@ -24,10 +24,10 @@ async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
         a.ponderacion
       FROM actividad a
       LEFT JOIN resultado_actividad ra
-        ON ra.id_actividad = a.id_actividad AND ra.matricula = ?
+        ON ra.id_actividad = a.id_actividad AND ra.no_control = ?
       WHERE a.id_unidad = ? AND a.id_grupo = ?
     `;
-    db.query(sql, [matricula, id_unidad, id_grupo], (err, results) => {
+    db.query(sql, [no_control, id_unidad, id_grupo], (err, results) => {
       if (err) return reject(err);
       if (!results.length) return resolve(0);
 
@@ -50,16 +50,16 @@ async function calcularPromedioUnidad(matricula, id_unidad, id_grupo) {
  * Cierra una unidad: calcula promedio, aplica bonus, guarda calificacion_unidad.
  * FIX 1: umbral 70
  */
-async function cerrarUnidad(matricula, id_unidad, id_grupo, overrides = {}) {
-  const promedio = await calcularPromedioUnidad(matricula, id_unidad, id_grupo);
+async function cerrarUnidad(no_control, id_unidad, id_grupo, overrides = {}) {
+  const promedio = await calcularPromedioUnidad(no_control, id_unidad, id_grupo);
 
   return new Promise((resolve, reject) => {
     const sqlBonus = `
       SELECT COALESCE(SUM(puntos_otorgados), 0) AS bonus
       FROM bonusunidad
-      WHERE matricula = ? AND id_unidad = ? AND id_grupo = ? AND estatus = 'Activo'
+      WHERE no_control = ? AND id_unidad = ? AND id_grupo = ? AND estatus = 'Activo'
     `;
-    db.query(sqlBonus, [matricula, id_unidad, id_grupo], (err, bonus) => {
+    db.query(sqlBonus, [no_control, id_unidad, id_grupo], (err, bonus) => {
       if (err) return reject(err);
 
       const puntos = parseFloat(bonus[0].bonus);
@@ -75,13 +75,13 @@ async function cerrarUnidad(matricula, id_unidad, id_grupo, overrides = {}) {
 
       db.query(
         `INSERT INTO calificacion_unidad
-          (matricula, id_unidad, id_grupo, promedio_ponderado, calificacion_unidad_final, estatus_unidad)
+          (no_control, id_unidad, id_grupo, promedio_ponderado, calificacion_unidad_final, estatus_unidad)
          VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
           promedio_ponderado        = VALUES(promedio_ponderado),
           calificacion_unidad_final = VALUES(calificacion_unidad_final),
           estatus_unidad            = VALUES(estatus_unidad)`,
-        [matricula, id_unidad, id_grupo, promedio, calificacionFinal, estatus],
+        [no_control, id_unidad, id_grupo, promedio, calificacionFinal, estatus],
         (err2) => {
           if (err2) return reject(err2);
           resolve({ promedio, calificacionFinal, estatus });
@@ -96,7 +96,7 @@ async function cerrarUnidad(matricula, id_unidad, id_grupo, overrides = {}) {
  * Aplica redondeo institucional (≥0.5 sube) DESPUÉS del cálculo.
  * FIX 1: umbral 70
  */
-async function calcularCalificacionFinal(matricula, id_grupo) {
+async function calcularCalificacionFinal(no_control, id_grupo) {
   return new Promise((resolve, reject) => {
     const sql = `
       SELECT
@@ -105,9 +105,9 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
       FROM calificacion_unidad cu
       LEFT JOIN grupo_unidad gu
           ON gu.id_grupo = cu.id_grupo AND gu.id_unidad = cu.id_unidad
-      WHERE cu.matricula = ? AND cu.id_grupo = ?
+      WHERE cu.no_control = ? AND cu.id_grupo = ?
     `;
-    db.query(sql, [matricula, id_grupo], (err, results) => {
+    db.query(sql, [no_control, id_grupo], (err, results) => {
       if (err) return reject(err);
       if (results.length === 0)
         return resolve({ promedio: 0, estatus: "Pendiente" });
@@ -142,9 +142,9 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
       db.query(
         `SELECT COALESCE(puntos_otorgados, 0) AS bonus
            FROM bonusfinal
-          WHERE matricula = ? AND id_grupo = ? AND estatus = 'Activo'
+          WHERE no_control = ? AND id_grupo = ? AND estatus = 'Activo'
           LIMIT 1`,
-        [matricula, id_grupo],
+        [no_control, id_grupo],
         (errB, bonusRows) => {
           if (errB) return reject(errB);
           const bonusPts = parseFloat(bonusRows[0]?.bonus ?? 0);
@@ -153,9 +153,9 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
           // Verificar si existe modificacion_final (sobreescribe todo)
           db.query(
             `SELECT calif_modificada FROM modificacionfinal
-              WHERE matricula = ? AND id_grupo = ? AND estatus = 'Aplicado'
+              WHERE no_control = ? AND id_grupo = ? AND estatus = 'Aplicado'
               LIMIT 1`,
-            [matricula, id_grupo],
+            [no_control, id_grupo],
             (errM, modRows) => {
               if (errM) return reject(errM);
 
@@ -167,13 +167,13 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
               const estatus = redondeado >= CALIFICACION_APROBATORIA ? "Aprobado" : "Reprobado";
 
               db.query(
-                `INSERT INTO calificacion_final (matricula, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
+                `INSERT INTO calificacion_final (no_control, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
                  VALUES (?, ?, ?, ?, ?)
                  ON DUPLICATE KEY UPDATE
                   promedio_unidades    = VALUES(promedio_unidades),
                   calificacion_oficial = VALUES(calificacion_oficial),
                   estatus_final        = VALUES(estatus_final)`,
-                [matricula, id_grupo, promedioBase, redondeado, estatus],
+                [no_control, id_grupo, promedioBase, redondeado, estatus],
                 (err2) => {
                   if (err2) return reject(err2);
                   resolve({ promedio: redondeado, estatus });
@@ -190,7 +190,7 @@ async function calcularCalificacionFinal(matricula, id_grupo) {
 /**
  * Cierra todas las unidades del grupo para un alumno y calcula el final.
  */
-async function calcularTodo(matricula, id_grupo) {
+async function calcularTodo(no_control, id_grupo) {
   return new Promise((resolve, reject) => {
     db.query(
       "SELECT id_unidad FROM grupo_unidad WHERE id_grupo = ?",
@@ -199,9 +199,9 @@ async function calcularTodo(matricula, id_grupo) {
         if (err) return reject(err);
         try {
           const resultadosUnidades = await Promise.all(
-            unidades.map((u) => cerrarUnidad(matricula, u.id_unidad, id_grupo)),
+            unidades.map((u) => cerrarUnidad(no_control, u.id_unidad, id_grupo)),
           );
-          const final = await calcularCalificacionFinal(matricula, id_grupo);
+          const final = await calcularCalificacionFinal(no_control, id_grupo);
           resolve({ unidades: resultadosUnidades, final });
         } catch (e) {
           reject(e);

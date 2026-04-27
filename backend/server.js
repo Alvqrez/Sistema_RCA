@@ -56,7 +56,7 @@ app.post("/login", (req, res) => {
       let sqlNombre;
       if (userRow.rol === "alumno")
         sqlNombre =
-          "SELECT nombre, apellido_paterno FROM alumno WHERE matricula = ?";
+          "SELECT nombre, apellido_paterno FROM alumno WHERE no_control = ?";
       else if (userRow.rol === "maestro")
         sqlNombre =
           "SELECT nombre, apellido_paterno FROM maestro WHERE rfc = ?";

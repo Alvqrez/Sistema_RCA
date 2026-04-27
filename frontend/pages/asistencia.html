@@ -205,7 +205,7 @@
               <thead>
                 <tr>
                   <th>Alumno</th>
-                  <th>Matrícula</th>
+                  <th>No. Control</th>
                   <th style="text-align: center">Hoy</th>
                   <th style="text-align: center">Asistencia total</th>
                 </tr>
@@ -239,7 +239,7 @@
       const tkn = () => localStorage.getItem("token");
       const STORE = (key) => `asist_${key}`; // localStorage key pattern
 
-      let alumnos = []; // { matricula, nombre }
+      let alumnos = []; // { no_control, nombre }
       let grupoActual = null;
 
       // ── Init ─────────────────────────────────────────────────────────
@@ -314,7 +314,7 @@
           );
           const data = await r.json();
           alumnos = (data || []).map((a) => ({
-            matricula: a.matricula,
+            no_control: a.no_control,
             nombre:
               `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
           }));
@@ -336,32 +336,32 @@
         renderTabla();
       }
 
-      function getRegistro(matricula) {
+      function getRegistro(no_control) {
         // { fecha: "presente"|"falta" }
         try {
           return (
             JSON.parse(
-              localStorage.getItem(STORE(`${grupoActual}_${matricula}`)),
+              localStorage.getItem(STORE(`${grupoActual}_${no_control}`)),
             ) || {}
           );
         } catch {
           return {};
         }
       }
-      function setRegistro(matricula, data) {
+      function setRegistro(no_control, data) {
         localStorage.setItem(
-          STORE(`${grupoActual}_${matricula}`),
+          STORE(`${grupoActual}_${no_control}`),
           JSON.stringify(data),
         );
       }
 
-      function toggleAsist(matricula, btn) {
+      function toggleAsist(no_control, btn) {
         const fecha = getFecha();
         if (!fecha) {
           showToast("Selecciona una fecha primero", "error");
           return;
         }
-        const reg = getRegistro(matricula);
+        const reg = getRegistro(no_control);
         const actual = reg[fecha];
         // Cycle: sin registro → presente → falta → sin registro
         if (!actual) {
@@ -371,7 +371,7 @@
         } else {
           delete reg[fecha];
         }
-        setRegistro(matricula, reg);
+        setRegistro(no_control, reg);
         actualizarBtn(btn, reg[fecha]);
         actualizarResumen();
       }
@@ -398,8 +398,8 @@
               : "Sin registrar";
       }
 
-      function getPctAsistencia(matricula) {
-        const reg = getRegistro(matricula);
+      function getPctAsistencia(no_control) {
+        const reg = getRegistro(no_control);
         const fechas = Object.keys(reg);
         if (!fechas.length) return null;
         const presentes = fechas.filter((f) => reg[f] === "presente").length;
@@ -411,9 +411,9 @@
         const tbody = document.getElementById("tbodyAsist");
         tbody.innerHTML = alumnos
           .map((a) => {
-            const reg = getRegistro(a.matricula);
+            const reg = getRegistro(a.no_control);
             const estado = reg[fecha];
-            const pct = getPctAsistencia(a.matricula);
+            const pct = getPctAsistencia(a.no_control);
             const pctBadge =
               pct === null
                 ? `<span style="font-size:0.78rem;color:var(--text-muted)">—</span>`
@@ -421,11 +421,11 @@
 
             return `<tr>
             <td style="font-weight:500">${a.nombre}</td>
-            <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted)">${a.no_control}</td>
             <td style="text-align:center">
               <button class="toggle-asist${estado === "presente" ? " presente" : estado === "falta" ? " falta" : ""}"
-                      onclick="toggleAsist('${a.matricula}', this)"
-                      data-matricula="${a.matricula}">
+                      onclick="toggleAsist('${a.no_control}', this)"
+                      data-no_control="${a.no_control}">
                 <iconify-icon icon="${estado === "presente" ? "lucide:check" : estado === "falta" ? "lucide:x" : "lucide:minus"}"></iconify-icon>
               </button>
             </td>
@@ -445,7 +445,7 @@
           faltas = 0,
           sinRegistrar = 0;
         alumnos.forEach((a) => {
-          const reg = getRegistro(a.matricula);
+          const reg = getRegistro(a.no_control);
           if (reg[fecha] === "presente") presentes++;
           else if (reg[fecha] === "falta") faltas++;
           else sinRegistrar++;
@@ -477,8 +477,8 @@
 
         // Re-guardar estado de cada alumno (por si algún toggle no se guardó)
         alumnos.forEach((a) => {
-          const reg = getRegistro(a.matricula);
-          setRegistro(a.matricula, reg);
+          const reg = getRegistro(a.no_control);
+          setRegistro(a.no_control, reg);
         });
 
         showToast("Asistencia guardada ✓", "success");
@@ -492,24 +492,24 @@
         // Collect all unique dates across all students
         const fechas = new Set();
         alumnos.forEach((a) => {
-          const reg = getRegistro(a.matricula);
+          const reg = getRegistro(a.no_control);
           Object.keys(reg).forEach((f) => fechas.add(f));
         });
         const fechasOrdenadas = [...fechas].sort();
         const header = [
-          "Matricula",
+          "No_control",
           "Nombre",
           ...fechasOrdenadas,
           "% Asistencia",
         ];
         const rows = alumnos.map((a) => {
-          const reg = getRegistro(a.matricula);
+          const reg = getRegistro(a.no_control);
           const celdas = fechasOrdenadas.map((f) =>
             reg[f] === "presente" ? "P" : reg[f] === "falta" ? "F" : "",
           );
-          const pct = getPctAsistencia(a.matricula);
+          const pct = getPctAsistencia(a.no_control);
           return [
-            `"${a.matricula}"`,
+            `"${a.no_control}"`,
             `"${a.nombre}"`,
             ...celdas,
             pct !== null ? `${pct}%` : "",

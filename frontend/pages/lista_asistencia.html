@@ -538,7 +538,7 @@
           const data = await r.json();
           alumnosGrupo = (data || [])
             .map((a) => ({
-              matricula: a.matricula,
+              no_control: a.no_control,
               nombre:
                 `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
             }))
@@ -554,7 +554,7 @@
       function construirFechas() {
         const set = new Set();
         alumnosGrupo.forEach((a) => {
-          const reg = getRegistro(a.matricula);
+          const reg = getRegistro(a.no_control);
           Object.keys(reg).forEach((f) => set.add(f));
         });
         todasFechas = [...set].sort();
@@ -600,7 +600,7 @@
         let suma = 0,
           riesgo = 0;
         alumnosGrupo.forEach((a) => {
-          const pct = getPct(a.matricula, fechas);
+          const pct = getPct(a.no_control, fechas);
           if (pct !== null) {
             suma += pct;
             if (pct < 80) riesgo++;
@@ -621,7 +621,7 @@
         }
         const rows = alumnosGrupo
           .map((a) => {
-            const reg = getRegistro(a.matricula);
+            const reg = getRegistro(a.no_control);
             const pres = fechas.filter((f) => reg[f] === "presente").length;
             const falt = fechas.filter((f) => reg[f] === "falta").length;
             const sinR = fechas.length - pres - falt;
@@ -636,7 +636,7 @@
 
             return `<tr>
         <td style="font-weight:600">${a.nombre}${riesgo}</td>
-        <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+        <td style="font-size:0.78rem;color:var(--text-muted)">${a.no_control}</td>
         <td style="text-align:center;font-weight:700;color:var(--success)">${pres}</td>
         <td style="text-align:center;font-weight:700;color:var(--danger)">${falt}</td>
         <td style="text-align:center;color:var(--text-muted)">${sinR}</td>
@@ -657,7 +657,7 @@
             <thead>
               <tr>
                 <th>Alumno</th>
-                <th>Matrícula</th>
+                <th>No. Control</th>
                 <th style="text-align:center">Presentes</th>
                 <th style="text-align:center">Faltas</th>
                 <th style="text-align:center">Sin reg.</th>
@@ -692,8 +692,8 @@
 
         const rows = alumnosGrupo
           .map((a) => {
-            const reg = getRegistro(a.matricula);
-            const pct = getPct(a.matricula, fechas);
+            const reg = getRegistro(a.no_control);
+            const pct = getPct(a.no_control, fechas);
             const col = pctColor(pct);
             const cells = fechas
               .map((f) => {
@@ -737,9 +737,9 @@
       function renderFaltas(fechas) {
         const conFaltas = alumnosGrupo
           .map((a) => {
-            const reg = getRegistro(a.matricula);
+            const reg = getRegistro(a.no_control);
             const faltas = fechas.filter((f) => reg[f] === "falta");
-            return { ...a, faltas, pct: getPct(a.matricula, fechas) };
+            return { ...a, faltas, pct: getPct(a.no_control, fechas) };
           })
           .filter((a) => a.faltas.length > 0)
           .sort((a, b) => a.faltas.length - b.faltas.length) // más faltas al final
@@ -785,7 +785,7 @@
             return `
         <div class="faltas-alumno-header">
           <span style="font-weight:700;color:var(--text-main)">${a.nombre}</span>
-          <span style="margin-left:8px;font-size:0.72rem;color:var(--text-muted)">${a.matricula}</span>
+          <span style="margin-left:8px;font-size:0.72rem;color:var(--text-muted)">${a.no_control}</span>
           <span style="margin-left:12px;font-weight:700;color:${col}">${a.faltas.length} falta${a.faltas.length > 1 ? "s" : ""}</span>
           ${a.pct !== null && a.pct < 80 ? '<span class="chip-riesgo">RIESGO</span>' : ""}
         </div>
@@ -842,11 +842,11 @@
       }
 
       /* ── Helpers ───────────────────────────────────────────────── */
-      function getRegistro(matricula) {
+      function getRegistro(no_control) {
         try {
           return (
             JSON.parse(
-              localStorage.getItem(STORE(`${grupoActual}_${matricula}`)),
+              localStorage.getItem(STORE(`${grupoActual}_${no_control}`)),
             ) || {}
           );
         } catch {
@@ -854,9 +854,9 @@
         }
       }
 
-      function getPct(matricula, fechas) {
+      function getPct(no_control, fechas) {
         if (!fechas.length) return null;
-        const reg = getRegistro(matricula);
+        const reg = getRegistro(no_control);
         const pres = fechas.filter((f) => reg[f] === "presente").length;
         return Math.round((pres / fechas.length) * 100);
       }
@@ -875,15 +875,15 @@
           return;
         }
         const fechas = todasFechas;
-        const header = ["Matricula", "Nombre", ...fechas, "% Asistencia"];
+        const header = ["No_control", "Nombre", ...fechas, "% Asistencia"];
         const rows = alumnosGrupo.map((a) => {
-          const reg = getRegistro(a.matricula);
+          const reg = getRegistro(a.no_control);
           const celdas = fechas.map((f) =>
             reg[f] === "presente" ? "P" : reg[f] === "falta" ? "F" : "",
           );
-          const pct = getPct(a.matricula, fechas);
+          const pct = getPct(a.no_control, fechas);
           return [
-            `"${a.matricula}"`,
+            `"${a.no_control}"`,
             `"${a.nombre}"`,
             ...celdas,
             pct !== null ? pct + "%" : "",

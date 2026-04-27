@@ -19,9 +19,9 @@ router.get("/stats", soloAdmin, (req, res) => {
     periodos_vigentes:
       "SELECT COUNT(*) AS total FROM periodo_escolar WHERE estatus = 'Vigente'",
     calificaciones_pendientes: `
-      SELECT COUNT(DISTINCT i.matricula, i.id_grupo) AS total
+      SELECT COUNT(DISTINCT i.no_control, i.id_grupo) AS total
       FROM inscripcion i
-      LEFT JOIN calificacion_final cf ON cf.matricula = i.matricula AND cf.id_grupo = i.id_grupo
+      LEFT JOIN calificacion_final cf ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
       WHERE i.estatus = 'Cursando' AND cf.calificacion_oficial IS NULL
     `,
   };
@@ -231,7 +231,7 @@ router.post("/administradores", soloAdmin, async (req, res) => {
 router.get("/backup", soloAdmin, (req, res) => {
   const tablas = {
     alumnos:
-      "SELECT matricula, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional FROM alumno",
+      "SELECT no_control, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional FROM alumno",
     maestros:
       "SELECT rfc, nombre, apellido_paterno, apellido_materno, correo_institucional, departamento, estatus FROM maestro",
     carreras: "SELECT * FROM carrera",

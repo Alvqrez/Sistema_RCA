@@ -145,7 +145,7 @@
               <input
                 type="text"
                 id="filtroBusqueda"
-                placeholder="🔍 Buscar por nombre o matrícula…"
+                placeholder="🔍 Buscar por nombre o no_control…"
                 oninput="filtrar()"
                 style="flex: 1; min-width: 200px"
               />
@@ -201,7 +201,7 @@
       const BASE = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
 
-      let todosAlumnos = []; // { matricula, nombre, grupo, id_grupo, materia, estatus_final }
+      let todosAlumnos = []; // { no_control, nombre, grupo, id_grupo, materia, estatus_final }
 
       // ── Init ─────────────────────────────────────────────────────────
       (async function init() {
@@ -253,7 +253,7 @@
               const data = await r.json();
               (data.alumnos || []).forEach((a) => {
                 todosAlumnos.push({
-                  matricula: a.matricula,
+                  no_control: a.no_control,
                   nombre: a.nombre_completo,
                   id_grupo: g.id_grupo,
                   materia: g.nombre_materia,
@@ -296,7 +296,7 @@
           const matchQ =
             !q ||
             a.nombre.toLowerCase().includes(q) ||
-            a.matricula.toLowerCase().includes(q);
+            a.no_control.toLowerCase().includes(q);
           const matchG = !grupo || String(a.id_grupo) === grupo;
           const matchE = !estatus || a.estatus_final === estatus;
           return matchQ && matchG && matchE;
@@ -342,7 +342,7 @@
               <div class="alumno-info">
                 <p class="alumno-nombre">${a.nombre}</p>
                 <div class="alumno-meta">
-                  <span><iconify-icon icon="lucide:hash"></iconify-icon> ${a.matricula}</span>
+                  <span><iconify-icon icon="lucide:hash"></iconify-icon> ${a.no_control}</span>
                   <span><iconify-icon icon="lucide:book-open"></iconify-icon> ${a.materia}</span>
                 </div>
                 <div style="margin-top:5px;display:flex;align-items:center;gap:8px">

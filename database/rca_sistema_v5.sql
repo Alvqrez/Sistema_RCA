@@ -91,7 +91,7 @@ CREATE TABLE `carrera` (
 
 -- Alumno  (sin columnas usuario/password)
 CREATE TABLE `alumno` (
-  `matricula`            VARCHAR(15)   NOT NULL  COMMENT 'Matrícula única del estudiante',
+  `no_control`            VARCHAR(15)   NOT NULL  COMMENT 'Matrícula única del estudiante',
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
   `nombre`               VARCHAR(80)   NOT NULL,
   `apellido_paterno`     VARCHAR(50)   NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE `alumno` (
   `tel_celular`          VARCHAR(15)   NULL DEFAULT NULL,
   `tel_casa`             VARCHAR(15)   NULL DEFAULT NULL,
   `direccion`            VARCHAR(200)  NULL DEFAULT NULL,
-  PRIMARY KEY (`matricula`),
+  PRIMARY KEY (`no_control`),
   UNIQUE INDEX `uq_Alumno_CURP` (`curp`),
   INDEX `fk_Alumno_Car` (`id_carrera`),
   CONSTRAINT `fk_Alumno_Car`
@@ -156,7 +156,7 @@ CREATE TABLE `usuario` (
   `pwd`            VARCHAR(255)  NOT NULL  COMMENT 'BCrypt. Nunca texto plano.',
   `rol`            ENUM('administrador','maestro','alumno') NOT NULL,
   `id_referencia`  VARCHAR(20)   NOT NULL
-    COMMENT 'matricula / rfc / id_admin según rol',
+    COMMENT 'no_control / rfc / id_admin según rol',
   `activo`         TINYINT       NOT NULL DEFAULT 1,
   `fecha_creacion` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ultimo_acceso`  DATETIME      NULL DEFAULT NULL,
@@ -359,15 +359,15 @@ CREATE TABLE `config_evaluacion_unidad` (
 
 -- Inscripción
 CREATE TABLE `inscripcion` (
-  `matricula`         VARCHAR(15)  NOT NULL  COMMENT 'FK → Alumno',
+  `no_control`         VARCHAR(15)  NOT NULL  COMMENT 'FK → Alumno',
   `id_grupo`          INT UNSIGNED NOT NULL  COMMENT 'FK → Grupo',
   `fecha_inscripcion` DATE         NOT NULL,
   `estatus`           ENUM('Cursando','Baja','Aprobado','Reprobado') NOT NULL DEFAULT 'Cursando',
   `tipo_curso`        ENUM('Ordinario','Recursado','Especial')       NOT NULL DEFAULT 'Ordinario',
-  PRIMARY KEY (`matricula`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_Inscr_Grupo` (`id_grupo`),
   CONSTRAINT `fk_Inscr_Alumno`
-    FOREIGN KEY (`matricula`) REFERENCES `alumno` (`matricula`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`) REFERENCES `alumno` (`no_control`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_Inscr_Grupo`
     FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`  (`id_grupo`)  ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -378,18 +378,18 @@ CREATE TABLE `inscripcion` (
 
 -- Resultado por actividad
 CREATE TABLE `resultado_actividad` (
-  `matricula`             VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`             VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_actividad`          INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Actividad',
   `calificacion_obtenida` DECIMAL(5,2) NULL DEFAULT NULL,
   `calificacion_anterior` DECIMAL(5,2) NULL DEFAULT NULL  COMMENT 'Valor previo (auditoría)',
   `fecha_registro`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `estatus`               ENUM('Pendiente','Validada','NP') NOT NULL DEFAULT 'Pendiente',
   `rfc`                   VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro que registró (RFC)',
-  PRIMARY KEY (`matricula`, `id_actividad`),
+  PRIMARY KEY (`no_control`, `id_actividad`),
   INDEX `fk_RA_Actividad` (`id_actividad`),
   INDEX `fk_RA_Maestro`   (`rfc`),
   CONSTRAINT `fk_RA_Alumno`
-    FOREIGN KEY (`matricula`)       REFERENCES `alumno`    (`matricula`)    ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`)       REFERENCES `alumno`    (`no_control`)    ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Actividad`
     FOREIGN KEY (`id_actividad`)    REFERENCES `actividad` (`id_actividad`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Maestro`
@@ -402,17 +402,17 @@ CREATE TABLE `resultado_actividad` (
 
 -- Calificación por unidad  (caché calculada)
 CREATE TABLE `calificacion_unidad` (
-  `matricula`                VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`                VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_unidad`                INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Unidad',
   `id_grupo`                 INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
   `promedio_ponderado`       DECIMAL(5,2) NULL DEFAULT NULL,
   `calificacion_unidad_final` DECIMAL(5,2) NULL DEFAULT NULL,
   `estatus_unidad`           ENUM('Pendiente','Aprobada','Reprobada') NOT NULL DEFAULT 'Pendiente',
-  PRIMARY KEY (`matricula`, `id_unidad`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_unidad`, `id_grupo`),
   INDEX `fk_CU_Unidad` (`id_unidad`),
   INDEX `fk_CU_Grupo`  (`id_grupo`),
   CONSTRAINT `fk_CU_Alumno`
-    FOREIGN KEY (`matricula`) REFERENCES `alumno`  (`matricula`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`) REFERENCES `alumno`  (`no_control`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CU_Unidad`
     FOREIGN KEY (`id_unidad`) REFERENCES `unidad`  (`id_unidad`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CU_Grupo`
@@ -425,15 +425,15 @@ CREATE TABLE `calificacion_unidad` (
 
 -- Calificación final
 CREATE TABLE `calificacion_final` (
-  `matricula`            VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`            VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_grupo`             INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
   `promedio_unidades`    DECIMAL(5,2) NULL DEFAULT NULL,
   `calificacion_oficial` DECIMAL(5,2) NULL DEFAULT NULL  COMMENT 'Nota asentada en acta',
   `estatus_final`        ENUM('Pendiente','Aprobado','Reprobado','Especial') NOT NULL DEFAULT 'Pendiente',
-  PRIMARY KEY (`matricula`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_CF_Grupo` (`id_grupo`),
   CONSTRAINT `fk_CF_Alumno`
-    FOREIGN KEY (`matricula`) REFERENCES `alumno` (`matricula`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`) REFERENCES `alumno` (`no_control`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CF_Grupo`
     FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`  (`id_grupo`)  ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -444,7 +444,7 @@ CREATE TABLE `calificacion_final` (
 
 -- Bonus por unidad
 CREATE TABLE `bonusunidad` (
-  `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_unidad`          INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Unidad',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
   `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
@@ -453,12 +453,12 @@ CREATE TABLE `bonusunidad` (
   `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
   `fecha_modificacion` DATE         NULL DEFAULT NULL,
   `estatus`            ENUM('Activo','Cancelado') NOT NULL DEFAULT 'Activo',
-  PRIMARY KEY (`matricula`, `id_unidad`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_unidad`, `id_grupo`),
   INDEX `fk_BU_Unidad`  (`id_unidad`),
   INDEX `fk_BU_Grupo`   (`id_grupo`),
   INDEX `fk_BU_Maestro` (`rfc`),
   CONSTRAINT `fk_BU_Alumno`
-    FOREIGN KEY (`matricula`)       REFERENCES `alumno`  (`matricula`)       ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`)       REFERENCES `alumno`  (`no_control`)       ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BU_Unidad`
     FOREIGN KEY (`id_unidad`)       REFERENCES `unidad`  (`id_unidad`)       ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BU_Grupo`
@@ -473,7 +473,7 @@ CREATE TABLE `bonusunidad` (
 
 -- Bonus final
 CREATE TABLE `bonusfinal` (
-  `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
   `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `puntos_otorgados`   DECIMAL(4,2) NOT NULL,
@@ -481,10 +481,10 @@ CREATE TABLE `bonusfinal` (
   `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
   `fecha_modificacion` DATE         NULL DEFAULT NULL,
   `estatus`            ENUM('Activo','Aplicado') NOT NULL DEFAULT 'Activo',
-  PRIMARY KEY (`matricula`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_BF_Maestro` (`rfc`),
   CONSTRAINT `fk_BF_CalFinal`
-    FOREIGN KEY (`matricula`, `id_grupo`) REFERENCES `calificacion_final` (`matricula`, `id_grupo`)
+    FOREIGN KEY (`no_control`, `id_grupo`) REFERENCES `calificacion_final` (`no_control`, `id_grupo`)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_BF_Maestro`
     FOREIGN KEY (`rfc`)             REFERENCES `maestro` (`rfc`)
@@ -497,7 +497,7 @@ CREATE TABLE `bonusfinal` (
 
 -- Modificación final
 CREATE TABLE `modificacionfinal` (
-  `matricula`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
+  `no_control`          VARCHAR(15)  NOT NULL  COMMENT 'PK/FK → Alumno',
   `id_grupo`           INT UNSIGNED NOT NULL  COMMENT 'PK/FK → Grupo',
   `rfc`                VARCHAR(13)  NOT NULL  COMMENT 'FK → Maestro (RFC)',
   `calif_original`     DECIMAL(5,2) NOT NULL,
@@ -505,10 +505,10 @@ CREATE TABLE `modificacionfinal` (
   `justificacion`      TEXT         NOT NULL,
   `fecha_modificacion` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `estatus`            ENUM('Aplicado','Auditado') NOT NULL DEFAULT 'Aplicado',
-  PRIMARY KEY (`matricula`, `id_grupo`),
+  PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_MF_Maestro` (`rfc`),
   CONSTRAINT `fk_MF_CalFinal`
-    FOREIGN KEY (`matricula`, `id_grupo`) REFERENCES `calificacion_final` (`matricula`, `id_grupo`)
+    FOREIGN KEY (`no_control`, `id_grupo`) REFERENCES `calificacion_final` (`no_control`, `id_grupo`)
     ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_MF_Maestro`
     FOREIGN KEY (`rfc`)             REFERENCES `maestro` (`rfc`)

@@ -1,7 +1,7 @@
 const BASE_URL = "http://localhost:3000";
 let alumnosGlobal = [];
 let modoEdicion = false;
-let matriculaEditando = null;
+let no_controlEditando = null;
 let csvData = [];
 
 function toast(msg, tipo = "success") {
@@ -56,7 +56,7 @@ function filtrar() {
 
   let datos = alumnosGlobal.filter((a) => {
     const nombre = `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.toLowerCase();
-    return (!q || nombre.includes(q) || a.matricula.toLowerCase().includes(q))
+    return (!q || nombre.includes(q) || a.no_control.toLowerCase().includes(q))
         && (!carrera || a.id_carrera === carrera);
   });
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
@@ -76,13 +76,13 @@ function renderTabla(datos, rol) {
     const iniciales = `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
     const acciones = rol === "administrador"
       ? `<div class="table-actions">
-          <button class="btn-icon" title="Ver cursos inscritos" onclick="abrirModalCursos('${a.matricula}')">
+          <button class="btn-icon" title="Ver cursos inscritos" onclick="abrirModalCursos('${a.no_control}')">
             <iconify-icon icon="lucide:book-open"></iconify-icon>
           </button>
-          <button class="btn-icon" title="Editar" onclick="editarAlumno('${a.matricula}')">
+          <button class="btn-icon" title="Editar" onclick="editarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:pencil"></iconify-icon>
           </button>
-          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.matricula}')">
+          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
         </div>`
@@ -92,7 +92,7 @@ function renderTabla(datos, rol) {
         <div class="avatar">${iniciales}</div>
         <span>${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}</span>
       </div></td>
-      <td><code>${a.matricula}</code></td>
+      <td><code>${a.no_control}</code></td>
       <td><span class="badge badge-info">${a.id_carrera}</span></td>
       <td>${a.correo_institucional ?? "—"}</td>
       <td>${a.tel_celular ?? "—"}</td>
@@ -117,10 +117,10 @@ async function cargarCarrerasSelect() {
 }
 
 // Modal: cursos inscritos del alumno
-async function abrirModalCursos(matricula) {
-  const alumno = alumnosGlobal.find((a) => a.matricula === matricula);
+async function abrirModalCursos(no_control) {
+  const alumno = alumnosGlobal.find((a) => a.no_control === no_control);
   document.getElementById("cursosNombreAlumno").textContent =
-    alumno ? `${alumno.nombre} ${alumno.apellido_paterno} (${matricula})` : matricula;
+    alumno ? `${alumno.nombre} ${alumno.apellido_paterno} (${no_control})` : no_control;
 
   const body = document.getElementById("cursosBody");
   body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">
@@ -130,7 +130,7 @@ async function abrirModalCursos(matricula) {
 
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/inscripciones/alumno/${matricula}`, {
+    const r = await fetch(`${BASE_URL}/api/inscripciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const cursos = await r.json();
@@ -172,22 +172,22 @@ async function abrirModalCursos(matricula) {
 
 function abrirModalNuevo() {
   modoEdicion = false;
-  matriculaEditando = null;
+  no_controlEditando = null;
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
-  document.getElementById("f_matricula").disabled = false;
+  document.getElementById("f_no_control").disabled = false;
   document.getElementById("grupoPassword").style.display = "";
   limpiarForm();
   abrirModal("modalAlumno");
 }
 
-function editarAlumno(matricula) {
-  const a = alumnosGlobal.find((x) => x.matricula === matricula);
+function editarAlumno(no_control) {
+  const a = alumnosGlobal.find((x) => x.no_control === no_control);
   if (!a) return;
   modoEdicion = true;
-  matriculaEditando = matricula;
+  no_controlEditando = no_control;
   document.getElementById("modalTitulo").textContent = "Editar alumno";
-  document.getElementById("f_matricula").value        = a.matricula;
-  document.getElementById("f_matricula").disabled     = true;
+  document.getElementById("f_no_control").value        = a.no_control;
+  document.getElementById("f_no_control").disabled     = true;
   document.getElementById("f_carrera").value          = a.id_carrera ?? "";
   document.getElementById("f_correo").value           = a.correo_institucional ?? "";
   document.getElementById("f_nombre").value           = a.nombre ?? "";
@@ -207,7 +207,7 @@ function editarAlumno(matricula) {
 }
 
 async function guardarAlumno() {
-  const matricula  = document.getElementById("f_matricula").value.trim();
+  const no_control  = document.getElementById("f_no_control").value.trim();
   const id_carrera = document.getElementById("f_carrera").value;
   const correo     = document.getElementById("f_correo").value.trim();
   const nombre     = document.getElementById("f_nombre").value.trim();
@@ -216,7 +216,7 @@ async function guardarAlumno() {
   const errEl      = document.getElementById("modalError");
   errEl.style.display = "none";
 
-  if (!modoEdicion && (!matricula || !id_carrera || !username || !password)) {
+  if (!modoEdicion && (!no_control || !id_carrera || !username || !password)) {
     errEl.textContent = "Los campos marcados con * son obligatorios.";
     errEl.style.display = "block";
     return;
@@ -228,7 +228,7 @@ async function guardarAlumno() {
   btn.innerHTML = `<span class="spinner"></span> Guardando…`;
 
   const body = {
-    matricula, id_carrera, correo_institucional: correo, nombre,
+    no_control, id_carrera, correo_institucional: correo, nombre,
     apellido_paterno:  document.getElementById("f_ap_pat").value.trim(),
     apellido_materno:  document.getElementById("f_ap_mat").value.trim(),
     curp:              document.getElementById("f_curp").value.trim(),
@@ -242,7 +242,7 @@ async function guardarAlumno() {
   };
 
   try {
-    const url    = modoEdicion ? `${BASE_URL}/api/alumnos/${matriculaEditando}` : `${BASE_URL}/api/alumnos`;
+    const url    = modoEdicion ? `${BASE_URL}/api/alumnos/${no_controlEditando}` : `${BASE_URL}/api/alumnos`;
     const method = modoEdicion ? "PUT" : "POST";
     const r = await fetch(url, {
       method,
@@ -263,11 +263,11 @@ async function guardarAlumno() {
   }
 }
 
-async function eliminarAlumno(matricula) {
-  if (!confirm(`¿Eliminar al alumno ${matricula}? Esta acción no se puede deshacer.`)) return;
+async function eliminarAlumno(no_control) {
+  if (!confirm(`¿Eliminar al alumno ${no_control}? Esta acción no se puede deshacer.`)) return;
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/alumnos/${matricula}`, {
+    const r = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -278,7 +278,7 @@ async function eliminarAlumno(matricula) {
 }
 
 function limpiarForm() {
-  ["f_matricula","f_carrera","f_correo","f_nombre","f_ap_pat","f_ap_mat",
+  ["f_no_control","f_carrera","f_correo","f_nombre","f_ap_pat","f_ap_mat",
    "f_curp","f_fnac","f_genero","f_direccion","f_celular","f_tel_casa",
    "f_correo_personal","f_username","f_password"].forEach((id) => {
     const el = document.getElementById(id);
@@ -290,7 +290,7 @@ function limpiarForm() {
 
 function exportarCSV() {
   if (!alumnosGlobal.length) { toast("No hay datos para exportar", "info"); return; }
-  const cols = ["matricula","nombre","apellido_paterno","apellido_materno","id_carrera","correo_institucional","tel_celular"];
+  const cols = ["no_control","nombre","apellido_paterno","apellido_materno","id_carrera","correo_institucional","tel_celular"];
   const rows = [cols.join(",")];
   alumnosGlobal.forEach((a) => {
     rows.push(cols.map((c) => `"${(a[c] ?? "").toString().replace(/"/g, '""')}"`).join(","));

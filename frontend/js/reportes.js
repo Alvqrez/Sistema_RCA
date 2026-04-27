@@ -225,7 +225,7 @@ function renderTablaReporte(alumnos, unidades) {
         <div class="avatar">${iniciales}</div>
         <span style="font-size:0.875rem">${a.nombre_completo}</span>
       </div></td>
-      <td><code>${a.matricula}</code></td>
+      <td><code>${a.no_control}</code></td>
       ${calUnidades}
       ${promUnidades}
       ${calFinal}
@@ -241,7 +241,7 @@ function filtrarTablaReporte() {
     (a) =>
       !q ||
       a.nombre_completo.toLowerCase().includes(q) ||
-      a.matricula.toLowerCase().includes(q),
+      a.no_control.toLowerCase().includes(q),
   );
   renderTablaReporte(filtrados);
 }
@@ -255,7 +255,7 @@ function volverSelector() {
 function exportarReporteCSV() {
   if (!reporteActual) return;
   const { grupo, unidades, alumnos } = reporteActual;
-  const colBase = ["matricula", "nombre_completo", "estatus_inscripcion"];
+  const colBase = ["no_control", "nombre_completo", "estatus_inscripcion"];
   const colUnidades = unidades.map((u) => u.nombre_unidad);
   const cols = [
     ...colBase,
@@ -273,7 +273,7 @@ function exportarReporteCSV() {
     });
     rows.push(
       [
-        a.matricula,
+        a.no_control,
         `"${a.nombre_completo}"`,
         a.estatus_inscripcion ?? "",
         ...unidadesVals,

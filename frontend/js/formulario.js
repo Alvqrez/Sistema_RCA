@@ -5,15 +5,15 @@ let estado = {
   grupoId: null,
   unidadId: null,
   actividades: [], // actividades de la unidad actual
-  alumnos: [], // [{ matricula, nombre }]
-  resultados: {}, // matricula → { id_actividad → { cal, estatus } }
+  alumnos: [], // [{ no_control, nombre }]
+  resultados: {}, // no_control → { id_actividad → { cal, estatus } }
   unidadesGrupo: [], // [{ id_unidad, nombre_unidad, numero_unidad, ponderacion }]
   rubros: [], // config activa (legacy)
   rubrosState: {}, // (legacy)
   unidadCerrada: false, // true cuando la unidad fue cerrada y no se puede modificar
 };
-let bonusState = {}; // matricula → { puntos, justificacion }
-let _modalMatricula = null; // alumno activo en modal de actividades
+let bonusState = {}; // no_control → { puntos, justificacion }
+let _modalNo_control = null; // alumno activo en modal de actividades
 
 function getRubrosConfig(id_grupo, id_unidad) {
   try {
@@ -25,16 +25,16 @@ function getRubrosConfig(id_grupo, id_unidad) {
   return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
 }
 
-function getRubroEstado(matricula, key) {
-  return estado.rubrosState[matricula]?.[key] ?? "";
+function getRubroEstado(no_control, key) {
+  return estado.rubrosState[no_control]?.[key] ?? "";
 }
-function setRubroEstado(matricula, key, val) {
-  if (!estado.rubrosState[matricula]) estado.rubrosState[matricula] = {};
-  estado.rubrosState[matricula][key] = val;
+function setRubroEstado(no_control, key, val) {
+  if (!estado.rubrosState[no_control]) estado.rubrosState[no_control] = {};
+  estado.rubrosState[no_control][key] = val;
 }
 
-function getBonus(matricula) {
-  return bonusState[matricula] ?? { puntos: "", justificacion: "" };
+function getBonus(no_control) {
+  return bonusState[no_control] ?? { puntos: "", justificacion: "" };
 }
 
 function buildRubros(id_grupo, id_unidad) {
@@ -314,7 +314,7 @@ async function cargarAlumnos() {
     );
     const data = await res.json();
     estado.alumnos = data.map((a) => ({
-      matricula: a.matricula,
+      no_control: a.no_control,
       nombre:
         `${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}`.trim(),
     }));
@@ -346,10 +346,10 @@ async function seleccionarUnidadTab(id_unidad) {
       .filter((r) => r.tipo === "directo")
       .forEach((r) => {
         const guardado = localStorage.getItem(
-          `rubro_${estado.grupoId}_${id_unidad}_${al.matricula}_${r.key}`
+          `rubro_${estado.grupoId}_${id_unidad}_${al.no_control}_${r.key}`
         );
         if (guardado !== null && guardado !== "") {
-          setRubroEstado(al.matricula, r.key, guardado);
+          setRubroEstado(al.no_control, r.key, guardado);
         }
       });
   });
@@ -418,7 +418,7 @@ function hayAlumnosSinDatos() {
   estado.alumnos.forEach((al) => {
     const sinDatos = estado.actividades.some(a => {
       const inp = document.querySelector(
-        `input[data-actividad="${a.id_actividad}"][data-matricula="${al.matricula}"]`
+        `input[data-actividad="${a.id_actividad}"][data-no_control="${al.no_control}"]`
       );
       return !inp || inp.value.trim() === "";
     });
@@ -472,9 +472,9 @@ async function cargarResultadosExistentes() {
       );
       const filas = await res.json();
       filas.forEach((f) => {
-        if (!estado.resultados[f.matricula])
-          estado.resultados[f.matricula] = {};
-        estado.resultados[f.matricula][act.id_actividad] = {
+        if (!estado.resultados[f.no_control])
+          estado.resultados[f.no_control] = {};
+        estado.resultados[f.no_control][act.id_actividad] = {
           cal: f.calificacion_obtenida,
           estatus: f.estatus,
         };
@@ -495,7 +495,7 @@ async function cargarBonusUnidad() {
     if (Array.isArray(bonuses)) {
       bonuses.forEach((b) => {
         if (b.id_unidad === estado.unidadId && b.estatus !== "Cancelado") {
-          bonusState[b.matricula] = {
+          bonusState[b.no_control] = {
             puntos: b.puntos_otorgados,
             justificacion: b.justificacion,
           };
@@ -555,7 +555,7 @@ function renderTablaCalificaciones() {
   // Thead: una columna por actividad
   let thead = `<tr>
     <th class="th-alumno" style="text-align:left">Alumno</th>
-    <th style="text-align:left">Matrícula</th>`;
+    <th style="text-align:left">No. Control</th>`;
 
   estado.actividades.forEach(a => {
     thead += `<th style="min-width:100px">
@@ -576,26 +576,26 @@ function renderTablaCalificaciones() {
 
   let tbody = "";
   estado.alumnos.forEach((al) => {
-    tbody += `<tr data-matricula="${al.matricula}">
+    tbody += `<tr data-no_control="${al.no_control}">
       <td>${al.nombre}</td>
-      <td style="font-size:0.75rem;color:var(--text-muted)">${al.matricula}</td>`;
+      <td style="font-size:0.75rem;color:var(--text-muted)">${al.no_control}</td>`;
 
     // Una celda por actividad — input directo
     estado.actividades.forEach(a => {
-      const r      = estado.resultados[al.matricula]?.[a.id_actividad];
+      const r      = estado.resultados[al.no_control]?.[a.id_actividad];
       const val    = r?.estatus === "NP" ? "" : (r?.cal ?? "");
       tbody += `<td>
         <input class="grade-input" type="number" min="0" max="100"
           data-actividad="${a.id_actividad}"
-          data-matricula="${al.matricula}"
+          data-no_control="${al.no_control}"
           data-ponderacion="${a.ponderacion}"
           value="${val}" placeholder="—"
-          oninput="onCalInput(this);recalcularFila('${al.matricula}')" />
+          oninput="onCalInput(this);recalcularFila('${al.no_control}')" />
       </td>`;
     });
 
     // Base (sin bonus) — req. Etapa 2 §3.2: mostrar diferencia antes/después del bonus
-    const base = calcularBaseScore(al.matricula);
+    const base = calcularBaseScore(al.no_control);
     const baseColor =
       base === null
         ? "var(--text-muted)"
@@ -603,31 +603,31 @@ function renderTablaCalificaciones() {
           ? "var(--success)"
           : "var(--danger)";
     tbody += `<td style="text-align:center">
-      <span id="base-${al.matricula}" style="color:${baseColor};font-weight:600">
+      <span id="base-${al.no_control}" style="color:${baseColor};font-weight:600">
         ${base !== null ? base : "—"}
       </span>
     </td>`;
 
     // Bonus — puntos + justificación inline
-    const b = getBonus(al.matricula);
+    const b = getBonus(al.no_control);
     tbody += `<td class="td-bonus" style="min-width:140px">
       <input class="bonus-input bonus-pts-input"
         type="number" min="0" max="10" step="0.5"
-        data-matricula="${al.matricula}"
+        data-no_control="${al.no_control}"
         value="${b.puntos ?? ""}" placeholder="pts"
         style="width:56px;margin-bottom:4px"
-        oninput="onBonusInput('${al.matricula}',this.value)" />
+        oninput="onBonusInput('${al.no_control}',this.value)" />
       <input class="bonus-just-input"
         type="text"
-        data-matricula="${al.matricula}"
+        data-no_control="${al.no_control}"
         value="${(b.justificacion ?? '').replace(/"/g,'&quot;')}"
         placeholder="Justificación *"
         style="width:100%;font-size:.72rem"
-        oninput="if(!bonusState['${al.matricula}'])bonusState['${al.matricula}']={};bonusState['${al.matricula}'].justificacion=this.value" />
+        oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
     </td>`;
 
     // Cal. Final
-    const final = calcularCalFinal(al.matricula);
+    const final = calcularCalFinal(al.no_control);
     const fColor =
       final === null
         ? "var(--text-muted)"
@@ -635,7 +635,7 @@ function renderTablaCalificaciones() {
           ? "var(--success)"
           : "var(--danger)";
     tbody += `<td class="td-final">
-      <span id="final-${al.matricula}" style="color:${fColor}">
+      <span id="final-${al.no_control}" style="color:${fColor}">
         ${final !== null ? final : "—"}
       </span>
     </td></tr>`;
@@ -647,7 +647,7 @@ function renderTablaCalificaciones() {
   </table>`;
 
   // Recalcular BASE y FINAL para todos los alumnos con los datos ya cargados
-  estado.alumnos.forEach(al => recalcularFila(al.matricula));
+  estado.alumnos.forEach(al => recalcularFila(al.no_control));
 }
 
 function clampCal(val) {
@@ -666,7 +666,7 @@ function onCalInput(inp) {
   }
 }
 
-function calcularPromedioActividades(matricula) {
+function calcularPromedioActividades(no_control) {
   if (!estado.actividades.length) return null;
   const sumaPond = estado.actividades.reduce(
     (s, a) => s + parseFloat(a.ponderacion),
@@ -675,7 +675,7 @@ function calcularPromedioActividades(matricula) {
   if (sumaPond <= 0) return null;
   let suma = 0;
   estado.actividades.forEach((a) => {
-    const r = estado.resultados[matricula]?.[a.id_actividad];
+    const r = estado.resultados[no_control]?.[a.id_actividad];
     const cal = r?.estatus === "NP" ? 0 : (clampCal(r?.cal) ?? 0);
     suma += cal * (parseFloat(a.ponderacion) / 100);
   });
@@ -685,20 +685,20 @@ function calcularPromedioActividades(matricula) {
   return Math.round(normalized * 10) / 10;
 }
 
-function calcularCalFinal(matricula) {
-  const base = calcularBaseScore(matricula);
+function calcularCalFinal(no_control) {
+  const base = calcularBaseScore(no_control);
   if (base === null) return null;
-  const bonus = parseFloat(getBonus(matricula).puntos) || 0;
+  const bonus = parseFloat(getBonus(no_control).puntos) || 0;
   const conBonus = Math.min(100, base + bonus);
   return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
 }
 
-function calcularBaseScore(matricula) {
+function calcularBaseScore(no_control) {
   if (!estado.actividades.length) return null;
   let total = 0; let haySomething = false;
   for (const a of estado.actividades) {
     const inp = document.querySelector(
-      `input[data-actividad="${a.id_actividad}"][data-matricula="${matricula}"]`
+      `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`
     );
     const val = inp ? inp.value.trim() : "";
     if (val === "") continue;
@@ -709,12 +709,12 @@ function calcularBaseScore(matricula) {
   return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
 }
 
-function recalcularFila(matricula) {
-  const final = calcularCalFinal(matricula);
-  const base = calcularBaseScore(matricula);
+function recalcularFila(no_control) {
+  const final = calcularCalFinal(no_control);
+  const base = calcularBaseScore(no_control);
 
-  const elFinal = document.getElementById(`final-${matricula}`);
-  const elBase = document.getElementById(`base-${matricula}`);
+  const elFinal = document.getElementById(`final-${no_control}`);
+  const elBase = document.getElementById(`base-${no_control}`);
 
   if (elFinal) {
     const color =
@@ -738,33 +738,33 @@ function recalcularFila(matricula) {
   }
 }
 
-function onRubroInput(matricula, key, val) {
-  setRubroEstado(matricula, key, val);
+function onRubroInput(no_control, key, val) {
+  setRubroEstado(no_control, key, val);
   if (estado.grupoId && estado.unidadId) {
     localStorage.setItem(
-      `rubro_${estado.grupoId}_${estado.unidadId}_${matricula}_${key}`,
+      `rubro_${estado.grupoId}_${estado.unidadId}_${no_control}_${key}`,
       val
     );
   }
-  recalcularFila(matricula);
+  recalcularFila(no_control);
 }
 
-function onBonusInput(matricula, val) {
-  if (!bonusState[matricula])
-    bonusState[matricula] = { puntos: "", justificacion: "" };
-  bonusState[matricula].puntos = val;
-  recalcularFila(matricula);
+function onBonusInput(no_control, val) {
+  if (!bonusState[no_control])
+    bonusState[no_control] = { puntos: "", justificacion: "" };
+  bonusState[no_control].puntos = val;
+  recalcularFila(no_control);
 }
 
-function abrirModalActividades(matricula) {
-  _modalMatricula = matricula;
-  const alumno = estado.alumnos.find((a) => a.matricula === matricula);
+function abrirModalActividades(no_control) {
+  _modalNo_control = no_control;
+  const alumno = estado.alumnos.find((a) => a.no_control === no_control);
   const unidad = estado.unidadesGrupo.find(
     (u) => u.id_unidad === estado.unidadId,
   );
 
   document.getElementById("modalActTitulo").textContent =
-    `${alumno?.nombre ?? matricula} — Unidad ${unidad?.numero_unidad ?? ""}`;
+    `${alumno?.nombre ?? no_control} — Unidad ${unidad?.numero_unidad ?? ""}`;
 
   const content = document.getElementById("modalActContent");
 
@@ -782,7 +782,7 @@ function abrirModalActividades(matricula) {
 
   let rows = estado.actividades
     .map((a) => {
-      const r = estado.resultados[matricula]?.[a.id_actividad];
+      const r = estado.resultados[no_control]?.[a.id_actividad];
       const val = r?.estatus === "NP" ? "" : (r?.cal ?? "");
       const numVal = parseFloat(val) || 0;
       avg += numVal * (parseFloat(a.ponderacion) / 100);
@@ -795,7 +795,7 @@ function abrirModalActividades(matricula) {
       <td>
         <input class="grade-input modal-act-input" type="number" min="0" max="100"
           data-actividad="${a.id_actividad}" data-ponderacion="${a.ponderacion}"
-          data-matricula="${matricula}"
+          data-no_control="${no_control}"
           value="${val}" placeholder="${r?.estatus === "NP" ? "NP" : "—"}"
           oninput="onCalInput(this);recalcularModalAvg()" />
       </td>
@@ -849,7 +849,7 @@ function recalcularModalAvg() {
 
 function cerrarModalActividades() {
   document.getElementById("modalActividades").classList.remove("visible");
-  _modalMatricula = null;
+  _modalNo_control = null;
 }
 
 async function guardarDesdeModal() {
@@ -863,7 +863,7 @@ async function guardarDesdeModal() {
   inputs.forEach((inp) => {
     const cal = inp.value.trim() === "" ? null : clampCal(inp.value);
     resultados.push({
-      matricula: _modalMatricula,
+      no_control: _modalNo_control,
       calificacion_obtenida: cal,
       estatus: cal === null ? "NP" : "Validada",
     });
@@ -885,7 +885,7 @@ async function guardarDesdeModal() {
           id_actividad: idAct,
           resultados: [
             {
-              matricula: _modalMatricula,
+              no_control: _modalNo_control,
               calificacion_obtenida: cal,
               estatus: cal === null ? "NP" : "Validada",
             },
@@ -901,8 +901,8 @@ async function guardarDesdeModal() {
     mostrarToast(`Calificaciones guardadas`, "success");
     await cargarResultadosExistentes();
     // Update the actividades cell in the table
-    const avg = calcularPromedioActividades(_modalMatricula);
-    const el = document.getElementById(`act-val-${_modalMatricula}`);
+    const avg = calcularPromedioActividades(_modalNo_control);
+    const el = document.getElementById(`act-val-${_modalNo_control}`);
     if (el) {
       el.textContent = avg !== null ? avg.toFixed(1) : "—";
       el.style.color =
@@ -912,7 +912,7 @@ async function guardarDesdeModal() {
             ? "var(--success)"
             : "var(--danger)";
     }
-    recalcularFila(_modalMatricula);
+    recalcularFila(_modalNo_control);
   }
   cerrarModalActividades();
 }
@@ -926,14 +926,14 @@ async function guardarGradesDirectos() {
     estado.rubros
       .filter((r) => r.tipo === "directo")
       .forEach((r) => {
-        const val = getRubroEstado(al.matricula, r.key);
+        const val = getRubroEstado(al.no_control, r.key);
         if (val !== "" && val !== undefined && val !== null) {
           if (r.key === "pct_examen")     entry.cal_examen     = parseFloat(val);
           if (r.key === "pct_asistencia") entry.cal_asistencia = parseFloat(val);
         }
       });
     if (Object.keys(entry).length) {
-      grades[al.matricula] = entry;
+      grades[al.no_control] = entry;
       hayGrades = true;
     }
   });
@@ -1016,7 +1016,7 @@ async function _ejecutarGuardado() {
         const rawVal = inp.value.trim();
         const cal = rawVal === "" ? null : clampCal(rawVal);
         resultados.push({
-          matricula: inp.dataset.matricula,
+          no_control: inp.dataset.no_control,
           calificacion_obtenida: cal,
           estatus: cal === null ? "NP" : "Validada",
         });
@@ -1085,7 +1085,7 @@ async function _ejecutarCierre() {
     estado.rubros
       .filter((r) => r.tipo === "directo")
       .forEach((r) => {
-        const val = getRubroEstado(al.matricula, r.key);
+        const val = getRubroEstado(al.no_control, r.key);
         if (val !== "" && val !== undefined) {
           if (r.key === "pct_examen")     rubrosDirectos.cal_examen     = parseFloat(val);
           if (r.key === "pct_asistencia") rubrosDirectos.cal_asistencia  = parseFloat(val);
@@ -1101,7 +1101,7 @@ async function _ejecutarCierre() {
           Authorization: `Bearer ${token()}`,
         },
         body: JSON.stringify({
-          matricula: al.matricula,
+          no_control: al.no_control,
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
           ...rubrosDirectos,
@@ -1139,21 +1139,21 @@ async function guardarBonusUnidad() {
   let saved = 0,
     errs = 0;
   for (const al of estado.alumnos) {
-    const b = bonusState[al.matricula];
+    const b = bonusState[al.no_control];
     const pts = parseFloat(b?.puntos);
     if (!pts || pts <= 0) continue;
 
     // Require justification
     const justEl = document.querySelector(
-      `.bonus-just-input[data-matricula="${al.matricula}"]`,
+      `.bonus-just-input[data-no_control="${al.no_control}"]`,
     );
     const just = justEl?.value?.trim() || b?.justificacion || "";
     if (!just) {
       // Show inline justification request via modal-like approach (we use a simpler method)
       const j = prompt(`Justificación para bonus de ${al.nombre}:`);
       if (!j) continue;
-      if (!bonusState[al.matricula]) bonusState[al.matricula] = {};
-      bonusState[al.matricula].justificacion = j;
+      if (!bonusState[al.no_control]) bonusState[al.no_control] = {};
+      bonusState[al.no_control].justificacion = j;
     }
 
     try {
@@ -1164,11 +1164,11 @@ async function guardarBonusUnidad() {
           Authorization: `Bearer ${token()}`,
         },
         body: JSON.stringify({
-          matricula: al.matricula,
+          no_control: al.no_control,
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
           puntos_otorgados: pts,
-          justificacion: bonusState[al.matricula]?.justificacion || "",
+          justificacion: bonusState[al.no_control]?.justificacion || "",
         }),
       });
       const d = await res.json();
@@ -1222,12 +1222,12 @@ function procesarCSV(file) {
     const lineas = ev.target.result.split("\n").filter(Boolean);
     const datos = [];
     lineas.forEach((linea, i) => {
-      if (i === 0 && linea.toLowerCase().includes("matricula")) return;
-      const [matricula, calStr] = linea.split(",").map((s) => s.trim());
-      if (!matricula) return;
+      if (i === 0 && linea.toLowerCase().includes("no_control")) return;
+      const [no_control, calStr] = linea.split(",").map((s) => s.trim());
+      if (!no_control) return;
       const cal = parseFloat(calStr);
       datos.push({
-        matricula,
+        no_control,
         calificacion_obtenida: isNaN(cal) ? null : cal,
         estatus: isNaN(cal) ? "NP" : "Validada",
       });
@@ -1285,10 +1285,10 @@ function intentarMostrarSeccionFinal() {
 async function recalcularCalificacionesFinal() {
   if (!estado.grupoId) return;
 
-  let matriculas = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")]
-    .map(f => f.dataset.matricula).filter(Boolean);
+  let no_controls = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")]
+    .map(f => f.dataset.no_control).filter(Boolean);
 
-  if (!matriculas.length) {
+  if (!no_controls.length) {
     mostrarToast("No hay alumnos con calificaciones para recalcular", "error");
     return;
   }
@@ -1296,12 +1296,12 @@ async function recalcularCalificacionesFinal() {
   mostrarToast("Recalculando...", "info");
   let ok = 0, err = 0;
 
-  for (const matricula of matriculas) {
+  for (const no_control of no_controls) {
     try {
       const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/calcular-final`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-        body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
+        body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
       });
       const d = await res.json();
       d.success ? ok++ : err++;
@@ -1342,7 +1342,7 @@ async function calcularVistaFinal() {
   const alumnos = reporteData.alumnos || [];
 
   let html = `<table class="final-table"><thead><tr>
-    <th>Alumno</th><th>Matrícula</th>
+    <th>Alumno</th><th>No. Control</th>
     ${unidades.map((u) => `<th>${u.nombre_unidad}</th>`).join("")}
     <th>Promedio Final</th><th>Estado</th>
   </tr></thead><tbody>`;
@@ -1393,9 +1393,9 @@ async function calcularVistaFinal() {
           : "var(--danger)";
     if (redondeado !== null) cfgsOk++;
 
-    html += `<tr data-matricula="${al.matricula}" data-final="${redondeado ?? ""}">
+    html += `<tr data-no_control="${al.no_control}" data-final="${redondeado ?? ""}">
       <td>${al.nombre_completo}</td>
-      <td style="font-size:0.75rem;color:var(--text-muted)">${al.matricula}</td>
+      <td style="font-size:0.75rem;color:var(--text-muted)">${al.no_control}</td>
       ${celdas}
       <td style="font-weight:700;font-size:.95rem;color:${colorFinal}">${redondeado !== null ? redondeado : "—"}</td>
       <td>${
@@ -1418,7 +1418,7 @@ async function calcularVistaFinal() {
 
 async function guardarCalificacionesFinal() {
   if (!estado.grupoId) return;
-  const filas = document.querySelectorAll("#tablaFinalWrap tr[data-matricula]");
+  const filas = document.querySelectorAll("#tablaFinalWrap tr[data-no_control]");
   if (!filas.length) {
     mostrarToast("No hay datos para guardar", "error");
     return;
@@ -1427,7 +1427,7 @@ async function guardarCalificacionesFinal() {
   let guardados = 0,
     errores = 0;
   for (const fila of filas) {
-    const matricula = fila.dataset.matricula;
+    const no_control = fila.dataset.no_control;
     if (!fila.dataset.final) continue;
     try {
       const res = await fetch(
@@ -1438,7 +1438,7 @@ async function guardarCalificacionesFinal() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token()}`,
           },
-          body: JSON.stringify({ matricula, id_grupo: estado.grupoId }),
+          body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
         },
       );
       const d = await res.json();
@@ -1463,7 +1463,7 @@ async function guardarCalificacionesFinal() {
 // ══════════════════════════════════════════════════════════════════════
 
 // Cache de calificaciones finales para los modales
-let _cfCache = {}; // matricula → { nombre_alumno, calificacion_oficial }
+let _cfCache = {}; // no_control → { nombre_alumno, calificacion_oficial }
 
 async function renderBonusFinalTabla() {
   const wrap = document.getElementById("tablaBonusFinalWrap");
@@ -1485,21 +1485,21 @@ async function renderBonusFinalTabla() {
   // Agrupar: una fila por alumno (la calificación final viene de calificacion_final, no de calificacion_unidad)
   // Reusamos el endpoint /calificaciones/grupo que devuelve calificacion_unidad; necesitamos el final
   // Hacemos fetch de /calificaciones/final por alumno — más simple: usamos tablaFinalWrap filas
-  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")];
+  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")];
 
   if (!filasFinal.length) {
     wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
     return;
   }
 
-  // Mapa de bonuses existentes por matricula
+  // Mapa de bonuses existentes por no_control
   const bonusMap = {};
-  bonuses.forEach(b => { bonusMap[b.matricula] = b; });
+  bonuses.forEach(b => { bonusMap[b.no_control] = b; });
 
   // Construir cache de calificaciones
   filasFinal.forEach(f => {
-    _cfCache[f.dataset.matricula] = {
-      nombre_alumno: f.querySelector("td:first-child")?.textContent || f.dataset.matricula,
+    _cfCache[f.dataset.no_control] = {
+      nombre_alumno: f.querySelector("td:first-child")?.textContent || f.dataset.no_control,
       calificacion_oficial: parseFloat(f.dataset.final ?? 0),
     };
   });
@@ -1514,7 +1514,7 @@ async function renderBonusFinalTabla() {
       </tr></thead><tbody>`;
 
   filasFinal.forEach(f => {
-    const mat  = f.dataset.matricula;
+    const mat  = f.dataset.no_control;
     const cal  = parseFloat(f.dataset.final ?? 0);
     const nom  = f.querySelector("td:first-child")?.textContent || mat;
     const bon  = bonusMap[mat];
@@ -1545,9 +1545,9 @@ async function renderBonusFinalTabla() {
   wrap.innerHTML = html;
 }
 
-function abrirModalBonusFinal(matricula, nombre, calActual) {
+function abrirModalBonusFinal(no_control, nombre, calActual) {
   const maxBonus = Math.max(0, parseFloat((100 - calActual).toFixed(2)));
-  document.getElementById("bonusFinalMatricula").value  = matricula;
+  document.getElementById("bonusFinalNo_control").value  = no_control;
   document.getElementById("bonusFinalNombreAlumno").textContent = nombre;
   document.getElementById("bonusFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
   document.getElementById("bonusFinalPuntos").value       = "";
@@ -1562,7 +1562,7 @@ function cerrarModalBonusFinal() {
 }
 
 async function guardarBonusFinal() {
-  const matricula     = document.getElementById("bonusFinalMatricula").value;
+  const no_control     = document.getElementById("bonusFinalNo_control").value;
   const inputPuntos   = document.getElementById("bonusFinalPuntos");
   const puntos        = parseFloat(inputPuntos.value);
   const maxBonus      = parseFloat(inputPuntos.max) || 100;
@@ -1576,7 +1576,7 @@ async function guardarBonusFinal() {
     const res = await fetch(`${BASE_URL_FORM}/api/bonus/final`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ matricula, id_grupo: estado.grupoId, puntos_otorgados: puntos, justificacion }),
+      body: JSON.stringify({ no_control, id_grupo: estado.grupoId, puntos_otorgados: puntos, justificacion }),
     });
     const d = await res.json();
     if (!res.ok) return mostrarToast(d.error || "Error al asignar bonus", "error");
@@ -1598,7 +1598,7 @@ async function renderModificacionFinalTabla() {
   const wrap = document.getElementById("tablaModificacionFinalWrap");
   if (!wrap || !estado.grupoId) return;
 
-  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-matricula]")];
+  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")];
   if (!filasFinal.length) {
     wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
     return;
@@ -1611,7 +1611,7 @@ async function renderModificacionFinalTabla() {
   ).catch(() => null);
   const modifs = (resModif && resModif.ok) ? await resModif.json() : [];
   const modifMap = {};
-  modifs.forEach(m => { modifMap[m.matricula] = m; });
+  modifs.forEach(m => { modifMap[m.no_control] = m; });
 
   let html = `
     <table class="final-table" style="width:100%;">
@@ -1623,7 +1623,7 @@ async function renderModificacionFinalTabla() {
       </tr></thead><tbody>`;
 
   filasFinal.forEach(f => {
-    const mat  = f.dataset.matricula;
+    const mat  = f.dataset.no_control;
     const cal  = parseFloat(f.dataset.final ?? 0);
     const nom  = f.querySelector("td:first-child")?.textContent || mat;
     const mod  = modifMap[mat];
@@ -1655,8 +1655,8 @@ async function renderModificacionFinalTabla() {
   wrap.innerHTML = html;
 }
 
-function abrirModalModificacionFinal(matricula, nombre, calActual) {
-  document.getElementById("modifFinalMatricula").value      = matricula;
+function abrirModalModificacionFinal(no_control, nombre, calActual) {
+  document.getElementById("modifFinalNo_control").value      = no_control;
   document.getElementById("modifFinalNombreAlumno").textContent = nombre;
   document.getElementById("modifFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
   document.getElementById("modifFinalNuevaCal").value       = "";
@@ -1669,7 +1669,7 @@ function cerrarModalModificacionFinal() {
 }
 
 async function guardarModificacionFinal() {
-  const matricula      = document.getElementById("modifFinalMatricula").value;
+  const no_control      = document.getElementById("modifFinalNo_control").value;
   const nuevaCal       = parseFloat(document.getElementById("modifFinalNuevaCal").value);
   const justificacion  = document.getElementById("modifFinalJustificacion").value.trim();
 
@@ -1682,7 +1682,7 @@ async function guardarModificacionFinal() {
     const res = await fetch(`${BASE_URL_FORM}/api/modificacion-final`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ matricula, id_grupo: estado.grupoId, calif_modificada: nuevaCal, justificacion }),
+      body: JSON.stringify({ no_control, id_grupo: estado.grupoId, calif_modificada: nuevaCal, justificacion }),
     });
     const d = await res.json();
     if (!res.ok) return mostrarToast(d.error || "Error al modificar", "error");
@@ -1698,15 +1698,15 @@ async function guardarModificacionFinal() {
 
 
 // ─── Revertir bonus final ─────────────────────────────────────────────────────
-async function revertirBonusFinal(matricula) {
-  const nom = _cfCache[matricula]?.nombre_alumno || matricula;
+async function revertirBonusFinal(no_control) {
+  const nom = _cfCache[no_control]?.nombre_alumno || no_control;
   mostrarConfirm(
     "Revertir bonus final",
     `¿Eliminar el bonus final de ${nom}?\n\nLa calificación volverá al promedio calculado sin bonus.`,
     async () => {
       try {
         const res = await fetch(
-          `${BASE_URL_FORM}/api/bonus/final/${matricula}/${estado.grupoId}`,
+          `${BASE_URL_FORM}/api/bonus/final/${no_control}/${estado.grupoId}`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
         );
         const d = await res.json();
@@ -1720,15 +1720,15 @@ async function revertirBonusFinal(matricula) {
 }
 
 // ─── Revertir modificación final ──────────────────────────────────────────────
-async function revertirModificacionFinal(matricula) {
-  const nom = _cfCache[matricula]?.nombre_alumno || matricula;
+async function revertirModificacionFinal(no_control) {
+  const nom = _cfCache[no_control]?.nombre_alumno || no_control;
   mostrarConfirm(
     "Revertir modificación final",
     `¿Revertir la modificación manual de ${nom}?\n\nLa calificación volverá al promedio calculado por el sistema.`,
     async () => {
       try {
         const res = await fetch(
-          `${BASE_URL_FORM}/api/modificacion-final/${matricula}/${estado.grupoId}`,
+          `${BASE_URL_FORM}/api/modificacion-final/${no_control}/${estado.grupoId}`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
         );
         const d = await res.json();

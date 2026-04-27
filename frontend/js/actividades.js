@@ -575,7 +575,7 @@ async function cargarAlumnosSinInscripcion(act) {
     const alumnos = await res.json();
     renderTablaCal(
       alumnos.map((a) => ({
-        matricula: a.matricula,
+        no_control: a.no_control,
         nombre_alumno: `${a.nombre} ${a.apellido_paterno}`,
         calificacion_obtenida: null,
         estatus: null,
@@ -603,25 +603,25 @@ function renderTablaCal(alumnos, act) {
     const esNP = a.estatus === "NP";
     const calVal = a.calificacion_obtenida ?? "";
     const tr = document.createElement("tr");
-    tr.dataset.matricula = a.matricula;
+    tr.dataset.no_control = a.no_control;
     tr.innerHTML = `
       <td class="td-alumno">${a.nombre_alumno}</td>
-      <td style="font-size:0.78rem;color:var(--text-muted)">${a.matricula}</td>
+      <td style="font-size:0.78rem;color:var(--text-muted)">${a.no_control}</td>
       <td style="font-size:0.82rem">${grupo?.nombre_materia || "—"}</td>
       <td style="text-align:center">
         <label class="toggle-entrego">
-          <input type="checkbox" class="chk-entrego" data-matricula="${a.matricula}"
+          <input type="checkbox" class="chk-entrego" data-no_control="${a.no_control}"
                  ${entrego ? "checked" : ""} onchange="toggleEntrego(this)" />
           <span class="toggle-track-cal"></span>
         </label>
       </td>
       <td>
         <input class="cal-input" type="number" min="0" max="100" placeholder="0"
-               value="${calVal}" data-matricula="${a.matricula}"
+               value="${calVal}" data-no_control="${a.no_control}"
                ${esNP ? 'disabled title="Marcado como NP"' : ""}
                oninput="actualizarEstatusFila(this)" />
       </td>
-      <td id="estatus-${a.matricula}">${renderEstatusBadge(a.estatus, a.calificacion_obtenida)}</td>
+      <td id="estatus-${a.no_control}">${renderEstatusBadge(a.estatus, a.calificacion_obtenida)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -638,19 +638,19 @@ function renderEstatusBadge(estatus, cal) {
 }
 
 function toggleEntrego(chk) {
-  const mat = chk.dataset.matricula;
-  const tr = document.querySelector(`tr[data-matricula="${mat}"]`);
+  const mat = chk.dataset.no_control;
+  const tr = document.querySelector(`tr[data-no_control="${mat}"]`);
   const inp = tr.querySelector(".cal-input");
   chk.checked
     ? ((inp.disabled = false), !inp.value && (inp.value = "0"))
     : ((inp.disabled = true), (inp.value = ""));
-  actualizarEstatusFilaPorMatricula(mat);
+  actualizarEstatusFilaPorNo_control(mat);
 }
 function actualizarEstatusFila(inp) {
-  actualizarEstatusFilaPorMatricula(inp.dataset.matricula);
+  actualizarEstatusFilaPorNo_control(inp.dataset.no_control);
 }
-function actualizarEstatusFilaPorMatricula(mat) {
-  const tr = document.querySelector(`tr[data-matricula="${mat}"]`);
+function actualizarEstatusFilaPorNo_control(mat) {
+  const tr = document.querySelector(`tr[data-no_control="${mat}"]`);
   if (!tr) return;
   const chk = tr.querySelector(".chk-entrego");
   const inp = tr.querySelector(".cal-input");
@@ -672,7 +672,7 @@ function marcarTodosNP() {
     chk.checked = false;
     inp.disabled = true;
     inp.value = "";
-    actualizarEstatusFilaPorMatricula(tr.dataset.matricula);
+    actualizarEstatusFilaPorNo_control(tr.dataset.no_control);
   });
 }
 function marcarTodosEntregados() {
@@ -683,7 +683,7 @@ function marcarTodosEntregados() {
     chk.checked = true;
     inp.disabled = false;
     if (!inp.value) inp.value = "0";
-    actualizarEstatusFilaPorMatricula(tr.dataset.matricula);
+    actualizarEstatusFilaPorNo_control(tr.dataset.no_control);
   });
 }
 
@@ -693,12 +693,12 @@ async function guardarCalificacionesActividad() {
 
   const resultados = [];
   document.querySelectorAll("#tbodyCal tr").forEach((tr) => {
-    const mat = tr.dataset.matricula;
+    const mat = tr.dataset.no_control;
     const chk = tr.querySelector(".chk-entrego");
     const inp = tr.querySelector(".cal-input");
     if (!mat) return;
     resultados.push({
-      matricula: mat,
+      no_control: mat,
       calificacion_obtenida:
         chk?.checked && !isNaN(parseFloat(inp?.value))
           ? parseFloat(inp.value)

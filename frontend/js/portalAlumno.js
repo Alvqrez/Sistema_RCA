@@ -12,7 +12,7 @@ function parsearToken(t) {
   }
 }
 const payload = parsearToken(token);
-const matricula = payload?.id_referencia;
+const no_control = payload?.id_referencia;
 
 let todasInscripciones = [];
 
@@ -23,7 +23,7 @@ let todasInscripciones = [];
 
 async function cargarDatosAlumno() {
   try {
-    const r = await fetch(`${BASE}/api/alumnos/${matricula}`, {
+    const r = await fetch(`${BASE}/api/alumnos/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!r.ok) {
@@ -34,15 +34,15 @@ async function cargarDatosAlumno() {
 
     document.getElementById("heroNombre").textContent =
       `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.trim();
-    document.getElementById("heroMatricula").textContent =
-      `No. Control: ${a.matricula}`;
+    document.getElementById("heroNo_control").textContent =
+      `No. Control: ${a.no_control}`;
     document.getElementById("heroCarrera").textContent = a.id_carrera;
   } catch (_) {}
 }
 
 async function cargarInscripciones() {
   try {
-    const r = await fetch(`${BASE}/api/inscripciones/alumno/${matricula}`, {
+    const r = await fetch(`${BASE}/api/inscripciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!r.ok) throw new Error();
@@ -63,7 +63,7 @@ async function cargarInscripciones() {
 // Fallback si la API de inscripciones no existe aún
 async function cargarCalificacionesFallback() {
   try {
-    const r = await fetch(`${BASE}/api/calificaciones/alumno/${matricula}`, {
+    const r = await fetch(`${BASE}/api/calificaciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const califs = await r.json();
@@ -256,7 +256,7 @@ async function cargarUnidades() {
   }
   wrap.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon></div>`;
   try {
-    const r = await fetch(`${BASE}/api/calificaciones/alumno/${matricula}`, {
+    const r = await fetch(`${BASE}/api/calificaciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const todas = await r.json();
@@ -338,7 +338,7 @@ async function toggleDesglose(id_unidad, id_grupo, rowEl) {
 
   try {
     const r = await fetch(
-      `${BASE}/api/calificaciones/desglose/${matricula}/${id_grupo}/${id_unidad}`,
+      `${BASE}/api/calificaciones/desglose/${no_control}/${id_grupo}/${id_unidad}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const data = await r.json();

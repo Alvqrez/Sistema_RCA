@@ -4,7 +4,7 @@ let alumnosGlobal = [];
 let filtroCarrera = "";
 let filtroBusqueda = "";
 let modoEdicion = false; // false = registrar, true = editar
-let matriculaEditando = null; // matrícula del alumno en edición
+let no_controlEditando = null; // no_control del alumno en edición
 
 async function cargarAlumnos() {
   const token = localStorage.getItem("token");
@@ -32,7 +32,7 @@ function renderTabla() {
     const q = filtroBusqueda.toLowerCase();
     datos = datos.filter(
       (a) =>
-        a.matricula.toLowerCase().includes(q) ||
+        a.no_control.toLowerCase().includes(q) ||
         a.nombre.toLowerCase().includes(q) ||
         a.apellido_paterno.toLowerCase().includes(q),
     );
@@ -53,7 +53,7 @@ function renderTabla() {
   datos.forEach((alumno) => {
     tabla.innerHTML += `
       <tr>
-        <td>${alumno.matricula}</td>
+        <td>${alumno.no_control}</td>
         <td>${alumno.apellido_paterno} ${alumno.apellido_materno ?? ""}, ${alumno.nombre}</td>
         <td>${alumno.id_carrera}</td>
         <td>${alumno.correo_institucional}</td>
@@ -61,8 +61,8 @@ function renderTabla() {
         <td style="text-align:center;">
           ${
             rol === "administrador"
-              ? `<button class="btn-editar" onclick="editarAlumno('${alumno.matricula}')">Editar</button>
-                 <button class="btn-eliminar" onclick="eliminarAlumno('${alumno.matricula}')">Eliminar</button>`
+              ? `<button class="btn-editar" onclick="editarAlumno('${alumno.no_control}')">Editar</button>
+                 <button class="btn-eliminar" onclick="eliminarAlumno('${alumno.no_control}')">Eliminar</button>`
               : "—"
           }
         </td>
@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const genero = generoMap[generoRaw] ?? null;
 
     const alumno = {
-      matricula: document.getElementById("matricula").value.trim(),
+      no_control: document.getElementById("no_control").value.trim(),
       nombre: document.getElementById("nombre").value.trim(),
       apellido_paterno: document.getElementById("apellidoPaterno").value.trim(),
       apellido_materno:
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     if (
-      !alumno.matricula ||
+      !alumno.no_control ||
       !alumno.nombre ||
       !alumno.apellido_paterno ||
       !alumno.id_carrera ||
@@ -149,12 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let method = "POST";
 
     if (modoEdicion) {
-      url = `${BASE_URL}/api/alumnos/${matriculaEditando}`;
+      url = `${BASE_URL}/api/alumnos/${no_controlEditando}`;
       method = "PUT";
       // PUT no necesita username/password (no los cambia)
       delete alumno.username;
       delete alumno.password;
-      delete alumno.matricula;
+      delete alumno.no_control;
     } else {
       if (!alumno.username || !alumno.password) {
         mostrarMensaje(
@@ -203,17 +203,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-async function editarAlumno(matricula) {
+async function editarAlumno(no_control) {
   // Busca el alumno en la lista global (ya cargada)
-  const alumno = alumnosGlobal.find((a) => a.matricula === matricula);
+  const alumno = alumnosGlobal.find((a) => a.no_control === no_control);
   if (!alumno) return;
 
   modoEdicion = true;
-  matriculaEditando = matricula;
+  no_controlEditando = no_control;
 
   // Rellena el formulario con los datos actuales
-  document.getElementById("matricula").value = alumno.matricula;
-  document.getElementById("matricula").disabled = true; // No se puede cambiar la PK
+  document.getElementById("no_control").value = alumno.no_control;
+  document.getElementById("no_control").disabled = true; // No se puede cambiar la PK
   document.getElementById("nombre").value = alumno.nombre ?? "";
   document.getElementById("apellidoPaterno").value =
     alumno.apellido_paterno ?? "";
@@ -238,12 +238,12 @@ async function editarAlumno(matricula) {
 
 function cancelarEdicion() {
   modoEdicion = false;
-  matriculaEditando = null;
+  no_controlEditando = null;
 
   const form = document.getElementById("formAlumno");
   form.reset();
 
-  document.getElementById("matricula").disabled = false;
+  document.getElementById("no_control").disabled = false;
 
   const seccionAcceso = document.getElementById("seccionAcceso");
   if (seccionAcceso) seccionAcceso.style.display = "";
@@ -252,10 +252,10 @@ function cancelarEdicion() {
   document.querySelector("#formAlumno .btn-guardar").textContent = "Guardar";
 }
 
-async function eliminarAlumno(matricula) {
+async function eliminarAlumno(no_control) {
   if (
     !confirm(
-      `¿Eliminar al alumno con matrícula ${matricula}? Esta acción no se puede deshacer.`,
+      `¿Eliminar al alumno con no_control ${no_control}? Esta acción no se puede deshacer.`,
     )
   )
     return;
@@ -263,7 +263,7 @@ async function eliminarAlumno(matricula) {
   const token = localStorage.getItem("token");
 
   try {
-    const res = await fetch(`${BASE_URL}/api/alumnos/${matricula}`, {
+    const res = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

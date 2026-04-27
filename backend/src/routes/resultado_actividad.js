@@ -8,7 +8,7 @@ const { verificarToken, maestroOAdmin } = require("../middleware/auth");
 router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
   const sql = `
     SELECT
-      a.matricula,
+      a.no_control,
       CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
       ra.calificacion_obtenida,
       ra.estatus,
@@ -16,9 +16,9 @@ router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
       ra.rfc
     FROM actividad act
     JOIN inscripcion i ON i.id_grupo = act.id_grupo AND i.estatus = 'Cursando'
-    JOIN alumno a ON i.matricula = a.matricula
+    JOIN alumno a ON i.no_control = a.no_control
     LEFT JOIN resultado_actividad ra
-      ON ra.matricula = a.matricula AND ra.id_actividad = act.id_actividad
+      ON ra.no_control = a.no_control AND ra.id_actividad = act.id_actividad
     WHERE act.id_actividad = ?
     ORDER BY a.apellido_paterno, a.nombre
   `;
@@ -33,10 +33,10 @@ router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
 
 // GET — promedio ponderado de un alumno en una unidad/grupo
 router.get(
-  "/promedio/:matricula/:id_grupo/:id_unidad",
+  "/promedio/:no_control/:id_grupo/:id_unidad",
   verificarToken,
   (req, res) => {
-    const { matricula, id_grupo, id_unidad } = req.params;
+    const { no_control, id_grupo, id_unidad } = req.params;
     const sql = `
     SELECT
       COALESCE(
@@ -48,10 +48,10 @@ router.get(
       ) AS promedio
     FROM actividad a
     LEFT JOIN resultado_actividad ra
-      ON ra.id_actividad = a.id_actividad AND ra.matricula = ?
+      ON ra.id_actividad = a.id_actividad AND ra.no_control = ?
     WHERE a.id_grupo = ? AND a.id_unidad = ?
   `;
-    db.query(sql, [matricula, id_grupo, id_unidad], (err, results) => {
+    db.query(sql, [no_control, id_grupo, id_unidad], (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       res.json({
@@ -63,10 +63,10 @@ router.get(
 
 // POST — registrar / actualizar resultado (FIX 13: verifica bloqueado)
 router.post("/", maestroOAdmin, (req, res) => {
-  const { matricula, id_actividad, calificacion_obtenida, estatus } = req.body;
+  const { no_control, id_actividad, calificacion_obtenida, estatus } = req.body;
   const rfc = req.usuario.id_referencia;
 
-  if (!matricula || !id_actividad) {
+  if (!no_control || !id_actividad) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
@@ -95,7 +95,7 @@ router.post("/", maestroOAdmin, (req, res) => {
       const est = estatus || (cal === null ? "NP" : "Validada");
 
       const sql = `
-      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, rfc)
+      INSERT INTO resultado_actividad (no_control, id_actividad, calificacion_obtenida, estatus, rfc)
       VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         calificacion_anterior = calificacion_obtenida,
@@ -106,7 +106,7 @@ router.post("/", maestroOAdmin, (req, res) => {
     `;
       db.query(
         sql,
-        [matricula, id_actividad, cal, est, rfc],
+        [no_control, id_actividad, cal, est, rfc],
         (err2) => {
           if (err2)
             return res
@@ -156,7 +156,7 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
         // Clamp al rango institucional 0–100
         const calSegura = cal === null ? null : Math.min(100, Math.max(0, cal));
         return [
-          r.matricula,
+          r.no_control,
           id_actividad,
           calSegura,
           r.estatus || (calSegura === null ? "NP" : "Validada"),
@@ -165,7 +165,7 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
       });
 
       const sql = `
-      INSERT INTO resultado_actividad (matricula, id_actividad, calificacion_obtenida, estatus, rfc)
+      INSERT INTO resultado_actividad (no_control, id_actividad, calificacion_obtenida, estatus, rfc)
       VALUES ?
       ON DUPLICATE KEY UPDATE
         calificacion_anterior = calificacion_obtenida,

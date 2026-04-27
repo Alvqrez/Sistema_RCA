@@ -9,14 +9,14 @@ const MAX_CALIFICACION = 100;
 // ─── BONUS UNIDAD ──────────────────────────────────────────────────────────
 
 // GET — todos los bonus de unidad de un grupo (para el maestro)
-// IMPORTANTE: esta ruta va ANTES de la dinámica /:matricula/:id_grupo
+// IMPORTANTE: esta ruta va ANTES de la dinámica /:no_control/:id_grupo
 router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT bu.*,
            CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
            u.nombre_unidad
     FROM bonusunidad bu
-    JOIN alumno a ON bu.matricula = a.matricula
+    JOIN alumno a ON bu.no_control = a.no_control
     JOIN unidad u ON bu.id_unidad = u.id_unidad
     WHERE bu.id_grupo = ?
     ORDER BY bu.id_unidad, a.apellido_paterno
@@ -29,17 +29,17 @@ router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 // GET — bonus de unidad de un alumno específico (ruta dinámica — va DESPUÉS de /grupo/)
-router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
+router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
   const sql = `
     SELECT bu.*, u.nombre_unidad,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusunidad bu
     JOIN unidad u ON bu.id_unidad = u.id_unidad
     JOIN maestro mae ON bu.numero_empleado = mae.numero_empleado
-    WHERE bu.matricula = ? AND bu.id_grupo = ?
+    WHERE bu.no_control = ? AND bu.id_grupo = ?
     ORDER BY bu.id_unidad
   `;
-  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
+  db.query(sql, [req.params.no_control, req.params.id_grupo], (err, r) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r);
@@ -48,12 +48,12 @@ router.get("/unidad/:matricula/:id_grupo", verificarToken, (req, res) => {
 
 // POST — asignar bonus de unidad (FIX 5)
 router.post("/unidad", maestroOAdmin, (req, res) => {
-  const { matricula, id_unidad, id_grupo, puntos_otorgados, justificacion } =
+  const { no_control, id_unidad, id_grupo, puntos_otorgados, justificacion } =
     req.body;
   const numero_empleado = req.usuario.id_referencia;
 
   if (
-    !matricula ||
+    !no_control ||
     !id_unidad ||
     !id_grupo ||
     puntos_otorgados === undefined ||
@@ -73,8 +73,8 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
 
   // Verificar que el alumno esté inscrito en el grupo
   db.query(
-    "SELECT 1 FROM inscripcion WHERE matricula = ? AND id_grupo = ? AND estatus = 'Cursando'",
-    [matricula, id_grupo],
+    "SELECT 1 FROM inscripcion WHERE no_control = ? AND id_grupo = ? AND estatus = 'Cursando'",
+    [no_control, id_grupo],
     (err, inscrito) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -88,8 +88,8 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
       db.query(
         `SELECT COALESCE(calificacion_unidad_final, promedio_ponderado, 0) AS cal
          FROM calificacion_unidad
-         WHERE matricula = ? AND id_unidad = ? AND id_grupo = ?`,
-        [matricula, id_unidad, id_grupo],
+         WHERE no_control = ? AND id_unidad = ? AND id_grupo = ?`,
+        [no_control, id_unidad, id_grupo],
         (err2, calRows) => {
           if (err2)
             return res
@@ -106,7 +106,7 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
               : puntos;
 
           db.query(
-            `INSERT INTO bonusunidad (matricula, id_unidad, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
+            `INSERT INTO bonusunidad (no_control, id_unidad, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
              VALUES (?, ?, ?, ?, ?, ?, CURDATE())
              ON DUPLICATE KEY UPDATE
                puntos_otorgados  = VALUES(puntos_otorgados),
@@ -115,7 +115,7 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
                fecha_modificacion = CURDATE(),
                estatus           = 'Activo'`,
             [
-              matricula,
+              no_control,
               id_unidad,
               id_grupo,
               numero_empleado,
@@ -146,12 +146,12 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
 
 // DELETE — cancelar bonus de unidad
 router.delete(
-  "/unidad/:matricula/:id_unidad/:id_grupo",
+  "/unidad/:no_control/:id_unidad/:id_grupo",
   maestroOAdmin,
   (req, res) => {
     db.query(
-      "UPDATE bonusunidad SET estatus = 'Cancelado' WHERE matricula = ? AND id_unidad = ? AND id_grupo = ?",
-      [req.params.matricula, req.params.id_unidad, req.params.id_grupo],
+      "UPDATE bonusunidad SET estatus = 'Cancelado' WHERE no_control = ? AND id_unidad = ? AND id_grupo = ?",
+      [req.params.no_control, req.params.id_unidad, req.params.id_grupo],
       (err, r) => {
         if (err)
           return res.status(500).json({ error: "Error interno del servidor" });
@@ -171,7 +171,7 @@ router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     SELECT bf.*,
            CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno
     FROM bonusfinal bf
-    JOIN alumno a ON bf.matricula = a.matricula
+    JOIN alumno a ON bf.no_control = a.no_control
     WHERE bf.id_grupo = ?
     ORDER BY a.apellido_paterno
   `;
@@ -183,15 +183,15 @@ router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 // GET — bonus final de un alumno en un grupo (ruta dinámica — va DESPUÉS de /grupo/)
-router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
+router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   const sql = `
     SELECT bf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusfinal bf
     JOIN maestro mae ON bf.numero_empleado = mae.numero_empleado
-    WHERE bf.matricula = ? AND bf.id_grupo = ?
+    WHERE bf.no_control = ? AND bf.id_grupo = ?
   `;
-  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
+  db.query(sql, [req.params.no_control, req.params.id_grupo], (err, r) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r[0] || null);
@@ -200,11 +200,11 @@ router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
 
 // POST — asignar bonus final (FIX 5)
 router.post("/final", maestroOAdmin, (req, res) => {
-  const { matricula, id_grupo, puntos_otorgados, justificacion } = req.body;
+  const { no_control, id_grupo, puntos_otorgados, justificacion } = req.body;
   const numero_empleado = req.usuario.id_referencia;
 
   if (
-    !matricula ||
+    !no_control ||
     !id_grupo ||
     puntos_otorgados === undefined ||
     !justificacion
@@ -223,8 +223,8 @@ router.post("/final", maestroOAdmin, (req, res) => {
 
   // Requiere que exista una calificacion_final para poder referenciarla
   db.query(
-    "SELECT promedio_unidades, calificacion_oficial FROM calificacion_final WHERE matricula = ? AND id_grupo = ?",
-    [matricula, id_grupo],
+    "SELECT promedio_unidades, calificacion_oficial FROM calificacion_final WHERE no_control = ? AND id_grupo = ?",
+    [no_control, id_grupo],
     (err, calRows) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -245,7 +245,7 @@ router.post("/final", maestroOAdmin, (req, res) => {
           : puntos;
 
       db.query(
-        `INSERT INTO bonusfinal (matricula, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
+        `INSERT INTO bonusfinal (no_control, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
          VALUES (?, ?, ?, ?, ?, CURDATE())
          ON DUPLICATE KEY UPDATE
            puntos_otorgados   = VALUES(puntos_otorgados),
@@ -253,7 +253,7 @@ router.post("/final", maestroOAdmin, (req, res) => {
            numero_empleado    = VALUES(numero_empleado),
            fecha_modificacion = CURDATE(),
            estatus            = 'Activo'`,
-        [matricula, id_grupo, numero_empleado, puntosEfectivos, justificacion],
+        [no_control, id_grupo, numero_empleado, puntosEfectivos, justificacion],
         (err2) => {
           if (err2)
             return res
@@ -266,11 +266,11 @@ router.post("/final", maestroOAdmin, (req, res) => {
             calBase + puntosEfectivos,
           );
           db.query(
-            "UPDATE calificacion_final SET calificacion_oficial = ?, estatus_final = ? WHERE matricula = ? AND id_grupo = ?",
+            "UPDATE calificacion_final SET calificacion_oficial = ?, estatus_final = ? WHERE no_control = ? AND id_grupo = ?",
             [
               nuevaCal,
               nuevaCal >= 70 ? "Aprobado" : "Reprobado",
-              matricula,
+              no_control,
               id_grupo,
             ],
           );
@@ -294,11 +294,11 @@ router.post("/final", maestroOAdmin, (req, res) => {
 
 
 // DELETE — revertir bonus final de materia
-router.delete("/final/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
-  const { matricula, id_grupo } = req.params;
+router.delete("/final/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
+  const { no_control, id_grupo } = req.params;
   db.query(
-    "DELETE FROM bonusfinal WHERE matricula = ? AND id_grupo = ?",
-    [matricula, id_grupo],
+    "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
+    [no_control, id_grupo],
     (err, result) => {
       if (err) return res.status(500).json({ error: "Error interno del servidor" });
       if (result.affectedRows === 0)

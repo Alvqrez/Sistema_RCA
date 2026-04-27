@@ -15,7 +15,7 @@ const CALIFICACION_APROBATORIA = 70; // RN: sección 1.3.1
 router.get("/", verificarToken, (req, res) => {
   const query = `
     SELECT
-      cu.matricula,
+      cu.no_control,
       CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
       cu.id_unidad,
       u.nombre_unidad,
@@ -24,7 +24,7 @@ router.get("/", verificarToken, (req, res) => {
       cu.calificacion_unidad_final,
       cu.estatus_unidad
     FROM calificacion_unidad cu
-    JOIN alumno a  ON cu.matricula = a.matricula
+    JOIN alumno a  ON cu.no_control = a.no_control
     JOIN unidad u  ON cu.id_unidad = u.id_unidad
   `;
   db.query(query, (err, results) => {
@@ -35,7 +35,7 @@ router.get("/", verificarToken, (req, res) => {
 });
 
 // GET — calificaciones de un alumno específico
-router.get("/alumno/:matricula", verificarToken, (req, res) => {
+router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const query = `
     SELECT
       cu.id_unidad,
@@ -46,9 +46,9 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
       cu.estatus_unidad
     FROM calificacion_unidad cu
     JOIN unidad u ON cu.id_unidad = u.id_unidad
-    WHERE cu.matricula = ?
+    WHERE cu.no_control = ?
   `;
-  db.query(query, [req.params.matricula], (err, results) => {
+  db.query(query, [req.params.no_control], (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(results);
@@ -59,7 +59,7 @@ router.get("/alumno/:matricula", verificarToken, (req, res) => {
 router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   const query = `
     SELECT
-      cu.matricula,
+      cu.no_control,
       CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
       cu.id_unidad,
       u.nombre_unidad,
@@ -68,7 +68,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
       cu.calificacion_unidad_final,
       cu.estatus_unidad
     FROM calificacion_unidad cu
-    JOIN alumno a  ON cu.matricula   = a.matricula
+    JOIN alumno a  ON cu.no_control   = a.no_control
     JOIN unidad u  ON cu.id_unidad   = u.id_unidad
     WHERE cu.id_grupo = ?
     ORDER BY a.apellido_paterno, cu.id_unidad
@@ -82,11 +82,11 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 
 // POST — registrar calificación de unidad manualmente y recalcular final (FIX 14)
 router.post("/", maestroOAdmin, async (req, res) => {
-  const { matricula, id_grupo, id_unidad, calificacion_unidad_final } =
+  const { no_control, id_grupo, id_unidad, calificacion_unidad_final } =
     req.body;
 
   if (
-    !matricula ||
+    !no_control ||
     !id_grupo ||
     !id_unidad ||
     calificacion_unidad_final === undefined
@@ -106,7 +106,7 @@ router.post("/", maestroOAdmin, async (req, res) => {
       : "Reprobada";
 
   const query = `
-    INSERT INTO calificacion_unidad (matricula, id_grupo, id_unidad, calificacion_unidad_final, estatus_unidad)
+    INSERT INTO calificacion_unidad (no_control, id_grupo, id_unidad, calificacion_unidad_final, estatus_unidad)
     VALUES (?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       calificacion_unidad_final = VALUES(calificacion_unidad_final),
@@ -115,14 +115,14 @@ router.post("/", maestroOAdmin, async (req, res) => {
 
   db.query(
     query,
-    [matricula, id_grupo, id_unidad, calificacion_unidad_final, estatus],
+    [no_control, id_grupo, id_unidad, calificacion_unidad_final, estatus],
     async (err) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
 
       // FIX 14: recalcular calificación final automáticamente
       try {
-        await calculo.calcularCalificacionFinal(matricula, id_grupo);
+        await calculo.calcularCalificacionFinal(no_control, id_grupo);
       } catch (_) {
         /* no bloquear si falla el recálculo */
       }
@@ -136,8 +136,8 @@ router.post("/", maestroOAdmin, async (req, res) => {
 
 // POST — calcular y cerrar calificación de unidad automáticamente
 router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
-  const { matricula, id_unidad, id_grupo, cal_examen, cal_asistencia } = req.body;
-  if (!matricula || !id_unidad || !id_grupo) {
+  const { no_control, id_unidad, id_grupo, cal_examen, cal_asistencia } = req.body;
+  if (!no_control || !id_unidad || !id_grupo) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   try {
@@ -149,7 +149,7 @@ router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
       overrides.cal_asistencia = parseFloat(cal_asistencia);
     }
     const resultado = await calculo.cerrarUnidad(
-      matricula,
+      no_control,
       id_unidad,
       id_grupo,
       overrides,
@@ -163,13 +163,13 @@ router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
 
 // POST — calcular calificación final de la materia
 router.post("/calcular-final", maestroOAdmin, async (req, res) => {
-  const { matricula, id_grupo } = req.body;
-  if (!matricula || !id_grupo) {
+  const { no_control, id_grupo } = req.body;
+  if (!no_control || !id_grupo) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   try {
     const resultado = await calculo.calcularCalificacionFinal(
-      matricula,
+      no_control,
       id_grupo,
     );
     res.json({ success: true, ...resultado });
@@ -181,12 +181,12 @@ router.post("/calcular-final", maestroOAdmin, async (req, res) => {
 
 // POST — calcular todo (todas las unidades + final) para un alumno en un grupo
 router.post("/calcular-todo", maestroOAdmin, async (req, res) => {
-  const { matricula, id_grupo } = req.body;
-  if (!matricula || !id_grupo) {
+  const { no_control, id_grupo } = req.body;
+  if (!no_control || !id_grupo) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   try {
-    const resultado = await calculo.calcularTodo(matricula, id_grupo);
+    const resultado = await calculo.calcularTodo(no_control, id_grupo);
     res.json({ success: true, ...resultado });
   } catch (err) {
     console.error(err);
@@ -195,22 +195,22 @@ router.post("/calcular-todo", maestroOAdmin, async (req, res) => {
 });
 
 // GET — calificación final de un alumno en un grupo
-router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
+router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   const query = `
     SELECT
-      cf.matricula,
+      cf.no_control,
       CONCAT(a.nombre, ' ', a.apellido_paterno) AS nombre_alumno,
       cf.id_grupo,
       cf.promedio_unidades,
       cf.calificacion_oficial,
       cf.estatus_final
     FROM calificacion_final cf
-    JOIN alumno a ON cf.matricula = a.matricula
-    WHERE cf.matricula = ? AND cf.id_grupo = ?
+    JOIN alumno a ON cf.no_control = a.no_control
+    WHERE cf.no_control = ? AND cf.id_grupo = ?
   `;
   db.query(
     query,
-    [req.params.matricula, req.params.id_grupo],
+    [req.params.no_control, req.params.id_grupo],
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -226,10 +226,10 @@ router.get("/final/:matricula/:id_grupo", verificarToken, (req, res) => {
 // GET — desglose de actividades de un alumno en una unidad de un grupo
 // Usado por el portal del alumno para mostrar transparencia matemática (Etapa 2, req. 3.3)
 router.get(
-  "/desglose/:matricula/:id_grupo/:id_unidad",
+  "/desglose/:no_control/:id_grupo/:id_unidad",
   verificarToken,
   (req, res) => {
-    const { matricula, id_grupo, id_unidad } = req.params;
+    const { no_control, id_grupo, id_unidad } = req.params;
     const sql = `
     SELECT
       act.id_actividad,
@@ -243,11 +243,11 @@ router.get(
       )                                                          AS aporte_ponderado
     FROM actividad act
     LEFT JOIN resultado_actividad ra
-      ON ra.id_actividad = act.id_actividad AND ra.matricula = ?
+      ON ra.id_actividad = act.id_actividad AND ra.no_control = ?
     WHERE act.id_grupo = ? AND act.id_unidad = ?
     ORDER BY act.id_actividad ASC
   `;
-    db.query(sql, [matricula, id_grupo, id_unidad], (err, rows) => {
+    db.query(sql, [no_control, id_grupo, id_unidad], (err, rows) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       const sumaPond = rows.reduce((s, r) => s + parseFloat(r.ponderacion), 0);
@@ -268,7 +268,7 @@ router.get(
 
 
 // ── BUGS 4/5 FIX: guardar calificaciones directas (examen, asistencia) por alumno ──
-// Almacena en config_evaluacion_unidad.nota como JSON {grades:{matricula:{cal_examen,cal_asistencia}}}
+// Almacena en config_evaluacion_unidad.nota como JSON {grades:{no_control:{cal_examen,cal_asistencia}}}
 router.post("/guardar-directos", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad, grades } = req.body;
   if (!id_grupo || !id_unidad || !grades || typeof grades !== "object") {

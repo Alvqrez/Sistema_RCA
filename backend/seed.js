@@ -121,7 +121,7 @@ async function seed() {
     ];
     for (const [mat, nom, ap, am, correo, usr, pwd] of alumnos) {
       await q(
-        `INSERT IGNORE INTO alumno (matricula,id_carrera,nombre,apellido_paterno,apellido_materno,correo_institucional)
+        `INSERT IGNORE INTO alumno (no_control,id_carrera,nombre,apellido_paterno,apellido_materno,correo_institucional)
                VALUES (?,'ISC',?,?,?,?)`,
         [mat, nom, ap, am, correo],
       );
@@ -140,7 +140,7 @@ async function seed() {
     ];
     for (const [mat, grp] of inscripciones) {
       await q(
-        `INSERT IGNORE INTO inscripcion (matricula,id_grupo,fecha_inscripcion,estatus,tipo_curso)
+        `INSERT IGNORE INTO inscripcion (no_control,id_grupo,fecha_inscripcion,estatus,tipo_curso)
                VALUES (?,?,'2025-01-15','Cursando','Ordinario')`,
         [mat, grp],
       );
@@ -149,7 +149,7 @@ async function seed() {
 
     // ── Calificaciones de actividades (Unidades 1 y 2 cerradas) ──────────
     const cals = [
-      // [matricula, id_actividad, calificacion, estatus, rfc_maestro]
+      // [no_control, id_actividad, calificacion, estatus, rfc_maestro]
       ["2023001", 1, 85, "Validada", rfc1],
       ["2023001", 2, 72, "Validada", rfc1],
       ["2023001", 3, 90, "Validada", rfc1],
@@ -174,7 +174,7 @@ async function seed() {
     ];
     for (const [mat, act, cal, est, rfc] of cals) {
       await q(
-        `INSERT IGNORE INTO resultado_actividad (matricula,id_actividad,calificacion_obtenida,estatus,rfc)
+        `INSERT IGNORE INTO resultado_actividad (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
                VALUES (?,?,?,?,?)`,
         [mat, act, cal, est, rfc],
       );
@@ -195,7 +195,7 @@ async function seed() {
     ];
     for (const [mat, idu, idg, prom, cal, est] of cuData) {
       await q(
-        `INSERT IGNORE INTO calificacion_unidad (matricula,id_unidad,id_grupo,promedio_ponderado,calificacion_unidad_final,estatus_unidad)
+        `INSERT IGNORE INTO calificacion_unidad (no_control,id_unidad,id_grupo,promedio_ponderado,calificacion_unidad_final,estatus_unidad)
                VALUES (?,?,?,?,?,?)`,
         [mat, idu, idg, prom, cal, est],
       );
@@ -204,13 +204,13 @@ async function seed() {
 
     // ── Bonus de unidad (ejemplo para 2023003 en Unidad 2) ───────────────
     await q(
-      `INSERT IGNORE INTO bonusunidad (matricula,id_unidad,id_grupo,rfc,puntos_otorgados,justificacion,fecha_asignacion,estatus)
+      `INSERT IGNORE INTO bonusunidad (no_control,id_unidad,id_grupo,rfc,puntos_otorgados,justificacion,fecha_asignacion,estatus)
        VALUES ('2023003',2,1,?,3.00,'Excelente participación en proyectos','2025-03-15','Activo')`,
       [rfc1]
     );
     await q(`UPDATE calificacion_unidad
              SET calificacion_unidad_final = LEAST(100, calificacion_unidad_final + 3), estatus_unidad = 'Aprobada'
-             WHERE matricula = '2023003' AND id_unidad = 2 AND id_grupo = 1`);
+             WHERE no_control = '2023003' AND id_unidad = 2 AND id_grupo = 1`);
     console.log("✓ Bonus unidad → 3 pts a alumno 2023003 (U2, G1)");
 
     console.log("\n✅ Seed completado exitosamente.\n");

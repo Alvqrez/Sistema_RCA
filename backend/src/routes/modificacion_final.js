@@ -12,7 +12,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     FROM modificacionfinal mf
     JOIN maestro mae ON mf.rfc = mae.rfc
     WHERE mf.id_grupo = ?
-    ORDER BY mf.matricula
+    ORDER BY mf.no_control
   `;
   db.query(sql, [req.params.id_grupo], (err, r) => {
     if (err) return res.status(500).json({ error: "Error interno del servidor" });
@@ -21,15 +21,15 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 // GET — modificación de un alumno en un grupo (ruta dinámica — va DESPUÉS de /grupo/)
-router.get("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
+router.get("/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT mf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM modificacionfinal mf
     JOIN maestro mae ON mf.rfc = mae.rfc
-    WHERE mf.matricula = ? AND mf.id_grupo = ?
+    WHERE mf.no_control = ? AND mf.id_grupo = ?
   `;
-  db.query(sql, [req.params.matricula, req.params.id_grupo], (err, r) => {
+  db.query(sql, [req.params.no_control, req.params.id_grupo], (err, r) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r[0] || null);
@@ -38,11 +38,11 @@ router.get("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
 
 // POST — aplicar modificación final manual (RN6)
 router.post("/", maestroOAdmin, (req, res) => {
-  const { matricula, id_grupo, calif_modificada, justificacion } = req.body;
+  const { no_control, id_grupo, calif_modificada, justificacion } = req.body;
   const rfc = req.usuario.id_referencia;
 
   if (
-    !matricula ||
+    !no_control ||
     !id_grupo ||
     calif_modificada === undefined ||
     !justificacion
@@ -61,8 +61,8 @@ router.post("/", maestroOAdmin, (req, res) => {
 
   // Requiere calificacion_final existente
   db.query(
-    "SELECT calificacion_oficial, promedio_unidades FROM calificacion_final WHERE matricula = ? AND id_grupo = ?",
-    [matricula, id_grupo],
+    "SELECT calificacion_oficial, promedio_unidades FROM calificacion_final WHERE no_control = ? AND id_grupo = ?",
+    [no_control, id_grupo],
     (err, rows) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -81,7 +81,7 @@ router.post("/", maestroOAdmin, (req, res) => {
       // Upsert de modificacion_final (PK compuesta — solo una por alumno-grupo)
       db.query(
         `INSERT INTO modificacionfinal
-           (matricula, id_grupo, rfc, calif_original, calif_modificada, justificacion, fecha_modificacion, estatus)
+           (no_control, id_grupo, rfc, calif_original, calif_modificada, justificacion, fecha_modificacion, estatus)
          VALUES (?, ?, ?, ?, ?, ?, NOW(), 'Aplicado')
          ON DUPLICATE KEY UPDATE
            calif_original    = VALUES(calif_original),
@@ -90,7 +90,7 @@ router.post("/", maestroOAdmin, (req, res) => {
            rfc   = VALUES(rfc),
            fecha_modificacion = NOW(),
            estatus            = 'Aplicado'`,
-        [matricula, id_grupo, rfc, original, nueva, justificacion],
+        [no_control, id_grupo, rfc, original, nueva, justificacion],
         (err2) => {
           if (err2)
             return res
@@ -99,11 +99,11 @@ router.post("/", maestroOAdmin, (req, res) => {
 
           // Reflejar la modificación en calificacion_final
           db.query(
-            "UPDATE calificacion_final SET calificacion_oficial = ?, estatus_final = ? WHERE matricula = ? AND id_grupo = ?",
+            "UPDATE calificacion_final SET calificacion_oficial = ?, estatus_final = ? WHERE no_control = ? AND id_grupo = ?",
             [
               nueva,
               nueva >= 70 ? "Aprobado" : "Reprobado",
-              matricula,
+              no_control,
               id_grupo,
             ],
           );
@@ -125,11 +125,11 @@ router.post("/", maestroOAdmin, (req, res) => {
 
 
 // DELETE — revertir modificación final
-router.delete("/:matricula/:id_grupo", maestroOAdmin, (req, res) => {
-  const { matricula, id_grupo } = req.params;
+router.delete("/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
+  const { no_control, id_grupo } = req.params;
   db.query(
-    "DELETE FROM modificacionfinal WHERE matricula = ? AND id_grupo = ?",
-    [matricula, id_grupo],
+    "DELETE FROM modificacionfinal WHERE no_control = ? AND id_grupo = ?",
+    [no_control, id_grupo],
     (err, result) => {
       if (err) return res.status(500).json({ error: "Error interno del servidor" });
       if (result.affectedRows === 0)

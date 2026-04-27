@@ -6,7 +6,7 @@ let todosAlumnos = [];
 let todasInsc = [];
 let grupoSel = null; // objeto grupo seleccionado
 let alumnosSel = new Set();
-let yaInscritos = new Set(); // matriculas ya en el grupo seleccionado
+let yaInscritos = new Set(); // no_controls ya en el grupo seleccionado
 
 (async () => {
   soloPermitido("administrador");
@@ -128,7 +128,7 @@ async function irPaso2() {
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     const inscritos = await r.json();
-    yaInscritos = new Set(inscritos.map((i) => i.matricula));
+    yaInscritos = new Set(inscritos.map((i) => i.no_control));
     document.getElementById("infoYaInscritos").textContent =
       `${yaInscritos.size} ya inscritos en este grupo`;
   } catch (_) {
@@ -167,7 +167,7 @@ function filtrarAlumnos() {
     if (car && a.id_carrera !== car) return false;
     if (
       q &&
-      !`${a.nombre} ${a.apellido_paterno} ${a.matricula}`
+      !`${a.nombre} ${a.apellido_paterno} ${a.no_control}`
         .toLowerCase()
         .includes(q)
     )
@@ -181,13 +181,13 @@ function renderTablaAlumnos(alumnos) {
   const tbody = document.getElementById("tablaAlumnos");
   tbody.innerHTML = "";
   alumnos.forEach((a) => {
-    const inscrito = yaInscritos.has(a.matricula);
-    const selec = alumnosSel.has(a.matricula);
+    const inscrito = yaInscritos.has(a.no_control);
+    const selec = alumnosSel.has(a.no_control);
     const tr = document.createElement("tr");
     if (inscrito) tr.style.opacity = "0.5";
     tr.innerHTML = `
-      <td><input type="checkbox" data-mat="${a.matricula}" ${selec ? "checked" : ""} ${inscrito ? "disabled title='Ya inscrito'" : ""} onchange="toggleAlumno(this)"/></td>
-      <td><code>${a.matricula}</code></td>
+      <td><input type="checkbox" data-mat="${a.no_control}" ${selec ? "checked" : ""} ${inscrito ? "disabled title='Ya inscrito'" : ""} onchange="toggleAlumno(this)"/></td>
+      <td><code>${a.no_control}</code></td>
       <td>${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}</td>
       <td><span class="badge-unidad">${a.id_carrera}</span></td>
       <td style="font-size:0.8rem">${a.correo_institucional}</td>
@@ -240,12 +240,12 @@ function deseleccionarTodos() {
 
 function irPaso3() {
   setStep(3);
-  const alumnosSelArr = todosAlumnos.filter((a) => alumnosSel.has(a.matricula));
+  const alumnosSelArr = todosAlumnos.filter((a) => alumnosSel.has(a.no_control));
   const filas = alumnosSelArr
     .map(
       (a) => `
     <tr>
-      <td><code>${a.matricula}</code></td>
+      <td><code>${a.no_control}</code></td>
       <td>${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}</td>
       <td><span class="badge-unidad">${a.id_carrera}</span></td>
     </tr>
@@ -290,7 +290,7 @@ async function confirmarInscripcion() {
         Authorization: `Bearer ${token()}`,
       },
       body: JSON.stringify({
-        matriculas: [...alumnosSel],
+        no_controls: [...alumnosSel],
         id_grupo: grupoSel.id_grupo,
         tipo_curso: document.getElementById("tipoCurso").value,
       }),
@@ -334,7 +334,7 @@ function filtrarTablaInsc() {
   const filtradas = todasInsc.filter((i) => {
     if (grupo && String(i.id_grupo) !== grupo) return false;
     if (est && i.estatus !== est) return false;
-    if (q && !`${i.nombre_alumno} ${i.matricula}`.toLowerCase().includes(q))
+    if (q && !`${i.nombre_alumno} ${i.no_control}`.toLowerCase().includes(q))
       return false;
     return true;
   });
@@ -358,7 +358,7 @@ function renderTablaInsc(insc) {
       }[i.estatus] || "badge-pendiente";
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><code style="font-size:0.8rem">${i.matricula}</code></td>
+      <td><code style="font-size:0.8rem">${i.no_control}</code></td>
       <td>${i.nombre_alumno}</td>
       <td><strong>${i.nombre_materia}</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">Grupo #${i.id_grupo}</span></td>
       <td style="font-size:0.82rem">${i.nombre_maestro}</td>
@@ -368,12 +368,12 @@ function renderTablaInsc(insc) {
       <td>
         ${
           i.estatus === "Cursando"
-            ? `<button class="btn btn-sm btn-danger-outline" onclick="pedirBaja('${i.matricula}',${i.id_grupo})" title="Dar de baja">
+            ? `<button class="btn btn-sm btn-danger-outline" onclick="pedirBaja('${i.no_control}',${i.id_grupo})" title="Dar de baja">
           <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
         </button>`
             : ""
         }
-        <button class="btn btn-sm btn-danger-outline" onclick="eliminarInscripcion('${i.matricula}',${i.id_grupo})" title="Eliminar registro" style="margin-left:4px">
+        <button class="btn btn-sm btn-danger-outline" onclick="eliminarInscripcion('${i.no_control}',${i.id_grupo})" title="Eliminar registro" style="margin-left:4px">
           <iconify-icon icon="mdi:delete-outline"></iconify-icon>
         </button>
       </td>
@@ -382,12 +382,12 @@ function renderTablaInsc(insc) {
   });
 }
 
-function pedirBaja(matricula, id_grupo) {
+function pedirBaja(no_control, id_grupo) {
   document.getElementById("modalBaja").classList.add("visible");
   document.getElementById("btnConfirmarBaja").onclick = async () => {
     cerrarModal("modalBaja");
     const r = await fetch(
-      `${BASE}/api/inscripciones/${matricula}/${id_grupo}/estatus`,
+      `${BASE}/api/inscripciones/${no_control}/${id_grupo}/estatus`,
       {
         method: "PUT",
         headers: {
@@ -405,14 +405,14 @@ function pedirBaja(matricula, id_grupo) {
   };
 }
 
-async function eliminarInscripcion(matricula, id_grupo) {
+async function eliminarInscripcion(no_control, id_grupo) {
   if (
     !confirm(
       "¿Eliminar el registro de inscripción? Esta acción no se puede deshacer.",
     )
   )
     return;
-  const r = await fetch(`${BASE}/api/inscripciones/${matricula}/${id_grupo}`, {
+  const r = await fetch(`${BASE}/api/inscripciones/${no_control}/${id_grupo}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token()}` },
   });
@@ -507,11 +507,11 @@ function procesarCSVInsc(file) {
         });
         return obj;
       })
-      .filter((r) => r.matricula && r.id_grupo);
+      .filter((r) => r.no_control && r.id_grupo);
     // Preview
     const preview = document.getElementById("csvPreviewInsc");
     if (!csvInscData.length) {
-      preview.innerHTML = `<p style="color:var(--danger);font-size:0.85rem;margin-top:8px">Sin datos válidos — revisa las columnas: matricula, id_grupo, tipo_curso.</p>`;
+      preview.innerHTML = `<p style="color:var(--danger);font-size:0.85rem;margin-top:8px">Sin datos válidos — revisa las columnas: no_control, id_grupo, tipo_curso.</p>`;
       document.getElementById("btnImportarInsc").disabled = true;
       return;
     }
@@ -519,8 +519,8 @@ function procesarCSVInsc(file) {
     preview.innerHTML = `
       <p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">${csvInscData.length} inscripciones detectadas (primeros 5):</p>
       <div class="csv-preview"><table>
-        <thead><tr><th>Matrícula</th><th>ID Grupo</th><th>Tipo curso</th></tr></thead>
-        <tbody>${muestra.map((r) => `<tr><td>${r.matricula}</td><td>${r.id_grupo}</td><td>${r.tipo_curso || "Ordinario"}</td></tr>`).join("")}</tbody>
+        <thead><tr><th>No. Control</th><th>ID Grupo</th><th>Tipo curso</th></tr></thead>
+        <tbody>${muestra.map((r) => `<tr><td>${r.no_control}</td><td>${r.id_grupo}</td><td>${r.tipo_curso || "Ordinario"}</td></tr>`).join("")}</tbody>
       </table></div>`;
     document.getElementById("btnImportarInsc").disabled = false;
   };
@@ -546,7 +546,7 @@ async function importarCSVInsc() {
           Authorization: `Bearer ${tk}`,
         },
         body: JSON.stringify({
-          matricula: row.matricula,
+          no_control: row.no_control,
           id_grupo: row.id_grupo,
           tipo_curso: row.tipo_curso || "Ordinario",
         }),
@@ -554,10 +554,10 @@ async function importarCSVInsc() {
       if (r.ok) insertados++;
       else {
         const d = await r.json();
-        errores.push({ matricula: row.matricula, motivo: d.error || "Error" });
+        errores.push({ no_control: row.no_control, motivo: d.error || "Error" });
       }
     } catch (e) {
-      errores.push({ matricula: row.matricula, motivo: e.message });
+      errores.push({ no_control: row.no_control, motivo: e.message });
     }
   }
 
@@ -592,7 +592,7 @@ async function exportarCSVInscripciones() {
     }
 
     const cols = [
-      "matricula",
+      "no_control",
       "id_grupo",
       "nombre_alumno",
       "nombre_materia",
