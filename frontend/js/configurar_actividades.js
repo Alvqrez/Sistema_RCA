@@ -483,7 +483,7 @@ async function abrirModal(idGrupo, idUnidad, nombreUnidad) {
   _modalActMateriaId = null;
 
   document.getElementById("modalSubtitulo").textContent = nombreUnidad;
-  document.getElementById("modalPctInput").value = "";
+  document.getElementById("modalPct").value = "";
   document.getElementById("modalSeleccion").style.display = "none";
   document.getElementById("modalHint").style.display = "block";
   document.getElementById("modalHint").innerHTML = `
@@ -514,11 +514,32 @@ async function mostrarTiposParaModal(idUnidad) {
   } catch (_) {}
 
   if (!_actividadesAdminCache.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px 12px;color:var(--text-muted)">
-      <iconify-icon icon="mdi:information-outline" style="font-size:1.6rem;display:block;margin-bottom:8px"></iconify-icon>
-      <strong>El administrador no ha definido actividades para esta unidad.</strong><br>
-      <span style="font-size:.78rem">Pídele al administrador que las agregue en la sección Unidades.</span>
-    </div>`;
+    // Fallback: el admin no pre-configuró actividades para esta unidad.
+    // Mostramos el catálogo de tipos completo y el maestro elige directamente.
+    const ICONOS_FB = {
+      Examen: "mdi:file-document-edit-outline",
+      Tarea: "mdi:pencil-outline",
+      "Práctica": "mdi:flask-outline",
+      "Exposición": "mdi:presentation",
+      Proyecto: "mdi:folder-open-outline",
+      Cuestionario: "mdi:help-circle-outline",
+      "Investigación": "mdi:magnify",
+      Asistencia: "mdi:account-check-outline",
+    };
+    grid.innerHTML = tiposActividad
+      .map((t) => {
+        const icono = ICONOS_FB[t.nombre] || "mdi:star-outline";
+        return `
+        <div class="tipo-card"
+             onclick="seleccionarActividadAdmin(null,'${esc(t.nombre)}',${t.id_tipo},'${esc(t.nombre)}')">
+          <iconify-icon icon="${icono}" class="tipo-card-icon"></iconify-icon>
+          <span class="tipo-card-nombre">${esc(t.nombre)}</span>
+        </div>`;
+      })
+      .join("");
+    document.getElementById("modalHint").innerHTML = `
+      <iconify-icon icon="lucide:arrow-up" style="vertical-align:middle"></iconify-icon>
+      Elige el tipo de actividad`;
     return;
   }
 
@@ -622,9 +643,15 @@ function seleccionarActividadAdmin(idMatAct, nombre, idTipo, nombreTipo) {
 
   document.getElementById("modalSeleccion").style.display = "block";
   document.getElementById("modalHint").style.display = "none";
-  const lbl = document.getElementById("modalNombreLabel");
+  const lbl = document.getElementById("modalTipoLabel");
   if (lbl) lbl.textContent = nombre;
-  document.getElementById("modalPctInput").focus();
+  // Actualizar disponible
+  const dispEl = document.getElementById("disponibleVal");
+  if (dispEl) {
+    const acts = getActs(_modalGrupo, _modalUnidad);
+    dispEl.textContent = `${(100 - calcTotal(acts)).toFixed(0)}%`;
+  }
+  document.getElementById("modalPct").focus();
 }
 
 async function confirmarAgregar() {
@@ -890,4 +917,21 @@ function esc(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// ─── Modal: cerrar ─────────────────────────────────────────────────────────
+function cerrarModal() {
+  const modal = document.getElementById("modalAgregar");
+  if (modal) modal.classList.remove("active");
+  _modalGrupo = null;
+  _modalUnidad = null;
+  _modalTipoId = null;
+  _modalTipoNom = null;
+  _modalActMateriaId = null;
+}
+
+function modalClickFuera(event) {
+  if (event.target === document.getElementById("modalAgregar")) {
+    cerrarModal();
+  }
 }

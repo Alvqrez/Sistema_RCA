@@ -89,63 +89,32 @@
         texto: "Alumnos",
         icono: "lucide:users",
         hijos: [
-          {
-            href: "alumnos.html",
-            texto: "Lista de alumnos",
-            icono: "lucide:list",
-          },
-          {
-            href: "inscripcion.html",
-            texto: "Inscripciones",
-            icono: "mdi:account-plus-outline",
-          },
+          { href: "alumnos.html", texto: "Lista de alumnos", icono: "lucide:list" },
+          { href: "inscripcion.html", texto: "Inscripciones", icono: "mdi:account-plus-outline" },
         ],
       },
       {
         texto: "Maestros",
         icono: "lucide:graduation-cap",
         hijos: [
-          {
-            href: "maestros.html",
-            texto: "Lista de maestros",
-            icono: "lucide:list",
-          },
+          { href: "maestros.html", texto: "Lista de maestros", icono: "lucide:list" },
+          { href: "grupos.html", texto: "Carga académica", icono: "mdi:briefcase-outline" },
         ],
       },
-
       {
-        texto: "Catálogo",
+        texto: "Catálogos",
         icono: "lucide:folder-open",
         hijos: [
-          {
-            href: "materias.html",
-            texto: "Materias",
-            icono: "lucide:book",
-          },
-          {
-            href: "unidades.html",
-            texto: "Unidades",
-            icono: "lucide:layers",
-          },
-          {
-            href: "grupos.html",
-            texto: "Grupos",
-            icono: "lucide:library",
-          },
-          {
-            href: "periodos.html",
-            texto: "Periodos",
-            icono: "mdi:calendar-range-outline",
-          },
+          { href: "carreras.html", texto: "Carreras", icono: "mdi:school-outline" },
+          { href: "materias.html", texto: "Materias", icono: "lucide:book" },
+          { href: "unidades.html", texto: "Unidades", icono: "lucide:layers" },
+          { href: "tipo_actividades.html", texto: "Tipos de actividad", icono: "mdi:tag-outline" },
+          { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
+          { href: "periodos.html", texto: "Periodos", icono: "mdi:calendar-range-outline" },
         ],
       },
-
       { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
-      {
-        href: "utilerias.html",
-        texto: "Utilerías",
-        icono: "lucide:settings-2",
-      },
+      { href: "utilerias.html", texto: "Utilerías", icono: "lucide:settings-2" },
     ],
   };
 

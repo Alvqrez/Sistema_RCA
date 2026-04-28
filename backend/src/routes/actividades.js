@@ -52,17 +52,36 @@ router.post("/", maestroOAdmin, (req, res) => {
     ponderacion,
     tipo_evaluacion,
     fecha_entrega,
+    id_tipo_actividad,
   } = req.body;
 
   if (
     !id_grupo ||
     !id_unidad ||
-    !nombre_actividad ||
     ponderacion === undefined ||
     ponderacion === ""
   ) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
+
+  // Si no viene nombre, usar el nombre del tipo de actividad
+  const resolverNombre = (cb) => {
+    if (nombre_actividad && nombre_actividad.trim()) {
+      return cb(null, nombre_actividad.trim());
+    }
+    if (id_tipo_actividad) {
+      db.query(
+        "SELECT nombre FROM tipo_actividad WHERE id_tipo = ?",
+        [id_tipo_actividad],
+        (err, rows) => {
+          if (err || !rows.length) return cb("No se pudo resolver el nombre de la actividad");
+          cb(null, rows[0].nombre);
+        }
+      );
+    } else {
+      return cb("El nombre de la actividad es requerido");
+    }
+  };
 
   const pond = parseFloat(ponderacion);
   if (isNaN(pond) || pond <= 0 || pond > 100) {
@@ -71,69 +90,75 @@ router.post("/", maestroOAdmin, (req, res) => {
       .json({ error: "La ponderación debe ser un valor entre 1 y 100" });
   }
 
-  // Verificar que la unidad pertenece a la materia del grupo
-  const sqlVerifica = `
-    SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad,
-           u.nombre_unidad
-    FROM grupo g
-    CROSS JOIN unidad u
-    WHERE g.id_grupo = ? AND u.id_unidad = ?
-`;
-  db.query(sqlVerifica, [id_grupo, id_unidad], (errV, rowsV) => {
-    if (errV)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    if (rowsV.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Grupo o unidad no encontrados en la base de datos" });
-    }
-    if (rowsV[0].clave_grupo !== rowsV[0].clave_unidad) {
-      return res.status(400).json({
-        error: `La unidad "${rowsV[0].nombre_unidad}" pertenece a otra materia. Selecciona una unidad de la materia correcta.`,
-      });
-    }
+  resolverNombre((errNombre, nombreFinal) => {
+    if (errNombre) return res.status(400).json({ error: errNombre });
 
-    // Verificar que la suma no supere 100%
-    const sqlSuma = `
-      SELECT COALESCE(SUM(ponderacion), 0) AS total
-      FROM actividad
-      WHERE id_grupo = ? AND id_unidad = ?
+    // Verificar que la unidad pertenece a la materia del grupo
+    const sqlVerifica = `
+      SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad,
+             u.nombre_unidad
+      FROM grupo g
+      CROSS JOIN unidad u
+      WHERE g.id_grupo = ? AND u.id_unidad = ?
     `;
-    db.query(sqlSuma, [id_grupo, id_unidad], (err, result) => {
-      if (err)
+    db.query(sqlVerifica, [id_grupo, id_unidad], (errV, rowsV) => {
+      if (errV)
         return res.status(500).json({ error: "Error interno del servidor" });
-
-      const totalActual = parseFloat(result[0].total);
-      if (totalActual + pond > 100) {
+      if (rowsV.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "Grupo o unidad no encontrados en la base de datos" });
+      }
+      if (rowsV[0].clave_grupo !== rowsV[0].clave_unidad) {
         return res.status(400).json({
-          error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad. Disponible: ${Math.round((100 - totalActual) * 100) / 100}%`,
-          total_actual: totalActual,
-          disponible: Math.round((100 - totalActual) * 100) / 100,
+          error: `La unidad "${rowsV[0].nombre_unidad}" pertenece a otra materia. Selecciona una unidad de la materia correcta.`,
         });
       }
 
-      db.query(
-        `INSERT INTO actividad (id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          id_grupo,
-          id_unidad,
-          nombre_actividad,
-          pond,
-          tipo_evaluacion ?? "Sumativa",          fecha_entrega ?? null,
-        ],
-        (err2, result2) => {
-          if (err2)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
-          res.status(201).json({
-            success: true,
-            id_actividad: result2.insertId,
-            total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+      // Verificar que la suma no supere 100%
+      const sqlSuma = `
+        SELECT COALESCE(SUM(ponderacion), 0) AS total
+        FROM actividad
+        WHERE id_grupo = ? AND id_unidad = ?
+      `;
+      db.query(sqlSuma, [id_grupo, id_unidad], (err, result) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+
+        const totalActual = parseFloat(result[0].total);
+        if (totalActual + pond > 100) {
+          return res.status(400).json({
+            error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad. Disponible: ${Math.round((100 - totalActual) * 100) / 100}%`,
+            total_actual: totalActual,
+            disponible: Math.round((100 - totalActual) * 100) / 100,
           });
-        },
-      );
+        }
+
+        db.query(
+          `INSERT INTO actividad (id_grupo, id_unidad, id_tipo_actividad, nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id_grupo,
+            id_unidad,
+            id_tipo_actividad ?? null,
+            nombreFinal,
+            pond,
+            tipo_evaluacion ?? "Sumativa",
+            fecha_entrega ?? null,
+          ],
+          (err2, result2) => {
+            if (err2)
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
+            res.status(201).json({
+              success: true,
+              id_actividad: result2.insertId,
+              total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+            });
+          },
+        );
+      });
     });
   });
 });

@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Carreras - RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="icon" type="image/png" href="../assets/images/icons/rca-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+
+        <div class="page-header-v2">
+          <div>
+            <h1>Carreras</h1>
+            <p class="page-subtitle">Catálogo de programas académicos</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="abrirModal()">
+              <iconify-icon icon="mdi:plus"></iconify-icon> Nueva carrera
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats rápidas -->
+        <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+          <div class="card" style="flex:1;min-width:140px;padding:16px 20px">
+            <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Total carreras</div>
+            <div id="statTotal" style="font-size:2rem;font-weight:700;color:var(--primary)">—</div>
+          </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="card" style="margin-bottom:16px;padding:14px 20px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <iconify-icon icon="lucide:search" style="color:var(--text-muted)"></iconify-icon>
+            <input id="buscador" type="text" placeholder="Buscar por nombre, clave o siglas…"
+              style="border:none;background:transparent;flex:1;font-size:.95rem;color:var(--text-primary);outline:none"
+              oninput="filtrar()" />
+          </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="card">
+          <div class="card-title">Lista de carreras</div>
+          <div class="card-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Clave</th>
+                    <th>Nombre</th>
+                    <th>Siglas</th>
+                    <th>Plan</th>
+                    <th style="text-align:center">Semestres</th>
+                    <th style="text-align:center">Créditos</th>
+                    <th style="text-align:center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaBody">
+                  <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">
+                    <iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite;font-size:1.5rem"></iconify-icon>
+                  </td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Modal crear / editar -->
+    <div id="modalCarrera" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2 id="modalTitulo">Nueva carrera</h2>
+          <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editId" />
+          <div class="form-grid-2">
+
+            <div class="form-group">
+              <label>Clave <span style="color:var(--danger)">*</span></label>
+              <input id="fId" type="text" placeholder="Ej. ISC, IIA" maxlength="10" required />
+              <small id="fIdHint" style="color:var(--text-muted);font-size:.72rem;margin-top:2px">
+                No se puede modificar después de crear
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label>Siglas</label>
+              <input id="fSiglas" type="text" placeholder="Ej. ISC" maxlength="15" />
+            </div>
+
+            <div class="form-group span-2">
+              <label>Nombre completo <span style="color:var(--danger)">*</span></label>
+              <input id="fNombre" type="text" placeholder="Ingeniería en Sistemas Computacionales" required />
+            </div>
+
+            <div class="form-group span-2">
+              <label>Plan de estudios</label>
+              <input id="fPlan" type="text" placeholder="Ej. 2010-254" />
+            </div>
+
+            <div class="form-group">
+              <label>Semestres</label>
+              <input id="fSemestres" type="number" min="1" max="16" placeholder="9" />
+            </div>
+
+            <div class="form-group">
+              <label>Créditos totales</label>
+              <input id="fCreditos" type="number" min="1" placeholder="358" />
+            </div>
+
+          </div>
+
+          <div id="formError" class="error-msg" style="display:none;margin-top:12px"></div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnGuardar" onclick="guardar()">
+            <iconify-icon icon="mdi:content-save-outline"></iconify-icon> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal confirmar eliminar -->
+    <div id="modalEliminar" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Eliminar carrera</h2>
+          <button class="modal-close" onclick="cerrarModalEliminar()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin:0 0 8px">¿Estás seguro de eliminar la carrera <strong id="nombreEliminar"></strong>?</p>
+          <p style="font-size:.82rem;color:var(--danger);display:flex;align-items:center;gap:6px;margin:0">
+            <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
+            Esta acción no se puede deshacer. No podrás eliminarla si tiene alumnos o retículas vinculadas.
+          </p>
+          <div id="eliminarError" class="error-msg" style="display:none;margin-top:10px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalEliminar()">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarEliminar">
+            <iconify-icon icon="mdi:delete-outline"></iconify-icon> Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/sidebar.js"></script>
+    <script>
+      const BASE = "http://localhost:3000";
+      const token = localStorage.getItem("token");
+      let todasCarreras = [];
+
+      (async () => {
+        await cargar();
+      })();
+
+      async function cargar() {
+        try {
+          const r = await fetch(`${BASE}/api/carreras`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (r.status === 401 || r.status === 403) { window.location.href = "login.html"; return; }
+          todasCarreras = await r.json();
+          document.getElementById("statTotal").textContent = todasCarreras.length;
+          filtrar();
+        } catch {
+          mostrarToast("Error al cargar carreras", "error");
+        }
+      }
+
+      function filtrar() {
+        const q = document.getElementById("buscador").value.toLowerCase();
+        const filtradas = todasCarreras.filter(c =>
+          !q ||
+          c.id_carrera?.toLowerCase().includes(q) ||
+          c.nombre_carrera?.toLowerCase().includes(q) ||
+          c.siglas?.toLowerCase().includes(q)
+        );
+        renderTabla(filtradas);
+      }
+
+      function renderTabla(lista) {
+        const tbody = document.getElementById("tablaBody");
+        if (!lista.length) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">
+            <iconify-icon icon="mdi:school-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
+            Sin carreras registradas
+          </td></tr>`;
+          return;
+        }
+        tbody.innerHTML = lista.map(c => `
+          <tr>
+            <td><span class="badge-unidad">${esc(c.id_carrera)}</span></td>
+            <td><strong>${esc(c.nombre_carrera)}</strong></td>
+            <td style="color:var(--text-muted);font-size:.85rem">${esc(c.siglas ?? "—")}</td>
+            <td style="font-size:.82rem;color:var(--text-muted)">${esc(c.plan_estudios ?? "—")}</td>
+            <td style="text-align:center">${c.total_semestres ?? "—"}</td>
+            <td style="text-align:center">${c.total_creditos ?? "—"}</td>
+            <td style="text-align:center">
+              <div style="display:flex;gap:6px;justify-content:center">
+                <button class="btn btn-sm btn-outline" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
+                  <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+                </button>
+                <button class="btn btn-sm btn-danger-outline" onclick="pedirEliminar('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Eliminar">
+                  <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      function abrirModal(id = null) {
+        document.getElementById("editId").value = id ?? "";
+        document.getElementById("formError").style.display = "none";
+        const esEdicion = !!id;
+        document.getElementById("modalTitulo").textContent = esEdicion ? "Editar carrera" : "Nueva carrera";
+        document.getElementById("fId").disabled = esEdicion;
+        document.getElementById("fIdHint").style.display = esEdicion ? "none" : "block";
+
+        if (esEdicion) {
+          const c = todasCarreras.find(x => x.id_carrera === id);
+          if (!c) return;
+          document.getElementById("fId").value = c.id_carrera;
+          document.getElementById("fNombre").value = c.nombre_carrera;
+          document.getElementById("fSiglas").value = c.siglas ?? "";
+          document.getElementById("fPlan").value = c.plan_estudios ?? "";
+          document.getElementById("fSemestres").value = c.total_semestres ?? "";
+          document.getElementById("fCreditos").value = c.total_creditos ?? "";
+        } else {
+          ["fId","fNombre","fSiglas","fPlan","fSemestres","fCreditos"].forEach(id => {
+            document.getElementById(id).value = "";
+          });
+        }
+        document.getElementById("modalCarrera").classList.add("visible");
+      }
+
+      function cerrarModal() {
+        document.getElementById("modalCarrera").classList.remove("visible");
+      }
+
+      async function guardar() {
+        const id = document.getElementById("editId").value;
+        const esEdicion = !!id;
+        const errEl = document.getElementById("formError");
+        errEl.style.display = "none";
+
+        const body = {
+          id_carrera: document.getElementById("fId").value.trim().toUpperCase(),
+          nombre_carrera: document.getElementById("fNombre").value.trim(),
+          siglas: document.getElementById("fSiglas").value.trim() || null,
+          plan_estudios: document.getElementById("fPlan").value.trim() || null,
+          total_semestres: document.getElementById("fSemestres").value || null,
+          total_creditos: document.getElementById("fCreditos").value || null,
+        };
+
+        const btn = document.getElementById("btnGuardar");
+        btn.disabled = true;
+
+        try {
+          const r = await fetch(
+            esEdicion ? `${BASE}/api/carreras/${id}` : `${BASE}/api/carreras`,
+            {
+              method: esEdicion ? "PUT" : "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify(body)
+            }
+          );
+          const data = await r.json();
+          if (!r.ok) { errEl.textContent = data.error || "Error al guardar"; errEl.style.display = "block"; return; }
+          mostrarToast(esEdicion ? "Carrera actualizada" : "Carrera registrada", "success");
+          cerrarModal();
+          await cargar();
+        } catch { errEl.textContent = "Error de conexión"; errEl.style.display = "block"; }
+        finally { btn.disabled = false; }
+      }
+
+      function editar(id) { abrirModal(id); }
+
+      function pedirEliminar(id, nombre) {
+        document.getElementById("nombreEliminar").textContent = nombre;
+        document.getElementById("eliminarError").style.display = "none";
+        document.getElementById("modalEliminar").classList.add("visible");
+        document.getElementById("btnConfirmarEliminar").onclick = () => confirmarEliminar(id);
+      }
+
+      function cerrarModalEliminar() {
+        document.getElementById("modalEliminar").classList.remove("visible");
+      }
+
+      async function confirmarEliminar(id) {
+        const errEl = document.getElementById("eliminarError");
+        errEl.style.display = "none";
+        try {
+          const r = await fetch(`${BASE}/api/carreras/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await r.json();
+          if (!r.ok) { errEl.textContent = data.error; errEl.style.display = "block"; return; }
+          mostrarToast("Carrera eliminada", "success");
+          cerrarModalEliminar();
+          await cargar();
+        } catch { errEl.textContent = "Error de conexión"; errEl.style.display = "block"; }
+      }
+
+      // Cerrar modales al click fuera
+      document.querySelectorAll(".modal-overlay").forEach(o => {
+        o.addEventListener("click", e => { if (e.target === o) o.classList.remove("visible"); });
+      });
+
+      function esc(s) {
+        return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+      }
+
+      function mostrarToast(msg, tipo = "success") {
+        if (typeof showToast === "function") { showToast(msg, tipo); return; }
+        let t = document.getElementById("_toast");
+        if (!t) { t = document.createElement("div"); t.id = "_toast"; Object.assign(t.style, {position:"fixed",bottom:"24px",right:"24px",padding:"12px 20px",borderRadius:"8px",fontFamily:"Inter,sans-serif",fontSize:".9rem",fontWeight:"600",zIndex:"9999",boxShadow:"0 4px 16px rgba(0,0,0,.15)",transition:"opacity .3s"}); document.body.appendChild(t); }
+        t.textContent = msg;
+        t.style.background = tipo === "success" ? "#059669" : tipo === "error" ? "#dc2626" : "#1e40af";
+        t.style.color = "#fff"; t.style.opacity = "1";
+        clearTimeout(t._t); t._t = setTimeout(() => t.style.opacity = "0", 3000);
+      }
+    </script>
+  </body>
+</html>

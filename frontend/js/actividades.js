@@ -446,11 +446,20 @@ async function registrarActividad() {
     }
   }
 
+  // Si el usuario dejó el nombre vacío, usar el nombre del tipo seleccionado
+  const tipo = tiposActividad.find(t => String(t.id_tipo) === String(id_tipo_actividad));
+  const nombreFinal = nombre_actividad || (tipo ? tipo.nombre : "");
+
+  if (!nombreFinal) {
+    mostrarToast("No se pudo resolver el nombre de la actividad", "error");
+    return;
+  }
+
   const actividad = {
     id_grupo,
     id_unidad,
     id_tipo_actividad,
-    nombre_actividad: nombre_actividad || undefined, // backend usará el nombre del tipo si es vacío
+    nombre_actividad: nombreFinal,
     ponderacion,
     fecha_entrega,
   };

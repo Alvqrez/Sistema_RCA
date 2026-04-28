@@ -318,3 +318,34 @@ router.put("/mi-password", async (req, res) => {
 });
 
 module.exports = router;
+
+// PUT — editar administrador
+router.put("/administradores/:id", soloAdmin, (req, res) => {
+  const { nombre, apellido_paterno, apellido_materno, correo_institucional } = req.body;
+  if (!nombre || !apellido_paterno || !correo_institucional) {
+    return res.status(400).json({ error: "Faltan campos requeridos" });
+  }
+  db.query(
+    "UPDATE administrador SET nombre=?, apellido_paterno=?, apellido_materno=?, correo_institucional=? WHERE id_admin=?",
+    [nombre, apellido_paterno, apellido_materno ?? null, correo_institucional, req.params.id],
+    (err, r) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!r.affectedRows) return res.status(404).json({ error: "No encontrado" });
+      res.json({ success: true, mensaje: "Administrador actualizado" });
+    }
+  );
+});
+
+// DELETE — desactivar administrador (soft delete)
+router.delete("/administradores/:id", soloAdmin, (req, res) => {
+  if (String(req.usuario.id_referencia) === String(req.params.id)) {
+    return res.status(400).json({ error: "No puedes eliminar tu propia cuenta" });
+  }
+  db.query("UPDATE administrador SET activo=0 WHERE id_admin=?", [req.params.id], (err, r) => {
+    if (err) return res.status(500).json({ error: "Error interno del servidor" });
+    if (!r.affectedRows) return res.status(404).json({ error: "No encontrado" });
+    db.query("UPDATE usuario SET activo=0 WHERE id_referencia=? AND rol='administrador'", [req.params.id], () => {
+      res.json({ success: true, mensaje: "Administrador desactivado" });
+    });
+  });
+});
