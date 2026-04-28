@@ -91,7 +91,7 @@ CREATE TABLE `carrera` (
 
 -- Alumno  (sin columnas usuario/password)
 CREATE TABLE `alumno` (
-  `no_control`            VARCHAR(15)   NOT NULL  COMMENT 'Matrícula única del estudiante',
+  `no_control`            VARCHAR(15)   NOT NULL  COMMENT 'Numero de contro único del estudiante',
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
   `nombre`               VARCHAR(80)   NOT NULL,
   `apellido_paterno`     VARCHAR(50)   NOT NULL,
