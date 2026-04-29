@@ -4,17 +4,78 @@ const token = () => localStorage.getItem("token");
 let estado = {
   grupoId: null,
   unidadId: null,
-  actividades: [],      // actividades de la unidad actual
-  alumnos: [],          // [{ no_control, nombre }]
-  resultados: {},       // no_control → { id_actividad → { cal, estatus } }
-  unidadesGrupo: [],    // [{ id_unidad, nombre_unidad, numero_unidad, ponderacion }]
+  actividades: [], // actividades de la unidad actual
+  alumnos: [], // [{ no_control, nombre }]
+  resultados: {}, // no_control → { id_actividad → { cal, estatus } }
+  unidadesGrupo: [], // [{ id_unidad, nombre_unidad, numero_unidad, ponderacion }]
+  rubros: [], // config activa (legacy)
+  rubrosState: {}, // (legacy)
   unidadCerrada: false, // true cuando la unidad fue cerrada y no se puede modificar
 };
 let bonusState = {}; // no_control → { puntos, justificacion }
 let _modalNo_control = null; // alumno activo en modal de actividades
 
+function getRubrosConfig(id_grupo, id_unidad) {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(`pcts_${id_grupo}_${id_unidad}`),
+    );
+    if (saved && Object.keys(saved).length) return saved;
+  } catch (_) {}
+  return { pct_actividades: 60, pct_examen: 30, pct_asistencia: 10 };
+}
+
+function getRubroEstado(no_control, key) {
+  return estado.rubrosState[no_control]?.[key] ?? "";
+}
+function setRubroEstado(no_control, key, val) {
+  if (!estado.rubrosState[no_control]) estado.rubrosState[no_control] = {};
+  estado.rubrosState[no_control][key] = val;
+}
+
 function getBonus(no_control) {
   return bonusState[no_control] ?? { puntos: "", justificacion: "" };
+}
+
+function buildRubros(id_grupo, id_unidad) {
+  const pcts = getRubrosConfig(id_grupo, id_unidad);
+  const extras = [];
+  try {
+    const ex =
+      JSON.parse(localStorage.getItem(`rubros_extra_${id_grupo}`)) || [];
+    ex.forEach((r) => {
+      if (pcts[r.key] !== undefined) extras.push(r);
+    });
+  } catch (_) {}
+
+  const list = [];
+  if (pcts.pct_actividades > 0)
+    list.push({
+      key: "pct_actividades",
+      nombre: "Actividades",
+      pct: pcts.pct_actividades,
+      tipo: "actividades",
+    });
+  if (pcts.pct_examen > 0)
+    list.push({
+      key: "pct_examen",
+      nombre: "Examen",
+      pct: pcts.pct_examen,
+      tipo: "directo",
+    });
+  if (pcts.pct_asistencia > 0)
+    list.push({
+      key: "pct_asistencia",
+      nombre: "Asistencia",
+      pct: pcts.pct_asistencia,
+      tipo: "directo",
+    });
+  extras.forEach((r) => {
+    const p = pcts[r.key] ?? 0;
+    if (p > 0)
+      list.push({ key: r.key, nombre: r.nombre, pct: p, tipo: "directo" });
+  });
+  return list;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -97,6 +158,7 @@ async function cargarGrupo() {
 
   estado.grupoId = id;
   estado.unidadId = null;
+  estado.rubrosState = {};
   bonusState = {};
 
   document.getElementById("badgeGrupo").textContent =
@@ -105,6 +167,7 @@ async function cargarGrupo() {
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
 
+  await verificarConfigGrupo(id);
 
   // Show paso 3
   const paso3 = document.getElementById("cardPaso3");
@@ -123,6 +186,35 @@ async function cargarGrupo() {
   await verificarUnidadesCerradas(id);
 }
 
+async function verificarConfigGrupo(id_grupo) {
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/config-evaluacion/grupo/${id_grupo}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (res.ok) {
+      const configs = await res.json();
+      if (Array.isArray(configs) && configs.length > 0) {
+        actualizarEstadoBadge(true);
+        // Poblar localStorage con los valores de BD para que los rubros
+        // aparezcan correctamente al abrir cada unidad
+        configs.forEach((c) => {
+          const key = `pcts_${id_grupo}_${c.id_unidad}`;
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(
+              key,
+              JSON.stringify({
+                pct_actividades: c.pct_actividades,
+                pct_examen: c.pct_examen,
+                pct_asistencia: c.pct_asistencia,
+              })
+            );
+          }
+        });
+      }
+    }
+  } catch (_) {}
+}
 
 async function verificarUnidadesCerradas(id_grupo) {
   try {
@@ -147,7 +239,8 @@ function resetVista() {
     alumnos: [],
     resultados: {},
     unidadesGrupo: [],
-    unidadCerrada: false,
+    rubros: [],
+    rubrosState: {},
   };
   bonusState = {};
   document.getElementById("badgeGrupo").textContent = "Sin grupo seleccionado";
@@ -237,12 +330,29 @@ async function seleccionarUnidadTab(id_unidad) {
   });
 
   estado.unidadId = id_unidad;
+  estado.rubros = buildRubros(estado.grupoId, id_unidad);
+  estado.rubrosState = {};
   bonusState = {};
 
   await cargarActividades();
   await cargarResultadosExistentes();
   await cargarBonusUnidad();
 
+  await cargarGradesDirectos();
+
+  // Restaurar valores de examen/asistencia (BD ya los pobló en localStorage vía cargarGradesDirectos)
+  estado.alumnos.forEach((al) => {
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const guardado = localStorage.getItem(
+          `rubro_${estado.grupoId}_${id_unidad}_${al.no_control}_${r.key}`
+        );
+        if (guardado !== null && guardado !== "") {
+          setRubroEstado(al.no_control, r.key, guardado);
+        }
+      });
+  });
 
   renderRubrosBar();
   renderTablaCalificaciones();
@@ -442,6 +552,12 @@ function renderTablaCalificaciones() {
     return;
   }
 
+  // Calcular suma total de ponderaciones para el aviso
+  const sumaPondTotal = estado.actividades.reduce(
+    (s, a) => s + parseFloat(a.ponderacion), 0
+  );
+  const ponderacionInvalida = Math.abs(sumaPondTotal - 100) > 0.5;
+
   // Thead: una columna por actividad
   let thead = `<tr>
     <th class="th-alumno" style="text-align:left">Alumno</th>
@@ -462,9 +578,6 @@ function renderTablaCalificaciones() {
   </th>
   <th style="min-width:90px;background:rgba(30,64,175,.06)">
     Cal. Final<small>con bonus</small>
-  </th>
-  <th style="min-width:60px;text-align:center">
-    Detalle
   </th></tr>`;
 
   let tbody = "";
@@ -531,18 +644,21 @@ function renderTablaCalificaciones() {
       <span id="final-${al.no_control}" style="color:${fColor}">
         ${final !== null ? final : "—"}
       </span>
-    </td>
-    <td style="text-align:center">
-      <button class="btn btn-sm btn-outline"
-        style="padding:4px 8px;font-size:.75rem"
-        onclick="abrirModalActividades('${al.no_control}')"
-        title="Ver detalle de actividades">
-        <iconify-icon icon="lucide:eye"></iconify-icon>
-      </button>
     </td></tr>`;
   });
 
-  wrap.innerHTML = `<table class="grade-table">
+  wrap.innerHTML = `
+    ${ponderacionInvalida ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
+                background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;
+                font-size:.82rem;color:#92400e;margin-bottom:10px">
+      <iconify-icon icon="lucide:alert-triangle" style="font-size:1rem;flex-shrink:0;color:#d97706"></iconify-icon>
+      <span><strong>Atención:</strong> Las ponderaciones de esta unidad suman
+        <strong>${sumaPondTotal.toFixed(0)}%</strong> en lugar de 100%.
+        El promedio BASE se muestra <em>normalizado</em> a escala 0-100.
+        Corrige las ponderaciones en <em>Configurar actividades</em>.</span>
+    </div>` : ""}
+    <table class="grade-table">
     <thead>${thead}</thead>
     <tbody>${tbody}</tbody>
   </table>`;
@@ -596,7 +712,15 @@ function calcularCalFinal(no_control) {
 
 function calcularBaseScore(no_control) {
   if (!estado.actividades.length) return null;
-  let total = 0; let haySomething = false;
+
+  // Suma total de ponderaciones (puede ≠ 100 si hay datos incorrectos)
+  const sumaPond = estado.actividades.reduce(
+    (s, a) => s + parseFloat(a.ponderacion), 0
+  );
+  if (sumaPond <= 0) return null;
+
+  let total = 0;
+  let haySomething = false;
   for (const a of estado.actividades) {
     const inp = document.querySelector(
       `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`
@@ -607,7 +731,14 @@ function calcularBaseScore(no_control) {
     total += parseFloat(val) * (parseFloat(a.ponderacion) / 100);
   }
   if (!haySomething) return null;
-  return Math.floor(total) + (total % 1 >= 0.5 ? 1 : 0);
+
+  // Normalizar si las ponderaciones no suman exactamente 100%
+  // (ej. 130% → dividir entre 1.3 para escalar a rango 0-100)
+  const normalizado = Math.abs(sumaPond - 100) > 0.5
+    ? (total / sumaPond) * 100
+    : total;
+
+  return Math.floor(normalizado) + (normalizado % 1 >= 0.5 ? 1 : 0);
 }
 
 function recalcularFila(no_control) {
@@ -639,6 +770,16 @@ function recalcularFila(no_control) {
   }
 }
 
+function onRubroInput(no_control, key, val) {
+  setRubroEstado(no_control, key, val);
+  if (estado.grupoId && estado.unidadId) {
+    localStorage.setItem(
+      `rubro_${estado.grupoId}_${estado.unidadId}_${no_control}_${key}`,
+      val
+    );
+  }
+  recalcularFila(no_control);
+}
 
 function onBonusInput(no_control, val) {
   if (!bonusState[no_control])
@@ -750,7 +891,17 @@ async function guardarDesdeModal() {
     return;
   }
 
-  // Guardar por actividad
+  const resultados = [];
+  inputs.forEach((inp) => {
+    const cal = inp.value.trim() === "" ? null : clampCal(inp.value);
+    resultados.push({
+      no_control: _modalNo_control,
+      calificacion_obtenida: cal,
+      estatus: cal === null ? "NP" : "Validada",
+    });
+  });
+
+  // Group by actividad
   let guardados = 0;
   for (const inp of inputs) {
     const idAct = parseInt(inp.dataset.actividad);
@@ -798,7 +949,68 @@ async function guardarDesdeModal() {
   cerrarModalActividades();
 }
 
+async function guardarGradesDirectos() {
+  if (!estado.grupoId || !estado.unidadId) return;
+  const grades = {};
+  let hayGrades = false;
+  estado.alumnos.forEach((al) => {
+    const entry = {};
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const val = getRubroEstado(al.no_control, r.key);
+        if (val !== "" && val !== undefined && val !== null) {
+          if (r.key === "pct_examen")     entry.cal_examen     = parseFloat(val);
+          if (r.key === "pct_asistencia") entry.cal_asistencia = parseFloat(val);
+        }
+      });
+    if (Object.keys(entry).length) {
+      grades[al.no_control] = entry;
+      hayGrades = true;
+    }
+  });
 
+  if (!hayGrades) return;
+
+  try {
+    await fetch(`${BASE_URL_FORM}/api/calificaciones/guardar-directos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ id_grupo: estado.grupoId, id_unidad: estado.unidadId, grades }),
+    });
+  } catch (_) {
+    // No bloquear el flujo si falla — los valores están en localStorage como respaldo
+  }
+}
+
+async function cargarGradesDirectos() {
+  if (!estado.grupoId || !estado.unidadId) return;
+  try {
+    const res = await fetch(
+      `${BASE_URL_FORM}/api/calificaciones/directos/${estado.grupoId}/${estado.unidadId}`,
+      { headers: { Authorization: `Bearer ${token()}` } }
+    );
+    if (!res.ok) return;
+    const grades = await res.json();
+    // Poblar estado y localStorage
+    Object.entries(grades).forEach(([mat, vals]) => {
+      if (vals.cal_examen !== undefined) {
+        setRubroEstado(mat, "pct_examen", vals.cal_examen);
+        localStorage.setItem(
+          `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_examen`,
+          vals.cal_examen
+        );
+      }
+      if (vals.cal_asistencia !== undefined) {
+        setRubroEstado(mat, "pct_asistencia", vals.cal_asistencia);
+        localStorage.setItem(
+          `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_asistencia`,
+          vals.cal_asistencia
+        );
+      }
+    });
+  } catch (_) {}
+}
 
 async function guardarCalificaciones() {
   if (!estado.grupoId || !estado.unidadId) {
@@ -861,6 +1073,7 @@ async function _ejecutarGuardado() {
   // 2. Save bonus
   await guardarBonusUnidad();
 
+  await guardarGradesDirectos();
 
   if (total > 0) mostrarToast(`${total} calificaciones guardadas`, "success");
   await cargarResultadosExistentes();
@@ -900,6 +1113,17 @@ async function _ejecutarCierre() {
 
   let errores = 0;
   for (const al of estado.alumnos) {
+    const rubrosDirectos = {};
+    estado.rubros
+      .filter((r) => r.tipo === "directo")
+      .forEach((r) => {
+        const val = getRubroEstado(al.no_control, r.key);
+        if (val !== "" && val !== undefined) {
+          if (r.key === "pct_examen")     rubrosDirectos.cal_examen     = parseFloat(val);
+          if (r.key === "pct_asistencia") rubrosDirectos.cal_asistencia  = parseFloat(val);
+        }
+      });
+
     const res = await fetch(
       `${BASE_URL_FORM}/api/calificaciones/calcular-unidad`,
       {
@@ -912,6 +1136,7 @@ async function _ejecutarCierre() {
           no_control: al.no_control,
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
+          ...rubrosDirectos,
         }),
       },
     );
@@ -943,49 +1168,94 @@ async function _ejecutarCierre() {
 }
 
 async function guardarBonusUnidad() {
-  let saved = 0,
-    errs = 0;
+  // Recopilar alumnos que tienen bonus pero sin justificación
+  const pendientesJust = [];
   for (const al of estado.alumnos) {
-    const b = bonusState[al.no_control];
+    const b   = bonusState[al.no_control];
     const pts = parseFloat(b?.puntos);
     if (!pts || pts <= 0) continue;
+    const justEl = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
+    const just   = justEl?.value?.trim() || b?.justificacion || "";
+    if (!just) pendientesJust.push(al);
+  }
 
-    // Require justification
-    const justEl = document.querySelector(
-      `.bonus-just-input[data-no_control="${al.no_control}"]`,
-    );
-    const just = justEl?.value?.trim() || b?.justificacion || "";
-    if (!just) {
-      // Show inline justification request via modal-like approach (we use a simpler method)
-      const j = prompt(`Justificación para bonus de ${al.nombre}:`);
-      if (!j) continue;
-      if (!bonusState[al.no_control]) bonusState[al.no_control] = {};
-      bonusState[al.no_control].justificacion = j;
+  // Si hay alumnos sin justificación, pedir una a una con el modal
+  if (pendientesJust.length) {
+    try {
+      for (const al of pendientesJust) {
+        const just = await pedirJustificacionBonus(al.nombre, bonusState[al.no_control]?.puntos);
+        if (!bonusState[al.no_control]) bonusState[al.no_control] = {};
+        bonusState[al.no_control].justificacion = just;
+        // Actualizar también el input visible en la tabla
+        const inp = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
+        if (inp) inp.value = just;
+      }
+    } catch {
+      // El usuario canceló el modal — no guardar
+      mostrarToast("Bonus cancelado (se requiere justificación)", "info");
+      return;
     }
+  }
 
+  let saved = 0, errs = 0;
+  for (const al of estado.alumnos) {
+    const b   = bonusState[al.no_control];
+    const pts = parseFloat(b?.puntos);
+    if (!pts || pts <= 0) continue;
+    const justEl = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
+    const just   = justEl?.value?.trim() || b?.justificacion || "";
+    if (!just) { errs++; continue; }
     try {
       const res = await fetch(`${BASE_URL_FORM}/api/bonus/unidad`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token()}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
         body: JSON.stringify({
           no_control: al.no_control,
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
           puntos_otorgados: pts,
-          justificacion: bonusState[al.no_control]?.justificacion || "",
+          justificacion: just,
         }),
       });
       const d = await res.json();
       d.success ? saved++ : errs++;
-    } catch {
-      errs++;
-    }
+    } catch { errs++; }
   }
-  if (saved > 0)
-    mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
+  if (saved > 0) mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
+  if (errs  > 0) mostrarToast(`${errs} bonus no pudieron guardarse`, "error");
+}
+
+// ─── Modal de justificación de bonus ─────────────────────────────────────────
+let _resolveJust = null, _rejectJust = null;
+
+function pedirJustificacionBonus(nombreAlumno, puntos) {
+  return new Promise((resolve, reject) => {
+    _resolveJust = resolve;
+    _rejectJust  = reject;
+    document.getElementById("justBonusNombre").textContent = nombreAlumno;
+    document.getElementById("justBonusPts").textContent    = `${puntos} pts`;
+    document.getElementById("justBonusInput").value        = "";
+    const modal = document.getElementById("modalJustBonus");
+    modal.style.display = "flex";
+    setTimeout(() => document.getElementById("justBonusInput").focus(), 80);
+  });
+}
+
+function confirmarJustBonus() {
+  const val = document.getElementById("justBonusInput").value.trim();
+  if (!val) {
+    document.getElementById("justBonusInput").style.borderColor = "var(--danger)";
+    mostrarToast("La justificación es obligatoria", "error");
+    return;
+  }
+  cerrarModalJustBonus();
+  if (_resolveJust) { _resolveJust(val); _resolveJust = null; }
+}
+
+function cerrarModalJustBonus() {
+  document.getElementById("modalJustBonus").style.display = "none";
+  document.getElementById("justBonusInput").style.borderColor = "var(--border)";
+  if (_rejectJust) { _rejectJust(new Error("cancelado")); _rejectJust = null; }
 }
 
 function abrirModalCSV() {

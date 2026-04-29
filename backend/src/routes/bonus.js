@@ -35,7 +35,7 @@ router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusunidad bu
     JOIN unidad u ON bu.id_unidad = u.id_unidad
-    JOIN maestro mae ON bu.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON bu.rfc = mae.rfc
     WHERE bu.no_control = ? AND bu.id_grupo = ?
     ORDER BY bu.id_unidad
   `;
@@ -50,7 +50,7 @@ router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
 router.post("/unidad", maestroOAdmin, (req, res) => {
   const { no_control, id_unidad, id_grupo, puntos_otorgados, justificacion } =
     req.body;
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
 
   if (
     !no_control ||
@@ -106,19 +106,19 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
               : puntos;
 
           db.query(
-            `INSERT INTO bonusunidad (no_control, id_unidad, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
+            `INSERT INTO bonusunidad (no_control, id_unidad, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
              VALUES (?, ?, ?, ?, ?, ?, CURDATE())
              ON DUPLICATE KEY UPDATE
                puntos_otorgados  = VALUES(puntos_otorgados),
                justificacion     = VALUES(justificacion),
-               numero_empleado   = VALUES(numero_empleado),
+               rfc               = VALUES(rfc),
                fecha_modificacion = CURDATE(),
                estatus           = 'Activo'`,
             [
               no_control,
               id_unidad,
               id_grupo,
-              numero_empleado,
+              rfc,
               puntosEfectivos,
               justificacion,
             ],
@@ -188,7 +188,7 @@ router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
     SELECT bf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
     FROM bonusfinal bf
-    JOIN maestro mae ON bf.numero_empleado = mae.numero_empleado
+    JOIN maestro mae ON bf.rfc = mae.rfc
     WHERE bf.no_control = ? AND bf.id_grupo = ?
   `;
   db.query(sql, [req.params.no_control, req.params.id_grupo], (err, r) => {
@@ -201,7 +201,7 @@ router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
 // POST — asignar bonus final (FIX 5)
 router.post("/final", maestroOAdmin, (req, res) => {
   const { no_control, id_grupo, puntos_otorgados, justificacion } = req.body;
-  const numero_empleado = req.usuario.id_referencia;
+  const rfc = req.usuario.id_referencia;
 
   if (
     !no_control ||
@@ -245,15 +245,15 @@ router.post("/final", maestroOAdmin, (req, res) => {
           : puntos;
 
       db.query(
-        `INSERT INTO bonusfinal (no_control, id_grupo, numero_empleado, puntos_otorgados, justificacion, fecha_asignacion)
+        `INSERT INTO bonusfinal (no_control, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
          VALUES (?, ?, ?, ?, ?, CURDATE())
          ON DUPLICATE KEY UPDATE
            puntos_otorgados   = VALUES(puntos_otorgados),
            justificacion      = VALUES(justificacion),
-           numero_empleado    = VALUES(numero_empleado),
+           rfc                = VALUES(rfc),
            fecha_modificacion = CURDATE(),
            estatus            = 'Activo'`,
-        [no_control, id_grupo, numero_empleado, puntosEfectivos, justificacion],
+        [no_control, id_grupo, rfc, puntosEfectivos, justificacion],
         (err2) => {
           if (err2)
             return res
