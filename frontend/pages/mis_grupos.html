@@ -70,17 +70,17 @@
             </h2>
             <div style="display: flex; flex-direction: column; gap: 10px">
               <a href="gruposMaestro.html" class="quick-link">
-                <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+                <iconify-icon icon="lucide:scale"></iconify-icon>
                 <div>
-                  <strong>Configurar evaluación</strong>
-                  <p>Rubros, ponderaciones y pesos por unidad</p>
+                  <strong>Ponderacion de unidades</strong>
+                  <p>Distribución del peso por unidad en el grupo</p>
                 </div>
                 <iconify-icon
                   icon="lucide:chevron-right"
                   class="ql-arrow"
                 ></iconify-icon>
               </a>
-              <a href="actividades.html" class="quick-link">
+              <a href="configurar_actividades.html" class="quick-link">
                 <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
                 <div>
                   <strong>Actividades</strong>
@@ -223,9 +223,7 @@
             });
             const todos = await r2.json();
             grupos = id_ref
-              ? todos.filter(
-                  (g) => String(g.rfc) === String(id_ref),
-                )
+              ? todos.filter((g) => String(g.rfc) === String(id_ref))
               : todos;
           }
 
@@ -314,7 +312,7 @@
                    class="btn btn-primary btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
                 </a>
-                <a href="gruposMaestro.html"
+                <a href="configurar_actividades.html"
                    class="btn btn-outline btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon> Configurar
                 </a>

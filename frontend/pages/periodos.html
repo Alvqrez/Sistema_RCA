@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Periodos Escolares - RCA</title>
+    <title>Periodos Escolares — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
@@ -14,131 +14,142 @@
       href="../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-box {
+        background: var(--card-bg);
+        border-radius: 14px;
+        width: min(520px, 100%);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+        animation: modalIn 0.18s ease;
+      }
+      @keyframes modalIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .modal-header {
+        padding: 20px 22px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 14px;
+      }
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      .modal-close-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: none;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+      .modal-close-btn:hover {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .modal-body {
+        padding: 20px 22px;
+        display: grid;
+        gap: 14px;
+      }
+      .modal-footer {
+        padding: 14px 22px 18px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        border-top: 1px solid var(--border);
+      }
+      .fgroup {
+        display: grid;
+        gap: 5px;
+      }
+      .fgroup label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .fgroup select,
+      .fgroup input {
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        font-family: inherit;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .fgroup select:focus,
+      .fgroup input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+      .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <div class="page-header">
-          <h1>
-            <iconify-icon icon="mdi:calendar-range-outline"></iconify-icon>
-            Periodos Escolares
-          </h1>
-        </div>
-
-        <div class="card card-collapsible" id="cardPeriodoForm">
-          <div class="card-title">
-            <iconify-icon icon="mdi:plus-circle-outline"></iconify-icon>
-            <span id="tituloPeriodoForm">Nuevo periodo</span>
-            <button
-              class="card-toggle-btn"
-              onclick="toggleCardPeriodo(this)"
-              title="Contraer"
-            >
-              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-            </button>
-            <button
-              class="btn btn-outline btn-sm"
-              id="btnCancelarEdicion"
-              onclick="cancelarEdicion()"
-              style="display: none; margin-left: 8px"
-            >
-              <iconify-icon icon="mdi:close"></iconify-icon> Cancelar edicion
-            </button>
+        <div class="page-header-v2">
+          <div>
+            <h1>Periodos Escolares</h1>
+            <p class="page-subtitle">
+              Gestión de ciclos académicos del Instituto
+            </p>
           </div>
-          <div class="card-body">
-            <div class="config-grid">
-              <div class="field-group">
-                <label
-                  >Descripcion
-                  <span style="color: var(--danger)">*</span></label
-                >
-                <select id="pDesc" onchange="autoFechas()">
-                  <option value="">Selecciona el periodo</option>
-                  <option value="Enero-Junio">Enero-Junio</option>
-                  <option value="Verano">Verano</option>
-                  <option value="Agosto-Diciembre">Agosto-Diciembre</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label>Año <span style="color: var(--danger)">*</span></label>
-                <input
-                  type="number"
-                  id="pAnio"
-                  placeholder="2026"
-                  min="2024"
-                  max="2099"
-                  onchange="autoFechas()"
-                />
-              </div>
-              <div class="field-group">
-                <label
-                  >Dia de inicio
-                  <span style="color: var(--danger)">*</span></label
-                >
-                <input
-                  type="number"
-                  id="pDiaInicio"
-                  min="1"
-                  max="31"
-                  placeholder="1"
-                  style="max-width: 110px"
-                />
-                <small
-                  id="pInicioHint"
-                  style="
-                    font-size: 0.75rem;
-                    color: var(--text-muted);
-                    margin-top: 3px;
-                    display: block;
-                  "
-                ></small>
-              </div>
-              <div class="field-group">
-                <label
-                  >Dia de fin <span style="color: var(--danger)">*</span></label
-                >
-                <input
-                  type="number"
-                  id="pDiaFin"
-                  min="1"
-                  max="31"
-                  placeholder="30"
-                  style="max-width: 110px"
-                />
-                <small
-                  id="pFinHint"
-                  style="
-                    font-size: 0.75rem;
-                    color: var(--text-muted);
-                    margin-top: 3px;
-                    display: block;
-                  "
-                ></small>
-              </div>
-              <div class="field-group">
-                <label>Estatus</label>
-                <select id="pEstatus">
-                  <option value="Proximo">Proximo</option>
-                  <option value="Vigente">Vigente (activo)</option>
-                  <option value="Concluido">Concluido</option>
-                </select>
-              </div>
-            </div>
-            <div class="acciones-row" style="margin-top: 16px">
-              <button class="btn btn-primary" onclick="guardarPeriodo()">
-                <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
-                <span id="lblBtnPeriodo">Crear periodo</span>
-              </button>
-            </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">
+              <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo periodo
+            </button>
           </div>
         </div>
 
-        <div class="card card-collapsible">
+        <!-- Lista de periodos -->
+        <div class="card card-collapsible" data-open>
           <div class="card-title">
             <iconify-icon icon="mdi:calendar-multiple"></iconify-icon>
             Lista de periodos
@@ -164,13 +175,147 @@
                     <th>Acciones</th>
                   </tr>
                 </thead>
-                <tbody id="tablaPeriodos"></tbody>
+                <tbody id="tablaPeriodos">
+                  <tr>
+                    <td
+                      colspan="7"
+                      style="
+                        text-align: center;
+                        padding: 24px;
+                        color: var(--text-muted);
+                      "
+                    >
+                      Cargando...
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </div>
         </div>
       </main>
     </div>
+
+    <!-- ═══════════ MODAL NUEVO / EDITAR PERIODO ═══════════ -->
+    <div
+      id="modalPeriodo"
+      class="modal-overlay"
+      onclick="modalClickFuera(event)"
+    >
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="modalPeriodoTitulo">
+            <iconify-icon
+              icon="mdi:calendar-plus-outline"
+              style="vertical-align: middle; margin-right: 6px"
+            ></iconify-icon>
+            Nuevo periodo
+          </h3>
+          <button class="modal-close-btn" onclick="cerrarModal()">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Descripción -->
+          <div class="fgroup">
+            <label
+              >Descripcion <span style="color: var(--danger)">*</span></label
+            >
+            <select id="pDesc" onchange="autoFechas()">
+              <option value="">— Selecciona el periodo —</option>
+              <option value="Enero-Junio">Enero-Junio</option>
+              <option value="Verano">Verano</option>
+              <option value="Agosto-Diciembre">Agosto-Diciembre</option>
+            </select>
+          </div>
+
+          <!-- Año -->
+          <div class="fgroup">
+            <label>Año <span style="color: var(--danger)">*</span></label>
+            <input
+              type="number"
+              id="pAnio"
+              placeholder="2026"
+              min="2024"
+              max="2099"
+              onchange="autoFechas()"
+            />
+          </div>
+
+          <!-- Dias de inicio y fin -->
+          <div class="form-grid-2">
+            <div class="fgroup">
+              <label
+                >Dia de inicio
+                <span style="color: var(--danger)">*</span></label
+              >
+              <input
+                type="number"
+                id="pDiaInicio"
+                min="1"
+                max="31"
+                placeholder="1"
+              />
+              <small
+                id="pInicioHint"
+                style="
+                  font-size: 0.74rem;
+                  color: var(--text-muted);
+                  margin-top: 2px;
+                  display: block;
+                "
+              ></small>
+            </div>
+            <div class="fgroup">
+              <label
+                >Dia de fin <span style="color: var(--danger)">*</span></label
+              >
+              <input
+                type="number"
+                id="pDiaFin"
+                min="1"
+                max="31"
+                placeholder="30"
+              />
+              <small
+                id="pFinHint"
+                style="
+                  font-size: 0.74rem;
+                  color: var(--text-muted);
+                  margin-top: 2px;
+                  display: block;
+                "
+              ></small>
+            </div>
+          </div>
+
+          <!-- Estatus -->
+          <div class="fgroup">
+            <label>Estatus</label>
+            <select id="pEstatus">
+              <option value="Proximo">Proximo</option>
+              <option value="Vigente">Vigente (activo)</option>
+              <option value="Concluido">Concluido</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal()">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="guardarPeriodo()"
+            id="btnGuardarPeriodo"
+          >
+            <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+            <span id="lblBtnPeriodo">Crear periodo</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
     <script src="../js/sidebar.js"></script>
     <script>
       const BASE = "http://localhost:3000";
@@ -205,29 +350,30 @@
         },
       };
 
+      /* Inicializar min del año */
+      document.getElementById("pAnio").min = new Date().getFullYear();
+
+      /* Autocompletar hints y valores por defecto al cambiar descripcion/año */
       function autoFechas() {
         const desc = document.getElementById("pDesc").value;
         const anio = document.getElementById("pAnio").value;
         const rango = RANGOS[desc];
         const hintI = document.getElementById("pInicioHint");
         const hintF = document.getElementById("pFinHint");
-
         if (!rango || !anio) {
           hintI.textContent = "";
           hintF.textContent = "";
           return;
         }
-
-        // Solo prellenar si el campo esta vacio
-        const diaIEl = document.getElementById("pDiaInicio");
-        const diaFEl = document.getElementById("pDiaFin");
-        if (!diaIEl.value) diaIEl.value = rango.diaI;
-        if (!diaFEl.value) diaFEl.value = rango.diaF;
-
+        if (!document.getElementById("pDiaInicio").value)
+          document.getElementById("pDiaInicio").value = rango.diaI;
+        if (!document.getElementById("pDiaFin").value)
+          document.getElementById("pDiaFin").value = rango.diaF;
         hintI.textContent = "Mes fijo: " + rango.lblI + " " + anio;
         hintF.textContent = "Mes fijo: " + rango.lblF + " " + anio;
       }
 
+      /* Construye YYYY-MM-DD desde descripcion, año y dia */
       function construirFecha(tipo) {
         const desc = document.getElementById("pDesc").value;
         const anio = document.getElementById("pAnio").value;
@@ -241,70 +387,23 @@
         return anio + "-" + mes + "-" + String(dia).padStart(2, "0");
       }
 
-      function showToastLocal(msg, tipo) {
-        if (typeof showToast === "function") {
-          showToast(msg, tipo || "success");
-          return;
-        }
-        alert(msg);
+      /* Abrir modal para nuevo periodo */
+      function abrirModalNuevo() {
+        editandoId = null;
+        document.getElementById("pDesc").value = "";
+        document.getElementById("pAnio").value = "";
+        document.getElementById("pDiaInicio").value = "";
+        document.getElementById("pDiaFin").value = "";
+        document.getElementById("pEstatus").value = "Proximo";
+        document.getElementById("pInicioHint").textContent = "";
+        document.getElementById("pFinHint").textContent = "";
+        document.getElementById("modalPeriodoTitulo").innerHTML =
+          '<iconify-icon icon="mdi:calendar-plus-outline" style="vertical-align:middle;margin-right:6px"></iconify-icon>Nuevo periodo';
+        document.getElementById("lblBtnPeriodo").textContent = "Crear periodo";
+        document.getElementById("modalPeriodo").classList.add("active");
       }
 
-      async function cargarPeriodos() {
-        const r = await fetch(BASE + "/api/periodos", {
-          headers: { Authorization: "Bearer " + tk() },
-        });
-        const datos = await r.json();
-        const tbody = document.getElementById("tablaPeriodos");
-        tbody.innerHTML = "";
-        if (!datos.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Sin periodos registrados</td></tr>';
-          return;
-        }
-        datos.forEach(function (p) {
-          const col =
-            {
-              Vigente: "badge-aprobado",
-              Concluido: "badge-np",
-              Proximo: "badge-pendiente",
-            }[p.estatus] || "badge-pendiente";
-          const btnEliminar =
-            p.estatus !== "Vigente"
-              ? '<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(' +
-                p.id_periodo +
-                ')"><iconify-icon icon="mdi:delete-outline"></iconify-icon></button>'
-              : "";
-          tbody.innerHTML +=
-            "<tr>" +
-            "<td>#" +
-            p.id_periodo +
-            "</td>" +
-            "<td><strong>" +
-            p.descripcion +
-            "</strong></td>" +
-            "<td>" +
-            p.anio +
-            "</td>" +
-            '<td style="font-size:0.82rem">' +
-            fmtFecha(p.fecha_inicio) +
-            "</td>" +
-            '<td style="font-size:0.82rem">' +
-            fmtFecha(p.fecha_fin) +
-            "</td>" +
-            '<td><span class="badge-estatus ' +
-            col +
-            '">' +
-            p.estatus +
-            "</span></td>" +
-            '<td style="display:flex;gap:6px">' +
-            '<button class="btn btn-sm btn-outline" onclick=\'editarPeriodo(' +
-            JSON.stringify(p).replace(/'/g, "&#39;") +
-            ')\'><iconify-icon icon="mdi:pencil-outline"></iconify-icon></button>' +
-            btnEliminar +
-            "</td></tr>";
-        });
-      }
-
+      /* Abrir modal para editar */
       function editarPeriodo(p) {
         editandoId = p.id_periodo;
         document.getElementById("pDesc").value = p.descripcion || "";
@@ -325,30 +424,26 @@
           ? parseInt(ff.split("-")[2])
           : "";
         document.getElementById("pEstatus").value = p.estatus;
-        document.getElementById("tituloPeriodoForm").textContent =
-          "Editando: " + p.descripcion;
+        document.getElementById("modalPeriodoTitulo").innerHTML =
+          '<iconify-icon icon="mdi:pencil-outline" style="vertical-align:middle;margin-right:6px"></iconify-icon>Editar: ' +
+          p.descripcion +
+          " " +
+          p.anio;
         document.getElementById("lblBtnPeriodo").textContent =
           "Actualizar periodo";
-        document.getElementById("btnCancelarEdicion").style.display =
-          "inline-flex";
         autoFechas();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.getElementById("modalPeriodo").classList.add("active");
       }
 
-      function cancelarEdicion() {
-        editandoId = null;
-        document.getElementById("tituloPeriodoForm").textContent =
-          "Nuevo periodo";
-        document.getElementById("lblBtnPeriodo").textContent = "Crear periodo";
-        document.getElementById("btnCancelarEdicion").style.display = "none";
-        ["pDesc", "pAnio", "pDiaInicio", "pDiaFin"].forEach(
-          (id) => (document.getElementById(id).value = ""),
-        );
-        document.getElementById("pEstatus").value = "Proximo";
-        document.getElementById("pInicioHint").textContent = "";
-        document.getElementById("pFinHint").textContent = "";
+      function cerrarModal() {
+        document.getElementById("modalPeriodo").classList.remove("active");
       }
 
+      function modalClickFuera(e) {
+        if (e.target.id === "modalPeriodo") cerrarModal();
+      }
+
+      /* Guardar */
       async function guardarPeriodo() {
         const desc = document.getElementById("pDesc").value.trim();
         const anio = document.getElementById("pAnio").value;
@@ -356,26 +451,27 @@
         const diaF = document.getElementById("pDiaFin").value;
 
         if (!desc || !anio || !diaI || !diaF) {
-          showToastLocal("Completa todos los campos requeridos", "error");
+          showToast("Completa todos los campos requeridos", "error");
           return;
         }
         if (parseInt(anio) < new Date().getFullYear()) {
-          showToastLocal("El año no puede ser anterior al año actual", "error");
+          showToast("El año no puede ser anterior al año actual", "error");
           return;
         }
         const fecha_inicio = construirFecha("inicio");
         const fecha_fin = construirFecha("fin");
         if (!fecha_inicio || !fecha_fin) {
-          showToastLocal("Error al construir las fechas", "error");
+          showToast("Error al construir las fechas", "error");
           return;
         }
         if (new Date(fecha_inicio) >= new Date(fecha_fin)) {
-          showToastLocal(
+          showToast(
             "La fecha de inicio debe ser anterior a la de fin",
             "error",
           );
           return;
         }
+
         const body = {
           descripcion: desc,
           anio,
@@ -384,23 +480,77 @@
           estatus: document.getElementById("pEstatus").value,
         };
         const url = editandoId
-          ? BASE + "/api/periodos/" + editandoId
-          : BASE + "/api/periodos";
+          ? `${BASE}/api/periodos/${editandoId}`
+          : `${BASE}/api/periodos`;
         const method = editandoId ? "PUT" : "POST";
-        const r = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + tk(),
-          },
-          body: JSON.stringify(body),
+
+        try {
+          const r = await fetch(url, {
+            method,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + tk(),
+            },
+            body: JSON.stringify(body),
+          });
+          const d = await r.json();
+          if (d.success) {
+            showToast(
+              editandoId
+                ? "Periodo actualizado"
+                : "Periodo creado correctamente",
+            );
+            cerrarModal();
+            cargarPeriodos();
+          } else {
+            showToast(d.error || "Error al guardar", "error");
+          }
+        } catch {
+          showToast("Error de conexion", "error");
+        }
+      }
+
+      /* Cargar lista */
+      async function cargarPeriodos() {
+        const r = await fetch(BASE + "/api/periodos", {
+          headers: { Authorization: "Bearer " + tk() },
         });
-        const d = await r.json();
-        if (d.success) {
-          showToastLocal(editandoId ? "Periodo actualizado" : "Periodo creado");
-          cancelarEdicion();
-          cargarPeriodos();
-        } else showToastLocal(d.error || "Error al guardar", "error");
+        const datos = await r.json();
+        const tbody = document.getElementById("tablaPeriodos");
+        tbody.innerHTML = "";
+        if (!datos.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Sin periodos registrados</td></tr>';
+          return;
+        }
+        datos.forEach((p) => {
+          const col =
+            {
+              Vigente: "badge-aprobado",
+              Concluido: "badge-np",
+              Proximo: "badge-pendiente",
+            }[p.estatus] || "badge-pendiente";
+          const btnDel =
+            p.estatus !== "Vigente"
+              ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(${p.id_periodo})" title="Eliminar">
+                <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+               </button>`
+              : "";
+          tbody.innerHTML += `<tr>
+            <td style="font-size:.78rem;color:var(--text-muted);font-weight:600">#${p.id_periodo}</td>
+            <td><strong>${p.descripcion}</strong></td>
+            <td>${p.anio}</td>
+            <td style="font-size:.82rem">${fmtFecha(p.fecha_inicio)}</td>
+            <td style="font-size:.82rem">${fmtFecha(p.fecha_fin)}</td>
+            <td><span class="badge-estatus ${col}">${p.estatus}</span></td>
+            <td style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick='editarPeriodo(${JSON.stringify(p).replace(/'/g, "&#39;")})' title="Editar">
+                <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+              </button>
+              ${btnDel}
+            </td>
+          </tr>`;
+        });
       }
 
       async function eliminarPeriodo(id) {
@@ -416,20 +566,11 @@
         });
         const d = await r.json();
         if (d.success) {
-          showToastLocal("Periodo eliminado");
+          showToast("Periodo eliminado");
           cargarPeriodos();
-        } else showToastLocal(d.error || "Error al eliminar", "error");
+        } else showToast(d.error || "Error al eliminar", "error");
       }
 
-      function toggleCardPeriodo(btn) {
-        const card = btn.closest(".card-collapsible");
-        card.classList.toggle("collapsed");
-        btn.title = card.classList.contains("collapsed")
-          ? "Expandir"
-          : "Contraer";
-      }
-
-      document.getElementById("pAnio").min = new Date().getFullYear();
       soloPermitido?.("administrador");
       cargarPeriodos();
     </script>

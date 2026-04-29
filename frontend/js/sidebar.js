@@ -54,6 +54,11 @@
             icono: "lucide:sliders-horizontal",
           },
           {
+            href: "gruposMaestro.html",
+            texto: "Ponderacion de unidades",
+            icono: "lucide:scale",
+          },
+          {
             href: "asistencia.html",
             texto: "Asistencia",
             icono: "lucide:calendar-check",

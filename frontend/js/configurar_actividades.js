@@ -186,6 +186,8 @@ async function cargarGrupos() {
     }
     actualizarStats(grupos.length, configuradas, pendientes);
     contenedor.innerHTML = grupos.map((g) => renderGrupoCard(g)).join("");
+    // Render resumen de ponderaciones
+    await renderResumenActividades(grupos);
   } catch (e) {
     msgCargando.style.display = "none";
     contenedor.innerHTML = `<div class="card" style="text-align:center;padding:30px;color:var(--danger)">
@@ -519,11 +521,11 @@ async function mostrarTiposParaModal(idUnidad) {
     const ICONOS_FB = {
       Examen: "mdi:file-document-edit-outline",
       Tarea: "mdi:pencil-outline",
-      "Práctica": "mdi:flask-outline",
-      "Exposición": "mdi:presentation",
+      Práctica: "mdi:flask-outline",
+      Exposición: "mdi:presentation",
       Proyecto: "mdi:folder-open-outline",
       Cuestionario: "mdi:help-circle-outline",
-      "Investigación": "mdi:magnify",
+      Investigación: "mdi:magnify",
       Asistencia: "mdi:account-check-outline",
     };
     grid.innerHTML = tiposActividad
@@ -934,4 +936,70 @@ function modalClickFuera(event) {
   if (event.target === document.getElementById("modalAgregar")) {
     cerrarModal();
   }
+}
+
+// ─── Resumen de ponderaciones (dashboard) ────────────────────────────────────
+// Muestra tarjetas compactas por grupo/unidad con el % acumulado de ponderación
+async function renderResumenActividades(grupos) {
+  const seccion = document.getElementById("resumenPonderacion");
+  const cont = document.getElementById("resumenCards");
+  if (!seccion || !cont) return;
+
+  // Recopilar actividades de todos los grupos/unidades
+  const tarjetas = [];
+  for (const g of grupos) {
+    const uns = await fetchUnidades(g.id_grupo, g.clave_materia);
+    for (const u of uns) {
+      const acts = await fetchActividades(g.id_grupo, u.id_unidad);
+      if (!acts.length) continue;
+      const totalPct = acts.reduce((s, a) => s + parseFloat(a.ponderacion), 0);
+      tarjetas.push({
+        materia: g.nombre_materia || g.clave_materia,
+        unidad: u.nombre_unidad || `Unidad ${u.id_unidad}`,
+        numUnidad: u.numero_unidad || u.id_unidad,
+        cantidad: acts.length,
+        total: Math.round(totalPct * 10) / 10,
+      });
+    }
+  }
+
+  if (!tarjetas.length) {
+    seccion.style.display = "none";
+    return;
+  }
+
+  seccion.style.display = "block";
+  cont.innerHTML = tarjetas
+    .map((item) => {
+      const pct = item.total;
+      const completa = pct >= 100;
+      const color = completa
+        ? "var(--success,#16a34a)"
+        : pct > 75
+          ? "var(--warning,#d97706)"
+          : "var(--primary,#2563eb)";
+      const bg = completa ? "rgba(22,163,74,.07)" : "rgba(59,130,246,.05)";
+
+      return `<div style="background:${bg};border:1.5px solid ${color}40;border-radius:12px;
+                         padding:14px 18px;min-width:180px;flex:1;max-width:260px">
+      <div style="font-size:.72rem;color:var(--text-muted);font-weight:700;
+                  text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">
+        ${esc(item.materia)} · Unidad ${item.numUnidad}
+      </div>
+      <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px">
+        ${esc(item.unidad)}
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+        <span style="font-size:1.5rem;font-weight:700;color:${color}">${pct}%</span>
+        <span style="font-size:.75rem;color:var(--text-muted)">${item.cantidad} act.</span>
+      </div>
+      <div style="height:5px;background:var(--border);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${Math.min(pct, 100)}%;background:${color};border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="font-size:.72rem;margin-top:5px;font-weight:600;color:${color}">
+        ${completa ? "✓ Unidad completa" : `Disponible: ${Math.max(0, 100 - pct).toFixed(0)}%`}
+      </div>
+    </div>`;
+    })
+    .join("");
 }
