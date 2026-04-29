@@ -47,21 +47,22 @@
               onclick="cancelarEdicion()"
               style="display: none; margin-left: 8px"
             >
-              <iconify-icon icon="mdi:close"></iconify-icon> Cancelar edición
+              <iconify-icon icon="mdi:close"></iconify-icon> Cancelar edicion
             </button>
           </div>
           <div class="card-body">
             <div class="config-grid">
               <div class="field-group">
                 <label
-                  >Descripción
+                  >Descripcion
                   <span style="color: var(--danger)">*</span></label
                 >
-                <input
-                  type="text"
-                  id="pDesc"
-                  placeholder="Ej. Enero-Junio 2026"
-                />
+                <select id="pDesc" onchange="autoFechas()">
+                  <option value="">Selecciona el periodo</option>
+                  <option value="Enero-Junio">Enero-Junio</option>
+                  <option value="Verano">Verano</option>
+                  <option value="Agosto-Diciembre">Agosto-Diciembre</option>
+                </select>
               </div>
               <div class="field-group">
                 <label>Año <span style="color: var(--danger)">*</span></label>
@@ -69,48 +70,64 @@
                   type="number"
                   id="pAnio"
                   placeholder="2026"
-                  min="2000"
+                  min="2024"
                   max="2099"
+                  onchange="autoFechas()"
                 />
               </div>
               <div class="field-group">
                 <label
-                  >Fecha inicio
+                  >Dia de inicio
                   <span style="color: var(--danger)">*</span></label
                 >
-                <input type="date" id="pInicio" oninput="validarFechas()" />
+                <input
+                  type="number"
+                  id="pDiaInicio"
+                  min="1"
+                  max="31"
+                  placeholder="1"
+                  style="max-width: 110px"
+                />
+                <small
+                  id="pInicioHint"
+                  style="
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                    margin-top: 3px;
+                    display: block;
+                  "
+                ></small>
               </div>
               <div class="field-group">
                 <label
-                  >Fecha fin <span style="color: var(--danger)">*</span></label
+                  >Dia de fin <span style="color: var(--danger)">*</span></label
                 >
-                <input type="date" id="pFin" oninput="validarFechas()" />
+                <input
+                  type="number"
+                  id="pDiaFin"
+                  min="1"
+                  max="31"
+                  placeholder="30"
+                  style="max-width: 110px"
+                />
+                <small
+                  id="pFinHint"
+                  style="
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                    margin-top: 3px;
+                    display: block;
+                  "
+                ></small>
               </div>
               <div class="field-group">
                 <label>Estatus</label>
                 <select id="pEstatus">
-                  <option value="Proximo">Próximo</option>
+                  <option value="Proximo">Proximo</option>
                   <option value="Vigente">Vigente (activo)</option>
                   <option value="Concluido">Concluido</option>
                 </select>
               </div>
-            </div>
-            <!-- Aviso de fechas inválidas -->
-            <div
-              id="avisoFechas"
-              style="
-                display: none;
-                margin-top: 10px;
-                padding: 10px 14px;
-                background: var(--warning-light);
-                border: 1px solid #f59e0b;
-                border-radius: 8px;
-                font-size: 0.83rem;
-                color: #92400e;
-              "
-            >
-              <iconify-icon icon="mdi:alert-outline"></iconify-icon>
-              <span id="avisoFechasMsg"></span>
             </div>
             <div class="acciones-row" style="margin-top: 16px">
               <button class="btn btn-primary" onclick="guardarPeriodo()">
@@ -139,7 +156,7 @@
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Descripción</th>
+                    <th>Descripcion</th>
                     <th>Año</th>
                     <th>Inicio</th>
                     <th>Fin</th>
@@ -160,100 +177,161 @@
       const tk = () => localStorage.getItem("token");
       let editandoId = null;
 
-      function showToastLocal(msg, tipo = "success") {
-        if (typeof showToast === "function") {
-          showToast(msg, tipo);
+      /* Rangos fijos por descripcion */
+      const RANGOS = {
+        "Enero-Junio": {
+          mesI: "01",
+          mesF: "06",
+          lblI: "enero",
+          lblF: "junio",
+          diaI: 6,
+          diaF: 30,
+        },
+        Verano: {
+          mesI: "07",
+          mesF: "07",
+          lblI: "julio",
+          lblF: "julio",
+          diaI: 1,
+          diaF: 31,
+        },
+        "Agosto-Diciembre": {
+          mesI: "08",
+          mesF: "12",
+          lblI: "agosto",
+          lblF: "diciembre",
+          diaI: 1,
+          diaF: 20,
+        },
+      };
+
+      function autoFechas() {
+        const desc = document.getElementById("pDesc").value;
+        const anio = document.getElementById("pAnio").value;
+        const rango = RANGOS[desc];
+        const hintI = document.getElementById("pInicioHint");
+        const hintF = document.getElementById("pFinHint");
+
+        if (!rango || !anio) {
+          hintI.textContent = "";
+          hintF.textContent = "";
           return;
         }
-        let t = document.getElementById("rca-toast");
-        if (!t) {
-          t = document.createElement("div");
-          t.id = "rca-toast";
-          Object.assign(t.style, {
-            position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            zIndex: "9999",
-            fontFamily: "Inter,sans-serif",
-            fontWeight: "600",
-            boxShadow: "0 4px 16px rgba(0,0,0,.15)",
-            transition: "opacity .3s",
-          });
-          document.body.appendChild(t);
+
+        // Solo prellenar si el campo esta vacio
+        const diaIEl = document.getElementById("pDiaInicio");
+        const diaFEl = document.getElementById("pDiaFin");
+        if (!diaIEl.value) diaIEl.value = rango.diaI;
+        if (!diaFEl.value) diaFEl.value = rango.diaF;
+
+        hintI.textContent = "Mes fijo: " + rango.lblI + " " + anio;
+        hintF.textContent = "Mes fijo: " + rango.lblF + " " + anio;
+      }
+
+      function construirFecha(tipo) {
+        const desc = document.getElementById("pDesc").value;
+        const anio = document.getElementById("pAnio").value;
+        const rango = RANGOS[desc];
+        if (!rango || !anio) return null;
+        const dia = document.getElementById(
+          tipo === "inicio" ? "pDiaInicio" : "pDiaFin",
+        ).value;
+        if (!dia) return null;
+        const mes = tipo === "inicio" ? rango.mesI : rango.mesF;
+        return anio + "-" + mes + "-" + String(dia).padStart(2, "0");
+      }
+
+      function showToastLocal(msg, tipo) {
+        if (typeof showToast === "function") {
+          showToast(msg, tipo || "success");
+          return;
         }
-        t.textContent = msg;
-        t.style.background =
-          tipo === "success"
-            ? "#059669"
-            : tipo === "error"
-              ? "#dc2626"
-              : "#1e40af";
-        t.style.color = "#fff";
-        t.style.opacity = "1";
-        clearTimeout(t._t);
-        t._t = setTimeout(() => (t.style.opacity = "0"), 3200);
+        alert(msg);
       }
 
       async function cargarPeriodos() {
-        const r = await fetch(`${BASE}/api/periodos`, {
-          headers: { Authorization: `Bearer ${tk()}` },
+        const r = await fetch(BASE + "/api/periodos", {
+          headers: { Authorization: "Bearer " + tk() },
         });
         const datos = await r.json();
         const tbody = document.getElementById("tablaPeriodos");
         tbody.innerHTML = "";
         if (!datos.length) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Sin periodos registrados</td></tr>`;
+          tbody.innerHTML =
+            '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Sin periodos registrados</td></tr>';
           return;
         }
-        datos.forEach((p) => {
+        datos.forEach(function (p) {
           const col =
             {
               Vigente: "badge-aprobado",
               Concluido: "badge-np",
               Proximo: "badge-pendiente",
             }[p.estatus] || "badge-pendiente";
-          tbody.innerHTML += `<tr>
-      <td>#${p.id_periodo}</td>
-      <td><strong>${p.descripcion}</strong></td>
-      <td>${p.anio}</td>
-      <td style="font-size:0.82rem">${fmtFecha(p.fecha_inicio)}</td>
-      <td style="font-size:0.82rem">${fmtFecha(p.fecha_fin)}</td>
-      <td><span class="badge-estatus ${col}">${p.estatus}</span></td>
-      <td style="display:flex;gap:6px">
-        <button class="btn btn-sm btn-outline" onclick="editarPeriodo(${JSON.stringify(p).replace(/"/g, "&quot;")})">
-          <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
-        </button>
-        ${
-          p.estatus !== "Vigente"
-            ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(${p.id_periodo})">
-          <iconify-icon icon="mdi:delete-outline"></iconify-icon>
-        </button>`
-            : ""
-        }
-      </td>
-    </tr>`;
+          const btnEliminar =
+            p.estatus !== "Vigente"
+              ? '<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(' +
+                p.id_periodo +
+                ')"><iconify-icon icon="mdi:delete-outline"></iconify-icon></button>'
+              : "";
+          tbody.innerHTML +=
+            "<tr>" +
+            "<td>#" +
+            p.id_periodo +
+            "</td>" +
+            "<td><strong>" +
+            p.descripcion +
+            "</strong></td>" +
+            "<td>" +
+            p.anio +
+            "</td>" +
+            '<td style="font-size:0.82rem">' +
+            fmtFecha(p.fecha_inicio) +
+            "</td>" +
+            '<td style="font-size:0.82rem">' +
+            fmtFecha(p.fecha_fin) +
+            "</td>" +
+            '<td><span class="badge-estatus ' +
+            col +
+            '">' +
+            p.estatus +
+            "</span></td>" +
+            '<td style="display:flex;gap:6px">' +
+            '<button class="btn btn-sm btn-outline" onclick=\'editarPeriodo(' +
+            JSON.stringify(p).replace(/'/g, "&#39;") +
+            ')\'><iconify-icon icon="mdi:pencil-outline"></iconify-icon></button>' +
+            btnEliminar +
+            "</td></tr>";
         });
       }
 
       function editarPeriodo(p) {
         editandoId = p.id_periodo;
-        document.getElementById("pDesc").value = p.descripcion;
-        document.getElementById("pAnio").value = p.anio;
-        document.getElementById("pInicio").value = p.fecha_inicio
+        document.getElementById("pDesc").value = p.descripcion || "";
+        const anio =
+          p.anio ||
+          (p.fecha_inicio
+            ? p.fecha_inicio.toString().split("T")[0].substring(0, 4)
+            : "");
+        document.getElementById("pAnio").value = anio;
+        const fi = p.fecha_inicio
           ? p.fecha_inicio.toString().split("T")[0]
           : "";
-        document.getElementById("pFin").value = p.fecha_fin
-          ? p.fecha_fin.toString().split("T")[0]
+        const ff = p.fecha_fin ? p.fecha_fin.toString().split("T")[0] : "";
+        document.getElementById("pDiaInicio").value = fi
+          ? parseInt(fi.split("-")[2])
+          : "";
+        document.getElementById("pDiaFin").value = ff
+          ? parseInt(ff.split("-")[2])
           : "";
         document.getElementById("pEstatus").value = p.estatus;
         document.getElementById("tituloPeriodoForm").textContent =
-          `Editando: ${p.descripcion}`;
+          "Editando: " + p.descripcion;
         document.getElementById("lblBtnPeriodo").textContent =
           "Actualizar periodo";
         document.getElementById("btnCancelarEdicion").style.display =
           "inline-flex";
+        autoFechas();
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
@@ -263,72 +341,84 @@
           "Nuevo periodo";
         document.getElementById("lblBtnPeriodo").textContent = "Crear periodo";
         document.getElementById("btnCancelarEdicion").style.display = "none";
-        ["pDesc", "pAnio", "pInicio", "pFin"].forEach(
+        ["pDesc", "pAnio", "pDiaInicio", "pDiaFin"].forEach(
           (id) => (document.getElementById(id).value = ""),
         );
         document.getElementById("pEstatus").value = "Proximo";
+        document.getElementById("pInicioHint").textContent = "";
+        document.getElementById("pFinHint").textContent = "";
       }
 
       async function guardarPeriodo() {
-        const body = {
-          descripcion: document.getElementById("pDesc").value.trim(),
-          anio: document.getElementById("pAnio").value,
-          fecha_inicio: document.getElementById("pInicio").value,
-          fecha_fin: document.getElementById("pFin").value,
-          estatus: document.getElementById("pEstatus").value,
-        };
-        if (
-          !body.descripcion ||
-          !body.anio ||
-          !body.fecha_inicio ||
-          !body.fecha_fin
-        ) {
+        const desc = document.getElementById("pDesc").value.trim();
+        const anio = document.getElementById("pAnio").value;
+        const diaI = document.getElementById("pDiaInicio").value;
+        const diaF = document.getElementById("pDiaFin").value;
+
+        if (!desc || !anio || !diaI || !diaF) {
           showToastLocal("Completa todos los campos requeridos", "error");
           return;
         }
+        if (parseInt(anio) < new Date().getFullYear()) {
+          showToastLocal("El año no puede ser anterior al año actual", "error");
+          return;
+        }
+        const fecha_inicio = construirFecha("inicio");
+        const fecha_fin = construirFecha("fin");
+        if (!fecha_inicio || !fecha_fin) {
+          showToastLocal("Error al construir las fechas", "error");
+          return;
+        }
+        if (new Date(fecha_inicio) >= new Date(fecha_fin)) {
+          showToastLocal(
+            "La fecha de inicio debe ser anterior a la de fin",
+            "error",
+          );
+          return;
+        }
+        const body = {
+          descripcion: desc,
+          anio,
+          fecha_inicio,
+          fecha_fin,
+          estatus: document.getElementById("pEstatus").value,
+        };
         const url = editandoId
-          ? `${BASE}/api/periodos/${editandoId}`
-          : `${BASE}/api/periodos`;
+          ? BASE + "/api/periodos/" + editandoId
+          : BASE + "/api/periodos";
         const method = editandoId ? "PUT" : "POST";
         const r = await fetch(url, {
           method,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${tk()}`,
+            Authorization: "Bearer " + tk(),
           },
           body: JSON.stringify(body),
         });
         const d = await r.json();
         if (d.success) {
-          showToastLocal(
-            editandoId ? "Periodo actualizado" : "Periodo creado correctamente",
-            "success",
-          );
+          showToastLocal(editandoId ? "Periodo actualizado" : "Periodo creado");
           cancelarEdicion();
           cargarPeriodos();
-        } else {
-          showToastLocal(d.error || "Error al guardar", "error");
-        }
+        } else showToastLocal(d.error || "Error al guardar", "error");
       }
 
       async function eliminarPeriodo(id) {
         if (
           !confirm(
-            "¿Eliminar este periodo? Solo es posible si no tiene grupos asignados.",
+            "Eliminar este periodo? Solo es posible si no tiene grupos asignados.",
           )
         )
           return;
-        const r = await fetch(`${BASE}/api/periodos/${id}`, {
+        const r = await fetch(BASE + "/api/periodos/" + id, {
           method: "DELETE",
-          headers: { Authorization: `Bearer ${tk()}` },
+          headers: { Authorization: "Bearer " + tk() },
         });
         const d = await r.json();
         if (d.success) {
-          showToastLocal("Periodo eliminado", "success");
+          showToastLocal("Periodo eliminado");
           cargarPeriodos();
-        } else {
-          showToastLocal(d.error || "Error al eliminar", "error");
-        }
+        } else showToastLocal(d.error || "Error al eliminar", "error");
       }
 
       function toggleCardPeriodo(btn) {
@@ -339,22 +429,7 @@
           : "Contraer";
       }
 
-      function validarFechas() {
-        const inicio = document.getElementById("pInicio").value;
-        const fin = document.getElementById("pFin").value;
-        const aviso = document.getElementById("avisoFechas");
-        const msg = document.getElementById("avisoFechasMsg");
-
-        if (inicio && fin && new Date(inicio) >= new Date(fin)) {
-          msg.textContent =
-            "La fecha de inicio debe ser anterior a la fecha de fin.";
-          aviso.style.display = "flex";
-          aviso.style.gap = "8px";
-          aviso.style.alignItems = "center";
-        } else {
-          aviso.style.display = "none";
-        }
-      }
+      document.getElementById("pAnio").min = new Date().getFullYear();
       soloPermitido?.("administrador");
       cargarPeriodos();
     </script>

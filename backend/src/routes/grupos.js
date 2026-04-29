@@ -118,7 +118,10 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
       return db.query(sqlBase, [req.params.id], (err2, results2) => {
         if (err2)
           return res.status(500).json({ error: "Error interno del servidor" });
-        const conNumero = results2.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+        const conNumero = results2.map((u, i) => ({
+          ...u,
+          numero_unidad: i + 1,
+        }));
         res.json(conNumero);
       });
     }
@@ -129,16 +132,42 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
   });
 });
 
-// POST — crear grupo con validación de unicidad
+// ─── Utilidades de horario ────────────────────────────────────────────────────
+// Parsea "Lun-Mie-Vie 07:00-08:00" → { dias:["Lun","Mie","Vie"], inicio:"07:00", fin:"08:00" }
+function parsearHorario(horarioStr) {
+  if (!horarioStr) return null;
+  const partes = horarioStr.trim().split(" ");
+  if (partes.length < 2) return null;
+  const dias = partes[0].split("-").map((d) => d.trim().toLowerCase());
+  const horas = partes[1].split("-");
+  if (horas.length < 2) return null;
+  return { dias, inicio: horas[0], fin: horas[1] };
+}
+
+// Convierte "07:00" → minutos desde medianoche
+function toMinutos(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+// Verifica si dos listas de días comparten al menos uno
+function diasSolapan(dias1, dias2) {
+  return dias1.some((d) => dias2.includes(d));
+}
+
+// Verifica si dos rangos horarios se solapan (exclusivo en extremos)
+function horariosSolapan(ini1, fin1, ini2, fin2) {
+  const s1 = toMinutos(ini1),
+    e1 = toMinutos(fin1);
+  const s2 = toMinutos(ini2),
+    e2 = toMinutos(fin2);
+  return s1 < e2 && s2 < e1;
+}
+
+// POST — crear grupo con validación de unicidad y conflicto de aula
 router.post("/", soloAdmin, (req, res) => {
-  const {
-    clave_materia,
-    rfc,
-    id_periodo,
-    limite_alumnos,
-    horario,
-    aula,
-  } = req.body;
+  const { clave_materia, rfc, id_periodo, limite_alumnos, horario, aula } =
+    req.body;
 
   if (!clave_materia || !rfc || !id_periodo) {
     return res.status(400).json({
@@ -146,39 +175,104 @@ router.post("/", soloAdmin, (req, res) => {
     });
   }
 
-  // Insertar el nuevo grupo directamente (un maestro puede tener varios grupos de la misma materia)
+  // Si hay aula Y horario, verificar conflicto de salón en ese periodo
+  if (aula && horario) {
+    const nuevoH = parsearHorario(horario);
+
+    if (nuevoH) {
       db.query(
-        `INSERT INTO grupo (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          clave_materia,
-          rfc,
-          id_periodo,
-          limite_alumnos ?? 30,
-          horario ?? null,
-          aula ?? null,
-        ],
-        (err2, result) => {
-          if (err2) {
-            // Captura también el error de la BD si el UNIQUE constraint ya existe
-            if (err2.code === "ER_DUP_ENTRY") {
-              return res.status(409).json({
-                error:
-                  "Este maestro ya tiene un grupo asignado para esta materia en este periodo.",
-              });
-            }
+        `SELECT id_grupo, horario FROM grupo WHERE id_periodo = ? AND aula = ? AND horario IS NOT NULL`,
+        [id_periodo, aula],
+        (err, existentes) => {
+          if (err)
             return res
               .status(500)
               .json({ error: "Error interno del servidor" });
-          }
-          res.status(201).json({
-            success: true,
-            mensaje: "Grupo creado",
-            id_grupo: result.insertId,
+
+          const conflicto = existentes.find((g) => {
+            const exH = parsearHorario(g.horario);
+            if (!exH) return false;
+            return (
+              diasSolapan(nuevoH.dias, exH.dias) &&
+              horariosSolapan(nuevoH.inicio, nuevoH.fin, exH.inicio, exH.fin)
+            );
           });
+
+          if (conflicto) {
+            return res.status(409).json({
+              conflict: true,
+              error: `El aula "${aula}" ya está ocupada ese horario (Grupo #${conflicto.id_grupo}: ${conflicto.horario}). Elige otro salón u otro horario.`,
+            });
+          }
+
+          // Sin conflicto → insertar
+          insertarGrupo(
+            res,
+            clave_materia,
+            rfc,
+            id_periodo,
+            limite_alumnos,
+            horario,
+            aula,
+          );
         },
       );
+      return; // esperar callback
+    }
+  }
+
+  // Sin aula o sin horario → insertar directamente
+  insertarGrupo(
+    res,
+    clave_materia,
+    rfc,
+    id_periodo,
+    limite_alumnos,
+    horario,
+    aula,
+  );
 });
+
+function insertarGrupo(
+  res,
+  clave_materia,
+  rfc,
+  id_periodo,
+  limite_alumnos,
+  horario,
+  aula,
+) {
+  db.query(
+    `INSERT INTO grupo (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      clave_materia,
+      rfc,
+      id_periodo,
+      limite_alumnos ?? 30,
+      horario ?? null,
+      aula ?? null,
+    ],
+    (err, result) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(409).json({
+            error:
+              "Este maestro ya tiene un grupo asignado para esta materia en este periodo.",
+          });
+        }
+        return res.status(500).json({ error: "Error interno del servidor" });
+      }
+      res
+        .status(201)
+        .json({
+          success: true,
+          mensaje: "Grupo creado",
+          id_grupo: result.insertId,
+        });
+    },
+  );
+}
 
 // POST — auto-vincular todas las unidades de la materia del grupo
 router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
@@ -188,8 +282,10 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
     "SELECT clave_materia FROM grupo WHERE id_grupo = ?",
     [idGrupo],
     (err, grupos) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!grupos.length) return res.status(404).json({ error: "Grupo no encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!grupos.length)
+        return res.status(404).json({ error: "Grupo no encontrado" });
 
       const claveMateria = grupos[0].clave_materia;
 
@@ -197,9 +293,16 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
         "SELECT id_unidad FROM unidad WHERE clave_materia = ?",
         [claveMateria],
         (err2, unidades) => {
-          if (err2) return res.status(500).json({ error: "Error interno del servidor" });
+          if (err2)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
           if (!unidades.length)
-            return res.json({ success: true, vinculadas: 0, mensaje: "No hay unidades creadas para esta materia" });
+            return res.json({
+              success: true,
+              vinculadas: 0,
+              mensaje: "No hay unidades creadas para esta materia",
+            });
 
           let vinculadas = 0;
           let pendientes = unidades.length;
@@ -218,12 +321,12 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
                     mensaje: `${vinculadas} unidad(es) vinculada(s) correctamente`,
                   });
                 }
-              }
+              },
             );
           });
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -368,8 +471,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
     if (!clave_materia || !rfc || !id_periodo) {
       errores.push({
         fila: `${clave_materia || "?"}/${rfc || "?"}`,
-        motivo:
-          "Faltan campos requeridos (clave_materia, rfc, id_periodo)",
+        motivo: "Faltan campos requeridos (clave_materia, rfc, id_periodo)",
       });
       continue;
     }

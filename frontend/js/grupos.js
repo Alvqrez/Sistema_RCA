@@ -1,3 +1,4 @@
+// frontend/js/grupos.js
 const BASE_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
@@ -6,12 +7,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   await Promise.all([
     cargarMateriasSelect(),
     cargarMaestrosSelect(),
-    cargarPeriodosSelect(), // FIX 12
+    cargarPeriodosSelect(),
   ]);
   cargarGrupos();
 });
 
-// FIX 12: Cargar periodos desde la API
+// ─── Cargar selects del modal ─────────────────────────────────────────────────
 async function cargarPeriodosSelect() {
   const token = localStorage.getItem("token");
   const sel = document.getElementById("idPeriodo");
@@ -58,12 +59,140 @@ async function cargarMaestrosSelect() {
   });
 }
 
+// ─── Modal Nuevo Grupo ────────────────────────────────────────────────────────
+function abrirModalNuevoGrupo() {
+  // Limpiar formulario
+  document.getElementById("claveMateria").value = "";
+  document.getElementById("numeroEmpleado").value = "";
+  document.getElementById("idPeriodo").value = "";
+  document.getElementById("limiteAlumnos").value = "30";
+  document.getElementById("aula").value = "";
+  document.getElementById("horaInicio").value = "";
+  document.getElementById("horaFin").value = "";
+  // Deseleccionar todos los dias
+  document.querySelectorAll("#diasGrid .dia-chip").forEach((chip) => {
+    chip.classList.remove("checked");
+    chip.querySelector("input[type='checkbox']").checked = false;
+  });
+  actualizarHorarioPreview();
+  document.getElementById("conflictBanner").classList.remove("visible");
+  document.getElementById("modalNuevoGrupo").classList.add("active");
+}
+
+function cerrarModalGrupo() {
+  document.getElementById("modalNuevoGrupo").classList.remove("active");
+}
+
+function modalClickFuera(e) {
+  if (e.target.id === "modalNuevoGrupo") cerrarModalGrupo();
+}
+
+// ─── Horario estructurado ─────────────────────────────────────────────────────
+function toggleDia(chip) {
+  // Necesario porque el click del label ya hace toggle del checkbox
+  setTimeout(() => {
+    const cb = chip.querySelector("input[type='checkbox']");
+    chip.classList.toggle("checked", cb.checked);
+    actualizarHorarioPreview();
+  }, 0);
+}
+
+function getDiasSeleccionados() {
+  return [
+    ...document.querySelectorAll("#diasGrid input[type='checkbox']:checked"),
+  ].map((cb) => cb.value);
+}
+
+function obtenerHorario() {
+  const dias = getDiasSeleccionados();
+  const inicio = document.getElementById("horaInicio").value;
+  const fin = document.getElementById("horaFin").value;
+  if (!dias.length || !inicio || !fin) return null;
+  return `${dias.join("-")} ${inicio}-${fin}`;
+}
+
+function actualizarHorarioPreview() {
+  const h = obtenerHorario();
+  const el = document.getElementById("horarioPreview");
+  if (h) {
+    el.innerHTML = `<iconify-icon icon="lucide:clock" style="vertical-align:middle;margin-right:4px"></iconify-icon><strong>${h}</strong>`;
+  } else {
+    el.innerHTML = `<span style="color:var(--text-muted)">Selecciona dias y horas para ver el horario</span>`;
+  }
+}
+
+// ─── Guardar grupo con validación de conflicto ────────────────────────────────
+async function guardarNuevoGrupo() {
+  const token = localStorage.getItem("token");
+
+  const grupo = {
+    clave_materia: document.getElementById("claveMateria").value,
+    rfc: document.getElementById("numeroEmpleado").value,
+    id_periodo: document.getElementById("idPeriodo").value,
+    limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
+    horario: obtenerHorario() || null,
+    aula: document.getElementById("aula").value.trim() || null,
+  };
+
+  if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
+    toastGrupo("Selecciona materia, maestro y periodo.", "error");
+    return;
+  }
+
+  // Validar que la materia tenga unidades configuradas
+  try {
+    const resU = await fetch(
+      `${BASE_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const unidades = resU.ok ? await resU.json() : [];
+    if (!unidades.length) {
+      toastGrupo(
+        "Esta materia no tiene unidades configuradas. El administrador debe registrarlas primero.",
+        "error",
+      );
+      return;
+    }
+  } catch (_) {}
+
+  // Ocultar banner antes de enviar
+  document.getElementById("conflictBanner").classList.remove("visible");
+
+  const res = await fetch(`${BASE_URL}/api/grupos`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(grupo),
+  });
+  const data = await res.json();
+
+  if (res.status === 409 && data.conflict) {
+    // Conflicto de aula/horario — mostrar banner dentro del modal
+    document.getElementById("conflictMsg").textContent = data.error;
+    document.getElementById("conflictBanner").classList.add("visible");
+    document
+      .getElementById("conflictBanner")
+      .scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
+
+  if (data.success) {
+    toastGrupo(`Grupo creado correctamente (ID: ${data.id_grupo})`);
+    cerrarModalGrupo();
+    cargarGrupos();
+  } else {
+    toastGrupo(data.error || "Error al crear grupo", "error");
+  }
+}
+
+// ─── Cargar y filtrar lista ───────────────────────────────────────────────────
 async function cargarGrupos() {
   const token = localStorage.getItem("token");
   const tabla = document.getElementById("tablaGrupos");
-  const rol = localStorage.getItem("rol");
-
-  // BUG FIX: envolver en try/catch para manejar errores de red
   let grupos;
   try {
     const response = await fetch(`${BASE_URL}/api/grupos`, {
@@ -77,13 +206,9 @@ async function cargarGrupos() {
     grupos = await response.json();
   } catch (err) {
     if (tabla)
-      tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">
-      <iconify-icon icon="lucide:wifi-off" style="font-size:1.4rem;display:block;margin:0 auto 8px"></iconify-icon>
-      Error al cargar grupos. Verifica la conexión con el servidor.
-    </td></tr>`;
+      tabla.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">Error al cargar grupos.</td></tr>`;
     return;
   }
-
   todosGrupos = grupos;
   filtrarGrupos();
 }
@@ -95,7 +220,6 @@ function filtrarGrupos() {
     document.getElementById("filtroTexto")?.value || ""
   ).toLowerCase();
   const estatus = document.getElementById("filtroEstatus")?.value || "";
-  const rol = localStorage.getItem("rol");
   const tabla = document.getElementById("tablaGrupos");
   if (!tabla) return;
 
@@ -110,7 +234,6 @@ function filtrarGrupos() {
     return matchText && matchEst;
   });
 
-  // Badge de total
   const badge = document.getElementById("badgeTotal");
   if (badge)
     badge.textContent =
@@ -122,9 +245,7 @@ function filtrarGrupos() {
 
   if (!filtrados.length) {
     tabla.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">
-      <iconify-icon icon="lucide:search-x" style="font-size:2rem;display:block;margin:0 auto 8px;opacity:.4"></iconify-icon>
-      Sin resultados
-    </td></tr>`;
+      <iconify-icon icon="lucide:search-x" style="font-size:2rem;display:block;margin:0 auto 8px;opacity:.4"></iconify-icon>Sin resultados</td></tr>`;
     return;
   }
 
@@ -132,7 +253,6 @@ function filtrarGrupos() {
     const periodoLabel = g.descripcion_periodo
       ? `${g.descripcion_periodo} ${g.anio || ""}`
       : `Periodo ${g.id_periodo}`;
-
     const badgeEst =
       g.estatus === "Activo"
         ? "badge-success"
@@ -141,87 +261,30 @@ function filtrarGrupos() {
           : g.estatus === "Cancelado"
             ? "badge-danger"
             : "badge-info";
-
     tabla.innerHTML += `<tr>
-      <td style="font-size:0.78rem;color:var(--text-muted);font-weight:600">#${g.id_grupo}</td>
-      <td>
-        <div style="font-weight:600;font-size:0.88rem">${g.nombre_materia}</div>
-        <div style="font-size:0.73rem;color:var(--text-muted)">${g.clave_materia}</div>
-      </td>
-      <td style="font-size:0.85rem">${g.nombre_maestro}</td>
-      <td style="font-size:0.8rem;color:var(--text-muted)">${periodoLabel}</td>
-      <td style="text-align:center;font-size:0.85rem">${g.limite_alumnos ?? "—"}</td>
-      <td style="font-size:0.82rem">${g.aula ?? "—"}</td>
-      <td style="font-size:0.78rem;color:var(--text-muted)">${g.horario ?? "—"}</td>
+      <td style="font-size:.78rem;color:var(--text-muted);font-weight:600">#${g.id_grupo}</td>
+      <td><div style="font-weight:600;font-size:.88rem">${g.nombre_materia}</div><div style="font-size:.73rem;color:var(--text-muted)">${g.clave_materia}</div></td>
+      <td style="font-size:.85rem">${g.nombre_maestro}</td>
+      <td style="font-size:.8rem;color:var(--text-muted)">${periodoLabel}</td>
+      <td style="text-align:center;font-size:.85rem">${g.limite_alumnos ?? "—"}</td>
+      <td style="font-size:.82rem">${g.aula ?? "—"}</td>
+      <td style="font-size:.78rem;color:var(--text-muted)">${g.horario ?? "—"}</td>
       <td><span class="badge ${badgeEst}">${g.estatus ?? "—"}</span></td>
       <td style="text-align:right">
         <div class="table-actions">
-          ${
-            rol === "administrador"
-              ? `<button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
-                 <iconify-icon icon="lucide:trash-2"></iconify-icon>
-               </button>`
-              : "—"
-          }
+          <button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon>
+          </button>
         </div>
       </td>
     </tr>`;
   });
 }
 
-document
-  .getElementById("formGrupo")
-  ?.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-    const grupo = {
-      clave_materia: document.getElementById("claveMateria").value,
-      rfc: document.getElementById("numeroEmpleado").value,
-      id_periodo: document.getElementById("idPeriodo").value,
-      limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
-      horario: document.getElementById("horario").value || null,
-      aula: document.getElementById("aula").value || null,
-    };
-
-    if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
-      toastGrupo("Selecciona materia, maestro y periodo.", "error");
-      return;
-    }
-
-    // Verificar que la materia tenga unidades configuradas
-    try {
-      const resU = await fetch(`${BASE_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const unidades = resU.ok ? await resU.json() : [];
-      if (!unidades.length) {
-        toastGrupo("Esta materia no tiene unidades configuradas. El administrador debe registrarlas primero.", "error");
-        return;
-      }
-    } catch (_) {}
-
-    const res = await fetch(`${BASE_URL}/api/grupos`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(grupo),
-    });
-    const data = await res.json();
-    if (data.success) {
-      toastGrupo(`Grupo creado correctamente (ID: ${data.id_grupo})`);
-      this.reset();
-      cargarGrupos();
-    } else {
-      toastGrupo(data.error || "Error al crear grupo", "error");
-    }
-  });
-
 async function eliminarGrupo(id) {
   if (
     !confirm(
-      "¿Eliminar este grupo? Se perderán las inscripciones y actividades asociadas.",
+      "Eliminar este grupo? Se perderan las inscripciones y actividades asociadas.",
     )
   )
     return;
@@ -234,15 +297,11 @@ async function eliminarGrupo(id) {
   if (data.success) {
     toastGrupo("Grupo eliminado");
     cargarGrupos();
-  } else {
-    toastGrupo(data.error || "Error al eliminar", "error");
-  }
+  } else toastGrupo(data.error || "Error al eliminar", "error");
 }
 
-let csvGruposData = [];
-
+// ─── Toast ────────────────────────────────────────────────────────────────────
 function toastGrupo(msg, tipo = "success") {
-  // Reutiliza el contenedor global del proyecto
   const c = document.getElementById("toast-container");
   if (!c) {
     alert(msg);
@@ -260,6 +319,9 @@ function toastGrupo(msg, tipo = "success") {
   setTimeout(() => t.remove(), 3200);
 }
 
+// ─── CSV Import/Export ────────────────────────────────────────────────────────
+let csvGruposData = [];
+
 function abrirModalCSVGrupos() {
   csvGruposData = [];
   document.getElementById("csvGruposPreview").innerHTML = "";
@@ -275,14 +337,12 @@ function leerCSVGrupos(e) {
   const file = e.target.files[0];
   if (file) procesarCSVGrupos(file);
 }
-
 function soltarCSVGrupos(e) {
   e.preventDefault();
   document.getElementById("dropZoneGrupos").classList.remove("drag-over");
   const file = e.dataTransfer.files[0];
   if (file) procesarCSVGrupos(file);
 }
-
 function dragOverGrupos(e) {
   e.preventDefault();
   document.getElementById("dropZoneGrupos").classList.add("drag-over");
@@ -294,7 +354,7 @@ function procesarCSVGrupos(file) {
     const lines = e.target.result.trim().split("\n").filter(Boolean);
     if (lines.length < 2) {
       document.getElementById("csvGruposPreview").innerHTML =
-        "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>El archivo está vacío o solo tiene encabezado.</p>";
+        "<p style='color:var(--danger)'>El archivo esta vacio o solo tiene encabezado.</p>";
       return;
     }
     const headers = lines[0]
@@ -319,20 +379,14 @@ function mostrarPreviewCSVGrupos(headers, data) {
   const muestra = data.slice(0, 5);
   const preview = document.getElementById("csvGruposPreview");
   if (!data.length) {
-    preview.innerHTML =
-      "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>Sin datos válidos.</p>";
+    preview.innerHTML = "<p style='color:var(--danger)'>Sin datos validos.</p>";
     return;
   }
-  preview.innerHTML = `
-    <p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">
-      ${data.length} registros detectados — vista previa (primeros 5):
-    </p>
-    <div class="csv-preview">
-      <table>
-        <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-        <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
-      </table>
-    </div>`;
+  preview.innerHTML = `<p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">${data.length} registros detectados:</p>
+    <div class="csv-preview"><table>
+      <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>`;
 }
 
 async function importarCSVGrupos() {
@@ -340,8 +394,7 @@ async function importarCSVGrupos() {
   const token = localStorage.getItem("token");
   const btn = document.getElementById("btnImportarGrupos");
   btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span> Importando…`;
-
+  btn.innerHTML = `<span class="spinner"></span> Importando...`;
   try {
     const r = await fetch(`${BASE_URL}/api/grupos/csv`, {
       method: "POST",
@@ -353,15 +406,9 @@ async function importarCSVGrupos() {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
-
     toastGrupo(`${data.insertados} grupo(s) importados correctamente`);
-    if (data.errores?.length) {
-      toastGrupo(
-        `${data.errores.length} fila(s) con errores — revisa la consola`,
-        "info",
-      );
-      console.table(data.errores);
-    }
+    if (data.errores?.length)
+      toastGrupo(`${data.errores.length} fila(s) con errores`, "info");
     cerrarModalCSVGrupos();
     cargarGrupos();
   } catch (err) {
@@ -383,7 +430,6 @@ async function exportarCSVGrupos() {
       toastGrupo("No hay grupos para exportar", "info");
       return;
     }
-
     const cols = [
       "id_grupo",
       "clave_materia",
@@ -397,14 +443,13 @@ async function exportarCSVGrupos() {
       "estatus",
     ];
     const rows = [cols.join(",")];
-    grupos.forEach((g) => {
+    grupos.forEach((g) =>
       rows.push(
         cols
           .map((c) => `"${(g[c] ?? "").toString().replace(/"/g, '""')}"`)
           .join(","),
-      );
-    });
-
+      ),
+    );
     const blob = new Blob([rows.join("\n")], {
       type: "text/csv;charset=utf-8;",
     });

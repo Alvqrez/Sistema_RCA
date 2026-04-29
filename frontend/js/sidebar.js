@@ -110,11 +110,6 @@
             texto: "Lista de maestros",
             icono: "lucide:list",
           },
-          {
-            href: "grupos.html",
-            texto: "Carga académica",
-            icono: "mdi:briefcase-outline",
-          },
         ],
       },
       {
