@@ -454,10 +454,18 @@ function renderizarBloqueado(unidades, nombreMateria) {
       )
       .join("")}
     <div style="margin-top:14px;padding:10px 14px;background:var(--bg-secondary);
-         border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text-muted)">
-      <iconify-icon icon="mdi:lock-check-outline"
-        style="vertical-align:middle;color:var(--success,#16a34a)"></iconify-icon>
-      Las unidades ya están guardadas. Para modificarlas contacta al administrador del sistema.
+         border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text-muted);
+         display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <span>
+        <iconify-icon icon="mdi:lock-check-outline"
+          style="vertical-align:middle;color:var(--success,#16a34a)"></iconify-icon>
+        Las unidades ya están guardadas.
+      </span>
+      <button class="btn btn-outline" style="font-size:.8rem;padding:5px 14px"
+        onclick="editarUnidades()">
+        <iconify-icon icon="lucide:pencil" style="vertical-align:middle"></iconify-icon>
+        Editar unidades
+      </button>
     </div>`;
 
   const btnRow = document.getElementById("btnGuardar")?.closest("div");
@@ -465,6 +473,18 @@ function renderizarBloqueado(unidades, nombreMateria) {
 
   card.style.display = "block";
   card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ─── Editar unidades ──────────────────────────────────────────────────────────
+function editarUnidades() {
+  if (!materiaActual) return;
+  const btnRow = document.getElementById("btnGuardar")?.closest("div");
+  if (btnRow) btnRow.style.display = "";
+  renderizarFormulario(
+    materiaActual.no_unidades,
+    materiaActual.nombre_materia,
+    unidadesGuardadas,
+  );
 }
 
 // ─── Actividades de la materia (definidas por el Admin) ────────────────────────

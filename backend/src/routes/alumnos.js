@@ -38,7 +38,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 // GET — un alumno por no_control
 router.get("/:no_control", verificarToken, (req, res) => {
   db.query(
-    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera FROM Alumno WHERE no_control = ?",
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, curp, fecha_nacimiento, genero, tel_celular, tel_casa, direccion, correo_personal FROM Alumno WHERE no_control = ?",
     [req.params.no_control],
     (err, results) => {
       if (err)
@@ -97,30 +97,43 @@ router.post("/", soloAdmin, async (req, res) => {
         no_control,
         nombre,
         apellido_paterno,
-        apellido_materno   ?? null,
+        apellido_materno ?? null,
         id_carrera,
         correo_institucional,
         curp?.trim().toUpperCase() || null,
-        fecha_nacimiento   || null,
-        genero             || null,
-        tel_celular        || null,
-        tel_casa           || null,
-        direccion          || null,
-        correo_personal    || null,
+        fecha_nacimiento || null,
+        genero || null,
+        tel_celular || null,
+        tel_casa || null,
+        direccion || null,
+        correo_personal || null,
       ],
       (err) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") {
-            if (err.message.includes("no_control") || err.message.includes("PRIMARY"))
-              return res.status(409).json({ error: "La no_control ya está registrada en el sistema." });
+            if (
+              err.message.includes("no_control") ||
+              err.message.includes("PRIMARY")
+            )
+              return res.status(409).json({
+                error: "La no_control ya está registrada en el sistema.",
+              });
             if (err.message.includes("curp") || err.message.includes("CURP"))
-              return res.status(409).json({ error: "El CURP ya está registrado en otro alumno." });
-            return res.status(409).json({ error: "Ya existe un alumno con esos datos." });
+              return res
+                .status(409)
+                .json({ error: "El CURP ya está registrado en otro alumno." });
+            return res
+              .status(409)
+              .json({ error: "Ya existe un alumno con esos datos." });
           }
           if (err.code === "ER_NO_REFERENCED_ROW_2")
-            return res.status(400).json({ error: "La carrera seleccionada no existe." });
+            return res
+              .status(400)
+              .json({ error: "La carrera seleccionada no existe." });
           console.error("❌ ERROR ALUMNO:", err.message);
-          return res.status(500).json({ error: "Error al registrar alumno: " + err.message });
+          return res
+            .status(500)
+            .json({ error: "Error al registrar alumno: " + err.message });
         }
         console.log(
           "✅ Perfil de alumno creado, procediendo a crear cuenta de usuario...",
@@ -150,7 +163,7 @@ router.post("/", soloAdmin, async (req, res) => {
   }
 });
 
-// PUT — editar alumno (solo maestro)
+// PUT — editar alumno (solo admin)
 router.put("/:no_control", soloAdmin, (req, res) => {
   const {
     nombre,
@@ -158,6 +171,13 @@ router.put("/:no_control", soloAdmin, (req, res) => {
     apellido_materno,
     correo_institucional,
     id_carrera,
+    curp,
+    fecha_nacimiento,
+    genero,
+    tel_celular,
+    tel_casa,
+    direccion,
+    correo_personal,
   } = req.body;
 
   if (!nombre || !apellido_paterno || !correo_institucional) {
@@ -166,7 +186,10 @@ router.put("/:no_control", soloAdmin, (req, res) => {
 
   const query = `
         UPDATE alumno
-        SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, correo_institucional = ?, id_carrera = ?
+        SET nombre = ?, apellido_paterno = ?, apellido_materno = ?,
+            correo_institucional = ?, id_carrera = ?,
+            curp = ?, fecha_nacimiento = ?, genero = ?,
+            tel_celular = ?, tel_casa = ?, direccion = ?, correo_personal = ?
         WHERE no_control = ?
     `;
 
@@ -178,12 +201,23 @@ router.put("/:no_control", soloAdmin, (req, res) => {
       apellido_materno ?? null,
       correo_institucional,
       id_carrera,
+      curp?.trim().toUpperCase() || null,
+      fecha_nacimiento || null,
+      genero || null,
+      tel_celular || null,
+      tel_casa || null,
+      direccion || null,
+      correo_personal || null,
       req.params.no_control,
     ],
     (err, result) => {
-      if (err)
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY")
+          return res
+            .status(409)
+            .json({ error: "El CURP ya está registrado en otro alumno." });
         return res.status(500).json({ error: "Error interno del servidor" });
-
+      }
       if (result.affectedRows === 0)
         return res.status(404).json({ error: "Alumno no encontrado" });
 
