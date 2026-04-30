@@ -29,7 +29,7 @@ USE `rca_sistema`;
 
 -- Administrador
 CREATE TABLE `administrador` (
-  `id_admin`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `rfc`                  VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del administrador',
   `nombre`               VARCHAR(80)   NOT NULL,
   `apellido_paterno`     VARCHAR(50)   NOT NULL,
   `apellido_materno`     VARCHAR(50)   NULL DEFAULT NULL,
@@ -37,11 +37,11 @@ CREATE TABLE `administrador` (
   `correo_personal`      VARCHAR(100)  NULL DEFAULT NULL,
   `tel_celular`          VARCHAR(15)   NULL DEFAULT NULL,
   `activo`               TINYINT       NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id_admin`)
+  PRIMARY KEY (`rfc`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
-  COMMENT='Usuario con acceso administrativo al sistema';
+  COMMENT='Usuario con acceso administrativo al sistema. RFC es PK y username.';
 
 
 -- Maestro  (sin columnas usuario/password — autenticación va en tabla usuario)

@@ -62,7 +62,7 @@ app.post("/login", (req, res) => {
           "SELECT nombre, apellido_paterno FROM maestro WHERE rfc = ?";
       else if (userRow.rol === "administrador")
         sqlNombre =
-          "SELECT nombre, apellido_paterno FROM administrador WHERE id_admin = ?";
+          "SELECT nombre, apellido_paterno FROM administrador WHERE rfc = ?";
 
       db.query(sqlNombre, [userRow.id_referencia], (err2, persona) => {
         if (err2)

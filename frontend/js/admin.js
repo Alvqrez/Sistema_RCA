@@ -210,16 +210,28 @@ function renderUsuarios(datos) {
     .join("");
 }
 
-async function crearUsuario() {
-  const username = document.getElementById("uUsername").value.trim();
+async function crearAdministrador() {
+  const rfc = document.getElementById("uRFC").value.trim().toUpperCase();
+  const nombre = document.getElementById("uNombre").value.trim();
+  const apellido_paterno = document.getElementById("uApellidoP").value.trim();
+  const apellido_materno = document.getElementById("uApellidoM").value.trim();
+  const correo_institucional = document.getElementById("uCorreo").value.trim();
   const password = document.getElementById("uPassword").value;
-  const rol = "administrador";
-  const id_referencia = document.getElementById("uReferencia").value.trim();
   const errEl = document.getElementById("modalUserError");
   errEl.style.display = "none";
 
-  if (!username || !password || !id_referencia) {
-    errEl.textContent = "Todos los campos son obligatorios.";
+  if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !password) {
+    errEl.textContent = "Los campos marcados con * son obligatorios.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (rfc.length < 12 || rfc.length > 13) {
+    errEl.textContent = "El RFC debe tener entre 12 y 13 caracteres.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = "La contraseña debe tener al menos 6 caracteres.";
     errEl.style.display = "block";
     return;
   }
@@ -229,17 +241,24 @@ async function crearUsuario() {
   btn.innerHTML = `<span class="spinner"></span> Creando…`;
 
   try {
-    const r = await fetch(`${BASE_URL}/api/admin/usuarios`, {
+    const r = await fetch(`${BASE_URL}/api/admin/administradores`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token()}`,
       },
-      body: JSON.stringify({ username, password, rol, id_referencia }),
+      body: JSON.stringify({
+        rfc,
+        nombre,
+        apellido_paterno,
+        apellido_materno: apellido_materno || null,
+        correo_institucional,
+        password,
+      }),
     });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.error || "Error al crear usuario");
-    toast("Usuario creado correctamente");
+    if (!r.ok) throw new Error(data.error || "Error al crear administrador");
+    toast("Administrador creado correctamente");
     cerrarModal("modalUsuario");
     limpiarModalUser();
     await cargarUsuarios();
@@ -249,17 +268,15 @@ async function crearUsuario() {
     errEl.style.display = "block";
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<iconify-icon icon="lucide:user-plus"></iconify-icon> Crear usuario`;
+    btn.innerHTML = `<iconify-icon icon="lucide:user-plus"></iconify-icon> Crear administrador`;
   }
 }
 
 function limpiarModalUser() {
-  ["uUsername", "uPassword", "uReferencia"].forEach((id) => {
+  ["uRFC", "uNombre", "uApellidoP", "uApellidoM", "uCorreo", "uPassword"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  const rol = document.getElementById("rolUsuario");
-  if (rol) rol.value = "administrador";
   const e = document.getElementById("modalUserError");
   if (e) e.style.display = "none";
 }

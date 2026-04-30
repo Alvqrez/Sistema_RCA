@@ -45,6 +45,7 @@ async function cargarAlumnos() {
   try {
     const r = await fetch(`${BASE_URL}/api/alumnos`, {
       headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
     });
     if (r.status === 401) {
       window.location.href = "login.html";
@@ -209,20 +210,33 @@ function abrirModalNuevo() {
   no_controlEditando = null;
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
   document.getElementById("f_no_control").disabled = false;
+  document.getElementById("f_carrera").disabled = false;
+  document.getElementById("grupoUsername").style.display = "";
   document.getElementById("grupoPassword").style.display = "";
   limpiarForm();
   abrirModal("modalAlumno");
 }
 
-function editarAlumno(no_control) {
-  const a = alumnosGlobal.find((x) => x.no_control === no_control);
-  if (!a) return;
+async function editarAlumno(no_control) {
+  let a;
+  try {
+    const r = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      cache: 'no-store',
+    });
+    if (!r.ok) throw new Error();
+    a = await r.json();
+  } catch {
+    toast("No se pudo cargar la información del alumno", "error");
+    return;
+  }
   modoEdicion = true;
   no_controlEditando = no_control;
   document.getElementById("modalTitulo").textContent = "Editar alumno";
   document.getElementById("f_no_control").value = a.no_control;
   document.getElementById("f_no_control").disabled = true;
   document.getElementById("f_carrera").value = a.id_carrera ?? "";
+  document.getElementById("f_carrera").disabled = true;
   document.getElementById("f_correo").value = a.correo_institucional ?? "";
   document.getElementById("f_nombre").value = a.nombre ?? "";
   document.getElementById("f_ap_pat").value = a.apellido_paterno ?? "";
@@ -237,6 +251,7 @@ function editarAlumno(no_control) {
   document.getElementById("f_correo_personal").value = a.correo_personal ?? "";
   document.getElementById("f_username").value = "";
   document.getElementById("f_password").value = "";
+  document.getElementById("grupoUsername").style.display = "none";
   document.getElementById("grupoPassword").style.display = "none";
   abrirModal("modalAlumno");
 }

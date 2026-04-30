@@ -23,12 +23,13 @@ async function seed() {
     console.log("✓ Periodo    → Enero-Junio 2025 (Vigente)");
 
     // ── Administrador ─────────────────────────────────────────────────────
+    const rfcAdmin = "ADMN800101ITV";
     await q(`INSERT IGNORE INTO administrador
-               (id_admin, nombre, apellido_paterno, correo_institucional)
-             VALUES (1,'Admin','Sistema','admin@itver.edu.mx')`);
+               (rfc, nombre, apellido_paterno, correo_institucional)
+             VALUES (?,'Admin','Sistema','admin@itver.edu.mx')`, [rfcAdmin]);
     const hashAdmin = await bcrypt.hash("admin123", 10);
     await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
-             VALUES ('admin',?,'administrador',1)`, [hashAdmin]);
+             VALUES ('admin',?,'administrador',?)`, [hashAdmin, rfcAdmin]);
     console.log("✓ Admin      → admin / admin123");
 
     // ── Maestros ──────────────────────────────────────────────────────────
@@ -42,9 +43,9 @@ async function seed() {
       [rfc1, rfc2]);
     const hM1 = await bcrypt.hash("maestro123", 10);
     const hM2 = await bcrypt.hash("maestro456", 10);
-    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES (?,?,'maestro',?)`, [rfc1, hM1, rfc1]);
-    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES (?,?,'maestro',?)`, [rfc2, hM2, rfc2]);
-    console.log(`✓ Maestros   → ${rfc1}/maestro123  |  ${rfc2}/maestro456`);
+    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe01',?,'maestro',?)`, [hM1, rfc1]);
+    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe02',?,'maestro',?)`, [hM2, rfc2]);
+    console.log(`✓ Maestros   → profe01/maestro123  |  profe02/maestro456`);
 
     // ── Materias ──────────────────────────────────────────────────────────
     await q(`INSERT IGNORE INTO materia
@@ -317,8 +318,8 @@ async function seed() {
     console.log("─────────────────────────────────────────────────────");
     console.log("  CREDENCIALES:");
     console.log("  admin              / admin123");
-    console.log(`  ${rfc1}  / maestro123  (Juan Pérez — G1 FBD, G3 POO)`);
-    console.log(`  ${rfc2}  / maestro456  (María García — G2 FBD, G4 POO)`);
+    console.log(`  profe01            / maestro123  (Juan Pérez)`);
+    console.log(`  profe02            / maestro456  (María García)`);
     console.log("  alumno1            / alumno123   (Carlos Ramírez  2023001)");
     console.log("  alumno2            / alumno456   (Diana López      2023002)");
     console.log("  alumno3            / alumno789   (Ernesto Martínez 2023003)");
