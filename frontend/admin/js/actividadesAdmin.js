@@ -6,7 +6,7 @@ const BASE = "http://localhost:3000";
 // ─── Guard ────────────────────────────────────────────────────────────────────
 (function () {
   if (localStorage.getItem("rol") !== "administrador") {
-    window.location.href = "login.html";
+    window.location.href = "../../shared/pages/login.html";
   }
 })();
 

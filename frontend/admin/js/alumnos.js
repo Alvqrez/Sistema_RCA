@@ -45,10 +45,10 @@ async function cargarAlumnos() {
   try {
     const r = await fetch(`${BASE_URL}/api/alumnos`, {
       headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
+      cache: "no-store",
     });
     if (r.status === 401) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     alumnosGlobal = await r.json();
@@ -222,7 +222,7 @@ async function editarAlumno(no_control) {
   try {
     const r = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      cache: 'no-store',
+      cache: "no-store",
     });
     if (!r.ok) throw new Error();
     a = await r.json();

@@ -45,7 +45,7 @@ function toast(msg, tipo = "success") {
 // ─── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   if (rol() !== "maestro") {
-    window.location.href = "login.html";
+    window.location.href = "../../shared/pages/login.html";
     return;
   }
   await cargarTiposActividad();
@@ -158,7 +158,7 @@ async function cargarGrupos() {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!res.ok) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     const grupos = await res.json();

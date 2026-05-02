@@ -2,7 +2,8 @@ const BASE = "http://localhost:3000";
 const token = localStorage.getItem("token");
 const rol = localStorage.getItem("rol");
 
-if (!token || rol !== "alumno") window.location.href = "login.html";
+if (!token || rol !== "alumno")
+  window.location.href = "../../shared/pages/login.html";
 
 function parsearToken(t) {
   try {
@@ -27,7 +28,7 @@ async function cargarDatosAlumno() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!r.ok) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     const a = await r.json();

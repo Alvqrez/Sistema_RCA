@@ -7,7 +7,8 @@ const rol = localStorage.getItem("rol");
 const token = localStorage.getItem("token");
 
 (function () {
-  if (rol !== "administrador") window.location.href = "login.html";
+  if (rol !== "administrador")
+    window.location.href = "../../shared/pages/login.html";
 })();
 
 let materiaActual = null; // { clave_materia, nombre_materia, no_unidades }
@@ -57,7 +58,7 @@ async function poblarSelectMaterias() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.status === 401 || res.status === 403) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     const materias = await res.json();

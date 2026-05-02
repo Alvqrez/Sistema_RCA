@@ -199,7 +199,7 @@ async function cargarGrupos() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.status === 401 || response.status === 403) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

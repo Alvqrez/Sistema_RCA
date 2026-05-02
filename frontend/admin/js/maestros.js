@@ -67,7 +67,7 @@ async function cargarMaestros() {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (r.status === 401) {
-      window.location.href = "login.html";
+      window.location.href = "../../shared/pages/login.html";
       return;
     }
     maestrosGlobal = await r.json();
@@ -105,9 +105,7 @@ function filtrarMaestros() {
     const nombre =
       `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
     return (
-      (!q ||
-        nombre.includes(q) ||
-        m.rfc?.toLowerCase().includes(q)) &&
+      (!q || nombre.includes(q) || m.rfc?.toLowerCase().includes(q)) &&
       (!dpto || m.departamento === dpto)
     );
   });
@@ -215,11 +213,11 @@ function editarMaestro(ne) {
 }
 
 async function guardarMaestro() {
-  const rfc    = document.getElementById("f_rfc").value.trim().toUpperCase();
-  const nom    = document.getElementById("f_nombre").value.trim();
-  const ap     = document.getElementById("f_ap_pat").value.trim();
+  const rfc = document.getElementById("f_rfc").value.trim().toUpperCase();
+  const nom = document.getElementById("f_nombre").value.trim();
+  const ap = document.getElementById("f_ap_pat").value.trim();
   const correo = document.getElementById("f_correo").value.trim();
-  const pwd    = document.getElementById("f_password").value;
+  const pwd = document.getElementById("f_password").value;
 
   ocultarError();
 
@@ -352,7 +350,10 @@ function limpiarForm() {
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) { el.value = ""; delete el.dataset.editado; }
+    if (el) {
+      el.value = "";
+      delete el.dataset.editado;
+    }
   });
   const estEl = document.getElementById("f_estatus");
   if (estEl) estEl.value = "Activo";

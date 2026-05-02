@@ -119,7 +119,7 @@ async function fetchAuthGM(url) {
     headers: { Authorization: `Bearer ${tokenGM()}` },
   });
   if (res.status === 401) {
-    window.location.href = "login.html";
+    window.location.href = "../../shared/pages/login.html";
     throw new Error("401");
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -437,7 +437,10 @@ function actualizarSumaRubros(id_grupo, id_unidad) {
       // clamp: no permite valores negativos ni mayores a 100
       let v = parseFloat(inp.value);
       if (isNaN(v) || v < 0) v = 0;
-      if (v > 100) { v = 100; inp.value = 100; }
+      if (v > 100) {
+        v = 100;
+        inp.value = 100;
+      }
       suma += v;
     });
   const badge = document.getElementById(`suma-badge-${id_grupo}-${id_unidad}`);
@@ -690,8 +693,9 @@ function eliminarRubroGrupo(id_grupo, key) {
   }
   const rubro = getRubrosGrupo(id_grupo).find((r) => r.key === key);
   _pendingEliminarRubro = { id_grupo, key };
-  document.getElementById("eliminarRubroNombre").textContent =
-    rubro ? rubro.nombre : key;
+  document.getElementById("eliminarRubroNombre").textContent = rubro
+    ? rubro.nombre
+    : key;
   document.getElementById("modalEliminarRubro").classList.add("visible");
 }
 
@@ -717,7 +721,6 @@ function ejecutarEliminarRubro() {
   rerenderGrupoBody(id_grupo);
   showToast("Rubro eliminado", "info");
 }
-
 
 async function rerenderGrupoBody(id_grupo) {
   const bodyEl = document.getElementById(`body-${id_grupo}`);
