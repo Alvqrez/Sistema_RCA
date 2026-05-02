@@ -273,8 +273,8 @@ async function guardarMaestro() {
 
   try {
     const url = modoEdicion
-      ? `${BASE_URL}/api/maestros/${empleadoEditando}`
-      : `${BASE_URL}/api/maestros`;
+      ? `${API_URL}/api/maestros/${empleadoEditando}`
+      : `${API_URL}/api/maestros`;
     const method = modoEdicion ? "PUT" : "POST";
     const r = await fetch(url, {
       method,
@@ -304,7 +304,7 @@ async function eliminarMaestro(ne) {
     return;
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/maestros/${ne}`, {
+    const r = await fetch(`${API_URL}/api/maestros/${ne}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -481,7 +481,7 @@ async function importarCSVMaestros() {
   btn.innerHTML = `<span class="spinner"></span> Importando…`;
 
   try {
-    const r = await fetch(`${BASE_URL}/api/maestros/csv`, {
+    const r = await fetch(`${API_URL}/api/maestros/csv`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

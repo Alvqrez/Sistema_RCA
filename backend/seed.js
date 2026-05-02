@@ -18,33 +18,47 @@ async function seed() {
 
     // ── Periodo ───────────────────────────────────────────────────────────
     await q(`INSERT IGNORE INTO periodo_escolar
-               (id_periodo, descripcion, anio, fecha_inicio, fecha_fin, estatus)
-             VALUES (1,'Enero-Junio',2025,'2025-01-13','2025-06-20','Vigente')`);
+           (id_periodo, descripcion, fecha_inicio, fecha_fin, estatus)
+         VALUES (1,'Enero-Junio 2025','2025-01-13','2025-06-20','Vigente')`);
     console.log("✓ Periodo    → Enero-Junio 2025 (Vigente)");
 
     // ── Administrador ─────────────────────────────────────────────────────
     const rfcAdmin = "ADMN800101ITV";
-    await q(`INSERT IGNORE INTO administrador
+    await q(
+      `INSERT IGNORE INTO administrador
                (rfc, nombre, apellido_paterno, correo_institucional)
-             VALUES (?,'Admin','Sistema','admin@itver.edu.mx')`, [rfcAdmin]);
+             VALUES (?,'Admin','Sistema','admin@itver.edu.mx')`,
+      [rfcAdmin],
+    );
     const hashAdmin = await bcrypt.hash("admin123", 10);
-    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
-             VALUES ('admin',?,'administrador',?)`, [hashAdmin, rfcAdmin]);
+    await q(
+      `INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
+             VALUES ('admin',?,'administrador',?)`,
+      [hashAdmin, rfcAdmin],
+    );
     console.log("✓ Admin      → admin / admin123");
 
     // ── Maestros ──────────────────────────────────────────────────────────
     const rfc1 = "PELJ800101HVZ";
     const rfc2 = "GASM850215MVZ";
-    await q(`INSERT IGNORE INTO maestro
+    await q(
+      `INSERT IGNORE INTO maestro
                (rfc,nombre,apellido_paterno,apellido_materno,curp,correo_institucional,departamento)
              VALUES
                (?,'Juan','Pérez','López','PELJ800101HVZRPN01','jperez@itver.edu.mx','Sistemas Computacionales'),
                (?,'María','García','Soto','GASM850215MVZRTN02','mgarcia@itver.edu.mx','Sistemas Computacionales')`,
-      [rfc1, rfc2]);
+      [rfc1, rfc2],
+    );
     const hM1 = await bcrypt.hash("maestro123", 10);
     const hM2 = await bcrypt.hash("maestro456", 10);
-    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe01',?,'maestro',?)`, [hM1, rfc1]);
-    await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe02',?,'maestro',?)`, [hM2, rfc2]);
+    await q(
+      `INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe01',?,'maestro',?)`,
+      [hM1, rfc1],
+    );
+    await q(
+      `INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia) VALUES ('profe02',?,'maestro',?)`,
+      [hM2, rfc2],
+    );
     console.log(`✓ Maestros   → profe01/maestro123  |  profe02/maestro456`);
 
     // ── Materias ──────────────────────────────────────────────────────────
@@ -71,14 +85,16 @@ async function seed() {
     console.log("✓ Unidades   → 6 unidades (3 por materia)");
 
     // ── Grupos ────────────────────────────────────────────────────────────
-    await q(`INSERT IGNORE INTO grupo
+    await q(
+      `INSERT IGNORE INTO grupo
                (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,aula,horario)
              VALUES
                (1,'FBD001',?  ,1,35,'Aula 101','Lun-Mié-Vie 07:00-08:00'),
                (2,'FBD001',?  ,1,35,'Aula 102','Mar-Jue 10:00-12:00'),
                (3,'POO001',?  ,1,30,'Lab 201', 'Lun-Mié 09:00-11:00'),
                (4,'POO001',?  ,1,30,'Lab 202', 'Mar-Jue-Vie 13:00-14:00')`,
-      [rfc1, rfc2, rfc1, rfc2]);
+      [rfc1, rfc2, rfc1, rfc2],
+    );
     console.log("✓ Grupos     → 4 grupos (2 por materia)");
 
     // ── grupo_unidad (ponderaciones por unidad) ───────────────────────────
@@ -148,78 +164,156 @@ async function seed() {
 
     // ── Alumnos ───────────────────────────────────────────────────────────
     const alumnos = [
-      ["2023001","Carlos",  "Ramírez","Vega", "cramirz@itver.edu.mx", "alumno1","alumno123"],
-      ["2023002","Diana",   "López",  "Cruz", "dlopez@itver.edu.mx",  "alumno2","alumno456"],
-      ["2023003","Ernesto", "Martínez","Ruiz","emartinez@itver.edu.mx","alumno3","alumno789"],
-      ["2023004","Fernanda","Torres", "Díaz", "ftorres@itver.edu.mx", "alumno4","alumno000"],
+      [
+        "2023001",
+        "Carlos",
+        "Ramírez",
+        "Vega",
+        "cramirz@itver.edu.mx",
+        "alumno1",
+        "alumno123",
+      ],
+      [
+        "2023002",
+        "Diana",
+        "López",
+        "Cruz",
+        "dlopez@itver.edu.mx",
+        "alumno2",
+        "alumno456",
+      ],
+      [
+        "2023003",
+        "Ernesto",
+        "Martínez",
+        "Ruiz",
+        "emartinez@itver.edu.mx",
+        "alumno3",
+        "alumno789",
+      ],
+      [
+        "2023004",
+        "Fernanda",
+        "Torres",
+        "Díaz",
+        "ftorres@itver.edu.mx",
+        "alumno4",
+        "alumno000",
+      ],
     ];
     for (const [mat, nom, ap, am, correo, usr, pwd] of alumnos) {
-      await q(`INSERT IGNORE INTO alumno
+      await q(
+        `INSERT IGNORE INTO alumno
                  (no_control,id_carrera,nombre,apellido_paterno,apellido_materno,correo_institucional)
-               VALUES (?,'ISC',?,?,?,?)`, [mat, nom, ap, am, correo]);
+               VALUES (?,'ISC',?,?,?,?)`,
+        [mat, nom, ap, am, correo],
+      );
       const h = await bcrypt.hash(pwd, 10);
-      await q(`INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
-               VALUES (?,?,'alumno',?)`, [usr, h, mat]);
+      await q(
+        `INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
+               VALUES (?,?,'alumno',?)`,
+        [usr, h, mat],
+      );
     }
     console.log("✓ Alumnos    → 2023001–2023004 / alumno1..4");
 
     // ── Inscripciones ─────────────────────────────────────────────────────
     // Los 4 en Grupo 1 (FBD); 2023001 y 2023002 también en Grupo 3 (POO)
     const insc = [
-      ["2023001",1],["2023002",1],["2023003",1],["2023004",1],
-      ["2023001",3],["2023002",3],
+      ["2023001", 1],
+      ["2023002", 1],
+      ["2023003", 1],
+      ["2023004", 1],
+      ["2023001", 3],
+      ["2023002", 3],
     ];
-    for (const [mat,grp] of insc) {
-      await q(`INSERT IGNORE INTO inscripcion
+    for (const [mat, grp] of insc) {
+      await q(
+        `INSERT IGNORE INTO inscripcion
                  (no_control,id_grupo,fecha_inscripcion,estatus,tipo_curso)
-               VALUES (?  ,?,'2025-01-15','Cursando','Ordinario')`, [mat, grp]);
+               VALUES (?  ,?,'2025-01-15','Cursando','Ordinario')`,
+        [mat, grp],
+      );
     }
     console.log("✓ Inscrip.   → 4 en G1-FBD, 2 en G3-POO");
 
     // ── Calificaciones de actividades ─────────────────────────────────────
     // Grupo 1 FBD — Unidad 1 (actos 1,2,3)
     const calsG1U1 = [
-      ["2023001",1,85],["2023001",2,72],["2023001",3,90],
-      ["2023002",1,60],["2023002",2,55],["2023002",3,70],
-      ["2023003",1,95],["2023003",2,88],["2023003",3,80],
-      ["2023004",1,45],["2023004",2,50],["2023004",3,60],
+      ["2023001", 1, 85],
+      ["2023001", 2, 72],
+      ["2023001", 3, 90],
+      ["2023002", 1, 60],
+      ["2023002", 2, 55],
+      ["2023002", 3, 70],
+      ["2023003", 1, 95],
+      ["2023003", 2, 88],
+      ["2023003", 3, 80],
+      ["2023004", 1, 45],
+      ["2023004", 2, 50],
+      ["2023004", 3, 60],
     ];
     // Grupo 1 FBD — Unidad 2 (actos 6,7)
     const calsG1U2 = [
-      ["2023001",6,78],["2023001",7,81],
-      ["2023002",6,65],["2023002",7,68],
-      ["2023003",6,92],["2023003",7,95],
-      ["2023004",6,50],["2023004",7,55],
+      ["2023001", 6, 78],
+      ["2023001", 7, 81],
+      ["2023002", 6, 65],
+      ["2023002", 7, 68],
+      ["2023003", 6, 92],
+      ["2023003", 7, 95],
+      ["2023004", 6, 50],
+      ["2023004", 7, 55],
     ];
     // Grupo 1 FBD — Unidad 3 en curso (actos 8,9) — parcialmente registradas
     const calsG1U3 = [
-      ["2023001",8,88],["2023001",9,null],  // Proyecto pendiente
-      ["2023002",8,71],["2023002",9,null],
-      ["2023003",8,95],["2023003",9,null],
-      ["2023004",8,55],["2023004",9,null],
+      ["2023001", 8, 88],
+      ["2023001", 9, null], // Proyecto pendiente
+      ["2023002", 8, 71],
+      ["2023002", 9, null],
+      ["2023003", 8, 95],
+      ["2023003", 9, null],
+      ["2023004", 8, 55],
+      ["2023004", 9, null],
     ];
     // Grupo 3 POO — Unidad 4 (actos 10,11,12)
     const calsG3U4 = [
-      ["2023001",10,80],["2023001",11,75],["2023001",12,90],
-      ["2023002",10,65],["2023002",11,60],["2023002",12,70],
+      ["2023001", 10, 80],
+      ["2023001", 11, 75],
+      ["2023001", 12, 90],
+      ["2023002", 10, 65],
+      ["2023002", 11, 60],
+      ["2023002", 12, 70],
     ];
     // Grupo 3 POO — Unidad 5 (actos 13,14)
     const calsG3U5 = [
-      ["2023001",13,82],["2023001",14,78],
-      ["2023002",13,70],["2023002",14,65],
+      ["2023001", 13, 82],
+      ["2023001", 14, 78],
+      ["2023002", 13, 70],
+      ["2023002", 14, 65],
     ];
 
-    for (const [mat,act,cal] of [...calsG1U1,...calsG1U2,...calsG3U4,...calsG3U5]) {
-      await q(`INSERT IGNORE INTO resultado_actividad
+    for (const [mat, act, cal] of [
+      ...calsG1U1,
+      ...calsG1U2,
+      ...calsG3U4,
+      ...calsG3U5,
+    ]) {
+      await q(
+        `INSERT IGNORE INTO resultado_actividad
                  (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
-               VALUES (?,?,?,'Validada',?)`, [mat, act, cal, rfc1]);
+               VALUES (?,?,?,'Validada',?)`,
+        [mat, act, cal, rfc1],
+      );
     }
     // Unidad 3 en curso — solo los que tienen calificación
-    for (const [mat,act,cal] of calsG1U3) {
+    for (const [mat, act, cal] of calsG1U3) {
       if (cal !== null) {
-        await q(`INSERT IGNORE INTO resultado_actividad
+        await q(
+          `INSERT IGNORE INTO resultado_actividad
                    (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
-                 VALUES (?,?,?,'Validada',?)`, [mat, act, cal, rfc1]);
+                 VALUES (?,?,?,'Validada',?)`,
+          [mat, act, cal, rfc1],
+        );
       }
     }
     console.log("✓ Result.act → Unidades 1,2 cerradas; U3 parcial; POO U4,U5");
@@ -232,42 +326,47 @@ async function seed() {
     // Fernanda:45×0.20+50×0.60 +60×0.20   = 9+30+12    = 51.0
     const cu = [
       // [mat, id_unidad, id_grupo, prom, cal_final, est]
-      ["2023001",1,1, 78.20, 78.20,"Aprobada"],
-      ["2023002",1,1, 59.00, 59.00,"Reprobada"],
-      ["2023003",1,1, 87.80, 87.80,"Aprobada"],
-      ["2023004",1,1, 51.00, 51.00,"Reprobada"],
+      ["2023001", 1, 1, 78.2, 78.2, "Aprobada"],
+      ["2023002", 1, 1, 59.0, 59.0, "Reprobada"],
+      ["2023003", 1, 1, 87.8, 87.8, "Aprobada"],
+      ["2023004", 1, 1, 51.0, 51.0, "Reprobada"],
       // Unidad 2: ponds 30%/70%
       // Carlos: 78×0.30+81×0.70 = 23.4+56.7 = 80.1
       // Diana:  65×0.30+68×0.70 = 19.5+47.6 = 67.1
       // Ernesto:92×0.30+95×0.70 = 27.6+66.5 = 94.1
       // Fernanda:50×0.30+55×0.70= 15+38.5   = 53.5
-      ["2023001",2,1, 80.10, 80.10,"Aprobada"],
-      ["2023002",2,1, 67.10, 67.10,"Reprobada"],
-      ["2023003",2,1, 94.10, 97.10,"Aprobada"],  // +3 bonus
-      ["2023004",2,1, 53.50, 53.50,"Reprobada"],
+      ["2023001", 2, 1, 80.1, 80.1, "Aprobada"],
+      ["2023002", 2, 1, 67.1, 67.1, "Reprobada"],
+      ["2023003", 2, 1, 94.1, 97.1, "Aprobada"], // +3 bonus
+      ["2023004", 2, 1, 53.5, 53.5, "Reprobada"],
       // Grupo 3 POO — Unidad 4: ponds 40%/40%/20%
       // Carlos: 80×0.40+75×0.40+90×0.20 = 32+30+18 = 80.0
       // Diana:  65×0.40+60×0.40+70×0.20 = 26+24+14 = 64.0
-      ["2023001",4,3, 80.00, 80.00,"Aprobada"],
-      ["2023002",4,3, 64.00, 64.00,"Reprobada"],
+      ["2023001", 4, 3, 80.0, 80.0, "Aprobada"],
+      ["2023002", 4, 3, 64.0, 64.0, "Reprobada"],
       // Unidad 5: ponds 50%/50%
       // Carlos: 82×0.50+78×0.50 = 41+39 = 80.0
       // Diana:  70×0.50+65×0.50 = 35+32.5 = 67.5
-      ["2023001",5,3, 80.00, 80.00,"Aprobada"],
-      ["2023002",5,3, 67.50, 67.50,"Reprobada"],
+      ["2023001", 5, 3, 80.0, 80.0, "Aprobada"],
+      ["2023002", 5, 3, 67.5, 67.5, "Reprobada"],
     ];
-    for (const [mat,idu,idg,prom,cal,est] of cu) {
-      await q(`INSERT IGNORE INTO calificacion_unidad
+    for (const [mat, idu, idg, prom, cal, est] of cu) {
+      await q(
+        `INSERT IGNORE INTO calificacion_unidad
                  (no_control,id_unidad,id_grupo,promedio_ponderado,calificacion_unidad_final,estatus_unidad)
-               VALUES (?,?,?,?,?,?)`, [mat, idu, idg, prom, cal, est]);
+               VALUES (?,?,?,?,?,?)`,
+        [mat, idu, idg, prom, cal, est],
+      );
     }
     console.log("✓ Cal.unidad → Unidades 1 y 2 G1-FBD; U4,U5 G3-POO");
 
     // ── Bonus de unidad (2023003 en Unidad 2 del Grupo 1) ────────────────
-    await q(`INSERT IGNORE INTO bonusunidad
+    await q(
+      `INSERT IGNORE INTO bonusunidad
                (no_control,id_unidad,id_grupo,rfc,puntos_otorgados,justificacion,fecha_asignacion,estatus)
              VALUES ('2023003',2,1,?,3.00,'Excelente participación y liderazgo en proyecto','2025-03-15','Activo')`,
-      [rfc1]);
+      [rfc1],
+    );
     console.log("✓ BonusUnidad→ 3 pts a 2023003 en U2-G1");
 
     // ── Calificación final (promedio de unidades 1 y 2) ───────────────────
@@ -278,36 +377,43 @@ async function seed() {
     // Ernesto: (87.8+97.1)/2  = 92.45 → 92  (U2 incluye bonus)
     // Fernanda:(51.0+53.5)/2  = 52.25 → 52
     const cf = [
-      ["2023001",1, 79.15, 79.00,"Aprobado"],
-      ["2023002",1, 63.05, 63.00,"Reprobado"],
-      ["2023003",1, 92.45, 92.00,"Aprobado"],
-      ["2023004",1, 52.25, 52.00,"Reprobado"],
+      ["2023001", 1, 79.15, 79.0, "Aprobado"],
+      ["2023002", 1, 63.05, 63.0, "Reprobado"],
+      ["2023003", 1, 92.45, 92.0, "Aprobado"],
+      ["2023004", 1, 52.25, 52.0, "Reprobado"],
       // POO Grupo 3 — solo 2 unidades cerradas
-      ["2023001",3, 80.00, 80.00,"Aprobado"],
-      ["2023002",3, 65.75, 65.00,"Reprobado"],
+      ["2023001", 3, 80.0, 80.0, "Aprobado"],
+      ["2023002", 3, 65.75, 65.0, "Reprobado"],
     ];
-    for (const [mat,idg,prom,oficial,est] of cf) {
-      await q(`INSERT IGNORE INTO calificacion_final
+    for (const [mat, idg, prom, oficial, est] of cf) {
+      await q(
+        `INSERT IGNORE INTO calificacion_final
                  (no_control,id_grupo,promedio_unidades,calificacion_oficial,estatus_final)
-               VALUES (?,?,?,?,?)`, [mat, idg, prom, oficial, est]);
+               VALUES (?,?,?,?,?)`,
+        [mat, idg, prom, oficial, est],
+      );
     }
     console.log("✓ Cal.final  → G1-FBD y G3-POO calculadas");
 
     // ── Bonus final (2023002 en Grupo 1, +8 pts para aprobar) ────────────
-    await q(`INSERT IGNORE INTO bonusfinal
+    await q(
+      `INSERT IGNORE INTO bonusfinal
                (no_control,id_grupo,rfc,puntos_otorgados,justificacion,fecha_asignacion,estatus)
              VALUES ('2023002',1,?,8.00,'Reconocimiento por mejora continua y asistencia perfecta','2025-05-10','Activo')`,
-      [rfc1]);
+      [rfc1],
+    );
     await q(`UPDATE calificacion_final
              SET calificacion_oficial=71, estatus_final='Aprobado'
              WHERE no_control='2023002' AND id_grupo=1`);
     console.log("✓ BonusFinal → 8 pts a 2023002 G1 (63→71 Aprobado)");
 
     // ── Modificación final (2023004 en Grupo 1) ──────────────────────────
-    await q(`INSERT IGNORE INTO modificacionfinal
+    await q(
+      `INSERT IGNORE INTO modificacionfinal
                (no_control,id_grupo,rfc,calif_original,calif_modificada,justificacion,fecha_modificacion,estatus)
              VALUES ('2023004',1,?,52.00,70.00,'Corrección por error en captura de examen final acordada en academia','2025-05-20 10:30:00','Aplicado')`,
-      [rfc1]);
+      [rfc1],
+    );
     await q(`UPDATE calificacion_final
              SET calificacion_oficial=70, estatus_final='Aprobado'
              WHERE no_control='2023004' AND id_grupo=1`);
@@ -321,9 +427,15 @@ async function seed() {
     console.log(`  profe01            / maestro123  (Juan Pérez)`);
     console.log(`  profe02            / maestro456  (María García)`);
     console.log("  alumno1            / alumno123   (Carlos Ramírez  2023001)");
-    console.log("  alumno2            / alumno456   (Diana López      2023002)");
-    console.log("  alumno3            / alumno789   (Ernesto Martínez 2023003)");
-    console.log("  alumno4            / alumno000   (Fernanda Torres  2023004)");
+    console.log(
+      "  alumno2            / alumno456   (Diana López      2023002)",
+    );
+    console.log(
+      "  alumno3            / alumno789   (Ernesto Martínez 2023003)",
+    );
+    console.log(
+      "  alumno4            / alumno000   (Fernanda Torres  2023004)",
+    );
     console.log("─────────────────────────────────────────────────────");
     console.log("  ESCENARIOS DEMOSTRADOS:");
     console.log("  • 2 materias × 2 grupos (actividades distintas = RN1,RN2)");

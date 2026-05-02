@@ -664,7 +664,7 @@
     </div>
 
     <script>
-      const BASE_URL = "http://localhost:3000";
+      const API_URL = "http://localhost:3000";
 
       function seleccionarRol(btn) {
         document
@@ -716,7 +716,7 @@
         btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Verificando...`;
 
         try {
-          const res = await fetch(`${BASE_URL}/login`, {
+          const res = await fetch(`${API_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password, rol }),

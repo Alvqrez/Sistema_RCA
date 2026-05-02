@@ -918,7 +918,7 @@ async function guardarDesdeModal() {
     const idAct = parseInt(inp.dataset.actividad);
     const cal = inp.value.trim() === "" ? null : clampCal(inp.value);
     try {
-      const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
+      const res = await fetch(`${API_URL}/api/resultado-actividad/bulk`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -985,7 +985,7 @@ async function guardarGradesDirectos() {
   if (!hayGrades) return;
 
   try {
-    await fetch(`${BASE_URL_FORM}/api/calificaciones/guardar-directos`, {
+    await fetch(`${API_URL}/api/calificaciones/guardar-directos`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1006,7 +1006,7 @@ async function cargarGradesDirectos() {
   if (!estado.grupoId || !estado.unidadId) return;
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/calificaciones/directos/${estado.grupoId}/${estado.unidadId}`,
+      `${API_URL}/api/calificaciones/directos/${estado.grupoId}/${estado.unidadId}`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     if (!res.ok) return;
@@ -1076,7 +1076,7 @@ async function _ejecutarGuardado() {
         });
       });
     if (!resultados.length) continue;
-    const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
+    const res = await fetch(`${API_URL}/api/resultado-actividad/bulk`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1154,22 +1154,19 @@ async function _ejecutarCierre() {
         }
       });
 
-    const res = await fetch(
-      `${BASE_URL_FORM}/api/calificaciones/calcular-unidad`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token()}`,
-        },
-        body: JSON.stringify({
-          no_control: al.no_control,
-          id_unidad: estado.unidadId,
-          id_grupo: estado.grupoId,
-          ...rubrosDirectos,
-        }),
+    const res = await fetch(`${API_URL}/api/calificaciones/calcular-unidad`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
       },
-    );
+      body: JSON.stringify({
+        no_control: al.no_control,
+        id_unidad: estado.unidadId,
+        id_grupo: estado.grupoId,
+        ...rubrosDirectos,
+      }),
+    });
     const d = await res.json();
     if (!d.success) errores++;
   }
@@ -1249,7 +1246,7 @@ async function guardarBonusUnidad() {
       continue;
     }
     try {
-      const res = await fetch(`${BASE_URL_FORM}/api/bonus/unidad`, {
+      const res = await fetch(`${API_URL}/api/bonus/unidad`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1387,7 +1384,7 @@ function procesarCSV(file) {
 }
 async function aplicarCSV(id_actividad) {
   if (!window._csvDatos?.length) return;
-  const res = await fetch(`${BASE_URL_FORM}/api/resultado-actividad/bulk`, {
+  const res = await fetch(`${API_URL}/api/resultado-actividad/bulk`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1435,17 +1432,14 @@ async function recalcularCalificacionesFinal() {
 
   for (const no_control of no_controls) {
     try {
-      const res = await fetch(
-        `${BASE_URL_FORM}/api/calificaciones/calcular-final`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token()}`,
-          },
-          body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
+      const res = await fetch(`${API_URL}/api/calificaciones/calcular-final`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
         },
-      );
+        body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
+      });
       const d = await res.json();
       d.success ? ok++ : err++;
     } catch {
@@ -1467,10 +1461,9 @@ async function calcularVistaFinal() {
 
   let reporteData = null;
   try {
-    const res = await fetch(
-      `${BASE_URL_FORM}/api/reportes/grupo/${estado.grupoId}`,
-      { headers: { Authorization: `Bearer ${token()}` } },
-    );
+    const res = await fetch(`${API_URL}/api/reportes/grupo/${estado.grupoId}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
     if (res.ok) reporteData = await res.json();
   } catch (_) {}
 
@@ -1577,17 +1570,14 @@ async function guardarCalificacionesFinal() {
     const no_control = fila.dataset.no_control;
     if (!fila.dataset.final) continue;
     try {
-      const res = await fetch(
-        `${BASE_URL_FORM}/api/calificaciones/calcular-final`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token()}`,
-          },
-          body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
+      const res = await fetch(`${API_URL}/api/calificaciones/calcular-final`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
         },
-      );
+        body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
+      });
       const d = await res.json();
       d.success ? guardados++ : errores++;
     } catch {
@@ -1618,10 +1608,10 @@ async function renderBonusFinalTabla() {
 
   // Cargar calificaciones finales y bonuses existentes en paralelo
   const [resCF, resBF] = await Promise.all([
-    fetch(`${BASE_URL_FORM}/api/calificaciones/grupo/${estado.grupoId}`, {
+    fetch(`${API_URL}/api/calificaciones/grupo/${estado.grupoId}`, {
       headers: { Authorization: `Bearer ${token()}` },
     }),
-    fetch(`${BASE_URL_FORM}/api/bonus/final/grupo/${estado.grupoId}`, {
+    fetch(`${API_URL}/api/bonus/final/grupo/${estado.grupoId}`, {
       headers: { Authorization: `Bearer ${token()}` },
     }),
   ]);
@@ -1739,7 +1729,7 @@ async function guardarBonusFinal() {
     return mostrarToast("La justificación es obligatoria", "error");
 
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/bonus/final`, {
+    const res = await fetch(`${API_URL}/api/bonus/final`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1786,7 +1776,7 @@ async function renderModificacionFinalTabla() {
 
   // Cargar modificaciones existentes del grupo
   const resModif = await fetch(
-    `${BASE_URL_FORM}/api/modificacion-final/grupo/${estado.grupoId}`,
+    `${API_URL}/api/modificacion-final/grupo/${estado.grupoId}`,
     { headers: { Authorization: `Bearer ${token()}` } },
   ).catch(() => null);
   const modifs = resModif && resModif.ok ? await resModif.json() : [];
@@ -1870,7 +1860,7 @@ async function guardarModificacionFinal() {
     return mostrarToast("La justificación es obligatoria", "error");
 
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/modificacion-final`, {
+    const res = await fetch(`${API_URL}/api/modificacion-final`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1907,7 +1897,7 @@ async function revertirBonusFinal(no_control) {
     async () => {
       try {
         const res = await fetch(
-          `${BASE_URL_FORM}/api/bonus/final/${no_control}/${estado.grupoId}`,
+          `${API_URL}/api/bonus/final/${no_control}/${estado.grupoId}`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } },
         );
         const d = await res.json();
@@ -1932,7 +1922,7 @@ async function revertirModificacionFinal(no_control) {
     async () => {
       try {
         const res = await fetch(
-          `${BASE_URL_FORM}/api/modificacion-final/${no_control}/${estado.grupoId}`,
+          `${API_URL}/api/modificacion-final/${no_control}/${estado.grupoId}`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } },
         );
         const d = await res.json();

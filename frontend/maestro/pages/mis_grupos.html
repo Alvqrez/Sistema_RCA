@@ -192,7 +192,7 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const BASE_URL = "http://localhost:3000";
+      const API_URL = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
 
       function parsearToken(t) {
@@ -211,14 +211,14 @@
           // Try /mis-grupos, fallback to filtered /grupos
           let grupos = [];
           try {
-            const r = await fetch(`${BASE_URL}/api/grupos/mis-grupos`, {
+            const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             if (r.ok) grupos = await r.json();
           } catch (_) {}
 
           if (!Array.isArray(grupos) || !grupos.length) {
-            const r2 = await fetch(`${BASE_URL}/api/grupos`, {
+            const r2 = await fetch(`${API_URL}/api/grupos`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             const todos = await r2.json();

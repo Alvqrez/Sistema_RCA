@@ -493,7 +493,7 @@ async function guardarConfigUnidad(id_grupo, id_unidad) {
   let serverError = "";
   for (const rid of idsReales) {
     try {
-      const res = await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
+      const res = await fetch(`${API_URL}/api/config-evaluacion`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

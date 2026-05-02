@@ -180,10 +180,10 @@ form.addEventListener("submit", async function (e) {
     return;
   }
 
-  let url = `${BASE_URL}/api/materias`;
+  let url = `${API_URL}/api/materias`;
   let method = "POST";
   if (materiaEditando) {
-    url = `${BASE_URL}/api/materias/${materiaEditando}`;
+    url = `${API_URL}/api/materias/${materiaEditando}`;
     method = "PUT";
     delete materia.clave_materia;
   } else {
@@ -212,13 +212,13 @@ form.addEventListener("submit", async function (e) {
 
     // Guardar vínculos de carreras en retícula
     for (const c of carrerasEliminar) {
-      await fetch(`${BASE_URL}/api/materias/${clave}/carreras/${c}`, {
+      await fetch(`${API_URL}/api/materias/${clave}/carreras/${c}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
     }
     for (const c of carrerasPendientes) {
-      await fetch(`${BASE_URL}/api/materias/${clave}/carreras`, {
+      await fetch(`${API_URL}/api/materias/${clave}/carreras`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -244,7 +244,7 @@ form.addEventListener("submit", async function (e) {
 async function editarMateria(clave) {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${BASE_URL}/api/materias/${clave}`, {
+    const res = await fetch(`${API_URL}/api/materias/${clave}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error();
@@ -298,7 +298,7 @@ async function eliminarMateria(clave) {
     return;
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${BASE_URL}/api/materias/${clave}`, {
+    const res = await fetch(`${API_URL}/api/materias/${clave}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -398,7 +398,7 @@ async function importarCSVMaterias() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Importando…`;
   try {
-    const r = await fetch(`${BASE_URL}/api/materias/csv`, {
+    const r = await fetch(`${API_URL}/api/materias/csv`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -428,7 +428,7 @@ async function importarCSVMaterias() {
 async function exportarCSVMaterias() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/materias`, {
+    const r = await fetch(`${API_URL}/api/materias`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const materias = await r.json();

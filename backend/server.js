@@ -99,6 +99,7 @@ app.post("/login", (req, res) => {
 });
 
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
+
 // ADMIN
 app.use("/api/alumnos", require("./src/routes/admin/alumnos"));
 app.use("/api/maestros", require("./src/routes/admin/maestros"));
@@ -106,14 +107,7 @@ app.use("/api/inscripciones", require("./src/routes/admin/inscripciones"));
 app.use("/api/admin", require("./src/routes/admin/admin"));
 app.use("/api/carreras", require("./src/routes/admin/carreras"));
 app.use("/api/periodos", require("./src/routes/admin/periodos"));
-app.use(
-  "/api/tipo-actividades",
-  require("./src/routes/admin/tipo_actividades"),
-);
-app.use(
-  "/api/materia-actividades",
-  require("./src/routes/admin/materia_actividades"),
-);
+app.use("/api/materias", require("./src/routes/admin/materias")); // ← era shared/materias (no existe)
 
 // MAESTRO
 app.use("/api/actividades", require("./src/routes/maestro/actividades"));
@@ -127,16 +121,23 @@ app.use(
   require("./src/routes/maestro/resultado_actividad"),
 );
 app.use("/api/bonus", require("./src/routes/maestro/bonus"));
-app.use(
-  "/api/modificacion-final",
-  require("./src/routes/maestro/modificacion_final"),
-);
+app.use("/api/unidades", require("./src/routes/maestro/unidades")); // ← era shared/unidades (no existe)
 
 // SHARED
 app.use("/api/grupos", require("./src/routes/shared/grupos"));
-app.use("/api/materias", require("./src/routes/shared/materias"));
-app.use("/api/unidades", require("./src/routes/shared/unidades"));
 app.use("/api/reportes", require("./src/routes/shared/reportes"));
+app.use(
+  "/api/tipo-actividades",
+  require("./src/routes/shared/tipo_actividades"),
+); // ← era admin/ (no existe)
+app.use(
+  "/api/materia-actividades",
+  require("./src/routes/shared/materia_actividades"),
+); // ← era admin/ (no existe)
+app.use(
+  "/api/modificacion-final",
+  require("./src/routes/shared/modificacion_final"),
+); // ← era maestro/ (no existe)
 
 app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),

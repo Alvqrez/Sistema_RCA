@@ -292,7 +292,7 @@ async function guardarUnidades() {
   try {
     // 1. Guardar nombres de unidades
     const res = await fetch(
-      `${BASE_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
       {
         method: "POST",
         headers: {
@@ -316,7 +316,7 @@ async function guardarUnidades() {
 
     await Promise.all(
       resultados.map((r) =>
-        fetch(`${BASE_URL}/api/unidades/${r.id}/tipos`, {
+        fetch(`${API_URL}/api/unidades/${r.id}/tipos`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -334,7 +334,7 @@ async function guardarUnidades() {
 
     // Recargar datos
     const resGet = await fetch(
-      `${BASE_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}`,
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     unidadesGuardadas = resGet.ok ? await resGet.json() : [];
@@ -495,7 +495,7 @@ let actividadesMateria = []; // cache
 async function cargarActividadesMateria(clave) {
   try {
     const res = await fetch(
-      `${BASE_URL}/api/materia-actividades/materia/${encodeURIComponent(clave)}`,
+      `${API_URL}/api/materia-actividades/materia/${encodeURIComponent(clave)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -603,7 +603,7 @@ async function agregarActividadMateria(idUnidad, claveMateria) {
   }
 
   try {
-    const res = await fetch(`${BASE_URL}/api/materia-actividades`, {
+    const res = await fetch(`${API_URL}/api/materia-actividades`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -632,7 +632,7 @@ async function agregarActividadMateria(idUnidad, claveMateria) {
 
 async function eliminarActividadMateria(id, claveMateria) {
   try {
-    const res = await fetch(`${BASE_URL}/api/materia-actividades/${id}`, {
+    const res = await fetch(`${API_URL}/api/materia-actividades/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
