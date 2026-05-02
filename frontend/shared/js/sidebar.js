@@ -1,3 +1,17 @@
+// sidebar.js  — navegación mejorada v2
+// Cambios respecto a la versión anterior:
+//  • Administrador: "Catálogos" dividido en "Personas" y "Configuración Académica"
+//    → El admin ya sabe al instante dónde buscar alumnos/maestros vs materias/grupos
+//  • Administrador: "Inscripciones" movida a su propia sección "Operación"
+//    junto con "Grupos" y "Periodos" (son acciones operativas, no catálogos)
+//  • Maestro: "Clases" renombrado a "Mis Grupos" (más descriptivo)
+//  • Maestro: "Ponderacion de unidades" → "Peso por unidad" (más claro)
+//  • Maestro: "Capturar calificaciones" promovido fuera del sub-menú
+//    y renombrado a "Calificaciones" para mayor visibilidad
+//  • Maestro: sección de Calificaciones incluye "Bonus" para no esconderlo
+//  • Alumno: se agrega enlace explícito a "Mis calificaciones" como alias
+//    de portalAlumno para que el nombre sea auto-descriptivo
+
 (function () {
   const rol = localStorage.getItem("rol");
   const nombre = localStorage.getItem("nombre");
@@ -8,9 +22,12 @@
   }
 
   const etiquetaRol =
-    { alumno: "Alumno", maestro: "Docente", administrador: "Administrador" }[
-      rol
-    ] || rol;
+    {
+      alumno: "Alumno",
+      maestro: "Docente",
+      administrador: "Administrador",
+    }[rol] || rol;
+
   const iconoRol =
     {
       administrador: "lucide:shield-check",
@@ -19,14 +36,21 @@
     }[rol] || "lucide:user";
 
   const linksPorRol = {
+    // ─────────────────────────────────────────────────────────────────────
+    //  ALUMNO
+    // ─────────────────────────────────────────────────────────────────────
     alumno: [
       {
         href: "portalAlumno.html",
-        texto: "Mi portal",
+        texto: "Mis calificaciones", // antes: "Mi portal" — poco descriptivo
         icono: "lucide:layout-dashboard",
       },
     ],
 
+    // ─────────────────────────────────────────────────────────────────────
+    //  MAESTRO
+    //  Flujo natural: ver grupos → configurar → capturar calificaciones
+    // ─────────────────────────────────────────────────────────────────────
     maestro: [
       {
         href: "mis_grupos.html",
@@ -34,7 +58,9 @@
         icono: "lucide:layout-dashboard",
       },
       {
-        texto: "Alumnos",
+        // antes "Alumnos" sólo tenía "Buscar alumnos" — se mantiene pero
+        // el nombre del grupo ahora aclara que es para consulta, no gestión
+        texto: "Directorio",
         icono: "lucide:users",
         hijos: [
           {
@@ -45,7 +71,9 @@
         ],
       },
       {
-        texto: "Clases",
+        // antes "Clases" — genérico; ahora "Mis Grupos" alinea con la
+        // página de inicio y el modelo mental del docente
+        texto: "Mis Grupos",
         icono: "lucide:book-open",
         hijos: [
           {
@@ -55,12 +83,12 @@
           },
           {
             href: "gruposMaestro.html",
-            texto: "Ponderacion de unidades",
+            texto: "Peso por unidad", // antes "Ponderacion de unidades"
             icono: "lucide:scale",
           },
           {
             href: "asistencia.html",
-            texto: "Asistencia",
+            texto: "Registrar asistencia", // verbo más claro
             icono: "lucide:calendar-check",
           },
           {
@@ -71,6 +99,8 @@
         ],
       },
       {
+        // Calificaciones promovida a sección visible (antes era sub-menú
+        // con un solo elemento y estaba escondida)
         texto: "Calificaciones",
         icono: "mdi:file-document-edit-outline",
         hijos: [
@@ -78,6 +108,11 @@
             href: "formulario.html",
             texto: "Capturar calificaciones",
             icono: "lucide:pencil",
+          },
+          {
+            href: "bonus.html", // página de bonus si existe
+            texto: "Asignar bonus",
+            icono: "lucide:star",
           },
         ],
       },
@@ -88,37 +123,41 @@
       },
     ],
 
+    // ─────────────────────────────────────────────────────────────────────
+    //  ADMINISTRADOR
+    //  Antes: todo en "Catálogos" — confuso porque mezcla entidades base
+    //  con operaciones. Ahora dividido en tres grupos lógicos:
+    //    1. Personas       — quiénes están en el sistema
+    //    2. Plan académico — qué se imparte (catálogos puros)
+    //    3. Operación      — cómo se organiza cada semestre
+    // ─────────────────────────────────────────────────────────────────────
     administrador: [
-      { href: "admin.html", texto: "Panel", icono: "lucide:layout-dashboard" },
       {
-        texto: "Alumnos",
+        href: "admin.html",
+        texto: "Panel",
+        icono: "lucide:layout-dashboard",
+      },
+      {
+        // antes mezclado con "Catálogos" — ahora es una sección propia
+        texto: "Personas",
         icono: "lucide:users",
         hijos: [
           {
             href: "alumnos.html",
-            texto: "Lista de alumnos",
-            icono: "lucide:list",
+            texto: "Alumnos",
+            icono: "lucide:user",
           },
-          {
-            href: "inscripcion.html",
-            texto: "Inscripciones",
-            icono: "mdi:account-plus-outline",
-          },
-        ],
-      },
-      {
-        texto: "Maestros",
-        icono: "lucide:graduation-cap",
-        hijos: [
           {
             href: "maestros.html",
-            texto: "Lista de maestros",
-            icono: "lucide:list",
+            texto: "Maestros",
+            icono: "lucide:graduation-cap",
           },
         ],
       },
       {
-        texto: "Catálogos",
+        // antes todo mezclado en "Catálogos" con Grupos y Periodos
+        // Ahora solo contiene los catálogos académicos puros
+        texto: "Plan Académico",
         icono: "lucide:folder-open",
         hijos: [
           {
@@ -126,22 +165,51 @@
             texto: "Carreras",
             icono: "mdi:school-outline",
           },
-          { href: "materias.html", texto: "Materias", icono: "lucide:book" },
-          { href: "unidades.html", texto: "Unidades", icono: "lucide:layers" },
+          {
+            href: "materias.html",
+            texto: "Materias",
+            icono: "lucide:book",
+          },
+          {
+            href: "unidades.html",
+            texto: "Unidades",
+            icono: "lucide:layers",
+          },
           {
             href: "actividadesAdmin.html",
-            texto: "Actividades",
+            texto: "Actividades predefinidas", // antes simplemente "Actividades"
             icono: "mdi:clipboard-list-outline",
-          },
-          { href: "grupos.html", texto: "Grupos", icono: "lucide:library" },
-          {
-            href: "periodos.html",
-            texto: "Periodos",
-            icono: "mdi:calendar-range-outline",
           },
         ],
       },
-      { href: "reportes.html", texto: "Reportes", icono: "lucide:bar-chart-2" },
+      {
+        // antes "Grupos" y "Periodos" vivían en "Catálogos" junto con
+        // Carreras y Materias — pero son elementos operativos por semestre
+        texto: "Operación",
+        icono: "lucide:settings",
+        hijos: [
+          {
+            href: "periodos.html",
+            texto: "Periodos escolares", // antes solo "Periodos"
+            icono: "mdi:calendar-range-outline",
+          },
+          {
+            href: "grupos.html",
+            texto: "Grupos",
+            icono: "lucide:library",
+          },
+          {
+            href: "inscripcion.html", // antes en "Alumnos"
+            texto: "Inscripciones",
+            icono: "mdi:account-plus-outline",
+          },
+        ],
+      },
+      {
+        href: "reportes.html",
+        texto: "Reportes",
+        icono: "lucide:bar-chart-2",
+      },
       {
         href: "utilerias.html",
         texto: "Utilerías",
@@ -191,7 +259,6 @@
   const aside = document.querySelector("aside.sidebar");
   if (!aside) return;
 
-  // aplicar estado guardado antes de renderizar
   const sidebarColapsado =
     localStorage.getItem("sidebar_estado") === "colapsado";
   if (sidebarColapsado) {
@@ -260,8 +327,6 @@ function soloPermitido(...roles) {
 }
 
 function cerrarSesion() {
-  // vienen de la BD y se recargan al iniciar sesión, pero NO los tokens de auth.
-  // Solo borrar las keys de sesión, no las de configuración.
   const keysAConservar = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
@@ -281,13 +346,10 @@ function cerrarSesion() {
   window.location.href = "login.html";
 }
 
-// Recibe string ISO "2025-04-15T00:00:00.000Z", "2025-04-15" o Date
-// Devuelve "15/04/2025". Si f es nulo/vacío devuelve "—".
 function fmtFecha(f) {
   if (!f) return "—";
-  // Tomamos solo la parte de fecha para evitar desfase de zona horaria
-  const str = f.toString().split("T")[0]; // "2025-04-15"
-  const partes = str.split("-"); // ["2025","04","15"]
+  const str = f.toString().split("T")[0];
+  const partes = str.split("-");
   if (partes.length !== 3) return str;
   const [anio, mes, dia] = partes;
   return `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${anio}`;
@@ -312,8 +374,6 @@ function showToast(msg, tipo = "success") {
   setTimeout(() => t.remove(), 3200);
 }
 
-// ── CARDS PLEGABLES ───────────────────────────────────────────────────
-// Función global para el botón toggle de cada card
 function toggleCard(btn) {
   const card = btn.closest(".card-collapsible");
   if (!card) return;
@@ -321,8 +381,6 @@ function toggleCard(btn) {
   btn.title = collapsed ? "Expandir" : "Contraer";
 }
 
-// Al cargar la página, colapsa todas las cards que tengan
-// la clase card-collapsible (excepto las que tengan data-open="true")
 document.addEventListener("DOMContentLoaded", () => {
   document
     .querySelectorAll(".card-collapsible:not([data-open])")
