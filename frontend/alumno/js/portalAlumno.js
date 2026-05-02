@@ -26,8 +26,15 @@ async function cargarDatosAlumno() {
     const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!r.ok) {
+    // Solo redirigir al login si el token es inválido/expirado
+    if (r.status === 401 || r.status === 403) {
       window.location.href = "../../shared/pages/login.html";
+      return;
+    }
+    if (!r.ok) {
+      // Error de servidor o alumno no encontrado — mostrar aviso sin expulsar
+      const el = document.getElementById("heroNombre");
+      if (el) el.textContent = "No se pudo cargar el perfil";
       return;
     }
     const a = await r.json();

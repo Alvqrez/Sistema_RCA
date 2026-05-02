@@ -205,13 +205,17 @@ window.API_URL = "http://localhost:3000";
     if (link.separador) {
       return `<div class="nav-group-label">${link.separador}</div>`;
     }
+    // Extraer solo el nombre de archivo para comparar con paginaActual
+    const getFilename = (href) =>
+      href ? href.split("/").pop().split("?")[0].split("#")[0] : "";
+
     if (link.hijos) {
       const algunoActivo = link.hijos.some(
-        (h) => h.href && h.href.split("#")[0] === paginaActual,
+        (h) => h.href && getFilename(h.href) === paginaActual,
       );
       const hijosHTML = link.hijos
         .map((h) => {
-          const pg = h.href.split("#")[0];
+          const pg = getFilename(h.href);
           return `<a href="${h.href}" class="submenu-item ${pg === paginaActual ? "active" : ""}">
           <iconify-icon icon="${h.icono}"></iconify-icon><span>${h.texto}</span>
         </a>`;
@@ -226,7 +230,8 @@ window.API_URL = "http://localhost:3000";
         <div class="submenu">${hijosHTML}</div>
       </div>`;
     }
-    return `<a href="${link.href}" class="${link.href === paginaActual ? "active" : ""}">
+    const linkPage = getFilename(link.href);
+    return `<a href="${link.href}" class="${linkPage === paginaActual ? "active" : ""}">
       <iconify-icon icon="${link.icono}"></iconify-icon><span>${link.texto}</span>
     </a>`;
   }
@@ -240,6 +245,9 @@ window.API_URL = "http://localhost:3000";
     aside.classList.add("collapsed");
     document.body.classList.add("sidebar-collapsed");
   }
+
+  // Obtener el título h1 de la página para mostrarlo en el sidebar colapsado
+  const tituloPagina = document.querySelector("h1")?.textContent?.trim() || "";
 
   aside.innerHTML = `
     <div class="sidebar-accent-bar"></div>
