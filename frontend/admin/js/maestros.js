@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function cargarMaestros() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/maestros`, {
+    const r = await fetch(`${API_URL}/api/maestros`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (r.status === 401) {

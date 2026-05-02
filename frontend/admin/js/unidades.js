@@ -2,7 +2,7 @@
 // Admin: configura nombres de unidades + tipos de actividad a nivel MATERIA
 // Los tipos elegidos se aplican IGUAL a todas las unidades de esa materia.
 
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const rol = localStorage.getItem("rol");
 const token = localStorage.getItem("token");
 
@@ -42,7 +42,7 @@ function escHtml(str) {
 // ─── Catálogo de tipos ─────────────────────────────────────────────────────────
 async function cargarTiposCatalogo() {
   try {
-    const res = await fetch(`${BASE_URL}/api/tipo-actividades`, {
+    const res = await fetch(`${API_URL}/api/tipo-actividades`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     tiposCatalogo = res.ok ? await res.json() : [];
@@ -54,7 +54,7 @@ async function cargarTiposCatalogo() {
 // ─── Selector de materia ───────────────────────────────────────────────────────
 async function poblarSelectMaterias() {
   try {
-    const res = await fetch(`${BASE_URL}/api/materias`, {
+    const res = await fetch(`${API_URL}/api/materias`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.status === 401 || res.status === 403) {
@@ -120,7 +120,7 @@ async function cargarConfiguracion() {
   // Traer unidades existentes
   try {
     const res = await fetch(
-      `${BASE_URL}/api/unidades/materia/${encodeURIComponent(clave)}`,
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(clave)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -135,7 +135,7 @@ async function cargarConfiguracion() {
   if (unidadesGuardadas.length > 0) {
     try {
       const r = await fetch(
-        `${BASE_URL}/api/unidades/${unidadesGuardadas[0].id_unidad}/tipos`,
+        `${API_URL}/api/unidades/${unidadesGuardadas[0].id_unidad}/tipos`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },

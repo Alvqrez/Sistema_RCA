@@ -1,5 +1,5 @@
 // frontend/js/grupos.js
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
 
@@ -18,7 +18,7 @@ async function cargarPeriodosSelect() {
   const sel = document.getElementById("idPeriodo");
   if (!sel) return;
   try {
-    const res = await fetch(`${BASE_URL}/api/periodos`, {
+    const res = await fetch(`${API_URL}/api/periodos`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const periodos = await res.json();
@@ -35,7 +35,7 @@ async function cargarMateriasSelect() {
   const token = localStorage.getItem("token");
   const sel = document.getElementById("claveMateria");
   if (!sel) return;
-  const res = await fetch(`${BASE_URL}/api/materias`, {
+  const res = await fetch(`${API_URL}/api/materias`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const materias = await res.json();
@@ -49,7 +49,7 @@ async function cargarMaestrosSelect() {
   const token = localStorage.getItem("token");
   const sel = document.getElementById("numeroEmpleado");
   if (!sel) return;
-  const res = await fetch(`${BASE_URL}/api/maestros`, {
+  const res = await fetch(`${API_URL}/api/maestros`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const maestros = await res.json();
@@ -142,7 +142,7 @@ async function guardarNuevoGrupo() {
   // Validar que la materia tenga unidades configuradas
   try {
     const resU = await fetch(
-      `${BASE_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -160,7 +160,7 @@ async function guardarNuevoGrupo() {
   // Ocultar banner antes de enviar
   document.getElementById("conflictBanner").classList.remove("visible");
 
-  const res = await fetch(`${BASE_URL}/api/grupos`, {
+  const res = await fetch(`${API_URL}/api/grupos`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -195,7 +195,7 @@ async function cargarGrupos() {
   const tabla = document.getElementById("tablaGrupos");
   let grupos;
   try {
-    const response = await fetch(`${BASE_URL}/api/grupos`, {
+    const response = await fetch(`${API_URL}/api/grupos`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.status === 401 || response.status === 403) {
@@ -289,7 +289,7 @@ async function eliminarGrupo(id) {
   )
     return;
   const token = localStorage.getItem("token");
-  const res = await fetch(`${BASE_URL}/api/grupos/${id}`, {
+  const res = await fetch(`${API_URL}/api/grupos/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -396,7 +396,7 @@ async function importarCSVGrupos() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Importando...`;
   try {
-    const r = await fetch(`${BASE_URL}/api/grupos/csv`, {
+    const r = await fetch(`${API_URL}/api/grupos/csv`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -422,7 +422,7 @@ async function importarCSVGrupos() {
 async function exportarCSVGrupos() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/grupos`, {
+    const r = await fetch(`${API_URL}/api/grupos`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const grupos = await r.json();

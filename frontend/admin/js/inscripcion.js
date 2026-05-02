@@ -1,4 +1,4 @@
-const BASE = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
 let todosGrupos = [];
@@ -21,7 +21,7 @@ let yaInscritos = new Set(); // no_controls ya en el grupo seleccionado
 
 async function cargarPeriodos() {
   try {
-    const r = await fetch(`${BASE}/api/periodos`, {
+    const r = await fetch(`${API_URL}/api/periodos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     const periodos = await r.json();
@@ -35,7 +35,7 @@ async function cargarPeriodos() {
 
 async function cargarGrupos() {
   try {
-    const r = await fetch(`${BASE}/api/grupos`, {
+    const r = await fetch(`${API_URL}/api/grupos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     todosGrupos = await r.json();
@@ -124,7 +124,7 @@ async function irPaso2() {
   // Cargar ya inscritos en este grupo
   try {
     const r = await fetch(
-      `${BASE}/api/inscripciones/grupo/${grupoSel.id_grupo}`,
+      `${API_URL}/api/inscripciones/grupo/${grupoSel.id_grupo}`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     const inscritos = await r.json();
@@ -139,7 +139,7 @@ async function irPaso2() {
 
 async function cargarAlumnosLista() {
   try {
-    const r = await fetch(`${BASE}/api/alumnos`, {
+    const r = await fetch(`${API_URL}/api/alumnos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     todosAlumnos = await r.json();
@@ -148,7 +148,7 @@ async function cargarAlumnosLista() {
 
 async function cargarCarrerasAlumno() {
   try {
-    const r = await fetch(`${BASE}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     const carreras = await r.json();
@@ -240,7 +240,9 @@ function deseleccionarTodos() {
 
 function irPaso3() {
   setStep(3);
-  const alumnosSelArr = todosAlumnos.filter((a) => alumnosSel.has(a.no_control));
+  const alumnosSelArr = todosAlumnos.filter((a) =>
+    alumnosSel.has(a.no_control),
+  );
   const filas = alumnosSelArr
     .map(
       (a) => `
@@ -554,7 +556,10 @@ async function importarCSVInsc() {
       if (r.ok) insertados++;
       else {
         const d = await r.json();
-        errores.push({ no_control: row.no_control, motivo: d.error || "Error" });
+        errores.push({
+          no_control: row.no_control,
+          motivo: d.error || "Error",
+        });
       }
     } catch (e) {
       errores.push({ no_control: row.no_control, motivo: e.message });

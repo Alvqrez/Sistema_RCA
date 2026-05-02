@@ -1,4 +1,4 @@
-const BASE_URL_GM = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const tokenGM = () => localStorage.getItem("token");
 
 const RUBROS_DEFAULT = [
@@ -54,7 +54,7 @@ function getPcts(id_grupo, id_unidad) {
 async function getPctsFromBD(id_grupo, id_unidad) {
   try {
     const res = await fetch(
-      `${BASE_URL_GM}/api/config-evaluacion/${id_grupo}/${id_unidad}`,
+      `${API_URL}/api/config-evaluacion/${id_grupo}/${id_unidad}`,
       {
         headers: { Authorization: `Bearer ${tokenGM()}` },
       },
@@ -80,7 +80,7 @@ async function getPctsFromBD(id_grupo, id_unidad) {
 async function guardarPctsEnBD(id_grupo, id_unidad, pcts) {
   localStorage.setItem(`pcts_${id_grupo}_${id_unidad}`, JSON.stringify(pcts));
   try {
-    await fetch(`${BASE_URL_GM}/api/config-evaluacion`, {
+    await fetch(`${API_URL}/api/config-evaluacion`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -130,11 +130,11 @@ async function cargarGruposGM() {
   try {
     let grupos = [];
     try {
-      const data = await fetchAuthGM(`${BASE_URL_GM}/api/grupos/mis-grupos`);
+      const data = await fetchAuthGM(`${API_URL}/api/grupos/mis-grupos`);
       grupos = Array.isArray(data) ? data : [];
     } catch (_) {
       try {
-        const todos = await fetchAuthGM(`${BASE_URL_GM}/api/grupos`);
+        const todos = await fetchAuthGM(`${API_URL}/api/grupos`);
         let id_ref = null;
         try {
           id_ref = JSON.parse(atob(tokenGM().split(".")[1])).id_referencia;
@@ -195,14 +195,14 @@ async function cargarUnidadesDeGrupo(grupo) {
     let unidades = [];
     try {
       unidades = await fetchAuthGM(
-        `${BASE_URL_GM}/api/grupos/${grupo.id_grupo}/unidades`,
+        `${API_URL}/api/grupos/${grupo.id_grupo}/unidades`,
       );
     } catch (_) {}
     if (!Array.isArray(unidades) || !unidades.length) {
       if (grupo.clave_materia) {
         try {
           unidades = await fetchAuthGM(
-            `${BASE_URL_GM}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+            `${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
           );
         } catch (_) {}
       }
@@ -222,7 +222,7 @@ async function cargarConfigsDesdeDB() {
   for (const g of misGrupos) {
     try {
       const res = await fetch(
-        `${BASE_URL_GM}/api/config-evaluacion/grupo/${g.id_grupo}`,
+        `${API_URL}/api/config-evaluacion/grupo/${g.id_grupo}`,
         {
           headers: { Authorization: `Bearer ${tokenGM()}` },
         },

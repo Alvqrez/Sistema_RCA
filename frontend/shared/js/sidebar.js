@@ -11,6 +11,7 @@
 //  • Maestro: sección de Calificaciones incluye "Bonus" para no esconderlo
 //  • Alumno: se agrega enlace explícito a "Mis calificaciones" como alias
 //    de portalAlumno para que el nombre sea auto-descriptivo
+window.API_URL = "http://localhost:3000";
 
 (function () {
   const rol = localStorage.getItem("rol");
@@ -321,7 +322,11 @@ function toggleSubmenu(btn) {
 function soloPermitido(...roles) {
   const rol = localStorage.getItem("rol");
   if (!roles.includes(rol)) {
-    const inicio = { maestro: "mis_grupos.html", alumno: "portalAlumno.html" };
+    const inicio = {
+      maestro: "mis_grupos.html",
+      alumno: "portalAlumno.html",
+      administrador: "admin.html",
+    };
     window.location.href = inicio[rol] || "login.html";
   }
 }

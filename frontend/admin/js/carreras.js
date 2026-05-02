@@ -1,4 +1,5 @@
 // Rellena cualquier <select> con id dado con las carreras de la BD
+const API_URL = "http://localhost:3000";
 async function cargarCarrerasEnSelect(selectId) {
   const token = localStorage.getItem("token");
   const select = document.getElementById(selectId);
@@ -6,7 +7,7 @@ async function cargarCarrerasEnSelect(selectId) {
   if (!select) return;
 
   try {
-    const response = await fetch(`${BASE_URL}/api/carreras`, {
+    const response = await fetch(`${API_URL}/api/carreras`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

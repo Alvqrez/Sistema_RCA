@@ -1,4 +1,4 @@
-const BASE = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const tk = () => localStorage.getItem("token");
 
 let todosGrupos = [];
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function cargarGrupos() {
   try {
-    const r = await fetch(`${BASE}/api/reportes/grupos`, {
+    const r = await fetch(`${API_URL}/api/reportes/grupos`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!r.ok) throw new Error();
@@ -37,7 +37,7 @@ async function cargarGrupos() {
 
 async function poblarFiltroPeriodo() {
   try {
-    const r = await fetch(`${BASE}/api/periodos`, {
+    const r = await fetch(`${API_URL}/api/periodos`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!r.ok) throw new Error();
@@ -117,7 +117,7 @@ async function cargarReporte(id_grupo) {
   if (card) card.classList.add("selected");
 
   try {
-    const r = await fetch(`${BASE}/api/reportes/grupo/${id_grupo}`, {
+    const r = await fetch(`${API_URL}/api/reportes/grupo/${id_grupo}`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!r.ok) throw new Error("No se pudo cargar el reporte");

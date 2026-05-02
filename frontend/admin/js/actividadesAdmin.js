@@ -1,7 +1,7 @@
 // frontend/js/actividadesAdmin.js
 // Gestión de actividades evaluables por materia — solo Administrador
 
-const BASE = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 
 // ─── Guard ────────────────────────────────────────────────────────────────────
 (function () {
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ─── Cargar catálogos ─────────────────────────────────────────────────────────
 async function cargarCarreras() {
   try {
-    const res = await fetch(`${BASE}/api/carreras`, {
+    const res = await fetch(`${API_URL}/api/carreras`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) todasCarreras = await res.json();
@@ -40,7 +40,7 @@ async function cargarCarreras() {
 
 async function cargarMaterias() {
   try {
-    const res = await fetch(`${BASE}/api/materias`, {
+    const res = await fetch(`${API_URL}/api/materias`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) todasMaterias = await res.json();
@@ -49,7 +49,7 @@ async function cargarMaterias() {
 
 async function cargarTipos() {
   try {
-    const res = await fetch(`${BASE}/api/tipo-actividades`, {
+    const res = await fetch(`${API_URL}/api/tipo-actividades`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) todosTipos = await res.json();
@@ -59,7 +59,7 @@ async function cargarTipos() {
 // ─── Cargar actividades (lista principal) ─────────────────────────────────────
 async function cargarActividades() {
   try {
-    const res = await fetch(`${BASE}/api/materia-actividades`, {
+    const res = await fetch(`${API_URL}/api/materia-actividades`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!res.ok) throw new Error();

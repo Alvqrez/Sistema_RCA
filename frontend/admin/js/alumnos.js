@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 let alumnosGlobal = [];
 let modoEdicion = false;
 let no_controlEditando = null;
@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function cargarAlumnos() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/alumnos`, {
+    const r = await fetch(`${API_URL}/api/alumnos`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -127,7 +127,7 @@ function renderTabla(datos, rol) {
 async function cargarCarrerasSelect() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const carreras = await r.json();
@@ -158,12 +158,9 @@ async function abrirModalCursos(no_control) {
 
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(
-      `${BASE_URL}/api/inscripciones/alumno/${no_control}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const r = await fetch(`${API_URL}/api/inscripciones/alumno/${no_control}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const cursos = await r.json();
 
     if (!Array.isArray(cursos) || !cursos.length) {
@@ -220,7 +217,7 @@ function abrirModalNuevo() {
 async function editarAlumno(no_control) {
   let a;
   try {
-    const r = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
+    const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       cache: "no-store",
     });
@@ -308,8 +305,8 @@ async function guardarAlumno() {
 
   try {
     const url = modoEdicion
-      ? `${BASE_URL}/api/alumnos/${no_controlEditando}`
-      : `${BASE_URL}/api/alumnos`;
+      ? `${API_URL}/api/alumnos/${no_controlEditando}`
+      : `${API_URL}/api/alumnos`;
     const method = modoEdicion ? "PUT" : "POST";
     const r = await fetch(url, {
       method,
@@ -344,7 +341,7 @@ async function eliminarAlumno(no_control) {
     return;
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/alumnos/${no_control}`, {
+    const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -482,7 +479,7 @@ async function importarCSV() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Importando…`;
   try {
-    const r = await fetch(`${BASE_URL}/api/alumnos/csv`, {
+    const r = await fetch(`${API_URL}/api/alumnos/csv`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

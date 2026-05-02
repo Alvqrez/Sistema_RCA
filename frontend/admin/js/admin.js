@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
 let usuariosGlobal = [];
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function cargarStats() {
   try {
-    const r = await fetch(`${BASE_URL}/api/admin/stats`, {
+    const r = await fetch(`${API_URL}/api/admin/stats`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     if (!r.ok) throw new Error();
@@ -139,7 +139,7 @@ function renderDistribucion(s) {
 
 async function cargarUsuarios() {
   try {
-    const r = await fetch(`${BASE_URL}/api/admin/usuarios`, {
+    const r = await fetch(`${API_URL}/api/admin/usuarios`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     if (!r.ok) throw new Error();
@@ -220,7 +220,13 @@ async function crearAdministrador() {
   const errEl = document.getElementById("modalUserError");
   errEl.style.display = "none";
 
-  if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !password) {
+  if (
+    !rfc ||
+    !nombre ||
+    !apellido_paterno ||
+    !correo_institucional ||
+    !password
+  ) {
     errEl.textContent = "Los campos marcados con * son obligatorios.";
     errEl.style.display = "block";
     return;
@@ -241,7 +247,7 @@ async function crearAdministrador() {
   btn.innerHTML = `<span class="spinner"></span> Creando…`;
 
   try {
-    const r = await fetch(`${BASE_URL}/api/admin/administradores`, {
+    const r = await fetch(`${API_URL}/api/admin/administradores`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -273,7 +279,14 @@ async function crearAdministrador() {
 }
 
 function limpiarModalUser() {
-  ["uRFC", "uNombre", "uApellidoP", "uApellidoM", "uCorreo", "uPassword"].forEach((id) => {
+  [
+    "uRFC",
+    "uNombre",
+    "uApellidoP",
+    "uApellidoM",
+    "uCorreo",
+    "uPassword",
+  ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -283,7 +296,7 @@ function limpiarModalUser() {
 
 async function toggleEstatus(id, estadoActual) {
   try {
-    const r = await fetch(`${BASE_URL}/api/admin/usuarios/${id}/estatus`, {
+    const r = await fetch(`${API_URL}/api/admin/usuarios/${id}/estatus`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -326,7 +339,7 @@ async function confirmarReset() {
 
   try {
     const r = await fetch(
-      `${BASE_URL}/api/admin/usuarios/${resetUserId}/password`,
+      `${API_URL}/api/admin/usuarios/${resetUserId}/password`,
       {
         method: "PUT",
         headers: {

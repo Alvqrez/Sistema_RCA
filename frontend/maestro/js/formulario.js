@@ -1,4 +1,4 @@
-const BASE_URL_FORM = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
 let estado = {
@@ -78,6 +78,8 @@ function buildRubros(id_grupo, id_unidad) {
   return list;
 }
 
+soloPermitido("maestro");
+
 document.addEventListener("DOMContentLoaded", async () => {
   await cargarGruposSelect();
   const params = new URLSearchParams(window.location.search);
@@ -98,8 +100,8 @@ async function cargarGruposSelect() {
   const rol = localStorage.getItem("rol");
   const url =
     rol === "maestro"
-      ? `${BASE_URL_FORM}/api/grupos/mis-grupos`
-      : `${BASE_URL_FORM}/api/grupos`;
+      ? `${API_URL}/api/grupos/mis-grupos`
+      : `${API_URL}/api/grupos`;
 
   try {
     const res = await fetch(url, {
@@ -128,7 +130,7 @@ async function cargarGruposSelect() {
 
 async function cargarGruposSelectFallback(sel) {
   try {
-    const res = await fetch(`${BASE_URL_FORM}/api/grupos`, {
+    const res = await fetch(`${API_URL}/api/grupos`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     const todos = await res.json();
@@ -189,8 +191,8 @@ async function cargarGrupo() {
 async function verificarConfigGrupo(id_grupo) {
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/config-evaluacion/grupo/${id_grupo}`,
-      { headers: { Authorization: `Bearer ${token()}` } }
+      `${API_URL}/api/config-evaluacion/grupo/${id_grupo}`,
+      { headers: { Authorization: `Bearer ${token()}` } },
     );
     if (res.ok) {
       const configs = await res.json();
@@ -207,7 +209,7 @@ async function verificarConfigGrupo(id_grupo) {
                 pct_actividades: c.pct_actividades,
                 pct_examen: c.pct_examen,
                 pct_asistencia: c.pct_asistencia,
-              })
+              }),
             );
           }
         });
@@ -218,14 +220,13 @@ async function verificarConfigGrupo(id_grupo) {
 
 async function verificarUnidadesCerradas(id_grupo) {
   try {
-    const res = await fetch(
-      `${BASE_URL_FORM}/api/reportes/grupo/${id_grupo}`,
-      { headers: { Authorization: `Bearer ${token()}` } }
-    );
+    const res = await fetch(`${API_URL}/api/reportes/grupo/${id_grupo}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
     if (!res.ok) return;
     const data = await res.json();
     const hayCalifs = data?.alumnos?.some(
-      (a) => Object.keys(a.unidades || {}).length > 0
+      (a) => Object.keys(a.unidades || {}).length > 0,
     );
     if (hayCalifs) intentarMostrarSeccionFinal();
   } catch (_) {}
@@ -256,19 +257,19 @@ function resetVista() {
 async function cargarUnidadesGrupo() {
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/grupos/${estado.grupoId}/unidades`,
+      `${API_URL}/api/grupos/${estado.grupoId}/unidades`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     let unidades = await res.json();
 
     if (!Array.isArray(unidades) || !unidades.length) {
       const info = await (
-        await fetch(`${BASE_URL_FORM}/api/grupos/${estado.grupoId}`, {
+        await fetch(`${API_URL}/api/grupos/${estado.grupoId}`, {
           headers: { Authorization: `Bearer ${token()}` },
         })
       ).json();
       const r2 = await fetch(
-        `${BASE_URL_FORM}/api/unidades/materia/${encodeURIComponent(info.clave_materia)}`,
+        `${API_URL}/api/unidades/materia/${encodeURIComponent(info.clave_materia)}`,
         { headers: { Authorization: `Bearer ${token()}` } },
       );
       unidades = await r2.json();
@@ -309,7 +310,7 @@ async function cargarUnidadesGrupo() {
 async function cargarAlumnos() {
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/inscripciones/grupo/${estado.grupoId}`,
+      `${API_URL}/api/inscripciones/grupo/${estado.grupoId}`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     const data = await res.json();
@@ -346,7 +347,7 @@ async function seleccionarUnidadTab(id_unidad) {
       .filter((r) => r.tipo === "directo")
       .forEach((r) => {
         const guardado = localStorage.getItem(
-          `rubro_${estado.grupoId}_${id_unidad}_${al.no_control}_${r.key}`
+          `rubro_${estado.grupoId}_${id_unidad}_${al.no_control}_${r.key}`,
         );
         if (guardado !== null && guardado !== "") {
           setRubroEstado(al.no_control, r.key, guardado);
@@ -368,8 +369,8 @@ async function verificarEstadoUnidad() {
   if (!estado.grupoId || !estado.unidadId) return;
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/calificaciones/estado-unidad/${estado.grupoId}/${estado.unidadId}`,
-      { headers: { Authorization: `Bearer ${token()}` } }
+      `${API_URL}/api/calificaciones/estado-unidad/${estado.grupoId}/${estado.unidadId}`,
+      { headers: { Authorization: `Bearer ${token()}` } },
     );
     if (!res.ok) return;
     const { cerrada } = await res.json();
@@ -379,7 +380,9 @@ async function verificarEstadoUnidad() {
 
 function marcarUnidadCerradaUI(cerrada) {
   const banner = document.getElementById("bannerUnidadCerrada");
-  const btnCerrar = document.querySelector('.btn-success[onclick="guardarYCerrarUnidad()"]');
+  const btnCerrar = document.querySelector(
+    '.btn-success[onclick="guardarYCerrarUnidad()"]',
+  );
 
   estado.unidadCerrada = cerrada;
 
@@ -392,7 +395,7 @@ function marcarUnidadCerradaUI(cerrada) {
       btnCerrar.disabled = true;
     }
     // Deshabilitar todos los inputs de calificación de la tabla
-    document.querySelectorAll(".grade-input").forEach(inp => {
+    document.querySelectorAll(".grade-input").forEach((inp) => {
       inp.disabled = true;
       inp.style.cursor = "not-allowed";
       inp.style.opacity = ".7";
@@ -400,12 +403,13 @@ function marcarUnidadCerradaUI(cerrada) {
   } else {
     if (banner) banner.style.display = "none";
     if (btnCerrar) {
-      btnCerrar.innerHTML = '<iconify-icon icon="mdi:check-decagram-outline"></iconify-icon> Guardar y cerrar unidad';
+      btnCerrar.innerHTML =
+        '<iconify-icon icon="mdi:check-decagram-outline"></iconify-icon> Guardar y cerrar unidad';
       btnCerrar.style.background = "";
       btnCerrar.style.borderColor = "";
       btnCerrar.disabled = false;
     }
-    document.querySelectorAll(".grade-input").forEach(inp => {
+    document.querySelectorAll(".grade-input").forEach((inp) => {
       inp.disabled = false;
       inp.style.cursor = "";
       inp.style.opacity = "";
@@ -416,9 +420,9 @@ function marcarUnidadCerradaUI(cerrada) {
 function hayAlumnosSinDatos() {
   const vacios = [];
   estado.alumnos.forEach((al) => {
-    const sinDatos = estado.actividades.some(a => {
+    const sinDatos = estado.actividades.some((a) => {
       const inp = document.querySelector(
-        `input[data-actividad="${a.id_actividad}"][data-no_control="${al.no_control}"]`
+        `input[data-actividad="${a.id_actividad}"][data-no_control="${al.no_control}"]`,
       );
       return !inp || inp.value.trim() === "";
     });
@@ -441,7 +445,7 @@ function limpiarUnidad() {
 }
 
 async function cargarActividades() {
-  const res = await fetch(`${BASE_URL_FORM}/api/actividades`, {
+  const res = await fetch(`${API_URL}/api/actividades`, {
     headers: { Authorization: `Bearer ${token()}` },
   });
   const todas = await res.json();
@@ -467,7 +471,7 @@ async function cargarResultadosExistentes() {
   for (const act of estado.actividades) {
     try {
       const res = await fetch(
-        `${BASE_URL_FORM}/api/resultado-actividad/actividad/${act.id_actividad}`,
+        `${API_URL}/api/resultado-actividad/actividad/${act.id_actividad}`,
         { headers: { Authorization: `Bearer ${token()}` } },
       );
       const filas = await res.json();
@@ -488,7 +492,7 @@ async function cargarBonusUnidad() {
   if (!estado.grupoId || !estado.unidadId) return;
   try {
     const res = await fetch(
-      `${BASE_URL_FORM}/api/bonus/unidad/grupo/${estado.grupoId}`,
+      `${API_URL}/api/bonus/unidad/grupo/${estado.grupoId}`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
     const bonuses = await res.json();
@@ -507,7 +511,9 @@ async function cargarBonusUnidad() {
 
 function renderRubrosBar() {
   const bar = document.getElementById("rubrosBar");
-  const unidad = estado.unidadesGrupo.find(u => u.id_unidad === estado.unidadId);
+  const unidad = estado.unidadesGrupo.find(
+    (u) => u.id_unidad === estado.unidadId,
+  );
 
   let html = "";
   if (unidad) {
@@ -519,7 +525,7 @@ function renderRubrosBar() {
 
   // Mostrar las actividades reales del maestro como chips
   if (estado.actividades.length) {
-    estado.actividades.forEach(a => {
+    estado.actividades.forEach((a) => {
       html += `<span class="rchip rchip-act">${a.nombre_actividad} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
     });
   } else {
@@ -554,7 +560,8 @@ function renderTablaCalificaciones() {
 
   // Calcular suma total de ponderaciones para el aviso
   const sumaPondTotal = estado.actividades.reduce(
-    (s, a) => s + parseFloat(a.ponderacion), 0
+    (s, a) => s + parseFloat(a.ponderacion),
+    0,
   );
   const ponderacionInvalida = Math.abs(sumaPondTotal - 100) > 0.5;
 
@@ -563,7 +570,7 @@ function renderTablaCalificaciones() {
     <th class="th-alumno" style="text-align:left">Alumno</th>
     <th style="text-align:left">No. Control</th>`;
 
-  estado.actividades.forEach(a => {
+  estado.actividades.forEach((a) => {
     thead += `<th style="min-width:100px">
       <span style="color:#2563eb">${a.nombre_actividad}</span>
       <small>${parseFloat(a.ponderacion).toFixed(0)}%</small>
@@ -587,9 +594,9 @@ function renderTablaCalificaciones() {
       <td style="font-size:0.75rem;color:var(--text-muted)">${al.no_control}</td>`;
 
     // Una celda por actividad — input directo
-    estado.actividades.forEach(a => {
-      const r      = estado.resultados[al.no_control]?.[a.id_actividad];
-      const val    = r?.estatus === "NP" ? "" : (r?.cal ?? "");
+    estado.actividades.forEach((a) => {
+      const r = estado.resultados[al.no_control]?.[a.id_actividad];
+      const val = r?.estatus === "NP" ? "" : (r?.cal ?? "");
       tbody += `<td>
         <input class="grade-input" type="number" min="0" max="100"
           data-actividad="${a.id_actividad}"
@@ -626,7 +633,7 @@ function renderTablaCalificaciones() {
       <input class="bonus-just-input"
         type="text"
         data-no_control="${al.no_control}"
-        value="${(b.justificacion ?? '').replace(/"/g,'&quot;')}"
+        value="${(b.justificacion ?? "").replace(/"/g, "&quot;")}"
         placeholder="Justificación *"
         style="width:100%;font-size:.72rem"
         oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
@@ -648,7 +655,9 @@ function renderTablaCalificaciones() {
   });
 
   wrap.innerHTML = `
-    ${ponderacionInvalida ? `
+    ${
+      ponderacionInvalida
+        ? `
     <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
                 background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;
                 font-size:.82rem;color:#92400e;margin-bottom:10px">
@@ -657,14 +666,16 @@ function renderTablaCalificaciones() {
         <strong>${sumaPondTotal.toFixed(0)}%</strong> en lugar de 100%.
         El promedio BASE se muestra <em>normalizado</em> a escala 0-100.
         Corrige las ponderaciones en <em>Configurar actividades</em>.</span>
-    </div>` : ""}
+    </div>`
+        : ""
+    }
     <table class="grade-table">
     <thead>${thead}</thead>
     <tbody>${tbody}</tbody>
   </table>`;
 
   // Recalcular BASE y FINAL para todos los alumnos con los datos ya cargados
-  estado.alumnos.forEach(al => recalcularFila(al.no_control));
+  estado.alumnos.forEach((al) => recalcularFila(al.no_control));
 }
 
 function clampCal(val) {
@@ -715,7 +726,8 @@ function calcularBaseScore(no_control) {
 
   // Suma total de ponderaciones (puede ≠ 100 si hay datos incorrectos)
   const sumaPond = estado.actividades.reduce(
-    (s, a) => s + parseFloat(a.ponderacion), 0
+    (s, a) => s + parseFloat(a.ponderacion),
+    0,
   );
   if (sumaPond <= 0) return null;
 
@@ -723,7 +735,7 @@ function calcularBaseScore(no_control) {
   let haySomething = false;
   for (const a of estado.actividades) {
     const inp = document.querySelector(
-      `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`
+      `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`,
     );
     const val = inp ? inp.value.trim() : "";
     if (val === "") continue;
@@ -734,9 +746,8 @@ function calcularBaseScore(no_control) {
 
   // Normalizar si las ponderaciones no suman exactamente 100%
   // (ej. 130% → dividir entre 1.3 para escalar a rango 0-100)
-  const normalizado = Math.abs(sumaPond - 100) > 0.5
-    ? (total / sumaPond) * 100
-    : total;
+  const normalizado =
+    Math.abs(sumaPond - 100) > 0.5 ? (total / sumaPond) * 100 : total;
 
   return Math.floor(normalizado) + (normalizado % 1 >= 0.5 ? 1 : 0);
 }
@@ -775,7 +786,7 @@ function onRubroInput(no_control, key, val) {
   if (estado.grupoId && estado.unidadId) {
     localStorage.setItem(
       `rubro_${estado.grupoId}_${estado.unidadId}_${no_control}_${key}`,
-      val
+      val,
     );
   }
   recalcularFila(no_control);
@@ -960,8 +971,9 @@ async function guardarGradesDirectos() {
       .forEach((r) => {
         const val = getRubroEstado(al.no_control, r.key);
         if (val !== "" && val !== undefined && val !== null) {
-          if (r.key === "pct_examen")     entry.cal_examen     = parseFloat(val);
-          if (r.key === "pct_asistencia") entry.cal_asistencia = parseFloat(val);
+          if (r.key === "pct_examen") entry.cal_examen = parseFloat(val);
+          if (r.key === "pct_asistencia")
+            entry.cal_asistencia = parseFloat(val);
         }
       });
     if (Object.keys(entry).length) {
@@ -975,8 +987,15 @@ async function guardarGradesDirectos() {
   try {
     await fetch(`${BASE_URL_FORM}/api/calificaciones/guardar-directos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ id_grupo: estado.grupoId, id_unidad: estado.unidadId, grades }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({
+        id_grupo: estado.grupoId,
+        id_unidad: estado.unidadId,
+        grades,
+      }),
     });
   } catch (_) {
     // No bloquear el flujo si falla — los valores están en localStorage como respaldo
@@ -988,7 +1007,7 @@ async function cargarGradesDirectos() {
   try {
     const res = await fetch(
       `${BASE_URL_FORM}/api/calificaciones/directos/${estado.grupoId}/${estado.unidadId}`,
-      { headers: { Authorization: `Bearer ${token()}` } }
+      { headers: { Authorization: `Bearer ${token()}` } },
     );
     if (!res.ok) return;
     const grades = await res.json();
@@ -998,14 +1017,14 @@ async function cargarGradesDirectos() {
         setRubroEstado(mat, "pct_examen", vals.cal_examen);
         localStorage.setItem(
           `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_examen`,
-          vals.cal_examen
+          vals.cal_examen,
         );
       }
       if (vals.cal_asistencia !== undefined) {
         setRubroEstado(mat, "pct_asistencia", vals.cal_asistencia);
         localStorage.setItem(
           `rubro_${estado.grupoId}_${estado.unidadId}_${mat}_pct_asistencia`,
-          vals.cal_asistencia
+          vals.cal_asistencia,
         );
       }
     });
@@ -1020,7 +1039,9 @@ async function guardarCalificaciones() {
 
   const vacios = hayAlumnosSinDatos();
   if (vacios.length > 0) {
-    const nombres = vacios.slice(0, 3).join(", ") + (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
+    const nombres =
+      vacios.slice(0, 3).join(", ") +
+      (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
     mostrarConfirm(
       "Campos sin calificar",
       `Los siguientes alumnos tienen actividades sin calificar:
@@ -1029,7 +1050,9 @@ ${nombres}.
 Los campos vacíos se guardarán como "sin dato" y usarán el valor 0 al calcular la unidad.
 
 ¿Deseas continuar de todas formas?`,
-      async () => { await _ejecutarGuardado(); }
+      async () => {
+        await _ejecutarGuardado();
+      },
     );
     return;
   }
@@ -1037,7 +1060,6 @@ Los campos vacíos se guardarán como "sin dato" y usarán el valor 0 al calcula
 }
 
 async function _ejecutarGuardado() {
-
   let total = 0;
   // 1. Save activity grades for all alumnos
   for (const act of estado.actividades) {
@@ -1087,20 +1109,27 @@ async function guardarYCerrarUnidad() {
     mostrarConfirm(
       "Confirmar cierre de unidad",
       "¿Cerrar definitivamente esta unidad para todos los alumnos?" +
-      "\n\nEsta acción calculará el promedio final y no se podrá deshacer fácilmente.",
-      async () => { await _ejecutarCierre(); }
+        "\n\nEsta acción calculará el promedio final y no se podrá deshacer fácilmente.",
+      async () => {
+        await _ejecutarCierre();
+      },
     );
   };
 
   if (vacios.length > 0) {
-    const nombres = vacios.slice(0, 3).join(", ") +
+    const nombres =
+      vacios.slice(0, 3).join(", ") +
       (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
     mostrarConfirm(
       "⚠️ Campos sin calificar",
-      "Los siguientes alumnos tienen actividades sin calificar:\n" + nombres +
-      ".\n\nAl cerrar la unidad, los campos vacíos se calcularán con valor 0" +
-      " y no podrán modificarse fácilmente.\n\n¿Cerrar de todas formas?",
-      async () => { await _ejecutarGuardado(); _procederCierre(); }
+      "Los siguientes alumnos tienen actividades sin calificar:\n" +
+        nombres +
+        ".\n\nAl cerrar la unidad, los campos vacíos se calcularán con valor 0" +
+        " y no podrán modificarse fácilmente.\n\n¿Cerrar de todas formas?",
+      async () => {
+        await _ejecutarGuardado();
+        _procederCierre();
+      },
     );
     return;
   }
@@ -1110,7 +1139,6 @@ async function guardarYCerrarUnidad() {
 }
 
 async function _ejecutarCierre() {
-
   let errores = 0;
   for (const al of estado.alumnos) {
     const rubrosDirectos = {};
@@ -1119,8 +1147,10 @@ async function _ejecutarCierre() {
       .forEach((r) => {
         const val = getRubroEstado(al.no_control, r.key);
         if (val !== "" && val !== undefined) {
-          if (r.key === "pct_examen")     rubrosDirectos.cal_examen     = parseFloat(val);
-          if (r.key === "pct_asistencia") rubrosDirectos.cal_asistencia  = parseFloat(val);
+          if (r.key === "pct_examen")
+            rubrosDirectos.cal_examen = parseFloat(val);
+          if (r.key === "pct_asistencia")
+            rubrosDirectos.cal_asistencia = parseFloat(val);
         }
       });
 
@@ -1171,11 +1201,13 @@ async function guardarBonusUnidad() {
   // Recopilar alumnos que tienen bonus pero sin justificación
   const pendientesJust = [];
   for (const al of estado.alumnos) {
-    const b   = bonusState[al.no_control];
+    const b = bonusState[al.no_control];
     const pts = parseFloat(b?.puntos);
     if (!pts || pts <= 0) continue;
-    const justEl = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
-    const just   = justEl?.value?.trim() || b?.justificacion || "";
+    const justEl = document.querySelector(
+      `.bonus-just-input[data-no_control="${al.no_control}"]`,
+    );
+    const just = justEl?.value?.trim() || b?.justificacion || "";
     if (!just) pendientesJust.push(al);
   }
 
@@ -1183,11 +1215,16 @@ async function guardarBonusUnidad() {
   if (pendientesJust.length) {
     try {
       for (const al of pendientesJust) {
-        const just = await pedirJustificacionBonus(al.nombre, bonusState[al.no_control]?.puntos);
+        const just = await pedirJustificacionBonus(
+          al.nombre,
+          bonusState[al.no_control]?.puntos,
+        );
         if (!bonusState[al.no_control]) bonusState[al.no_control] = {};
         bonusState[al.no_control].justificacion = just;
         // Actualizar también el input visible en la tabla
-        const inp = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
+        const inp = document.querySelector(
+          `.bonus-just-input[data-no_control="${al.no_control}"]`,
+        );
         if (inp) inp.value = just;
       }
     } catch {
@@ -1197,18 +1234,27 @@ async function guardarBonusUnidad() {
     }
   }
 
-  let saved = 0, errs = 0;
+  let saved = 0,
+    errs = 0;
   for (const al of estado.alumnos) {
-    const b   = bonusState[al.no_control];
+    const b = bonusState[al.no_control];
     const pts = parseFloat(b?.puntos);
     if (!pts || pts <= 0) continue;
-    const justEl = document.querySelector(`.bonus-just-input[data-no_control="${al.no_control}"]`);
-    const just   = justEl?.value?.trim() || b?.justificacion || "";
-    if (!just) { errs++; continue; }
+    const justEl = document.querySelector(
+      `.bonus-just-input[data-no_control="${al.no_control}"]`,
+    );
+    const just = justEl?.value?.trim() || b?.justificacion || "";
+    if (!just) {
+      errs++;
+      continue;
+    }
     try {
       const res = await fetch(`${BASE_URL_FORM}/api/bonus/unidad`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
         body: JSON.stringify({
           no_control: al.no_control,
           id_unidad: estado.unidadId,
@@ -1219,22 +1265,26 @@ async function guardarBonusUnidad() {
       });
       const d = await res.json();
       d.success ? saved++ : errs++;
-    } catch { errs++; }
+    } catch {
+      errs++;
+    }
   }
-  if (saved > 0) mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
-  if (errs  > 0) mostrarToast(`${errs} bonus no pudieron guardarse`, "error");
+  if (saved > 0)
+    mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
+  if (errs > 0) mostrarToast(`${errs} bonus no pudieron guardarse`, "error");
 }
 
 // ─── Modal de justificación de bonus ─────────────────────────────────────────
-let _resolveJust = null, _rejectJust = null;
+let _resolveJust = null,
+  _rejectJust = null;
 
 function pedirJustificacionBonus(nombreAlumno, puntos) {
   return new Promise((resolve, reject) => {
     _resolveJust = resolve;
-    _rejectJust  = reject;
+    _rejectJust = reject;
     document.getElementById("justBonusNombre").textContent = nombreAlumno;
-    document.getElementById("justBonusPts").textContent    = `${puntos} pts`;
-    document.getElementById("justBonusInput").value        = "";
+    document.getElementById("justBonusPts").textContent = `${puntos} pts`;
+    document.getElementById("justBonusInput").value = "";
     const modal = document.getElementById("modalJustBonus");
     modal.style.display = "flex";
     setTimeout(() => document.getElementById("justBonusInput").focus(), 80);
@@ -1244,18 +1294,25 @@ function pedirJustificacionBonus(nombreAlumno, puntos) {
 function confirmarJustBonus() {
   const val = document.getElementById("justBonusInput").value.trim();
   if (!val) {
-    document.getElementById("justBonusInput").style.borderColor = "var(--danger)";
+    document.getElementById("justBonusInput").style.borderColor =
+      "var(--danger)";
     mostrarToast("La justificación es obligatoria", "error");
     return;
   }
   cerrarModalJustBonus();
-  if (_resolveJust) { _resolveJust(val); _resolveJust = null; }
+  if (_resolveJust) {
+    _resolveJust(val);
+    _resolveJust = null;
+  }
 }
 
 function cerrarModalJustBonus() {
   document.getElementById("modalJustBonus").style.display = "none";
   document.getElementById("justBonusInput").style.borderColor = "var(--border)";
-  if (_rejectJust) { _rejectJust(new Error("cancelado")); _rejectJust = null; }
+  if (_rejectJust) {
+    _rejectJust(new Error("cancelado"));
+    _rejectJust = null;
+  }
 }
 
 function abrirModalCSV() {
@@ -1355,15 +1412,17 @@ function intentarMostrarSeccionFinal() {
   calcularVistaFinal();
 }
 
-
 // ─── Recalcular calificaciones finales desde el backend ───────────────────────
 // Llama a calcular-final por cada alumno — el backend suma:
 // promedio de unidades + bonus_unidad ya guardados + bonus_final + modificacion_final
 async function recalcularCalificacionesFinal() {
   if (!estado.grupoId) return;
 
-  let no_controls = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")]
-    .map(f => f.dataset.no_control).filter(Boolean);
+  let no_controls = [
+    ...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]"),
+  ]
+    .map((f) => f.dataset.no_control)
+    .filter(Boolean);
 
   if (!no_controls.length) {
     mostrarToast("No hay alumnos con calificaciones para recalcular", "error");
@@ -1371,18 +1430,27 @@ async function recalcularCalificacionesFinal() {
   }
 
   mostrarToast("Recalculando...", "info");
-  let ok = 0, err = 0;
+  let ok = 0,
+    err = 0;
 
   for (const no_control of no_controls) {
     try {
-      const res = await fetch(`${BASE_URL_FORM}/api/calificaciones/calcular-final`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-        body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
-      });
+      const res = await fetch(
+        `${BASE_URL_FORM}/api/calificaciones/calcular-final`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token()}`,
+          },
+          body: JSON.stringify({ no_control, id_grupo: estado.grupoId }),
+        },
+      );
       const d = await res.json();
       d.success ? ok++ : err++;
-    } catch { err++; }
+    } catch {
+      err++;
+    }
   }
 
   if (ok > 0) mostrarToast(`✓ Recalculado para ${ok} alumno(s)`, "success");
@@ -1495,7 +1563,9 @@ async function calcularVistaFinal() {
 
 async function guardarCalificacionesFinal() {
   if (!estado.grupoId) return;
-  const filas = document.querySelectorAll("#tablaFinalWrap tr[data-no_control]");
+  const filas = document.querySelectorAll(
+    "#tablaFinalWrap tr[data-no_control]",
+  );
   if (!filas.length) {
     mostrarToast("No hay datos para guardar", "error");
     return;
@@ -1557,12 +1627,14 @@ async function renderBonusFinalTabla() {
   ]);
 
   const calFinales = resCF.ok ? await resCF.json() : [];
-  const bonuses    = resBF.ok ? await resBF.json() : [];
+  const bonuses = resBF.ok ? await resBF.json() : [];
 
   // Agrupar: una fila por alumno (la calificación final viene de calificacion_final, no de calificacion_unidad)
   // Reusamos el endpoint /calificaciones/grupo que devuelve calificacion_unidad; necesitamos el final
   // Hacemos fetch de /calificaciones/final por alumno — más simple: usamos tablaFinalWrap filas
-  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")];
+  const filasFinal = [
+    ...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]"),
+  ];
 
   if (!filasFinal.length) {
     wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
@@ -1571,12 +1643,15 @@ async function renderBonusFinalTabla() {
 
   // Mapa de bonuses existentes por no_control
   const bonusMap = {};
-  bonuses.forEach(b => { bonusMap[b.no_control] = b; });
+  bonuses.forEach((b) => {
+    bonusMap[b.no_control] = b;
+  });
 
   // Construir cache de calificaciones
-  filasFinal.forEach(f => {
+  filasFinal.forEach((f) => {
     _cfCache[f.dataset.no_control] = {
-      nombre_alumno: f.querySelector("td:first-child")?.textContent || f.dataset.no_control,
+      nombre_alumno:
+        f.querySelector("td:first-child")?.textContent || f.dataset.no_control,
       calificacion_oficial: parseFloat(f.dataset.final ?? 0),
     };
   });
@@ -1590,11 +1665,11 @@ async function renderBonusFinalTabla() {
         <th style="text-align:center;">Acción</th>
       </tr></thead><tbody>`;
 
-  filasFinal.forEach(f => {
-    const mat  = f.dataset.no_control;
-    const cal  = parseFloat(f.dataset.final ?? 0);
-    const nom  = f.querySelector("td:first-child")?.textContent || mat;
-    const bon  = bonusMap[mat];
+  filasFinal.forEach((f) => {
+    const mat = f.dataset.no_control;
+    const cal = parseFloat(f.dataset.final ?? 0);
+    const nom = f.querySelector("td:first-child")?.textContent || mat;
+    const bon = bonusMap[mat];
     html += `<tr>
       <td>${nom}</td>
       <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
@@ -1604,15 +1679,19 @@ async function renderBonusFinalTabla() {
       <td style="text-align:center;">
         <div style="display:flex;gap:6px;justify-content:center">
           <button class="btn btn-sm" style="background:#7c3aed;color:#fff;padding:4px 10px;font-size:.78rem"
-                  onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/\'/g,"\\'")}', ${cal})">
+                  onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${cal})">
             <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
             ${bon ? "Editar" : "Asignar"}
           </button>
-          ${bon ? `<button class="btn btn-sm" title="Eliminar bonus"
+          ${
+            bon
+              ? `<button class="btn btn-sm" title="Eliminar bonus"
                   style="background:var(--danger,#ef4444);color:#fff;padding:4px 8px;font-size:.78rem"
                   onclick="revertirBonusFinal('${mat}')">
             <iconify-icon icon="mdi:undo-variant"></iconify-icon>
-          </button>` : ""}
+          </button>`
+              : ""
+          }
         </div>
       </td>
     </tr>`;
@@ -1624,12 +1703,14 @@ async function renderBonusFinalTabla() {
 
 function abrirModalBonusFinal(no_control, nombre, calActual) {
   const maxBonus = Math.max(0, parseFloat((100 - calActual).toFixed(2)));
-  document.getElementById("bonusFinalNo_control").value  = no_control;
+  document.getElementById("bonusFinalNo_control").value = no_control;
   document.getElementById("bonusFinalNombreAlumno").textContent = nombre;
-  document.getElementById("bonusFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
-  document.getElementById("bonusFinalPuntos").value       = "";
-  document.getElementById("bonusFinalPuntos").max         = maxBonus;
-  document.getElementById("bonusFinalPuntos").placeholder = `Máx: ${maxBonus} pts`;
+  document.getElementById("bonusFinalCalActual").textContent =
+    `${calActual.toFixed(2)} / 100`;
+  document.getElementById("bonusFinalPuntos").value = "";
+  document.getElementById("bonusFinalPuntos").max = maxBonus;
+  document.getElementById("bonusFinalPuntos").placeholder =
+    `Máx: ${maxBonus} pts`;
   document.getElementById("bonusFinalJustificacion").value = "";
   document.getElementById("modalBonusFinal").style.display = "flex";
 }
@@ -1639,26 +1720,46 @@ function cerrarModalBonusFinal() {
 }
 
 async function guardarBonusFinal() {
-  const no_control     = document.getElementById("bonusFinalNo_control").value;
-  const inputPuntos   = document.getElementById("bonusFinalPuntos");
-  const puntos        = parseFloat(inputPuntos.value);
-  const maxBonus      = parseFloat(inputPuntos.max) || 100;
-  const justificacion = document.getElementById("bonusFinalJustificacion").value.trim();
+  const no_control = document.getElementById("bonusFinalNo_control").value;
+  const inputPuntos = document.getElementById("bonusFinalPuntos");
+  const puntos = parseFloat(inputPuntos.value);
+  const maxBonus = parseFloat(inputPuntos.max) || 100;
+  const justificacion = document
+    .getElementById("bonusFinalJustificacion")
+    .value.trim();
 
-  if (!puntos || puntos <= 0) return mostrarToast("Ingresa puntos válidos", "error");
-  if (puntos > maxBonus)      return mostrarToast(`El máximo de puntos disponible es ${maxBonus}`, "error");
-  if (!justificacion)         return mostrarToast("La justificación es obligatoria", "error");
+  if (!puntos || puntos <= 0)
+    return mostrarToast("Ingresa puntos válidos", "error");
+  if (puntos > maxBonus)
+    return mostrarToast(
+      `El máximo de puntos disponible es ${maxBonus}`,
+      "error",
+    );
+  if (!justificacion)
+    return mostrarToast("La justificación es obligatoria", "error");
 
   try {
     const res = await fetch(`${BASE_URL_FORM}/api/bonus/final`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ no_control, id_grupo: estado.grupoId, puntos_otorgados: puntos, justificacion }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({
+        no_control,
+        id_grupo: estado.grupoId,
+        puntos_otorgados: puntos,
+        justificacion,
+      }),
     });
     const d = await res.json();
-    if (!res.ok) return mostrarToast(d.error || "Error al asignar bonus", "error");
+    if (!res.ok)
+      return mostrarToast(d.error || "Error al asignar bonus", "error");
 
-    mostrarToast(`Bonus final asignado: +${d.puntos_aplicados} pts${d.advertencia ? " (ajustado al máximo)" : ""}`, "success");
+    mostrarToast(
+      `Bonus final asignado: +${d.puntos_aplicados} pts${d.advertencia ? " (ajustado al máximo)" : ""}`,
+      "success",
+    );
     cerrarModalBonusFinal();
     await renderBonusFinalTabla();
     await calcularVistaFinal();
@@ -1675,7 +1776,9 @@ async function renderModificacionFinalTabla() {
   const wrap = document.getElementById("tablaModificacionFinalWrap");
   if (!wrap || !estado.grupoId) return;
 
-  const filasFinal = [...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]")];
+  const filasFinal = [
+    ...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]"),
+  ];
   if (!filasFinal.length) {
     wrap.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Guarda las calificaciones finales primero.</p>`;
     return;
@@ -1684,11 +1787,13 @@ async function renderModificacionFinalTabla() {
   // Cargar modificaciones existentes del grupo
   const resModif = await fetch(
     `${BASE_URL_FORM}/api/modificacion-final/grupo/${estado.grupoId}`,
-    { headers: { Authorization: `Bearer ${token()}` } }
+    { headers: { Authorization: `Bearer ${token()}` } },
   ).catch(() => null);
-  const modifs = (resModif && resModif.ok) ? await resModif.json() : [];
+  const modifs = resModif && resModif.ok ? await resModif.json() : [];
   const modifMap = {};
-  modifs.forEach(m => { modifMap[m.no_control] = m; });
+  modifs.forEach((m) => {
+    modifMap[m.no_control] = m;
+  });
 
   let html = `
     <table class="final-table" style="width:100%;">
@@ -1699,11 +1804,11 @@ async function renderModificacionFinalTabla() {
         <th style="text-align:center;">Acción</th>
       </tr></thead><tbody>`;
 
-  filasFinal.forEach(f => {
-    const mat  = f.dataset.no_control;
-    const cal  = parseFloat(f.dataset.final ?? 0);
-    const nom  = f.querySelector("td:first-child")?.textContent || mat;
-    const mod  = modifMap[mat];
+  filasFinal.forEach((f) => {
+    const mat = f.dataset.no_control;
+    const cal = parseFloat(f.dataset.final ?? 0);
+    const nom = f.querySelector("td:first-child")?.textContent || mat;
+    const mod = modifMap[mat];
     html += `<tr>
       <td>${nom}</td>
       <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
@@ -1713,16 +1818,20 @@ async function renderModificacionFinalTabla() {
       <td style="text-align:center;">
         <div style="display:flex;gap:6px;justify-content:center">
           <button class="btn btn-sm" style="background:#dc2626;color:#fff;padding:4px 10px;font-size:.78rem"
-                  onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/\'/g,"\\'")}', ${cal})">
+                  onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${cal})">
             <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
             ${mod ? "Editar" : "Modificar"}
           </button>
-          ${mod ? `<button class="btn btn-sm" title="Revertir modificación"
+          ${
+            mod
+              ? `<button class="btn btn-sm" title="Revertir modificación"
                   style="background:var(--text-muted,#6b7280);color:#fff;padding:4px 8px;font-size:.78rem"
                   onclick="revertirModificacionFinal('${mat}')">
             <iconify-icon icon="mdi:undo-variant"></iconify-icon>
             Revertir
-          </button>` : ""}
+          </button>`
+              : ""
+          }
         </div>
       </td>
     </tr>`;
@@ -1733,11 +1842,12 @@ async function renderModificacionFinalTabla() {
 }
 
 function abrirModalModificacionFinal(no_control, nombre, calActual) {
-  document.getElementById("modifFinalNo_control").value      = no_control;
+  document.getElementById("modifFinalNo_control").value = no_control;
   document.getElementById("modifFinalNombreAlumno").textContent = nombre;
-  document.getElementById("modifFinalCalActual").textContent    = `${calActual.toFixed(2)} / 100`;
-  document.getElementById("modifFinalNuevaCal").value       = "";
-  document.getElementById("modifFinalJustificacion").value  = "";
+  document.getElementById("modifFinalCalActual").textContent =
+    `${calActual.toFixed(2)} / 100`;
+  document.getElementById("modifFinalNuevaCal").value = "";
+  document.getElementById("modifFinalJustificacion").value = "";
   document.getElementById("modalModificacionFinal").style.display = "flex";
 }
 
@@ -1746,9 +1856,13 @@ function cerrarModalModificacionFinal() {
 }
 
 async function guardarModificacionFinal() {
-  const no_control      = document.getElementById("modifFinalNo_control").value;
-  const nuevaCal       = parseFloat(document.getElementById("modifFinalNuevaCal").value);
-  const justificacion  = document.getElementById("modifFinalJustificacion").value.trim();
+  const no_control = document.getElementById("modifFinalNo_control").value;
+  const nuevaCal = parseFloat(
+    document.getElementById("modifFinalNuevaCal").value,
+  );
+  const justificacion = document
+    .getElementById("modifFinalJustificacion")
+    .value.trim();
 
   if (isNaN(nuevaCal) || nuevaCal < 0 || nuevaCal > 100)
     return mostrarToast("Calificación debe estar entre 0 y 100", "error");
@@ -1758,13 +1872,24 @@ async function guardarModificacionFinal() {
   try {
     const res = await fetch(`${BASE_URL_FORM}/api/modificacion-final`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ no_control, id_grupo: estado.grupoId, calif_modificada: nuevaCal, justificacion }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({
+        no_control,
+        id_grupo: estado.grupoId,
+        calif_modificada: nuevaCal,
+        justificacion,
+      }),
     });
     const d = await res.json();
     if (!res.ok) return mostrarToast(d.error || "Error al modificar", "error");
 
-    mostrarToast(`Modificación aplicada: ${d.calif_original} → ${d.calif_modificada}`, "success");
+    mostrarToast(
+      `Modificación aplicada: ${d.calif_original} → ${d.calif_modificada}`,
+      "success",
+    );
     cerrarModalModificacionFinal();
     await renderModificacionFinalTabla();
     await calcularVistaFinal();
@@ -1772,7 +1897,6 @@ async function guardarModificacionFinal() {
     mostrarToast("Error de conexión", "error");
   }
 }
-
 
 // ─── Revertir bonus final ─────────────────────────────────────────────────────
 async function revertirBonusFinal(no_control) {
@@ -1784,15 +1908,18 @@ async function revertirBonusFinal(no_control) {
       try {
         const res = await fetch(
           `${BASE_URL_FORM}/api/bonus/final/${no_control}/${estado.grupoId}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
+          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } },
         );
         const d = await res.json();
-        if (!res.ok) return mostrarToast(d.error || "Error al revertir", "error");
+        if (!res.ok)
+          return mostrarToast(d.error || "Error al revertir", "error");
         mostrarToast("Bonus final eliminado", "success");
         await renderBonusFinalTabla();
         await recalcularCalificacionesFinal();
-      } catch { mostrarToast("Error de conexión", "error"); }
-    }
+      } catch {
+        mostrarToast("Error de conexión", "error");
+      }
+    },
   );
 }
 
@@ -1806,15 +1933,21 @@ async function revertirModificacionFinal(no_control) {
       try {
         const res = await fetch(
           `${BASE_URL_FORM}/api/modificacion-final/${no_control}/${estado.grupoId}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } }
+          { method: "DELETE", headers: { Authorization: `Bearer ${token()}` } },
         );
         const d = await res.json();
-        if (!res.ok) return mostrarToast(d.error || "Error al revertir", "error");
-        mostrarToast("Modificación revertida — calificación restaurada", "success");
+        if (!res.ok)
+          return mostrarToast(d.error || "Error al revertir", "error");
+        mostrarToast(
+          "Modificación revertida — calificación restaurada",
+          "success",
+        );
         await renderModificacionFinalTabla();
         await recalcularCalificacionesFinal();
-      } catch { mostrarToast("Error de conexión", "error"); }
-    }
+      } catch {
+        mostrarToast("Error de conexión", "error");
+      }
+    },
   );
 }
 
@@ -1824,7 +1957,6 @@ function actualizarEstadoBadge(activo) {
   badge.className = `status-pill ${activo ? "ok" : "warn"}`;
   badge.innerHTML = `<span class="dot-pulse"></span> ${activo ? "Configurado" : "Sin configurar"}`;
 }
-
 
 // ─── Modal de confirmación personalizado ──────────────────────────────────────
 function mostrarConfirm(titulo, cuerpo, onAceptar, onCancelar = null) {
@@ -1864,21 +1996,32 @@ function mostrarConfirm(titulo, cuerpo, onAceptar, onCancelar = null) {
   document.getElementById("rca-confirm-cuerpo").textContent = cuerpo;
   overlay.style.display = "flex";
 
-  const btnAceptar  = document.getElementById("rca-confirm-aceptar");
+  const btnAceptar = document.getElementById("rca-confirm-aceptar");
   const btnCancelar = document.getElementById("rca-confirm-cancelar");
 
   // Clonar para limpiar event listeners previos
-  const newAceptar  = btnAceptar.cloneNode(true);
+  const newAceptar = btnAceptar.cloneNode(true);
   const newCancelar = btnCancelar.cloneNode(true);
   btnAceptar.replaceWith(newAceptar);
   btnCancelar.replaceWith(newCancelar);
 
-  function cerrar() { overlay.style.display = "none"; }
+  function cerrar() {
+    overlay.style.display = "none";
+  }
 
-  newAceptar.addEventListener("click", () => { cerrar(); onAceptar(); });
-  newCancelar.addEventListener("click", () => { cerrar(); if (onCancelar) onCancelar(); });
+  newAceptar.addEventListener("click", () => {
+    cerrar();
+    onAceptar();
+  });
+  newCancelar.addEventListener("click", () => {
+    cerrar();
+    if (onCancelar) onCancelar();
+  });
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) { cerrar(); if (onCancelar) onCancelar(); }
+    if (e.target === overlay) {
+      cerrar();
+      if (onCancelar) onCancelar();
+    }
   });
 }
 

@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
 
@@ -19,7 +19,7 @@ const tabla = document.getElementById("tablaMaterias");
 async function cargarCarrerasCatalogo() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${BASE_URL}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     carrerasDisponibles = await r.json();
@@ -44,7 +44,7 @@ function cerrarModalMateria() {
 
 async function cargarMaterias() {
   const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/api/materias`, {
+  const response = await fetch(`${API_URL}/api/materias`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (response.status === 401 || response.status === 403) {

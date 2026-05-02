@@ -1,7 +1,7 @@
 // frontend/js/configurar_actividades.js  v3
 // Flujo: botón "+ Agregar actividad" en cada unidad → modal con tipos → nombre + % → guardar
 
-const BASE = "http://localhost:3000";
+const API_URL = "http://localhost:3000";
 
 // ─── Caché de datos ────────────────────────────────────────────────────────
 const cacheUnidades = {}; // grupoId  → [unidad]
@@ -67,7 +67,7 @@ const ICONO_DEFAULT = "mdi:tag-outline";
 
 async function cargarTiposActividad() {
   try {
-    const res = await fetch(`${BASE}/api/tipo-actividades`, {
+    const res = await fetch(`${API_URL}/api/tipo-actividades`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) tiposActividad = await res.json();
@@ -111,7 +111,7 @@ async function cargarTiposParaUnidad(idUnidad) {
 
   let tiposUnidad = [];
   try {
-    const res = await fetch(`${BASE}/api/unidades/${idUnidad}/tipos`, {
+    const res = await fetch(`${API_URL}/api/unidades/${idUnidad}/tipos`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) tiposUnidad = await res.json();
@@ -154,7 +154,7 @@ async function cargarGrupos() {
   const msgCargando = document.getElementById("msgCargando");
 
   try {
-    const res = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+    const res = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!res.ok) {
