@@ -1,8 +1,8 @@
 // src/routes/actividades.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
 // GET — actividades filtradas por rol (incluye nombre_unidad y numero_unidad)
 router.get("/", verificarToken, (req, res) => {
@@ -74,9 +74,10 @@ router.post("/", maestroOAdmin, (req, res) => {
         "SELECT nombre FROM tipo_actividad WHERE id_tipo = ?",
         [id_tipo_actividad],
         (err, rows) => {
-          if (err || !rows.length) return cb("No se pudo resolver el nombre de la actividad");
+          if (err || !rows.length)
+            return cb("No se pudo resolver el nombre de la actividad");
           cb(null, rows[0].nombre);
-        }
+        },
       );
     } else {
       return cb("El nombre de la actividad es requerido");
@@ -257,7 +258,6 @@ router.delete("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
-
 // POST /bloquear-unidad — Bloquea (guarda definitivamente) todas las actividades de un grupo-unidad
 // Una vez bloqueadas, no se pueden agregar ni eliminar actividades en esa unidad
 router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
@@ -272,17 +272,20 @@ router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
     "SELECT COALESCE(SUM(ponderacion), 0) AS total, COUNT(*) AS cantidad FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
     [id_grupo, id_unidad],
     (errC, rowsC) => {
-      if (errC) return res.status(500).json({ error: "Error interno del servidor" });
+      if (errC)
+        return res.status(500).json({ error: "Error interno del servidor" });
 
-      const total    = parseFloat(rowsC[0].total);
+      const total = parseFloat(rowsC[0].total);
       const cantidad = parseInt(rowsC[0].cantidad);
 
       if (cantidad === 0) {
-        return res.status(400).json({ error: "La unidad no tiene actividades configuradas." });
+        return res
+          .status(400)
+          .json({ error: "La unidad no tiene actividades configuradas." });
       }
       if (Math.round(total) !== 100) {
         return res.status(400).json({
-          error: `La suma de ponderaciones debe ser exactamente 100%. Actualmente: ${total.toFixed(0)}%.`
+          error: `La suma de ponderaciones debe ser exactamente 100%. Actualmente: ${total.toFixed(0)}%.`,
         });
       }
 
@@ -291,15 +294,18 @@ router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
         "UPDATE actividad SET bloqueado = 1 WHERE id_grupo = ? AND id_unidad = ?",
         [id_grupo, id_unidad],
         (errU, result) => {
-          if (errU) return res.status(500).json({ error: "Error interno del servidor" });
+          if (errU)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
           res.json({
             success: true,
             mensaje: "Unidad guardada y bloqueada correctamente.",
-            actividades_bloqueadas: result.affectedRows
+            actividades_bloqueadas: result.affectedRows,
           });
-        }
+        },
       );
-    }
+    },
   );
 });
 

@@ -1,8 +1,8 @@
 // src/routes/unidades.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken, soloAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
 router.get("/", verificarToken, (req, res) => {
   db.query(
@@ -41,9 +41,10 @@ router.get("/mis-materias", verificarToken, (req, res) => {
      ORDER BY m.nombre_materia`,
     [req.usuario.id_referencia],
     (err, results) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       res.json(results);
-    }
+    },
   );
 });
 
@@ -84,13 +85,11 @@ router.post("/", soloAdmin, (req, res) => {
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      res
-        .status(201)
-        .json({
-          success: true,
-          mensaje: "Unidad registrada",
-          id_unidad: result.insertId,
-        });
+      res.status(201).json({
+        success: true,
+        mensaje: "Unidad registrada",
+        id_unidad: result.insertId,
+      });
     },
   );
 });
@@ -131,7 +130,6 @@ router.delete("/:id", soloAdmin, (req, res) => {
   );
 });
 
-
 // POST /materia/:clave/configurar — Crea o actualiza las N unidades de una materia en un solo paso
 // Body: [ { id_unidad?, nombre_unidad, temario? }, ... ]  — un objeto por unidad
 router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
@@ -139,76 +137,103 @@ router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
   const unidades = req.body; // array
 
   if (!Array.isArray(unidades) || unidades.length === 0) {
-    return res.status(400).json({ error: "Se requiere un arreglo de unidades" });
+    return res
+      .status(400)
+      .json({ error: "Se requiere un arreglo de unidades" });
   }
 
   // Verificar que la materia existe y obtener no_unidades
-  db.query("SELECT no_unidades FROM materia WHERE clave_materia = ?", [clave], (errM, rowsM) => {
-    if (errM) return res.status(500).json({ error: "Error interno del servidor" });
-    if (!rowsM.length) return res.status(404).json({ error: "Materia no encontrada" });
+  db.query(
+    "SELECT no_unidades FROM materia WHERE clave_materia = ?",
+    [clave],
+    (errM, rowsM) => {
+      if (errM)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rowsM.length)
+        return res.status(404).json({ error: "Materia no encontrada" });
 
-    const noUnidades = rowsM[0].no_unidades;
-    if (unidades.length !== noUnidades) {
-      return res.status(400).json({
-        error: `La materia tiene ${noUnidades} unidad(es). Se enviaron ${unidades.length}.`
-      });
-    }
-
-    // Validar que todos tengan nombre
-    for (let i = 0; i < unidades.length; i++) {
-      if (!unidades[i].nombre_unidad || !unidades[i].nombre_unidad.trim()) {
-        return res.status(400).json({ error: `La unidad ${i + 1} no tiene nombre.` });
+      const noUnidades = rowsM[0].no_unidades;
+      if (unidades.length !== noUnidades) {
+        return res.status(400).json({
+          error: `La materia tiene ${noUnidades} unidad(es). Se enviaron ${unidades.length}.`,
+        });
       }
-    }
 
-    // Obtener unidades existentes de la materia (ordenadas por id_unidad)
-    db.query(
-      "SELECT id_unidad FROM unidad WHERE clave_materia = ? ORDER BY id_unidad",
-      [clave],
-      (errE, existentes) => {
-        if (errE) return res.status(500).json({ error: "Error interno del servidor" });
-
-        const ops = [];
-        for (let i = 0; i < unidades.length; i++) {
-          const u = unidades[i];
-          const nombre = u.nombre_unidad.trim();
-          const temario = u.temario ?? null;
-
-          if (existentes[i]) {
-            // Actualizar la unidad ya existente en esa posición
-            ops.push(new Promise((resolve, reject) => {
-              db.query(
-                "UPDATE unidad SET nombre_unidad = ?, temario = ? WHERE id_unidad = ?",
-                [nombre, temario, existentes[i].id_unidad],
-                (err) => err ? reject(err) : resolve({ accion: "actualizada", id: existentes[i].id_unidad })
-              );
-            }));
-          } else {
-            // Crear unidad nueva
-            ops.push(new Promise((resolve, reject) => {
-              db.query(
-                "INSERT INTO unidad (clave_materia, nombre_unidad, temario) VALUES (?, ?, ?)",
-                [clave, nombre, temario],
-                (err, result) => err ? reject(err) : resolve({ accion: "creada", id: result.insertId })
-              );
-            }));
-          }
+      // Validar que todos tengan nombre
+      for (let i = 0; i < unidades.length; i++) {
+        if (!unidades[i].nombre_unidad || !unidades[i].nombre_unidad.trim()) {
+          return res
+            .status(400)
+            .json({ error: `La unidad ${i + 1} no tiene nombre.` });
         }
-
-        Promise.all(ops)
-          .then(resultados => res.json({ success: true, resultados }))
-          .catch(() => res.status(500).json({ error: "Error al guardar las unidades" }));
       }
-    );
-  });
-});
 
+      // Obtener unidades existentes de la materia (ordenadas por id_unidad)
+      db.query(
+        "SELECT id_unidad FROM unidad WHERE clave_materia = ? ORDER BY id_unidad",
+        [clave],
+        (errE, existentes) => {
+          if (errE)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+
+          const ops = [];
+          for (let i = 0; i < unidades.length; i++) {
+            const u = unidades[i];
+            const nombre = u.nombre_unidad.trim();
+            const temario = u.temario ?? null;
+
+            if (existentes[i]) {
+              // Actualizar la unidad ya existente en esa posición
+              ops.push(
+                new Promise((resolve, reject) => {
+                  db.query(
+                    "UPDATE unidad SET nombre_unidad = ?, temario = ? WHERE id_unidad = ?",
+                    [nombre, temario, existentes[i].id_unidad],
+                    (err) =>
+                      err
+                        ? reject(err)
+                        : resolve({
+                            accion: "actualizada",
+                            id: existentes[i].id_unidad,
+                          }),
+                  );
+                }),
+              );
+            } else {
+              // Crear unidad nueva
+              ops.push(
+                new Promise((resolve, reject) => {
+                  db.query(
+                    "INSERT INTO unidad (clave_materia, nombre_unidad, temario) VALUES (?, ?, ?)",
+                    [clave, nombre, temario],
+                    (err, result) =>
+                      err
+                        ? reject(err)
+                        : resolve({ accion: "creada", id: result.insertId }),
+                  );
+                }),
+              );
+            }
+          }
+
+          Promise.all(ops)
+            .then((resultados) => res.json({ success: true, resultados }))
+            .catch(() =>
+              res.status(500).json({ error: "Error al guardar las unidades" }),
+            );
+        },
+      );
+    },
+  );
+});
 
 // ─── Tipos de actividad habilitados por unidad ────────────────────────────────
 
 // GET /:id/tipos — retorna los tipos que el admin habilitó para esta unidad
 // Si no hay ninguno configurado, retorna lista vacía (el maestro verá todos)
-router.get('/:id/tipos', verificarToken, (req, res) => {
+router.get("/:id/tipos", verificarToken, (req, res) => {
   db.query(
     `SELECT ta.*
        FROM unidad_tipo_actividad uta
@@ -217,33 +242,45 @@ router.get('/:id/tipos', verificarToken, (req, res) => {
       ORDER BY ta.nombre`,
     [req.params.id],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Error interno del servidor' });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       res.json(rows);
-    }
+    },
   );
 });
 
 // POST /:id/tipos — admin reemplaza los tipos habilitados para la unidad
-router.post('/:id/tipos', soloAdmin, (req, res) => {
+router.post("/:id/tipos", soloAdmin, (req, res) => {
   const { id_tipos } = req.body;
 
-  db.query('DELETE FROM unidad_tipo_actividad WHERE id_unidad = ?', [req.params.id], (errD) => {
-    if (errD) return res.status(500).json({ error: 'Error interno del servidor' });
+  db.query(
+    "DELETE FROM unidad_tipo_actividad WHERE id_unidad = ?",
+    [req.params.id],
+    (errD) => {
+      if (errD)
+        return res.status(500).json({ error: "Error interno del servidor" });
 
-    if (!Array.isArray(id_tipos) || id_tipos.length === 0) {
-      return res.json({ success: true, mensaje: 'Sin tipos seleccionados' });
-    }
-
-    const values = id_tipos.map(t => [parseInt(req.params.id), parseInt(t)]);
-    db.query(
-      'INSERT INTO unidad_tipo_actividad (id_unidad, id_tipo) VALUES ?',
-      [values],
-      (errI) => {
-        if (errI) return res.status(500).json({ error: 'Error interno del servidor' });
-        res.json({ success: true, guardados: values.length });
+      if (!Array.isArray(id_tipos) || id_tipos.length === 0) {
+        return res.json({ success: true, mensaje: "Sin tipos seleccionados" });
       }
-    );
-  });
+
+      const values = id_tipos.map((t) => [
+        parseInt(req.params.id),
+        parseInt(t),
+      ]);
+      db.query(
+        "INSERT INTO unidad_tipo_actividad (id_unidad, id_tipo) VALUES ?",
+        [values],
+        (errI) => {
+          if (errI)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          res.json({ success: true, guardados: values.length });
+        },
+      );
+    },
+  );
 });
 
 module.exports = router;

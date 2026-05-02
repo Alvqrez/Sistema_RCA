@@ -1,13 +1,13 @@
 // src/routes/calificaciones.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const calculo = require("../services/calculo");
+const db = require("../../db");
+const calculo = require("../../services/calculo");
 const {
   verificarToken,
   soloMaestro,
   maestroOAdmin,
-} = require("../middleware/auth");
+} = require("../../middleware/auth");
 
 const CALIFICACION_APROBATORIA = 70; // RN: sección 1.3.1
 
@@ -136,7 +136,8 @@ router.post("/", maestroOAdmin, async (req, res) => {
 
 // POST — calcular y cerrar calificación de unidad automáticamente
 router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
-  const { no_control, id_unidad, id_grupo, cal_examen, cal_asistencia } = req.body;
+  const { no_control, id_unidad, id_grupo, cal_examen, cal_asistencia } =
+    req.body;
   if (!no_control || !id_unidad || !id_grupo) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
@@ -145,7 +146,11 @@ router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
     if (cal_examen !== undefined && cal_examen !== null && cal_examen !== "") {
       overrides.cal_examen = parseFloat(cal_examen);
     }
-    if (cal_asistencia !== undefined && cal_asistencia !== null && cal_asistencia !== "") {
+    if (
+      cal_asistencia !== undefined &&
+      cal_asistencia !== null &&
+      cal_asistencia !== ""
+    ) {
       overrides.cal_asistencia = parseFloat(cal_asistencia);
     }
     const resultado = await calculo.cerrarUnidad(
@@ -266,13 +271,14 @@ router.get(
   },
 );
 
-
 // ── BUGS 4/5 FIX: guardar calificaciones directas (examen, asistencia) por alumno ──
 // Almacena en config_evaluacion_unidad.nota como JSON {grades:{no_control:{cal_examen,cal_asistencia}}}
 router.post("/guardar-directos", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad, grades } = req.body;
   if (!id_grupo || !id_unidad || !grades || typeof grades !== "object") {
-    return res.status(400).json({ error: "Faltan campos: id_grupo, id_unidad, grades" });
+    return res
+      .status(400)
+      .json({ error: "Faltan campos: id_grupo, id_unidad, grades" });
   }
 
   // Leer nota actual para no sobrescribir los pcts
@@ -284,7 +290,9 @@ router.post("/guardar-directos", maestroOAdmin, (req, res) => {
 
       let notaObj = {};
       if (rows[0]?.nota) {
-        try { notaObj = JSON.parse(rows[0].nota); } catch (_) {}
+        try {
+          notaObj = JSON.parse(rows[0].nota);
+        } catch (_) {}
       }
       // Fusionar grades con los existentes (por alumno)
       if (!notaObj.grades) notaObj.grades = {};
@@ -298,11 +306,12 @@ router.post("/guardar-directos", maestroOAdmin, (req, res) => {
          ON DUPLICATE KEY UPDATE nota = VALUES(nota)`,
         [id_grupo, id_unidad, JSON.stringify(notaObj)],
         (err2) => {
-          if (err2) return res.status(500).json({ error: "Error interno al guardar" });
+          if (err2)
+            return res.status(500).json({ error: "Error interno al guardar" });
           res.json({ success: true });
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -322,22 +331,26 @@ router.get("/directos/:id_grupo/:id_unidad", verificarToken, (req, res) => {
         } catch (_) {}
       }
       res.json(grades);
-    }
+    },
   );
 });
 
 // GET — verificar si una unidad ya tiene calificaciones calculadas (para Bug 6)
-router.get("/estado-unidad/:id_grupo/:id_unidad", verificarToken, (req, res) => {
-  const { id_grupo, id_unidad } = req.params;
-  db.query(
-    `SELECT COUNT(*) AS total FROM calificacion_unidad
+router.get(
+  "/estado-unidad/:id_grupo/:id_unidad",
+  verificarToken,
+  (req, res) => {
+    const { id_grupo, id_unidad } = req.params;
+    db.query(
+      `SELECT COUNT(*) AS total FROM calificacion_unidad
      WHERE id_grupo = ? AND id_unidad = ? AND calificacion_unidad_final IS NOT NULL`,
-    [id_grupo, id_unidad],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: "Error interno" });
-      res.json({ cerrada: rows[0].total > 0, total_alumnos: rows[0].total });
-    }
-  );
-});
+      [id_grupo, id_unidad],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: "Error interno" });
+        res.json({ cerrada: rows[0].total > 0, total_alumnos: rows[0].total });
+      },
+    );
+  },
+);
 
 module.exports = router;

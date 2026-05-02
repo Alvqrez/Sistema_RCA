@@ -31,10 +31,14 @@ async function calcularPromedioUnidad(no_control, id_unidad, id_grupo) {
       if (err) return reject(err);
       if (!results.length) return resolve(0);
 
-      const sumaPond = results.reduce((acc, r) => acc + parseFloat(r.ponderacion), 0);
-      let promedio   = results.reduce(
-        (acc, r) => acc + parseFloat(r.calificacion) * (parseFloat(r.ponderacion) / 100),
-        0
+      const sumaPond = results.reduce(
+        (acc, r) => acc + parseFloat(r.ponderacion),
+        0,
+      );
+      let promedio = results.reduce(
+        (acc, r) =>
+          acc + parseFloat(r.calificacion) * (parseFloat(r.ponderacion) / 100),
+        0,
       );
 
       // Normalizar si las ponderaciones no suman exactamente 100
@@ -51,7 +55,11 @@ async function calcularPromedioUnidad(no_control, id_unidad, id_grupo) {
  * FIX 1: umbral 70
  */
 async function cerrarUnidad(no_control, id_unidad, id_grupo, overrides = {}) {
-  const promedio = await calcularPromedioUnidad(no_control, id_unidad, id_grupo);
+  const promedio = await calcularPromedioUnidad(
+    no_control,
+    id_unidad,
+    id_grupo,
+  );
 
   return new Promise((resolve, reject) => {
     const sqlBonus = `
@@ -163,8 +171,12 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
                 ? parseFloat(modRows[0].calif_modificada)
                 : conBonus;
 
-              const redondeado = Math.floor(calOficial) + (calOficial % 1 >= 0.5 ? 1 : 0);
-              const estatus = redondeado >= CALIFICACION_APROBATORIA ? "Aprobado" : "Reprobado";
+              const redondeado =
+                Math.floor(calOficial) + (calOficial % 1 >= 0.5 ? 1 : 0);
+              const estatus =
+                redondeado >= CALIFICACION_APROBATORIA
+                  ? "Aprobado"
+                  : "Reprobado";
 
               db.query(
                 `INSERT INTO calificacion_final (no_control, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
@@ -199,7 +211,9 @@ async function calcularTodo(no_control, id_grupo) {
         if (err) return reject(err);
         try {
           const resultadosUnidades = await Promise.all(
-            unidades.map((u) => cerrarUnidad(no_control, u.id_unidad, id_grupo)),
+            unidades.map((u) =>
+              cerrarUnidad(no_control, u.id_unidad, id_grupo),
+            ),
           );
           const final = await calcularCalificacionFinal(no_control, id_grupo);
           resolve({ unidades: resultadosUnidades, final });

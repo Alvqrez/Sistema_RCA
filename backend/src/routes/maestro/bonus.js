@@ -1,8 +1,8 @@
 // src/routes/bonus.js — módulo completo de bonus
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
 const MAX_CALIFICACION = 100;
 
@@ -291,8 +291,6 @@ router.post("/final", maestroOAdmin, (req, res) => {
   );
 });
 
-
-
 // DELETE — revertir bonus final de materia
 router.delete("/final/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
   const { no_control, id_grupo } = req.params;
@@ -300,11 +298,12 @@ router.delete("/final/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
     "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
     [no_control, id_grupo],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       if (result.affectedRows === 0)
         return res.status(404).json({ error: "Bonus no encontrado" });
       res.json({ success: true, mensaje: "Bonus final eliminado" });
-    }
+    },
   );
 });
 

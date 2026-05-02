@@ -2,8 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const db = require("../db");
-const { soloAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { soloAdmin } = require("../../middleware/auth");
 
 // GET — estadísticas generales del sistema (dashboard)
 router.get("/stats", soloAdmin, (req, res) => {
@@ -169,12 +169,20 @@ router.post("/administradores", soloAdmin, async (req, res) => {
     password,
   } = req.body;
 
-  if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !password) {
+  if (
+    !rfc ||
+    !nombre ||
+    !apellido_paterno ||
+    !correo_institucional ||
+    !password
+  ) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
   if (rfc.length < 12 || rfc.length > 13) {
-    return res.status(400).json({ error: "El RFC debe tener entre 12 y 13 caracteres" });
+    return res
+      .status(400)
+      .json({ error: "El RFC debe tener entre 12 y 13 caracteres" });
   }
 
   try {
@@ -185,11 +193,19 @@ router.post("/administradores", soloAdmin, async (req, res) => {
     db.query(
       `INSERT INTO administrador (rfc, nombre, apellido_paterno, apellido_materno, correo_institucional)
              VALUES (?, ?, ?, ?, ?)`,
-      [rfcUpper, nombre, apellido_paterno, apellido_materno ?? null, correo_institucional],
+      [
+        rfcUpper,
+        nombre,
+        apellido_paterno,
+        apellido_materno ?? null,
+        correo_institucional,
+      ],
       (err) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({ error: "Ya existe un administrador con ese RFC" });
+            return res
+              .status(409)
+              .json({ error: "Ya existe un administrador con ese RFC" });
           }
           return res.status(500).json({ error: "Error interno del servidor" });
         }
@@ -202,9 +218,13 @@ router.post("/administradores", soloAdmin, async (req, res) => {
           (err2) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY") {
-                return res.status(409).json({ error: "Ya existe un usuario con ese RFC" });
+                return res
+                  .status(409)
+                  .json({ error: "Ya existe un usuario con ese RFC" });
               }
-              return res.status(500).json({ error: "Error interno del servidor" });
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
             }
             res.status(201).json({
               success: true,
@@ -315,31 +335,52 @@ module.exports = router;
 
 // PUT — editar administrador
 router.put("/administradores/:id", soloAdmin, (req, res) => {
-  const { nombre, apellido_paterno, apellido_materno, correo_institucional } = req.body;
+  const { nombre, apellido_paterno, apellido_materno, correo_institucional } =
+    req.body;
   if (!nombre || !apellido_paterno || !correo_institucional) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   db.query(
     "UPDATE administrador SET nombre=?, apellido_paterno=?, apellido_materno=?, correo_institucional=? WHERE rfc=?",
-    [nombre, apellido_paterno, apellido_materno ?? null, correo_institucional, req.params.id],
+    [
+      nombre,
+      apellido_paterno,
+      apellido_materno ?? null,
+      correo_institucional,
+      req.params.id,
+    ],
     (err, r) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!r.affectedRows) return res.status(404).json({ error: "No encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!r.affectedRows)
+        return res.status(404).json({ error: "No encontrado" });
       res.json({ success: true, mensaje: "Administrador actualizado" });
-    }
+    },
   );
 });
 
 // DELETE — desactivar administrador (soft delete)
 router.delete("/administradores/:id", soloAdmin, (req, res) => {
   if (String(req.usuario.id_referencia) === String(req.params.id)) {
-    return res.status(400).json({ error: "No puedes eliminar tu propia cuenta" });
+    return res
+      .status(400)
+      .json({ error: "No puedes eliminar tu propia cuenta" });
   }
-  db.query("UPDATE administrador SET activo=0 WHERE rfc=?", [req.params.id], (err, r) => {
-    if (err) return res.status(500).json({ error: "Error interno del servidor" });
-    if (!r.affectedRows) return res.status(404).json({ error: "No encontrado" });
-    db.query("UPDATE usuario SET activo=0 WHERE id_referencia=? AND rol='administrador'", [req.params.id], () => {
-      res.json({ success: true, mensaje: "Administrador desactivado" });
-    });
-  });
+  db.query(
+    "UPDATE administrador SET activo=0 WHERE rfc=?",
+    [req.params.id],
+    (err, r) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!r.affectedRows)
+        return res.status(404).json({ error: "No encontrado" });
+      db.query(
+        "UPDATE usuario SET activo=0 WHERE id_referencia=? AND rol='administrador'",
+        [req.params.id],
+        () => {
+          res.json({ success: true, mensaje: "Administrador desactivado" });
+        },
+      );
+    },
+  );
 });

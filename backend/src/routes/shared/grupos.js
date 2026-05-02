@@ -1,12 +1,12 @@
 // backend/src/routes/grupos.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const db = require("../../db");
 const {
   verificarToken,
   soloAdmin,
   maestroOAdmin,
-} = require("../middleware/auth");
+} = require("../../middleware/auth");
 
 // GET — todos los grupos
 router.get("/", verificarToken, (req, res) => {
@@ -263,13 +263,11 @@ function insertarGrupo(
         }
         return res.status(500).json({ error: "Error interno del servidor" });
       }
-      res
-        .status(201)
-        .json({
-          success: true,
-          mensaje: "Grupo creado",
-          id_grupo: result.insertId,
-        });
+      res.status(201).json({
+        success: true,
+        mensaje: "Grupo creado",
+        id_grupo: result.insertId,
+      });
     },
   );
 }

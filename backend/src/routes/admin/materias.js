@@ -1,8 +1,8 @@
 // src/routes/materias.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken, soloAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
 // GET — todas las materias con sus carreras asociadas
 router.get("/", verificarToken, (req, res) => {
@@ -19,15 +19,20 @@ router.get("/", verificarToken, (req, res) => {
     ORDER BY m.nombre_materia
   `;
   db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: "Error interno del servidor" });
-    const parsed = results.map(m => ({
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    const parsed = results.map((m) => ({
       ...m,
       carreras: m.carreras_raw
-        ? m.carreras_raw.split("|").map(s => {
+        ? m.carreras_raw.split("|").map((s) => {
             const [id_carrera, nombre_carrera, semestre] = s.split(":");
-            return { id_carrera, nombre_carrera, semestre: parseInt(semestre) || null };
+            return {
+              id_carrera,
+              nombre_carrera,
+              semestre: parseInt(semestre) || null,
+            };
           })
-        : []
+        : [],
     }));
     res.json(parsed);
   });
@@ -39,8 +44,10 @@ router.get("/:clave", verificarToken, (req, res) => {
     "SELECT * FROM materia WHERE clave_materia = ?",
     [req.params.clave],
     (err, results) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!results.length) return res.status(404).json({ error: "Materia no encontrada" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!results.length)
+        return res.status(404).json({ error: "Materia no encontrada" });
       const m = results[0];
       // Obtener carreras de la retícula
       db.query(
@@ -49,58 +56,100 @@ router.get("/:clave", verificarToken, (req, res) => {
          WHERE r.clave_materia = ? ORDER BY c.nombre_carrera`,
         [req.params.clave],
         (err2, carreras) => {
-          if (err2) return res.status(500).json({ error: "Error interno del servidor" });
+          if (err2)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
           res.json({ ...m, carreras: carreras || [] });
-        }
+        },
       );
-    }
+    },
   );
 });
 
 // POST — crear materia
 router.post("/", soloAdmin, (req, res) => {
-  const { clave_materia, nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades } = req.body;
+  const {
+    clave_materia,
+    nombre_materia,
+    creditos_totales,
+    horas_teoricas,
+    horas_practicas,
+    no_unidades,
+  } = req.body;
   if (!clave_materia || !nombre_materia)
     return res.status(400).json({ error: "Clave y nombre son requeridos" });
 
   db.query(
     `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [clave_materia, nombre_materia, creditos_totales ?? 0, horas_teoricas ?? 0, horas_practicas ?? 0, no_unidades ?? 0],
+    [
+      clave_materia,
+      nombre_materia,
+      creditos_totales ?? 0,
+      horas_teoricas ?? 0,
+      horas_practicas ?? 0,
+      no_unidades ?? 0,
+    ],
     (err) => {
       if (err) {
-        if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "La clave de materia ya existe" });
+        if (err.code === "ER_DUP_ENTRY")
+          return res
+            .status(409)
+            .json({ error: "La clave de materia ya existe" });
         return res.status(500).json({ error: "Error interno del servidor" });
       }
       res.status(201).json({ success: true, mensaje: "Materia registrada" });
-    }
+    },
   );
 });
 
 // PUT — editar materia
 router.put("/:clave", soloAdmin, (req, res) => {
-  const { nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades } = req.body;
-  if (!nombre_materia) return res.status(400).json({ error: "El nombre es requerido" });
+  const {
+    nombre_materia,
+    creditos_totales,
+    horas_teoricas,
+    horas_practicas,
+    no_unidades,
+  } = req.body;
+  if (!nombre_materia)
+    return res.status(400).json({ error: "El nombre es requerido" });
 
   db.query(
     `UPDATE materia SET nombre_materia=?, creditos_totales=?, horas_teoricas=?, horas_practicas=?, no_unidades=?
      WHERE clave_materia=?`,
-    [nombre_materia, creditos_totales ?? 0, horas_teoricas ?? 0, horas_practicas ?? 0, no_unidades ?? 0, req.params.clave],
+    [
+      nombre_materia,
+      creditos_totales ?? 0,
+      horas_teoricas ?? 0,
+      horas_practicas ?? 0,
+      no_unidades ?? 0,
+      req.params.clave,
+    ],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!result.affectedRows) return res.status(404).json({ error: "Materia no encontrada" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows)
+        return res.status(404).json({ error: "Materia no encontrada" });
       res.json({ success: true, mensaje: "Materia actualizada" });
-    }
+    },
   );
 });
 
 // DELETE — eliminar materia
 router.delete("/:clave", soloAdmin, (req, res) => {
-  db.query("DELETE FROM materia WHERE clave_materia=?", [req.params.clave], (err, result) => {
-    if (err) return res.status(500).json({ error: "Error interno del servidor" });
-    if (!result.affectedRows) return res.status(404).json({ error: "Materia no encontrada" });
-    res.json({ success: true, mensaje: "Materia eliminada" });
-  });
+  db.query(
+    "DELETE FROM materia WHERE clave_materia=?",
+    [req.params.clave],
+    (err, result) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows)
+        return res.status(404).json({ error: "Materia no encontrada" });
+      res.json({ success: true, mensaje: "Materia eliminada" });
+    },
+  );
 });
 
 // ── RETÍCULA (asociar materia ↔ carrera) ──────────────────────────────────────
@@ -108,7 +157,8 @@ router.delete("/:clave", soloAdmin, (req, res) => {
 // POST — vincular materia a una carrera
 router.post("/:clave/carreras", soloAdmin, (req, res) => {
   const { id_carrera, semestre, creditos } = req.body;
-  if (!id_carrera) return res.status(400).json({ error: "Se requiere id_carrera" });
+  if (!id_carrera)
+    return res.status(400).json({ error: "Se requiere id_carrera" });
 
   db.query(
     `INSERT INTO reticula (clave_materia, id_carrera, semestre, creditos)
@@ -116,9 +166,10 @@ router.post("/:clave/carreras", soloAdmin, (req, res) => {
      ON DUPLICATE KEY UPDATE semestre=VALUES(semestre), creditos=VALUES(creditos)`,
     [req.params.clave, id_carrera, semestre ?? 1, creditos ?? 0],
     (err) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       res.status(201).json({ success: true, mensaje: "Carrera vinculada" });
-    }
+    },
   );
 });
 
@@ -128,10 +179,12 @@ router.delete("/:clave/carreras/:id_carrera", soloAdmin, (req, res) => {
     "DELETE FROM reticula WHERE clave_materia=? AND id_carrera=?",
     [req.params.clave, req.params.id_carrera],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!result.affectedRows) return res.status(404).json({ error: "Vínculo no encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows)
+        return res.status(404).json({ error: "Vínculo no encontrado" });
       res.json({ success: true, mensaje: "Carrera desvinculada" });
-    }
+    },
   );
 });
 
@@ -147,13 +200,21 @@ router.post("/csv", soloAdmin, (req, res) => {
 
   const finalizar = () => {
     if (--pendientes === 0)
-      res.json({ success: true, insertados, errores, mensaje: `${insertados} materia(s) importadas. ${errores.length} con errores.` });
+      res.json({
+        success: true,
+        insertados,
+        errores,
+        mensaje: `${insertados} materia(s) importadas. ${errores.length} con errores.`,
+      });
   };
 
   for (const mat of materias) {
     const { clave_materia, nombre_materia } = mat;
     if (!clave_materia || !nombre_materia) {
-      errores.push({ clave: clave_materia || "?", motivo: "clave_materia y nombre_materia son obligatorios" });
+      errores.push({
+        clave: clave_materia || "?",
+        motivo: "clave_materia y nombre_materia son obligatorios",
+      });
       finalizar();
       continue;
     }
@@ -161,12 +222,19 @@ router.post("/csv", soloAdmin, (req, res) => {
       `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades)
        VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE nombre_materia=VALUES(nombre_materia), creditos_totales=VALUES(creditos_totales), no_unidades=VALUES(no_unidades)`,
-      [clave_materia.trim(), nombre_materia.trim(), parseInt(mat.creditos_totales)||0, parseInt(mat.horas_teoricas)||0, parseInt(mat.horas_practicas)||0, parseInt(mat.no_unidades)||3],
+      [
+        clave_materia.trim(),
+        nombre_materia.trim(),
+        parseInt(mat.creditos_totales) || 0,
+        parseInt(mat.horas_teoricas) || 0,
+        parseInt(mat.horas_practicas) || 0,
+        parseInt(mat.no_unidades) || 3,
+      ],
       (err) => {
         if (err) errores.push({ clave: clave_materia, motivo: err.message });
         else insertados++;
         finalizar();
-      }
+      },
     );
   }
 });

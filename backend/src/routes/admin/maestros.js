@@ -2,8 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const db = require("../db");
-const { verificarToken, soloAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
 // GET — todos los maestros
 router.get("/", verificarToken, (req, res) => {
@@ -95,9 +95,7 @@ router.post("/", soloAdmin, async (req, res) => {
       (err) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY")
-            return res
-              .status(409)
-              .json({ error: "El RFC ya está registrado" });
+            return res.status(409).json({ error: "El RFC ya está registrado" });
           return res.status(500).json({ error: "Error interno del servidor" });
         }
 

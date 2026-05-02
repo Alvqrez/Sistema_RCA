@@ -4,12 +4,12 @@
 
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const db = require("../../db");
 const {
   verificarToken,
   soloAdmin,
   maestroOAdmin,
-} = require("../middleware/auth");
+} = require("../../middleware/auth");
 
 // GET / — todas las actividades con joins (admin)
 router.get("/", verificarToken, (req, res) => {

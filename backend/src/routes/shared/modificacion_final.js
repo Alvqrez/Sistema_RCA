@@ -1,8 +1,8 @@
 // src/routes/modificacion_final.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { maestroOAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { maestroOAdmin } = require("../../middleware/auth");
 
 // GET — todas las modificaciones de un grupo (ruta específica — va ANTES de la dinámica)
 router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
@@ -15,7 +15,8 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
     ORDER BY mf.no_control
   `;
   db.query(sql, [req.params.id_grupo], (err, r) => {
-    if (err) return res.status(500).json({ error: "Error interno del servidor" });
+    if (err)
+      return res.status(500).json({ error: "Error interno del servidor" });
     res.json(r);
   });
 });
@@ -67,11 +68,9 @@ router.post("/", maestroOAdmin, (req, res) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       if (!rows.length) {
-        return res
-          .status(400)
-          .json({
-            error: "No hay calificación final calculada para este alumno.",
-          });
+        return res.status(400).json({
+          error: "No hay calificación final calculada para este alumno.",
+        });
       }
 
       const original = parseFloat(
@@ -108,21 +107,17 @@ router.post("/", maestroOAdmin, (req, res) => {
             ],
           );
 
-          res
-            .status(201)
-            .json({
-              success: true,
-              mensaje: "Modificación final aplicada",
-              calif_original: original,
-              calif_modificada: nueva,
-            });
+          res.status(201).json({
+            success: true,
+            mensaje: "Modificación final aplicada",
+            calif_original: original,
+            calif_modificada: nueva,
+          });
         },
       );
     },
   );
 });
-
-
 
 // DELETE — revertir modificación final
 router.delete("/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
@@ -131,11 +126,12 @@ router.delete("/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
     "DELETE FROM modificacionfinal WHERE no_control = ? AND id_grupo = ?",
     [no_control, id_grupo],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       if (result.affectedRows === 0)
         return res.status(404).json({ error: "Modificación no encontrada" });
       res.json({ success: true, mensaje: "Modificación revertida" });
-    }
+    },
   );
 });
 

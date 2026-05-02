@@ -1,8 +1,8 @@
 // src/routes/reportes.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken } = require("../../middleware/auth");
 
 // GET /api/reportes/grupos — lista de grupos para el filtro
 router.get("/grupos", verificarToken, (req, res) => {

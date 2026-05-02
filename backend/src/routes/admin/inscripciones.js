@@ -1,12 +1,12 @@
 // backend/src/routes/inscripciones.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const db = require("../../db");
 const {
   verificarToken,
   soloAdmin,
   maestroOAdmin,
-} = require("../middleware/auth");
+} = require("../../middleware/auth");
 
 // GET — todas las inscripciones (con datos del alumno y grupo)
 router.get("/", verificarToken, (req, res) => {
@@ -78,7 +78,9 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 router.post("/", soloAdmin, (req, res) => {
   const { no_control, id_grupo, tipo_curso } = req.body;
   if (!no_control || !id_grupo)
-    return res.status(400).json({ error: "No. Control y grupo son requeridos" });
+    return res
+      .status(400)
+      .json({ error: "No. Control y grupo son requeridos" });
 
   // Verificar que el alumno no esté ya inscrito en otro grupo de la misma materia en el mismo periodo
   const sqlDuplicado = `
@@ -101,8 +103,8 @@ router.post("/", soloAdmin, (req, res) => {
         error: `El alumno ya está inscrito en un grupo de esta materia en el mismo periodo (Grupo #${dupRows[0].id_grupo}).`,
       });
 
-  // BUG 3 FIX: verificar capacidad máxima antes de insertar
-  const sqlCapacidad = `
+    // BUG 3 FIX: verificar capacidad máxima antes de insertar
+    const sqlCapacidad = `
     SELECT g.limite_alumnos,
            COUNT(i.no_control) AS inscritos_actuales
     FROM grupo g
@@ -110,46 +112,49 @@ router.post("/", soloAdmin, (req, res) => {
     WHERE g.id_grupo = ?
     GROUP BY g.id_grupo, g.limite_alumnos
   `;
-  db.query(sqlCapacidad, [id_grupo], (errCap, capRows) => {
-    if (errCap)
-      return res.status(500).json({ error: "Error interno del servidor" });
+    db.query(sqlCapacidad, [id_grupo], (errCap, capRows) => {
+      if (errCap)
+        return res.status(500).json({ error: "Error interno del servidor" });
 
-    if (capRows.length > 0) {
-      const { limite_alumnos, inscritos_actuales } = capRows[0];
-      // Solo bloquear si el límite está definido y es mayor a 0
-      if (limite_alumnos && inscritos_actuales >= limite_alumnos) {
-        return res.status(400).json({
-          error: `El grupo ya alcanzó su capacidad máxima (${limite_alumnos} alumnos).`,
-        });
+      if (capRows.length > 0) {
+        const { limite_alumnos, inscritos_actuales } = capRows[0];
+        // Solo bloquear si el límite está definido y es mayor a 0
+        if (limite_alumnos && inscritos_actuales >= limite_alumnos) {
+          return res.status(400).json({
+            error: `El grupo ya alcanzó su capacidad máxima (${limite_alumnos} alumnos).`,
+          });
+        }
       }
-    }
 
-    // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
-    const sql = `
+      // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
+      const sql = `
       INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso)
       VALUES (?, ?, CURDATE(), 'Cursando', ?)
     `;
-    db.query(
-      sql,
-      [no_control, id_grupo, tipo_curso || "Ordinario"],
-      (err, result) => {
-        if (err)
-          return res
-            .status(500)
-            .json({ error: "Error interno del servidor", detalle: err.message });
+      db.query(
+        sql,
+        [no_control, id_grupo, tipo_curso || "Ordinario"],
+        (err, result) => {
+          if (err)
+            return res
+              .status(500)
+              .json({
+                error: "Error interno del servidor",
+                detalle: err.message,
+              });
 
-        if (result.affectedRows === 0)
-          return res.status(200).json({
-            success: true,
-            mensaje: "El alumno ya estaba inscrito (sin cambios)",
-          });
+          if (result.affectedRows === 0)
+            return res.status(200).json({
+              success: true,
+              mensaje: "El alumno ya estaba inscrito (sin cambios)",
+            });
 
-        res
-          .status(201)
-          .json({ success: true, mensaje: "Alumno inscrito correctamente" });
-      },
-    );
-  });
+          res
+            .status(201)
+            .json({ success: true, mensaje: "Alumno inscrito correctamente" });
+        },
+      );
+    });
   }); // cierre sqlDuplicado
 });
 
@@ -157,7 +162,9 @@ router.post("/", soloAdmin, (req, res) => {
 router.post("/bulk", soloAdmin, (req, res) => {
   const { no_controls, id_grupo, tipo_curso } = req.body;
   if (!no_controls?.length || !id_grupo)
-    return res.status(400).json({ error: "No_controls y grupo son requeridos" });
+    return res
+      .status(400)
+      .json({ error: "No_controls y grupo son requeridos" });
 
   // BUG 3 FIX: verificar capacidad antes de inserción masiva
   const sqlCapacidad = `
@@ -174,7 +181,10 @@ router.post("/bulk", soloAdmin, (req, res) => {
 
     if (capRows.length > 0) {
       const { limite_alumnos, inscritos_actuales } = capRows[0];
-      if (limite_alumnos && inscritos_actuales + no_controls.length > limite_alumnos) {
+      if (
+        limite_alumnos &&
+        inscritos_actuales + no_controls.length > limite_alumnos
+      ) {
         const disponibles = Math.max(0, limite_alumnos - inscritos_actuales);
         return res.status(400).json({
           error: `Capacidad insuficiente. El grupo tiene espacio para ${disponibles} alumno(s) más (límite: ${limite_alumnos}).`,
@@ -196,7 +206,10 @@ router.post("/bulk", soloAdmin, (req, res) => {
         if (err)
           return res
             .status(500)
-            .json({ error: "Error interno del servidor", detalle: err.message });
+            .json({
+              error: "Error interno del servidor",
+              detalle: err.message,
+            });
         res.status(201).json({ success: true, insertados: r.affectedRows });
       },
     );

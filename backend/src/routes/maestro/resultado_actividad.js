@@ -1,8 +1,8 @@
 // backend/src/routes/resultado_actividad.js
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
-const { verificarToken, maestroOAdmin } = require("../middleware/auth");
+const db = require("../../db");
+const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
 // GET — resultados de una actividad con alumnos inscritos en el grupo (FIX 2)
 router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
@@ -82,7 +82,7 @@ router.post("/", maestroOAdmin, (req, res) => {
 
       // FIX: null !== undefined, parseFloat(null) = NaN → must check both
       const cal =
-        (calificacion_obtenida === undefined || calificacion_obtenida === null)
+        calificacion_obtenida === undefined || calificacion_obtenida === null
           ? null
           : parseFloat(calificacion_obtenida);
 
@@ -104,26 +104,20 @@ router.post("/", maestroOAdmin, (req, res) => {
         rfc       = VALUES(rfc),
         fecha_registro        = NOW()
     `;
-      db.query(
-        sql,
-        [no_control, id_actividad, cal, est, rfc],
-        (err2) => {
-          if (err2)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
+      db.query(sql, [no_control, id_actividad, cal, est, rfc], (err2) => {
+        if (err2)
+          return res.status(500).json({ error: "Error interno del servidor" });
 
-          // FIX 13: bloquear la actividad si no estaba bloqueada ya
-          if (!rows[0].bloqueado) {
-            db.query(
-              "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
-              [id_actividad],
-            );
-          }
+        // FIX 13: bloquear la actividad si no estaba bloqueada ya
+        if (!rows[0].bloqueado) {
+          db.query(
+            "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
+            [id_actividad],
+          );
+        }
 
-          res.json({ success: true });
-        },
-      );
+        res.json({ success: true });
+      });
     },
   );
 });
@@ -150,7 +144,8 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
       const values = resultados.map((r) => {
         // FIX: parseFloat(null) = NaN — treat null and undefined the same way
         const cal =
-          (r.calificacion_obtenida === undefined || r.calificacion_obtenida === null)
+          r.calificacion_obtenida === undefined ||
+          r.calificacion_obtenida === null
             ? null
             : parseFloat(r.calificacion_obtenida);
         // Clamp al rango institucional 0–100
