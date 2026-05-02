@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       /* ── Page header ─────────────────────────────────────────────────── */
       .form-header {
@@ -858,7 +858,10 @@
                   border-top: 1px solid var(--border);
                 "
               >
-                <button class="btn btn-outline" onclick="recalcularCalificacionesFinal()">
+                <button
+                  class="btn btn-outline"
+                  onclick="recalcularCalificacionesFinal()"
+                >
                   <iconify-icon
                     icon="mdi:calculator-variant-outline"
                   ></iconify-icon>
@@ -1373,42 +1376,126 @@
       </div>
     </div>
 
-    <script src="../js/sidebar.js"></script>
-    <script src="../js/formulario.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../maestro/js/formulario.js"></script>
     <!-- ══ MODAL — Justificación de bonus de unidad ════════════════════════ -->
-    <div id="modalJustBonus" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:20px">
-      <div style="background:var(--card-bg);border-radius:14px;width:min(440px,100%);box-shadow:0 24px 80px rgba(0,0,0,.35);animation:modalIn .18s ease">
-        <div style="padding:18px 20px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:14px">
-          <iconify-icon icon="lucide:star" style="color:var(--warning,#f59e0b);font-size:1.2rem;flex-shrink:0"></iconify-icon>
-          <h3 style="margin:0;font-size:.98rem;font-weight:700">Justificación de bonus</h3>
-          <button onclick="cerrarModalJustBonus()" style="margin-left:auto;width:28px;height:28px;border-radius:7px;border:none;background:var(--bg-secondary);cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center">
+    <div
+      id="modalJustBonus"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          background: var(--card-bg);
+          border-radius: 14px;
+          width: min(440px, 100%);
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+          animation: modalIn 0.18s ease;
+        "
+      >
+        <div
+          style="
+            padding: 18px 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+          "
+        >
+          <iconify-icon
+            icon="lucide:star"
+            style="
+              color: var(--warning, #f59e0b);
+              font-size: 1.2rem;
+              flex-shrink: 0;
+            "
+          ></iconify-icon>
+          <h3 style="margin: 0; font-size: 0.98rem; font-weight: 700">
+            Justificación de bonus
+          </h3>
+          <button
+            onclick="cerrarModalJustBonus()"
+            style="
+              margin-left: auto;
+              width: 28px;
+              height: 28px;
+              border-radius: 7px;
+              border: none;
+              background: var(--bg-secondary);
+              cursor: pointer;
+              color: var(--text-muted);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
             <iconify-icon icon="mdi:close"></iconify-icon>
           </button>
         </div>
-        <div style="padding:18px 20px;display:grid;gap:12px">
-          <p style="margin:0;font-size:.87rem;color:var(--text-muted)">
+        <div style="padding: 18px 20px; display: grid; gap: 12px">
+          <p style="margin: 0; font-size: 0.87rem; color: var(--text-muted)">
             El alumno <strong id="justBonusNombre"></strong> tiene
-            <strong id="justBonusPts"></strong> pts de bonus. Ingresa la justificación obligatoria:
+            <strong id="justBonusPts"></strong> pts de bonus. Ingresa la
+            justificación obligatoria:
           </p>
-          <div style="display:grid;gap:4px">
-            <label style="font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)">
-              Justificación <span style="color:var(--danger)">*</span>
+          <div style="display: grid; gap: 4px">
+            <label
+              style="
+                font-size: 0.76rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: var(--text-muted);
+              "
+            >
+              Justificación <span style="color: var(--danger)">*</span>
             </label>
-            <textarea id="justBonusInput" rows="3"
+            <textarea
+              id="justBonusInput"
+              rows="3"
               placeholder="Ej. Desempeño sobresaliente en proyecto de unidad..."
-              style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text-primary);font-size:.88rem;font-family:inherit;resize:vertical;transition:border-color .15s"
-              onfocus="this.style.borderColor='var(--primary)'"
-              onblur="this.style.borderColor='var(--border)'"></textarea>
+              style="
+                padding: 9px 12px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-primary);
+                font-size: 0.88rem;
+                font-family: inherit;
+                resize: vertical;
+                transition: border-color 0.15s;
+              "
+              onfocus="this.style.borderColor = 'var(--primary)'"
+              onblur="this.style.borderColor = 'var(--border)'"
+            ></textarea>
           </div>
         </div>
-        <div style="padding:12px 20px 18px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--border)">
-          <button class="btn btn-outline" onclick="cerrarModalJustBonus()">Cancelar</button>
+        <div
+          style="
+            padding: 12px 20px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            border-top: 1px solid var(--border);
+          "
+        >
+          <button class="btn btn-outline" onclick="cerrarModalJustBonus()">
+            Cancelar
+          </button>
           <button class="btn btn-primary" onclick="confirmarJustBonus()">
             <iconify-icon icon="lucide:check"></iconify-icon> Confirmar
           </button>
         </div>
       </div>
     </div>
-
   </body>
 </html>

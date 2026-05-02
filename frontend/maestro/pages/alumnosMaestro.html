@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       .alumno-card {
         display: flex;
@@ -196,7 +196,7 @@
       </main>
     </div>
     <div id="toast-container"></div>
-    <script src="../js/sidebar.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
     <script>
       const BASE = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
@@ -230,9 +230,7 @@
               id_ref = JSON.parse(atob(tkn().split(".")[1])).id_referencia;
             } catch (_) {}
             grupos = id_ref
-              ? todos.filter(
-                  (g) => String(g.rfc) === String(id_ref),
-                )
+              ? todos.filter((g) => String(g.rfc) === String(id_ref))
               : [];
           }
 
@@ -356,7 +354,7 @@
                    title="Capturar calificaciones de este grupo">
                   <iconify-icon icon="lucide:pencil"></iconify-icon>
                 </a>
-                <a href="reportes.html?grupo=${a.id_grupo}"
+                <a href="../../shared/pages/reportes.html?grupo=${a.id_grupo}"
                    class="btn btn-outline btn-sm" style="text-decoration:none"
                    title="Ver reporte del grupo">
                   <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>

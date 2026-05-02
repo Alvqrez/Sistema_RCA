@@ -17,7 +17,7 @@
   const nombre = localStorage.getItem("nombre");
   const token = localStorage.getItem("token");
   if (!token) {
-    window.location.href = "login.html";
+    window.location.href = "../../shared/pages/login.html";
     return;
   }
 
@@ -41,7 +41,7 @@
     // ─────────────────────────────────────────────────────────────────────
     alumno: [
       {
-        href: "portalAlumno.html",
+        href: "../../alumno/pages/portalAlumno.html",
         texto: "Mis calificaciones", // antes: "Mi portal" — poco descriptivo
         icono: "lucide:layout-dashboard",
       },
@@ -53,7 +53,7 @@
     // ─────────────────────────────────────────────────────────────────────
     maestro: [
       {
-        href: "mis_grupos.html",
+        href: "../../maestro/pages/mis_grupos.html",
         texto: "Inicio",
         icono: "lucide:layout-dashboard",
       },
@@ -64,7 +64,7 @@
         icono: "lucide:users",
         hijos: [
           {
-            href: "alumnosMaestro.html",
+            href: "../../maestro/pages/alumnosMaestro.html",
             texto: "Buscar alumnos",
             icono: "lucide:search",
           },
@@ -77,22 +77,22 @@
         icono: "lucide:book-open",
         hijos: [
           {
-            href: "configurar_actividades.html",
+            href: "../../maestro/pages/configurar_actividades.html",
             texto: "Configurar actividades",
             icono: "lucide:sliders-horizontal",
           },
           {
-            href: "gruposMaestro.html",
+            href: "../../maestro/pages/gruposMaestro.html",
             texto: "Peso por unidad", // antes "Ponderacion de unidades"
             icono: "lucide:scale",
           },
           {
-            href: "asistencia.html",
+            href: "../../maestro/pages/asistencia.html",
             texto: "Registrar asistencia", // verbo más claro
             icono: "lucide:calendar-check",
           },
           {
-            href: "lista_asistencia.html",
+            href: "../../maestro/pages/lista_asistencia.html",
             texto: "Historial de asistencia",
             icono: "lucide:calendar-clock",
           },
@@ -105,19 +105,19 @@
         icono: "mdi:file-document-edit-outline",
         hijos: [
           {
-            href: "formulario.html",
+            href: "../../maestro/pages/formulario.html",
             texto: "Capturar calificaciones",
             icono: "lucide:pencil",
           },
           {
-            href: "bonus.html", // página de bonus si existe
+            href: "../../maestro/pages/bonus.html", // página de bonus si existe
             texto: "Asignar bonus",
             icono: "lucide:star",
           },
         ],
       },
       {
-        href: "reportes.html",
+        href: "../../maestro/pages/reportes.html",
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
       },
@@ -133,7 +133,7 @@
     // ─────────────────────────────────────────────────────────────────────
     administrador: [
       {
-        href: "admin.html",
+        href: "../../admin/pages/admin.html",
         texto: "Panel",
         icono: "lucide:layout-dashboard",
       },
@@ -143,12 +143,12 @@
         icono: "lucide:users",
         hijos: [
           {
-            href: "alumnos.html",
+            href: "../../admin/pages/alumnos.html",
             texto: "Alumnos",
             icono: "lucide:user",
           },
           {
-            href: "maestros.html",
+            href: "../../admin/pages/maestros.html",
             texto: "Maestros",
             icono: "lucide:graduation-cap",
           },
@@ -161,22 +161,22 @@
         icono: "lucide:folder-open",
         hijos: [
           {
-            href: "carreras.html",
+            href: "../../admin/pages/carreras.html",
             texto: "Carreras",
             icono: "mdi:school-outline",
           },
           {
-            href: "materias.html",
+            href: "../../admin/pages/materias.html",
             texto: "Materias",
             icono: "lucide:book",
           },
           {
-            href: "unidades.html",
+            href: "../../admin/pages/unidades.html",
             texto: "Unidades",
             icono: "lucide:layers",
           },
           {
-            href: "actividadesAdmin.html",
+            href: "../../admin/pages/actividadesAdmin.html",
             texto: "Actividades predefinidas", // antes simplemente "Actividades"
             icono: "mdi:clipboard-list-outline",
           },
@@ -189,29 +189,29 @@
         icono: "lucide:settings",
         hijos: [
           {
-            href: "periodos.html",
+            href: "../../admin/pages/periodos.html",
             texto: "Periodos escolares", // antes solo "Periodos"
             icono: "mdi:calendar-range-outline",
           },
           {
-            href: "grupos.html",
+            href: "../../admin/pages/grupos.html",
             texto: "Grupos",
             icono: "lucide:library",
           },
           {
-            href: "inscripcion.html", // antes en "Alumnos"
+            href: "../../admin/pages/inscripcion.html", // antes en "Alumnos"
             texto: "Inscripciones",
             icono: "mdi:account-plus-outline",
           },
         ],
       },
       {
-        href: "reportes.html",
+        href: "../../admin/pages/reportes.html",
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
       },
       {
-        href: "utilerias.html",
+        href: "../../admin/pages/utilerias.html",
         texto: "Utilerías",
         icono: "lucide:settings-2",
       },

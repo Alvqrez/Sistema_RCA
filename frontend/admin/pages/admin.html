@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       /* ── Barras de distribución ──────────────────────────────── */
       .dist-bar-row {
@@ -278,7 +278,7 @@
                   class="ql-arrow"
                 ></iconify-icon>
               </a>
-              <a href="reportes.html" class="quick-link">
+              <a href="../../shared/pages/reportes.html" class="quick-link">
                 <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
                 <div>
                   <strong>Reportes</strong>
@@ -391,27 +391,55 @@
             </div>
             <div class="form-group">
               <label>Apellido paterno *</label>
-              <input type="text" id="uApellidoP" placeholder="Apellido paterno" />
+              <input
+                type="text"
+                id="uApellidoP"
+                placeholder="Apellido paterno"
+              />
             </div>
             <div class="form-group">
               <label>Apellido materno</label>
-              <input type="text" id="uApellidoM" placeholder="Apellido materno (opcional)" />
+              <input
+                type="text"
+                id="uApellidoM"
+                placeholder="Apellido materno (opcional)"
+              />
             </div>
             <div class="form-group">
               <label>Correo institucional *</label>
-              <input type="email" id="uCorreo" placeholder="correo@itver.edu.mx" />
+              <input
+                type="email"
+                id="uCorreo"
+                placeholder="correo@itver.edu.mx"
+              />
             </div>
             <div class="form-group span-2">
               <label>RFC *</label>
-              <input type="text" id="uRFC" placeholder="RFC (12–13 caracteres)" maxlength="13"
-                style="text-transform:uppercase" />
-              <small style="color:var(--text-muted);font-size:0.76rem;margin-top:4px;display:block">
+              <input
+                type="text"
+                id="uRFC"
+                placeholder="RFC (12–13 caracteres)"
+                maxlength="13"
+                style="text-transform: uppercase"
+              />
+              <small
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.76rem;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
                 El RFC será su nombre de usuario para iniciar sesión.
               </small>
             </div>
             <div class="form-group span-2">
               <label>Contraseña *</label>
-              <input type="password" id="uPassword" placeholder="Mín. 6 caracteres" />
+              <input
+                type="password"
+                id="uPassword"
+                placeholder="Mín. 6 caracteres"
+              />
             </div>
           </div>
           <p
@@ -433,7 +461,8 @@
             id="btnCrearUser"
             onclick="crearAdministrador()"
           >
-            <iconify-icon icon="lucide:user-plus"></iconify-icon> Crear administrador
+            <iconify-icon icon="lucide:user-plus"></iconify-icon> Crear
+            administrador
           </button>
         </div>
       </div>
@@ -492,7 +521,7 @@
     </div>
 
     <div id="toast-container"></div>
-    <script src="../js/sidebar.js"></script>
-    <script src="../js/admin.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../admin/js/admin.js"></script>
   </body>
 </html>

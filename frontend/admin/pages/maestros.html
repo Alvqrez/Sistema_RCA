@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       /* ── Tabs del modal ─────────────────────────────────────────────── */
       .modal-tabs {
@@ -290,10 +290,14 @@
             <div class="form-grid-2">
               <div class="form-group">
                 <label>RFC *</label>
-                <input type="text" id="f_rfc" placeholder="Ej: PERJ850101HDF"
-                       maxlength="13"
-                       oninput="this.value=this.value.toUpperCase()" />
-                <small style="color:var(--text-muted);font-size:.72rem">
+                <input
+                  type="text"
+                  id="f_rfc"
+                  placeholder="Ej: PERJ850101HDF"
+                  maxlength="13"
+                  oninput="this.value = this.value.toUpperCase()"
+                />
+                <small style="color: var(--text-muted); font-size: 0.72rem">
                   El RFC será el identificador y nombre de usuario del maestro
                 </small>
               </div>
@@ -341,7 +345,6 @@
               Acceso al sistema
             </p>
             <div class="form-grid-2">
-            
               <div class="form-group" id="grupoPassword">
                 <label>Contraseña inicial *</label>
                 <input
@@ -367,7 +370,7 @@
                   style="text-transform: uppercase"
                 />
               </div>
-              
+
               <div class="form-group">
                 <label>Fecha de nacimiento</label>
                 <input type="date" id="f_fnac" />
@@ -514,8 +517,8 @@
           >
             <strong>Columnas requeridas:</strong>
             <code style="display: block; margin-top: 4px">
-              rfc, nombre, apellido_paterno, correo_institucional,
-              username, password
+              rfc, nombre, apellido_paterno, correo_institucional, username,
+              password
             </code>
             <strong style="margin-top: 8px; display: block"
               >Columnas opcionales:</strong
@@ -543,8 +546,8 @@
               Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
             </p>
             <small
-              >Columnas: rfc, nombre, apellido_paterno,
-              correo_institucional, username, password</small
+              >Columnas: rfc, nombre, apellido_paterno, correo_institucional,
+              username, password</small
             >
           </div>
           <input
@@ -578,7 +581,7 @@
       </div>
     </div>
 
-    <script src="../js/sidebar.js"></script>
-    <script src="../js/maestros.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../admin/js/maestros.js"></script>
   </body>
 </html>

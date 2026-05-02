@@ -99,26 +99,44 @@ app.post("/login", (req, res) => {
 });
 
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
-app.use("/api/alumnos", require("./src/routes/alumnos"));
-app.use("/api/materias", require("./src/routes/materias"));
-app.use("/api/grupos", require("./src/routes/grupos"));
-app.use("/api/calificaciones", require("./src/routes/calificaciones"));
-app.use("/api/admin", require("./src/routes/admin"));
-app.use("/api/maestros", require("./src/routes/maestros"));
-app.use("/api/unidades", require("./src/routes/unidades"));
-app.use("/api/carreras", require("./src/routes/carreras"));
-app.use("/api/actividades", require("./src/routes/actividades"));
-app.use("/api/resultado-actividad", require("./src/routes/resultado_actividad"));
+// ADMIN
+app.use("/api/alumnos", require("./src/routes/admin/alumnos"));
+app.use("/api/maestros", require("./src/routes/admin/maestros"));
+app.use("/api/inscripciones", require("./src/routes/admin/inscripciones"));
+app.use("/api/admin", require("./src/routes/admin/admin"));
+app.use("/api/carreras", require("./src/routes/admin/carreras"));
+app.use("/api/periodos", require("./src/routes/admin/periodos"));
+app.use(
+  "/api/tipo-actividades",
+  require("./src/routes/admin/tipo_actividades"),
+);
+app.use(
+  "/api/materia-actividades",
+  require("./src/routes/admin/materia_actividades"),
+);
 
-app.use("/api/inscripciones", require("./src/routes/inscripciones"));
-app.use("/api/periodos", require("./src/routes/periodos"));
-// FIX 5 & 6: nuevas rutas
-app.use("/api/bonus", require("./src/routes/bonus"));
-app.use("/api/modificacion-final", require("./src/routes/modificacion_final"));
-app.use("/api/reportes", require("./src/routes/reportes"));
-app.use("/api/config-evaluacion", require("./src/routes/config_evaluacion"));
-app.use("/api/tipo-actividades", require("./src/routes/tipo_actividades"));
-app.use("/api/materia-actividades", require("./src/routes/materia_actividades"));
+// MAESTRO
+app.use("/api/actividades", require("./src/routes/maestro/actividades"));
+app.use("/api/calificaciones", require("./src/routes/maestro/calificaciones"));
+app.use(
+  "/api/config-evaluacion",
+  require("./src/routes/maestro/config_evaluacion"),
+);
+app.use(
+  "/api/resultado-actividad",
+  require("./src/routes/maestro/resultado_actividad"),
+);
+app.use("/api/bonus", require("./src/routes/maestro/bonus"));
+app.use(
+  "/api/modificacion-final",
+  require("./src/routes/maestro/modificacion_final"),
+);
+
+// SHARED
+app.use("/api/grupos", require("./src/routes/shared/grupos"));
+app.use("/api/materias", require("./src/routes/shared/materias"));
+app.use("/api/unidades", require("./src/routes/shared/unidades"));
+app.use("/api/reportes", require("./src/routes/shared/reportes"));
 
 app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),

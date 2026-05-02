@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       /* ── Grupo card ─────────────────────────────────────────────── */
       .grupo-card {
@@ -492,8 +492,8 @@
     </div>
 
     <div id="toast-container"></div>
-    <script src="../js/sidebar.js"></script>
-    <script src="../js/gruposMaestro.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../maestro/js/gruposMaestro.js"></script>
 
     <!-- Modal Agregar Rubro -->
     <div class="modal-overlay" id="modalAgregarRubro">
@@ -570,23 +570,41 @@
     <div class="modal-overlay" id="modalEliminarRubro">
       <div class="modal-panel modal-sm">
         <div class="modal-header">
-          <h2 style="display:flex;align-items:center;gap:8px">
-            <iconify-icon icon="lucide:trash-2" style="color:var(--danger)"></iconify-icon>
+          <h2 style="display: flex; align-items: center; gap: 8px">
+            <iconify-icon
+              icon="lucide:trash-2"
+              style="color: var(--danger)"
+            ></iconify-icon>
             Eliminar rubro
           </h2>
-          <button class="modal-close" onclick="cerrarModalEliminarRubro()">✕</button>
+          <button class="modal-close" onclick="cerrarModalEliminarRubro()">
+            ✕
+          </button>
         </div>
         <div class="modal-body">
-          <p style="margin:0;font-size:0.95rem">
-            ¿Eliminar el rubro <strong id="eliminarRubroNombre"></strong> de todas las unidades de este grupo?
+          <p style="margin: 0; font-size: 0.95rem">
+            ¿Eliminar el rubro <strong id="eliminarRubroNombre"></strong> de
+            todas las unidades de este grupo?
           </p>
-          <p style="margin:10px 0 0;font-size:0.85rem;color:var(--text-muted)">
+          <p
+            style="
+              margin: 10px 0 0;
+              font-size: 0.85rem;
+              color: var(--text-muted);
+            "
+          >
             Los porcentajes guardados para ese rubro se perderán.
           </p>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModalEliminarRubro()">Cancelar</button>
-          <button class="btn btn-danger" id="btnConfirmarEliminarRubro" onclick="ejecutarEliminarRubro()">
+          <button class="btn btn-outline" onclick="cerrarModalEliminarRubro()">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-danger"
+            id="btnConfirmarEliminarRubro"
+            onclick="ejecutarEliminarRubro()"
+          >
             <iconify-icon icon="lucide:trash-2"></iconify-icon> Eliminar
           </button>
         </div>

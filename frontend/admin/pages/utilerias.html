@@ -11,13 +11,13 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       .util-grid {
         display: grid;
@@ -459,49 +459,75 @@
         </div>
 
         <!-- ── ADMINISTRADORES ───────────────────────────────────────── -->
-        <div class="card" style="margin-top:24px">
-          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-            <span><iconify-icon icon="lucide:shield-check" style="vertical-align:middle;margin-right:6px"></iconify-icon>Administradores del sistema</span>
+        <div class="card" style="margin-top: 24px">
+          <div
+            class="card-title"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <span
+              ><iconify-icon
+                icon="lucide:shield-check"
+                style="vertical-align: middle; margin-right: 6px"
+              ></iconify-icon
+              >Administradores del sistema</span
+            >
             <button class="btn btn-primary btn-sm" onclick="abrirModalAdmin()">
               <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo admin
             </button>
           </div>
-          <div class="card-body" style="padding:0">
-            <div style="overflow-x:auto">
+          <div class="card-body" style="padding: 0">
+            <div style="overflow-x: auto">
               <table>
                 <thead>
                   <tr>
                     <th>Nombre</th>
                     <th>Correo institucional</th>
-                    <th style="text-align:center">Acciones</th>
+                    <th style="text-align: center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tablaAdmins">
-                  <tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted)">Cargando…</td></tr>
+                  <tr>
+                    <td
+                      colspan="3"
+                      style="
+                        text-align: center;
+                        padding: 24px;
+                        color: var(--text-muted);
+                      "
+                    >
+                      Cargando…
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-
       </main>
     </div>
 
     <!-- Modal nuevo / editar admin -->
     <div id="modalAdmin" class="modal-overlay">
-      <div class="modal-panel" style="max-width:460px">
+      <div class="modal-panel" style="max-width: 460px">
         <div class="modal-header">
           <h2 id="modalAdminTitulo" class="modal-title">Nuevo administrador</h2>
           <button class="modal-close" onclick="cerrarModalAdmin()">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Nombre <span style="color:var(--danger)">*</span></label>
+            <label>Nombre <span style="color: var(--danger)">*</span></label>
             <input id="aNombre" type="text" placeholder="Juan" />
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
             <div class="form-group">
-              <label>Apellido paterno <span style="color:var(--danger)">*</span></label>
+              <label
+                >Apellido paterno
+                <span style="color: var(--danger)">*</span></label
+              >
               <input id="aApPat" type="text" placeholder="García" />
             </div>
             <div class="form-group">
@@ -510,24 +536,46 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Correo institucional <span style="color:var(--danger)">*</span></label>
+            <label
+              >Correo institucional
+              <span style="color: var(--danger)">*</span></label
+            >
             <input id="aCorreo" type="email" placeholder="admin@itv.edu.mx" />
           </div>
           <div id="camposNuevoAdmin">
             <div class="form-group">
-              <label>Username <span style="color:var(--danger)">*</span></label>
+              <label
+                >Username <span style="color: var(--danger)">*</span></label
+              >
               <input id="aUsername" type="text" placeholder="admin02" />
             </div>
             <div class="form-group">
-              <label>Contraseña <span style="color:var(--danger)">*</span></label>
-              <input id="aPassword" type="password" placeholder="Mínimo 6 caracteres" />
+              <label
+                >Contraseña <span style="color: var(--danger)">*</span></label
+              >
+              <input
+                id="aPassword"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+              />
             </div>
           </div>
-          <div id="adminFormError" class="error-msg" style="display:none;margin-top:8px"></div>
-          <div class="modal-footer" style="padding:0;margin-top:12px">
-            <button class="btn btn-outline" onclick="cerrarModalAdmin()">Cancelar</button>
-            <button class="btn btn-primary" id="btnGuardarAdmin" onclick="guardarAdmin()">
-              <iconify-icon icon="mdi:content-save-outline"></iconify-icon> Guardar
+          <div
+            id="adminFormError"
+            class="error-msg"
+            style="display: none; margin-top: 8px"
+          ></div>
+          <div class="modal-footer" style="padding: 0; margin-top: 12px">
+            <button class="btn btn-outline" onclick="cerrarModalAdmin()">
+              Cancelar
+            </button>
+            <button
+              class="btn btn-primary"
+              id="btnGuardarAdmin"
+              onclick="guardarAdmin()"
+            >
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Guardar
             </button>
           </div>
         </div>
@@ -536,7 +584,7 @@
 
     <div id="toast-container"></div>
 
-    <script src="../js/sidebar.js"></script>
+    <script src="../../shared/js/sidebar.js"></script>
     <script>
       const BASE = "http://localhost:3000";
       const tk = () => localStorage.getItem("token");
@@ -785,7 +833,7 @@
       async function cargarAdmins() {
         try {
           const r = await fetch(`${BASE}/api/admin/administradores`, {
-            headers: { Authorization: `Bearer ${tk()}` }
+            headers: { Authorization: `Bearer ${tk()}` },
           });
           const lista = await r.json();
           const tbody = document.getElementById("tablaAdmins");
@@ -795,17 +843,21 @@
           }
           // Obtener id del admin actual para protegerlo
           let miId = null;
-          try { miId = JSON.parse(atob(tk().split(".")[1])).id_referencia; } catch {}
-          tbody.innerHTML = lista.map(a => `
+          try {
+            miId = JSON.parse(atob(tk().split(".")[1])).id_referencia;
+          } catch {}
+          tbody.innerHTML = lista
+            .map(
+              (a) => `
             <tr>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
                   <div class="avatar-initials" style="width:32px;height:32px;font-size:.8rem;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">
-                    ${esc((a.nombre[0]??'')+(a.apellido_paterno[0]??''))}
+                    ${esc((a.nombre[0] ?? "") + (a.apellido_paterno[0] ?? ""))}
                   </div>
                   <div>
                     <div style="font-weight:600">${esc(a.nombre)} ${esc(a.apellido_paterno)}</div>
-                    ${a.apellido_materno ? `<div style="font-size:.75rem;color:var(--text-muted)">${esc(a.apellido_materno)}</div>` : ''}
+                    ${a.apellido_materno ? `<div style="font-size:.75rem;color:var(--text-muted)">${esc(a.apellido_materno)}</div>` : ""}
                   </div>
                 </div>
               </td>
@@ -815,36 +867,60 @@
                   <button class="btn btn-sm btn-outline" onclick="editarAdmin(${a.id_admin})" title="Editar">
                     <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
                   </button>
-                  ${String(a.id_admin) !== String(miId) ? `
+                  ${
+                    String(a.id_admin) !== String(miId)
+                      ? `
                   <button class="btn btn-sm btn-danger-outline" onclick="eliminarAdmin(${a.id_admin},'${esc(a.nombre)} ${esc(a.apellido_paterno)}')" title="Desactivar">
                     <iconify-icon icon="mdi:delete-outline"></iconify-icon>
-                  </button>` : `<span style="font-size:.72rem;color:var(--text-muted);padding:4px 8px">(tú)</span>`}
+                  </button>`
+                      : `<span style="font-size:.72rem;color:var(--text-muted);padding:4px 8px">(tú)</span>`
+                  }
                 </div>
               </td>
             </tr>
-          `).join("");
-        } catch { toast("Error al cargar administradores", "error"); }
+          `,
+            )
+            .join("");
+        } catch {
+          toast("Error al cargar administradores", "error");
+        }
       }
 
       function abrirModalAdmin(id = null) {
         _editAdminId = id;
         document.getElementById("adminFormError").style.display = "none";
-        document.getElementById("modalAdminTitulo").textContent = id ? "Editar administrador" : "Nuevo administrador";
-        document.getElementById("camposNuevoAdmin").style.display = id ? "none" : "block";
+        document.getElementById("modalAdminTitulo").textContent = id
+          ? "Editar administrador"
+          : "Nuevo administrador";
+        document.getElementById("camposNuevoAdmin").style.display = id
+          ? "none"
+          : "block";
         if (id) {
           // Buscar en tabla (simplificado: llamar a la API)
-          fetch(`${BASE}/api/admin/administradores`, { headers: { Authorization: `Bearer ${tk()}` } })
-            .then(r => r.json()).then(lista => {
-              const a = lista.find(x => x.id_admin === id);
+          fetch(`${BASE}/api/admin/administradores`, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          })
+            .then((r) => r.json())
+            .then((lista) => {
+              const a = lista.find((x) => x.id_admin === id);
               if (!a) return;
               document.getElementById("aNombre").value = a.nombre;
               document.getElementById("aApPat").value = a.apellido_paterno;
-              document.getElementById("aApMat").value = a.apellido_materno ?? "";
+              document.getElementById("aApMat").value =
+                a.apellido_materno ?? "";
               document.getElementById("aCorreo").value = a.correo_institucional;
             });
         } else {
-          ["aNombre","aApPat","aApMat","aCorreo","aUsername","aPassword"].forEach(id => {
-            const el = document.getElementById(id); if (el) el.value = "";
+          [
+            "aNombre",
+            "aApPat",
+            "aApMat",
+            "aCorreo",
+            "aUsername",
+            "aPassword",
+          ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
           });
         }
         document.getElementById("modalAdmin").classList.add("visible");
@@ -860,11 +936,16 @@
         errEl.style.display = "none";
         const nombre = document.getElementById("aNombre").value.trim();
         const apellido_paterno = document.getElementById("aApPat").value.trim();
-        const apellido_materno = document.getElementById("aApMat").value.trim() || null;
-        const correo_institucional = document.getElementById("aCorreo").value.trim();
+        const apellido_materno =
+          document.getElementById("aApMat").value.trim() || null;
+        const correo_institucional = document
+          .getElementById("aCorreo")
+          .value.trim();
 
         if (!nombre || !apellido_paterno || !correo_institucional) {
-          errEl.textContent = "Los campos marcados con * son obligatorios"; errEl.style.display = "block"; return;
+          errEl.textContent = "Los campos marcados con * son obligatorios";
+          errEl.style.display = "block";
+          return;
         }
 
         const btn = document.getElementById("btnGuardarAdmin");
@@ -875,52 +956,108 @@
           if (_editAdminId) {
             url = `${BASE}/api/admin/administradores/${_editAdminId}`;
             method = "PUT";
-            body = { nombre, apellido_paterno, apellido_materno, correo_institucional };
+            body = {
+              nombre,
+              apellido_paterno,
+              apellido_materno,
+              correo_institucional,
+            };
           } else {
             const username = document.getElementById("aUsername").value.trim();
             const password = document.getElementById("aPassword").value;
-            if (!username || !password) { errEl.textContent = "Username y contraseña son requeridos"; errEl.style.display = "block"; btn.disabled = false; return; }
-            if (password.length < 6) { errEl.textContent = "La contraseña debe tener al menos 6 caracteres"; errEl.style.display = "block"; btn.disabled = false; return; }
+            if (!username || !password) {
+              errEl.textContent = "Username y contraseña son requeridos";
+              errEl.style.display = "block";
+              btn.disabled = false;
+              return;
+            }
+            if (password.length < 6) {
+              errEl.textContent =
+                "La contraseña debe tener al menos 6 caracteres";
+              errEl.style.display = "block";
+              btn.disabled = false;
+              return;
+            }
             url = `${BASE}/api/admin/administradores`;
             method = "POST";
-            body = { nombre, apellido_paterno, apellido_materno, correo_institucional, username, password };
+            body = {
+              nombre,
+              apellido_paterno,
+              apellido_materno,
+              correo_institucional,
+              username,
+              password,
+            };
           }
           const r = await fetch(url, {
             method,
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk()}` },
-            body: JSON.stringify(body)
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tk()}`,
+            },
+            body: JSON.stringify(body),
           });
           const data = await r.json();
-          if (!r.ok) { errEl.textContent = data.error || "Error al guardar"; errEl.style.display = "block"; return; }
-          toast(_editAdminId ? "Administrador actualizado" : "Administrador creado", "success");
+          if (!r.ok) {
+            errEl.textContent = data.error || "Error al guardar";
+            errEl.style.display = "block";
+            return;
+          }
+          toast(
+            _editAdminId ? "Administrador actualizado" : "Administrador creado",
+            "success",
+          );
           cerrarModalAdmin();
           await cargarAdmins();
-        } catch { errEl.textContent = "Error de conexión"; errEl.style.display = "block"; }
-        finally { btn.disabled = false; }
+        } catch {
+          errEl.textContent = "Error de conexión";
+          errEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+        }
       }
 
-      function editarAdmin(id) { abrirModalAdmin(id); }
+      function editarAdmin(id) {
+        abrirModalAdmin(id);
+      }
 
       async function eliminarAdmin(id, nombre) {
-        if (!confirm(`¿Desactivar al administrador "${nombre}"?\n\nSu cuenta quedará inactiva pero el registro se conserva.`)) return;
+        if (
+          !confirm(
+            `¿Desactivar al administrador "${nombre}"?\n\nSu cuenta quedará inactiva pero el registro se conserva.`,
+          )
+        )
+          return;
         try {
           const r = await fetch(`${BASE}/api/admin/administradores/${id}`, {
-            method: "DELETE", headers: { Authorization: `Bearer ${tk()}` }
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${tk()}` },
           });
           const data = await r.json();
-          if (!r.ok) { toast(data.error || "Error al desactivar", "error"); return; }
+          if (!r.ok) {
+            toast(data.error || "Error al desactivar", "error");
+            return;
+          }
           toast("Administrador desactivado", "success");
           await cargarAdmins();
-        } catch { toast("Error de conexión", "error"); }
+        } catch {
+          toast("Error de conexión", "error");
+        }
       }
 
       function esc(s) {
-        return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
       // Cerrar modal admin al click fuera
-      document.getElementById("modalAdmin").addEventListener("click", e => {
-        if (e.target === document.getElementById("modalAdmin")) cerrarModalAdmin();
+      document.getElementById("modalAdmin").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("modalAdmin"))
+          cerrarModalAdmin();
       });
 
       // Spinner CSS

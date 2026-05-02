@@ -6,7 +6,7 @@
     <link
       rel="icon"
       type="image/png"
-      href="../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/rca-icon.png"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -548,7 +548,7 @@
         <div class="inst-logo">
           <div class="inst-icon">
             <img
-              src="../assets/images/icons/logo-itv.png"
+              src="../../assets/images/icons/logo-itv.png"
               alt="Instituto Tecnológico de Veracruz"
             />
           </div>
@@ -732,11 +732,11 @@
 
             setTimeout(() => {
               if (data.rol === "alumno")
-                window.location.href = "portalAlumno.html";
+                window.location.href = "../../alumno/pages/portalAlumno.html";
               else if (data.rol === "maestro")
-                window.location.href = "mis_grupos.html";
+                window.location.href = "../../maestro/pages/mis_grupos.html";
               else if (data.rol === "administrador")
-                window.location.href = "admin.html";
+                window.location.href = "../../admin/pages/admin.html";
             }, 600);
           } else {
             mostrarError(data.message || "Usuario o contraseña incorrectos");
