@@ -1,8 +1,6 @@
 // frontend/js/actividadesAdmin.js
 // Gestión de actividades evaluables por materia — solo Administrador
 
-const API_URL = "http://localhost:3000";
-
 // ─── Guard ────────────────────────────────────────────────────────────────────
 (function () {
   if (localStorage.getItem("rol") !== "administrador") {

@@ -192,7 +192,6 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const API_URL = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
 
       function parsearToken(t) {
@@ -312,7 +311,7 @@
                    class="btn btn-primary btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
                 </a>
-                <a href="configurar_actividades.html"
+                <a href="configurar_actividades.html?grupo=${g.id_grupo}"
                    class="btn btn-outline btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon> Configurar
                 </a>

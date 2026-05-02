@@ -1,5 +1,4 @@
 // frontend/js/grupos.js
-const API_URL = "http://localhost:3000";
 
 soloPermitido("administrador");
 

@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:3000";
 const tk = () => localStorage.getItem("token");
 
 let todosGrupos = [];

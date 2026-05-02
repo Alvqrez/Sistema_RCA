@@ -1,8 +1,6 @@
 // frontend/js/configurar_actividades.js  v3
 // Flujo: botón "+ Agregar actividad" en cada unidad → modal con tipos → nombre + % → guardar
 
-const API_URL = "http://localhost:3000";
-
 // ─── Caché de datos ────────────────────────────────────────────────────────
 const cacheUnidades = {}; // grupoId  → [unidad]
 const cacheActividades = {}; // `gId_uId` → [actividad]
@@ -44,12 +42,23 @@ function toast(msg, tipo = "success") {
 
 // ─── Init ──────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  if (rol() !== "maestro") {
-    window.location.href = "../../shared/pages/login.html";
-    return;
-  }
+  // soloPermitido() (definida en sidebar.js) redirige correctamente según rol:
+  // admins → admin.html, alumnos → login, etc. en lugar de ir siempre al login
+  soloPermitido("maestro", "administrador");
   await cargarTiposActividad();
   await cargarGrupos();
+
+  // Si se abrió desde mis_grupos.html con ?grupo=ID, expandir y hacer scroll a ese grupo
+  const paramGrupo = new URLSearchParams(window.location.search).get("grupo");
+  if (paramGrupo) {
+    const card = document.getElementById(`gcard-${paramGrupo}`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Expandir la card si tiene el método toggle
+      const header = card.querySelector(".grupo-card-header");
+      if (header && !card.classList.contains("open")) header.click();
+    }
+  }
 });
 
 // ─── Tipos de actividad (del catálogo admin) ───────────────────────────────

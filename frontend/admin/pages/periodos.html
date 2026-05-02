@@ -318,7 +318,6 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const BASE = "http://localhost:3000";
       const tk = () => localStorage.getItem("token");
       let editandoId = null;
 
@@ -479,8 +478,8 @@
           estatus: document.getElementById("pEstatus").value,
         };
         const url = editandoId
-          ? `${BASE}/api/periodos/${editandoId}`
-          : `${BASE}/api/periodos`;
+          ? `${API_URL}/api/periodos/${editandoId}`
+          : `${API_URL}/api/periodos`;
         const method = editandoId ? "PUT" : "POST";
 
         try {

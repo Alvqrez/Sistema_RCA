@@ -1,4 +1,3 @@
-const BASE = "http://localhost:3000";
 const token = localStorage.getItem("token");
 const rol = localStorage.getItem("rol");
 
@@ -24,7 +23,7 @@ let todasInscripciones = [];
 
 async function cargarDatosAlumno() {
   try {
-    const r = await fetch(`${BASE}/api/alumnos/${no_control}`, {
+    const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!r.ok) {
@@ -43,7 +42,7 @@ async function cargarDatosAlumno() {
 
 async function cargarInscripciones() {
   try {
-    const r = await fetch(`${BASE}/api/inscripciones/alumno/${no_control}`, {
+    const r = await fetch(`${API_URL}/api/inscripciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!r.ok) throw new Error();
@@ -64,9 +63,12 @@ async function cargarInscripciones() {
 // Fallback si la API de inscripciones no existe aún
 async function cargarCalificacionesFallback() {
   try {
-    const r = await fetch(`${BASE}/api/calificaciones/alumno/${no_control}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const r = await fetch(
+      `${API_URL}/api/calificaciones/alumno/${no_control}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     const califs = await r.json();
     const tbody = document.getElementById("tablaHistorial");
     if (!califs.length) {
@@ -257,9 +259,12 @@ async function cargarUnidades() {
   }
   wrap.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon></div>`;
   try {
-    const r = await fetch(`${BASE}/api/calificaciones/alumno/${no_control}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const r = await fetch(
+      `${API_URL}/api/calificaciones/alumno/${no_control}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     const todas = await r.json();
     const delGrupo = todas.filter((c) => c.id_grupo == id_grupo);
     if (!delGrupo.length) {
@@ -339,7 +344,7 @@ async function toggleDesglose(id_unidad, id_grupo, rowEl) {
 
   try {
     const r = await fetch(
-      `${BASE}/api/calificaciones/desglose/${no_control}/${id_grupo}/${id_unidad}`,
+      `${API_URL}/api/calificaciones/desglose/${no_control}/${id_grupo}/${id_unidad}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const data = await r.json();

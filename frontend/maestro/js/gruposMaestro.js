@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:3000";
 const tokenGM = () => localStorage.getItem("token");
 
 const RUBROS_DEFAULT = [
@@ -314,7 +313,7 @@ function buildGrupoBody(grupo, unidades) {
   if (!unidades.length) {
     return `<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:0.85rem">
       <iconify-icon icon="lucide:inbox" style="font-size:1.8rem;display:block;margin:0 auto 8px"></iconify-icon>
-      No hay unidades definidas. <a href="unidades.html" style="color:var(--primary);font-weight:600">Ir a crear unidades →</a>
+      No hay unidades definidas. <a href="../../admin/pages/unidades.html" style="color:var(--primary);font-weight:600">Ir a crear unidades →</a>
     </div>`;
   }
 

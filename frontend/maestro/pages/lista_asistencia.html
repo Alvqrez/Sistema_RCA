@@ -471,7 +471,6 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const BASE = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
       const STORE = (key) => `asist_${key}`;
 
@@ -499,14 +498,14 @@
       async function cargarGrupos() {
         let grupos = [];
         try {
-          const r = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+          const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
             headers: { Authorization: `Bearer ${tkn()}` },
           });
           if (r.ok) grupos = await r.json();
         } catch (_) {}
         if (!grupos.length) {
           try {
-            const r2 = await fetch(`${BASE}/api/grupos`, {
+            const r2 = await fetch(`${API_URL}/api/grupos`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             grupos = await r2.json();
@@ -530,7 +529,7 @@
 
         try {
           const r = await fetch(
-            `${BASE}/api/inscripciones/grupo/${grupoActual}`,
+            `${API_URL}/api/inscripciones/grupo/${grupoActual}`,
             {
               headers: { Authorization: `Bearer ${tkn()}` },
             },

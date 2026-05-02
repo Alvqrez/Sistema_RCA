@@ -586,7 +586,6 @@
 
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const BASE = "http://localhost:3000";
       const tk = () => localStorage.getItem("token");
 
       // ── Toast ─────────────────────────────────────────────────────
@@ -656,7 +655,7 @@
         }
 
         try {
-          const r = await fetch(`${BASE}/api/admin/mi-password`, {
+          const r = await fetch(`${API_URL}/api/admin/mi-password`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -766,7 +765,7 @@
       async function exportarCSV(modulo) {
         const cfg = csvEndpoints[modulo];
         try {
-          const r = await fetch(`${BASE}${cfg.url}`, {
+          const r = await fetch(`${API_URL}${cfg.url}`, {
             headers: { Authorization: `Bearer ${tk()}` },
           });
           const datos = await r.json();
@@ -805,7 +804,7 @@
         btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Generando…`;
 
         try {
-          const r = await fetch(`${BASE}/api/admin/backup`, {
+          const r = await fetch(`${API_URL}/api/admin/backup`, {
             headers: { Authorization: `Bearer ${tk()}` },
           });
           if (!r.ok) throw new Error("Error del servidor");
@@ -832,7 +831,7 @@
 
       async function cargarAdmins() {
         try {
-          const r = await fetch(`${BASE}/api/admin/administradores`, {
+          const r = await fetch(`${API_URL}/api/admin/administradores`, {
             headers: { Authorization: `Bearer ${tk()}` },
           });
           const lista = await r.json();
@@ -897,7 +896,7 @@
           : "block";
         if (id) {
           // Buscar en tabla (simplificado: llamar a la API)
-          fetch(`${BASE}/api/admin/administradores`, {
+          fetch(`${API_URL}/api/admin/administradores`, {
             headers: { Authorization: `Bearer ${tk()}` },
           })
             .then((r) => r.json())
@@ -954,7 +953,7 @@
         try {
           let url, method, body;
           if (_editAdminId) {
-            url = `${BASE}/api/admin/administradores/${_editAdminId}`;
+            url = `${API_URL}/api/admin/administradores/${_editAdminId}`;
             method = "PUT";
             body = {
               nombre,
@@ -978,7 +977,7 @@
               btn.disabled = false;
               return;
             }
-            url = `${BASE}/api/admin/administradores`;
+            url = `${API_URL}/api/admin/administradores`;
             method = "POST";
             body = {
               nombre,
@@ -1029,7 +1028,7 @@
         )
           return;
         try {
-          const r = await fetch(`${BASE}/api/admin/administradores/${id}`, {
+          const r = await fetch(`${API_URL}/api/admin/administradores/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${tk()}` },
           });

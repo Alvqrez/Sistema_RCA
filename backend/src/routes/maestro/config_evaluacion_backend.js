@@ -3,6 +3,25 @@ const router = express.Router();
 const db = require("../../db");
 const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
+// IMPORTANTE: /grupo/:id_grupo DEBE ir antes de /:id_grupo/:id_unidad
+// porque Express evalúa rutas en orden y "/grupo/5" coincidiría con
+// /:id_grupo/:id_unidad si esta estuviera primero (id_grupo="grupo", id_unidad="5")
+router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+  db.query(
+    `SELECT c.*, u.nombre_unidad
+     FROM config_evaluacion_unidad c
+     JOIN unidad u ON c.id_unidad = u.id_unidad
+     WHERE c.id_grupo = ? ORDER BY c.id_unidad`,
+    [req.params.id_grupo],
+    (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(rows);
+    },
+  );
+});
+
+// Esta ruta va DESPUÉS de /grupo/:id_grupo para que Express no la capture primero
 router.get("/:id_grupo/:id_unidad", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",
@@ -21,21 +40,6 @@ router.get("/:id_grupo/:id_unidad", verificarToken, (req, res) => {
           nota: null,
         },
       );
-    },
-  );
-});
-
-router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
-  db.query(
-    `SELECT c.*, u.nombre_unidad
-     FROM config_evaluacion_unidad c
-     JOIN unidad u ON c.id_unidad = u.id_unidad
-     WHERE c.id_grupo = ? ORDER BY c.id_unidad`,
-    [req.params.id_grupo],
-    (err, rows) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      res.json(rows);
     },
   );
 });
@@ -95,12 +99,10 @@ router.post("/", maestroOAdmin, (req, res) => {
     [id_grupo, id_unidad, pA, pE, pAs, nota ?? null],
     (err) => {
       if (err)
-        return res
-          .status(500)
-          .json({
-            error: "Error al guardar en base de datos",
-            detail: err.message,
-          });
+        return res.status(500).json({
+          error: "Error al guardar en base de datos",
+          detail: err.message,
+        });
       res.json({ success: true });
     },
   );

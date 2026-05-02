@@ -1,5 +1,4 @@
 // Rellena cualquier <select> con id dado con las carreras de la BD
-const API_URL = "http://localhost:3000";
 async function cargarCarrerasEnSelect(selectId) {
   const token = localStorage.getItem("token");
   const select = document.getElementById(selectId);

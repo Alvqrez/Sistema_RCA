@@ -198,7 +198,6 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
-      const BASE = "http://localhost:3000";
       const tkn = () => localStorage.getItem("token");
 
       let todosAlumnos = []; // { no_control, nombre, grupo, id_grupo, materia, estatus_final }
@@ -214,14 +213,14 @@
           // 1. Get teacher's groups
           let grupos = [];
           try {
-            const r = await fetch(`${BASE}/api/grupos/mis-grupos`, {
+            const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             if (r.ok) grupos = await r.json();
           } catch (_) {}
 
           if (!Array.isArray(grupos) || !grupos.length) {
-            const r2 = await fetch(`${BASE}/api/grupos`, {
+            const r2 = await fetch(`${API_URL}/api/grupos`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             const todos = await r2.json();
@@ -244,7 +243,7 @@
             sel.innerHTML += `<option value="${g.id_grupo}">${g.nombre_materia} (Grupo #${g.id_grupo})</option>`;
             try {
               const r = await fetch(
-                `${BASE}/api/reportes/grupo/${g.id_grupo}`,
+                `${API_URL}/api/reportes/grupo/${g.id_grupo}`,
                 { headers: { Authorization: `Bearer ${tkn()}` } },
               );
               if (!r.ok) continue;

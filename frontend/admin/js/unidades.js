@@ -2,7 +2,6 @@
 // Admin: configura nombres de unidades + tipos de actividad a nivel MATERIA
 // Los tipos elegidos se aplican IGUAL a todas las unidades de esa materia.
 
-const API_URL = "http://localhost:3000";
 const rol = localStorage.getItem("rol");
 const token = localStorage.getItem("token");
 

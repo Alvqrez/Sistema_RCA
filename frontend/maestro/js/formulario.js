@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:3000";
 const token = () => localStorage.getItem("token");
 
 let estado = {
@@ -13,7 +12,8 @@ let estado = {
   unidadCerrada: false, // true cuando la unidad fue cerrada y no se puede modificar
 };
 let bonusState = {}; // no_control → { puntos, justificacion }
-let _modalNo_control = null; // alumno activo en modal de actividades
+let _modalNo_control = null;
+let _cambiosPendientes = false; // true cuando hay datos sin guardar // alumno activo en modal de actividades
 
 function getRubrosConfig(id_grupo, id_unidad) {
   try {
@@ -79,6 +79,52 @@ function buildRubros(id_grupo, id_unidad) {
 }
 
 soloPermitido("maestro");
+
+// ─── Confirmación de cambios sin guardar ──────────────────────────────────────
+// Muestra aviso nativo si el usuario cierra/recarga la pestaña
+window.addEventListener("beforeunload", (e) => {
+  if (_cambiosPendientes) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+// Intercepta clics en enlaces del sidebar y menú de navegación
+document.addEventListener(
+  "click",
+  (e) => {
+    const link = e.target.closest("a[href]");
+    if (!link || !_cambiosPendientes) return;
+    const href = link.getAttribute("href");
+    // Ignorar anclas internas o vacías
+    if (!href || href.startsWith("#") || href.startsWith("javascript")) return;
+    // Solo interceptar si es navegación real (fuera de la página)
+    const esMismaUrl = link.href === window.location.href;
+    if (esMismaUrl) return;
+
+    e.preventDefault();
+    _urlPendienteNavegacion = link.href;
+    const modal = document.getElementById("modalCambiosSinGuardar");
+    if (modal) modal.classList.add("visible");
+  },
+  true,
+);
+
+let _urlPendienteNavegacion = null;
+
+function confirmarSalirSinGuardar() {
+  _cambiosPendientes = false;
+  const modal = document.getElementById("modalCambiosSinGuardar");
+  if (modal) modal.classList.remove("visible");
+  if (_urlPendienteNavegacion) window.location.href = _urlPendienteNavegacion;
+  _urlPendienteNavegacion = null;
+}
+
+function cancelarSalirSinGuardar() {
+  const modal = document.getElementById("modalCambiosSinGuardar");
+  if (modal) modal.classList.remove("visible");
+  _urlPendienteNavegacion = null;
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   await cargarGruposSelect();
@@ -692,6 +738,7 @@ function onCalInput(inp) {
     if (val > 100) inp.value = 100;
     if (val < 0) inp.value = 0;
   }
+  _cambiosPendientes = true;
 }
 
 function calcularPromedioActividades(no_control) {
@@ -797,6 +844,7 @@ function onBonusInput(no_control, val) {
     bonusState[no_control] = { puntos: "", justificacion: "" };
   bonusState[no_control].puntos = val;
   recalcularFila(no_control);
+  _cambiosPendientes = true;
 }
 
 function abrirModalActividades(no_control) {
@@ -1097,7 +1145,10 @@ async function _ejecutarGuardado() {
 
   await guardarGradesDirectos();
 
-  if (total > 0) mostrarToast(`${total} calificaciones guardadas`, "success");
+  if (total > 0) {
+    mostrarToast(`${total} calificaciones guardadas`, "success");
+    _cambiosPendientes = false;
+  }
   await cargarResultadosExistentes();
   renderTablaCalificaciones();
 }
@@ -1268,6 +1319,7 @@ async function guardarBonusUnidad() {
   }
   if (saved > 0)
     mostrarToast(`${saved} bonus guardado${saved > 1 ? "s" : ""}`, "success");
+  _cambiosPendientes = false;
   if (errs > 0) mostrarToast(`${errs} bonus no pudieron guardarse`, "error");
 }
 
@@ -1587,6 +1639,7 @@ async function guardarCalificacionesFinal() {
 
   if (guardados > 0)
     mostrarToast(`${guardados} calificaciones finales guardadas`, "success");
+  _cambiosPendientes = false;
   if (errores > 0) mostrarToast(`${errores} errores al guardar`, "error");
   // que ahora sí se guarda en BD (fix en calculo.js)
   await calcularVistaFinal();

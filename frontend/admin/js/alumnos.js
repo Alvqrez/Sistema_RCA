@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:3000";
 let alumnosGlobal = [];
 let modoEdicion = false;
 let no_controlEditando = null;

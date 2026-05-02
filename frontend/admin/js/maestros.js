@@ -1,4 +1,3 @@
-const API_URL = "http://localhost:3000";
 let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
