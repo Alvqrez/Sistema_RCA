@@ -77,11 +77,13 @@ router.post("/", soloAdmin, async (req, res) => {
     !no_control ||
     !id_carrera ||
     !correo_institucional ||
-    !username ||
     !password
   ) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
+
+  // El username del alumno siempre es su número de control
+  const usernameAlumno = no_control;
 
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -142,7 +144,7 @@ router.post("/", soloAdmin, async (req, res) => {
         // 2. Crea el acceso en la tabla usuario
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?, ?, 'alumno', ?, 1)`,
-          [username, hash, no_control],
+          [usernameAlumno, hash, no_control],
           (err2) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY")
@@ -244,10 +246,9 @@ router.post("/csv", soloAdmin, async (req, res) => {
       apellido_materno,
       id_carrera,
       correo_institucional,
-      username,
       password,
     } = alumno;
-    if (!no_control || !nombre || !id_carrera || !username || !password) {
+    if (!no_control || !nombre || !id_carrera || !password) {
       errores.push({
         no_control: no_control || "?",
         motivo: "Campos requeridos faltantes",
@@ -278,7 +279,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?,?,'alumno',?,1)
            ON DUPLICATE KEY UPDATE pwd=VALUES(pwd)`,
-          [username, hash, no_control],
+          [no_control, hash, no_control],
           (err) => {
             if (err) fail(err);
             else ok();

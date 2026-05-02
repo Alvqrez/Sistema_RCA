@@ -617,3 +617,19 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  DIS  modificacionfinal   → nueva PK auto-incremental (múltiples por par)
 --  REF  actividad           → nueva FK hacia grupo_unidad(id_grupo,id_unidad)
 -- ============================================================
+
+-- ============================================================
+-- PATCH: Cambiar username de alumnos a su número de control
+-- Ejecutar UNA VEZ en MySQL Workbench si ya tienes datos en la BD
+-- ============================================================
+
+-- Actualiza el username de cada usuario tipo 'alumno' para que
+-- sea igual a su id_referencia (número de control)
+UPDATE usuario
+SET username = id_referencia
+WHERE rol = 'alumno';
+
+-- Verificar resultado
+SELECT username, id_referencia, rol
+FROM usuario
+WHERE rol = 'alumno';

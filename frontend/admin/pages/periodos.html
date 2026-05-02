@@ -510,7 +510,7 @@
 
       /* Cargar lista */
       async function cargarPeriodos() {
-        const r = await fetch(BASE + "/api/periodos", {
+        const r = await fetch(API_URL + "/api/periodos", {
           headers: { Authorization: "Bearer " + tk() },
         });
         const datos = await r.json();
@@ -558,7 +558,7 @@
           )
         )
           return;
-        const r = await fetch(BASE + "/api/periodos/" + id, {
+        const r = await fetch(API_URL + "/api/periodos/" + id, {
           method: "DELETE",
           headers: { Authorization: "Bearer " + tk() },
         });

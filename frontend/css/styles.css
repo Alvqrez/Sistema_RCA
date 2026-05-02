@@ -3595,6 +3595,7 @@ th.col-final {
 /* ── SIDEBAR COLAPSABLE (toggle desktop) ─────────────────────────── */
 .sidebar {
   transition: width 0.22s ease;
+  overflow: visible;
 }
 .sidebar-toggle-btn {
   position: absolute;
@@ -3635,7 +3636,9 @@ th.col-final {
 
 .sidebar-toggle-btn iconify-icon {
   font-size: 14px;
-  display: flex;
+  display: block;
+  line-height: 1;
+  overflow: visible;
 }
 .sidebar.collapsed {
   width: 64px;

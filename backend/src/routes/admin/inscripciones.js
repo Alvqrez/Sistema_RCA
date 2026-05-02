@@ -38,7 +38,7 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
     SELECT i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
            m.nombre_materia, m.clave_materia,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
-           p.descripcion AS periodo, p.anio,
+           p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
            cf.calificacion_oficial, cf.estatus_final
     FROM inscripcion i
     JOIN grupo g   ON i.id_grupo = g.id_grupo
@@ -136,12 +136,10 @@ router.post("/", soloAdmin, (req, res) => {
         [no_control, id_grupo, tipo_curso || "Ordinario"],
         (err, result) => {
           if (err)
-            return res
-              .status(500)
-              .json({
-                error: "Error interno del servidor",
-                detalle: err.message,
-              });
+            return res.status(500).json({
+              error: "Error interno del servidor",
+              detalle: err.message,
+            });
 
           if (result.affectedRows === 0)
             return res.status(200).json({
@@ -204,12 +202,10 @@ router.post("/bulk", soloAdmin, (req, res) => {
       [vals],
       (err, r) => {
         if (err)
-          return res
-            .status(500)
-            .json({
-              error: "Error interno del servidor",
-              detalle: err.message,
-            });
+          return res.status(500).json({
+            error: "Error interno del servidor",
+            detalle: err.message,
+          });
         res.status(201).json({ success: true, insertados: r.affectedRows });
       },
     );

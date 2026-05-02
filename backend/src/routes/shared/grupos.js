@@ -16,7 +16,7 @@ router.get("/", verificarToken, (req, res) => {
       g.rfc,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
-      pe.descripcion AS descripcion_periodo, pe.anio,
+      pe.descripcion AS descripcion_periodo, YEAR(pe.fecha_inicio) AS anio,
       g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
@@ -46,7 +46,7 @@ router.get("/mis-grupos", verificarToken, (req, res) => {
       g.rfc,
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
-      pe.descripcion AS descripcion_periodo, pe.anio,
+      pe.descripcion AS descripcion_periodo, YEAR(pe.fecha_inicio) AS anio,
       g.limite_alumnos, g.horario, g.aula, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia

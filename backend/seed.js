@@ -209,13 +209,14 @@ async function seed() {
         [mat, nom, ap, am, correo],
       );
       const h = await bcrypt.hash(pwd, 10);
+      // username = no_control (número de control del alumno)
       await q(
         `INSERT IGNORE INTO usuario (username,pwd,rol,id_referencia)
                VALUES (?,?,'alumno',?)`,
-        [usr, h, mat],
+        [mat, h, mat],
       );
     }
-    console.log("✓ Alumnos    → 2023001–2023004 / alumno1..4");
+    console.log("✓ Alumnos    → 2023001–2023004 / controles como usuario");
 
     // ── Inscripciones ─────────────────────────────────────────────────────
     // Los 4 en Grupo 1 (FBD); 2023001 y 2023002 también en Grupo 3 (POO)
@@ -426,15 +427,15 @@ async function seed() {
     console.log(`  ${rfcAdmin}   / admin123    (Admin Sistema)`);
     console.log(`  ${rfc1}  / maestro123  (Juan Pérez)`);
     console.log(`  ${rfc2}  / maestro456  (María García)`);
-    console.log("  alumno1            / alumno123   (Carlos Ramírez  2023001)");
+    console.log("  2023001            / alumno123   (Carlos Ramírez  2023001)");
     console.log(
-      "  alumno2            / alumno456   (Diana López      2023002)",
+      "  2023002            / alumno456   (Diana López      2023002)",
     );
     console.log(
-      "  alumno3            / alumno789   (Ernesto Martínez 2023003)",
+      "  2023003            / alumno789   (Ernesto Martínez 2023003)",
     );
     console.log(
-      "  alumno4            / alumno000   (Fernanda Torres  2023004)",
+      "  2023004            / alumno000   (Fernanda Torres  2023004)",
     );
     console.log("─────────────────────────────────────────────────────");
     console.log("  ESCENARIOS DEMOSTRADOS:");

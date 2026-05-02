@@ -123,11 +123,7 @@
                 type="text"
                 id="f_no_control"
                 placeholder="Ej: 21VE0001"
-                maxlength="8"
-                oninput="
-                  const u = document.getElementById('f_username');
-                  if (!u.dataset.editado) u.value = this.value.toUpperCase();
-                "
+                maxlength="15"
               />
             </div>
             <div class="form-group">
@@ -142,12 +138,23 @@
                 type="text"
                 id="f_username"
                 readonly
+                placeholder="Se asigna automáticamente"
                 style="
                   background: var(--bg-app);
                   cursor: default;
                   color: var(--text-muted);
                 "
               />
+              <small
+                style="
+                  color: var(--text-muted);
+                  font-size: 11px;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
+                El usuario será el número de control del alumno
+              </small>
             </div>
             <div class="form-group" id="grupoPassword">
               <label>Contraseña inicial *</label>

@@ -257,12 +257,11 @@ async function guardarAlumno() {
   const id_carrera = document.getElementById("f_carrera").value;
   const correo = document.getElementById("f_correo").value.trim();
   const nombre = document.getElementById("f_nombre").value.trim();
-  const username = document.getElementById("f_username").value.trim();
   const password = document.getElementById("f_password").value;
   const errEl = document.getElementById("modalError");
   errEl.style.display = "none";
 
-  if (!modoEdicion && (!no_control || !id_carrera || !username || !password)) {
+  if (!modoEdicion && (!no_control || !id_carrera || !password)) {
     errEl.textContent = "Los campos marcados con * son obligatorios.";
     errEl.style.display = "block";
     return;
@@ -298,7 +297,6 @@ async function guardarAlumno() {
     tel_celular: document.getElementById("f_celular").value.trim(),
     tel_casa: document.getElementById("f_tel_casa").value.trim(),
     correo_personal: document.getElementById("f_correo_personal").value.trim(),
-    username,
     password,
   };
 
