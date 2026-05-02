@@ -1,16 +1,3 @@
-// sidebar.js  — navegación mejorada v2
-// Cambios respecto a la versión anterior:
-//  • Administrador: "Catálogos" dividido en "Personas" y "Configuración Académica"
-//    → El admin ya sabe al instante dónde buscar alumnos/maestros vs materias/grupos
-//  • Administrador: "Inscripciones" movida a su propia sección "Operación"
-//    junto con "Grupos" y "Periodos" (son acciones operativas, no catálogos)
-//  • Maestro: "Clases" renombrado a "Mis Grupos" (más descriptivo)
-//  • Maestro: "Ponderacion de unidades" → "Peso por unidad" (más claro)
-//  • Maestro: "Capturar calificaciones" promovido fuera del sub-menú
-//    y renombrado a "Calificaciones" para mayor visibilidad
-//  • Maestro: sección de Calificaciones incluye "Bonus" para no esconderlo
-//  • Alumno: se agrega enlace explícito a "Mis calificaciones" como alias
-//    de portalAlumno para que el nombre sea auto-descriptivo
 window.API_URL = "http://localhost:3000";
 
 (function () {
@@ -110,28 +97,15 @@ window.API_URL = "http://localhost:3000";
             texto: "Capturar calificaciones",
             icono: "lucide:pencil",
           },
-          {
-            href: "../../maestro/pages/bonus.html", // página de bonus si existe
-            texto: "Asignar bonus",
-            icono: "lucide:star",
-          },
         ],
       },
       {
-        href: "../../maestro/pages/reportes.html",
+        href: "../../shared/pages/reportes.html",
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
       },
     ],
 
-    // ─────────────────────────────────────────────────────────────────────
-    //  ADMINISTRADOR
-    //  Antes: todo en "Catálogos" — confuso porque mezcla entidades base
-    //  con operaciones. Ahora dividido en tres grupos lógicos:
-    //    1. Personas       — quiénes están en el sistema
-    //    2. Plan académico — qué se imparte (catálogos puros)
-    //    3. Operación      — cómo se organiza cada semestre
-    // ─────────────────────────────────────────────────────────────────────
     administrador: [
       {
         href: "../../admin/pages/admin.html",
@@ -207,7 +181,7 @@ window.API_URL = "http://localhost:3000";
         ],
       },
       {
-        href: "../../admin/pages/reportes.html",
+        href: "../../shared/pages/reportes.html",
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
       },
@@ -323,11 +297,11 @@ function soloPermitido(...roles) {
   const rol = localStorage.getItem("rol");
   if (!roles.includes(rol)) {
     const inicio = {
-      maestro: "mis_grupos.html",
-      alumno: "portalAlumno.html",
-      administrador: "admin.html",
+      maestro: "../../maestro/pages/mis_grupos.html",
+      alumno: "../../alumno/pages/portalAlumno.html",
+      administrador: "../../admin/pages/admin.html",
     };
-    window.location.href = inicio[rol] || "login.html";
+    window.location.href = inicio[rol] || "../../shared/pages/login.html";
   }
 }
 
@@ -335,20 +309,11 @@ function cerrarSesion() {
   const keysAConservar = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (
-      k.startsWith("pcts_") ||
-      k.startsWith("rubros_extra_") ||
-      k.startsWith("unidades_custom_") ||
-      k.startsWith("asist_") ||
-      k.startsWith("rubro_") ||
-      k === "tema"
-    ) {
-      keysAConservar.push([k, localStorage.getItem(k)]);
-    }
+    if (k === "tema") keysAConservar.push([k, localStorage.getItem(k)]);
   }
   localStorage.clear();
   keysAConservar.forEach(([k, v]) => localStorage.setItem(k, v));
-  window.location.href = "login.html";
+  window.location.href = "../../shared/pages/login.html";
 }
 
 function fmtFecha(f) {
