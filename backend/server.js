@@ -107,14 +107,14 @@ app.use("/api/inscripciones", require("./src/routes/admin/inscripciones"));
 app.use("/api/admin", require("./src/routes/admin/admin"));
 app.use("/api/carreras", require("./src/routes/admin/carreras"));
 app.use("/api/periodos", require("./src/routes/admin/periodos"));
-app.use("/api/materias", require("./src/routes/admin/materias")); // ← era shared/materias (no existe)
+app.use("/api/materias", require("./src/routes/admin/materias"));
 
 // MAESTRO
 app.use("/api/actividades", require("./src/routes/maestro/actividades"));
 app.use("/api/calificaciones", require("./src/routes/maestro/calificaciones"));
 app.use(
   "/api/config-evaluacion",
-  require("./src/routes/maestro/config_evaluacion"),
+  require("./src/routes/maestro/config_evaluacion_backend"),
 );
 app.use(
   "/api/resultado-actividad",
