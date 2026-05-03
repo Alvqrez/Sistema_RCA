@@ -1980,7 +1980,7 @@
         // Mostrar sección final si hay unidades
         if (estado.unidadesGrupo?.length) {
           document.getElementById("seccionFinal").style.display = "block";
-          recalcularCalificacionesFinal();
+          calcularVistaFinal(); // solo muestra datos existentes, sin error si no hay califs finales
         }
       };
     </script>

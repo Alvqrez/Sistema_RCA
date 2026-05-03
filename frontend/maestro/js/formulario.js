@@ -390,13 +390,18 @@ async function seleccionarUnidadTab(id_unidad) {
   estado.rubrosState = {};
   bonusState = {};
 
-  await cargarActividades();
-  await cargarResultadosExistentes();
-  await cargarBonusUnidad();
+  // Cargar datos — try-finally garantiza que el render siempre ocurra
+  try {
+    await cargarActividades();
+  } catch (e) {
+    console.error("Error cargando actividades:", e);
+    estado.actividades = [];
+  }
+  try { await cargarResultadosExistentes(); } catch (e) { console.error(e); }
+  try { await cargarBonusUnidad(); } catch (e) { console.error(e); }
+  try { await cargarGradesDirectos(); } catch (e) { console.error(e); }
 
-  await cargarGradesDirectos();
-
-  // Restaurar valores de examen/asistencia (BD ya los pobló en localStorage vía cargarGradesDirectos)
+  // Restaurar valores de examen/asistencia
   estado.alumnos.forEach((al) => {
     estado.rubros
       .filter((r) => r.tipo === "directo")
@@ -418,7 +423,7 @@ async function seleccionarUnidadTab(id_unidad) {
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 
-  await verificarEstadoUnidad();
+  try { await verificarEstadoUnidad(); } catch (e) { console.error(e); }
 }
 
 async function verificarEstadoUnidad() {
@@ -502,15 +507,21 @@ function limpiarUnidad() {
 }
 
 async function cargarActividades() {
-  const res = await fetch(`${API_URL}/api/actividades`, {
-    headers: { Authorization: `Bearer ${token()}` },
-  });
-  const todas = await res.json();
-  estado.actividades = todas.filter(
-    (a) =>
-      parseInt(a.id_grupo) === parseInt(estado.grupoId) &&
-      parseInt(a.id_unidad) === parseInt(estado.unidadId),
-  );
+  try {
+    const res = await fetch(`${API_URL}/api/actividades`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!res.ok) { estado.actividades = []; return; }
+    const todas = await res.json();
+    estado.actividades = todas.filter(
+      (a) =>
+        parseInt(a.id_grupo) === parseInt(estado.grupoId) &&
+        parseInt(a.id_unidad) === parseInt(estado.unidadId),
+    );
+  } catch (e) {
+    console.error("cargarActividades error:", e);
+    estado.actividades = [];
+  }
 }
 
 async function actualizarActividades() {
