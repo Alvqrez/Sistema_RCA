@@ -38,7 +38,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 // GET — un alumno por no_control
 router.get("/:no_control", verificarToken, (req, res) => {
   db.query(
-    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, curp, fecha_nacimiento, genero, tel_celular, tel_casa, direccion, correo_personal FROM alumno WHERE no_control = ?",
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, curp, fecha_nacimiento, genero, tel_celular, tel_casa, CONCAT_WS(', ', NULLIF(dir_calle,''), NULLIF(dir_numero,''), NULLIF(dir_colonia,''), NULLIF(dir_ciudad,''), NULLIF(dir_estado,''), NULLIF(dir_cp,'')) AS direccion, correo_personal FROM alumno WHERE no_control = ?",
     [req.params.no_control],
     (err, results) => {
       if (err)
@@ -93,7 +93,7 @@ router.post("/", soloAdmin, async (req, res) => {
       `INSERT INTO alumno
          (no_control, nombre, apellido_paterno, apellido_materno, id_carrera,
           correo_institucional, curp, fecha_nacimiento, genero,
-          tel_celular, tel_casa, direccion, correo_personal)
+          tel_celular, tel_casa, dir_calle, correo_personal)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         no_control,
@@ -191,7 +191,7 @@ router.put("/:no_control", soloAdmin, (req, res) => {
         SET nombre = ?, apellido_paterno = ?, apellido_materno = ?,
             correo_institucional = ?, id_carrera = ?,
             curp = ?, fecha_nacimiento = ?, genero = ?,
-            tel_celular = ?, tel_casa = ?, direccion = ?, correo_personal = ?
+            tel_celular = ?, tel_casa = ?, dir_calle = ?, correo_personal = ?
         WHERE no_control = ?
     `;
 
