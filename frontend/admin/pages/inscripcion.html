@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Inscripción de Alumnos - RCA</title>
+    <title>Inscripción de Alumnos — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
@@ -14,10 +14,465 @@
       href="../../assets/images/icons/rca-icon.png"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../../css/styles.css" />
+    <style>
+      .wizard-layout {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+      .step-tracker {
+        position: sticky;
+        top: 24px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+      .step-track-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 6px;
+        border-radius: 8px;
+        position: relative;
+      }
+      .step-track-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        left: 17px;
+        top: 36px;
+        width: 2px;
+        height: calc(100% - 10px);
+        background: var(--border);
+        border-radius: 2px;
+      }
+      .step-track-item.done::after {
+        background: #22c55e;
+      }
+      .step-track-item.active::after {
+        background: #3b82f6;
+      }
+      .step-track-circle {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        background: var(--card-bg);
+        flex-shrink: 0;
+        transition: all 0.2s;
+        z-index: 1;
+        position: relative;
+      }
+      .step-track-item.active .step-track-circle {
+        border-color: #3b82f6;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+      }
+      .step-track-item.done .step-track-circle {
+        border-color: #22c55e;
+        background: #22c55e;
+        color: #fff;
+      }
+      .step-track-label {
+        display: flex;
+        flex-direction: column;
+        padding-top: 3px;
+      }
+      .step-track-label strong {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        line-height: 1.2;
+      }
+      .step-track-item.active .step-track-label strong {
+        color: var(--text-main);
+      }
+      .step-track-item.done .step-track-label strong {
+        color: #22c55e;
+      }
+      .step-track-label span {
+        font-size: 0.69rem;
+        color: var(--text-muted);
+        margin-top: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+      }
+
+      .wizard-steps {
+        display: flex;
+        flex-direction: column;
+      }
+      .insc-step {
+        display: none;
+      }
+      .insc-step.active {
+        display: block;
+      }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .step-num-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .step-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+      .step-header p {
+        margin: 2px 0 0;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      /* ── Periodo cards ── */
+      .periodo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .periodo-card {
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+        background: var(--card-bg);
+      }
+      .periodo-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      .periodo-card.selected {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .periodo-card .pc-estatus {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .pc-estatus.vigente {
+        background: rgba(34, 197, 94, 0.12);
+        color: #16a34a;
+      }
+      .pc-estatus.proximo {
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+      }
+      .periodo-card .pc-nombre {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .periodo-card .pc-anio {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      /* ── Materia cards ── */
+      .section-sep {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 18px 0 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+      }
+      .section-sep::before,
+      .section-sep::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .materia-lista {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 8px;
+        margin-bottom: 18px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 2px;
+      }
+      .mat-card {
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: all 0.14s;
+        background: var(--card-bg);
+      }
+      .mat-card:hover {
+        border-color: #3b82f6;
+      }
+      .mat-card.selected {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .mat-card .mc-clave {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.4px;
+        margin-bottom: 4px;
+      }
+      .mat-card .mc-nombre {
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      /* ── Grupo cards ── */
+      .grupo-lista {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .grp-card {
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.14s;
+        background: var(--card-bg);
+      }
+      .grp-card:hover {
+        border-color: #3b82f6;
+      }
+      .grp-card.selected {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .grp-card .gc-id {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 6px;
+      }
+      .grp-card .gc-maestro {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .grp-card .gc-info {
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .grp-card .gc-info span {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .grp-card .gc-cap {
+        margin-top: 8px;
+        font-size: 0.73rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .cap-bar {
+        flex: 1;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border);
+        overflow: hidden;
+      }
+      .cap-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: #3b82f6;
+      }
+
+      .filter-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        margin-bottom: 14px;
+      }
+      .filter-row .field-group {
+        flex: 1;
+        min-width: 180px;
+      }
+
+      .empty-hint {
+        text-align: center;
+        padding: 24px 16px;
+        color: var(--text-muted);
+        font-size: 0.83rem;
+        border: 2px dashed var(--border);
+        border-radius: 10px;
+      }
+      .empty-hint iconify-icon {
+        font-size: 1.8rem;
+        display: block;
+        margin: 0 auto 6px;
+        opacity: 0.45;
+      }
+
+      /* ── Alumnos step ── */
+      .alumnos-toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .alumnos-toolbar input {
+        flex: 1;
+        min-width: 200px;
+      }
+      .sel-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.07);
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        font-size: 0.82rem;
+        color: var(--text-main);
+        margin-bottom: 12px;
+      }
+      .sel-info iconify-icon {
+        color: #3b82f6;
+      }
+
+      /* ── Confirmacion ── */
+      .resumen-box {
+        background: var(--bg-app);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+      .dark-mode .resumen-box {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .resumen-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.86rem;
+      }
+      .resumen-row:last-child {
+        border-bottom: none;
+      }
+      .rr-label {
+        font-weight: 600;
+        min-width: 120px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .rr-val {
+        font-weight: 500;
+      }
+      .alumnos-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 6px;
+      }
+      .alumno-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.22);
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .wizard-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 22px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      /* ── Recientes ── */
+      .recientes-card {
+        margin-top: 28px;
+      }
+      .card-filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .card-filter-bar input {
+        flex: 2;
+        min-width: 180px;
+      }
+      .card-filter-bar select {
+        min-width: 140px;
+      }
+
+      @media (max-width: 760px) {
+        .wizard-layout {
+          grid-template-columns: 1fr;
+        }
+        .step-tracker {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
@@ -26,9 +481,7 @@
         <div class="page-header-v2">
           <div>
             <h1>Inscripción de Alumnos</h1>
-            <p class="page-subtitle">
-              Asigna alumnos a grupos por periodo escolar
-            </p>
+            <p class="page-subtitle">Asigna alumnos a grupos en pocos pasos</p>
           </div>
           <div class="header-actions">
             <button
@@ -43,225 +496,306 @@
             >
               <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
             </button>
-            <button
-              class="btn btn-outline btn-sm"
-              onclick="window.location.href = 'alumnos.html'"
-            >
-              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Volver
-            </button>
           </div>
         </div>
 
-        <!-- PASOS VISUALES -->
-        <div class="stepper" id="stepper">
-          <div class="step active" id="stepDot1">
-            <div class="step-circle">1</div>
-            <span>Seleccionar grupo</span>
+        <div class="wizard-layout">
+          <!-- ── Step tracker lateral ── -->
+          <div class="step-tracker">
+            <div class="step-track-item active" id="track1">
+              <div class="step-track-circle" id="tc1">1</div>
+              <div class="step-track-label">
+                <strong>Periodo</strong>
+                <span id="tc1val">Pendiente</span>
+              </div>
+            </div>
+            <div class="step-track-item" id="track2">
+              <div class="step-track-circle" id="tc2">2</div>
+              <div class="step-track-label">
+                <strong>Carrera &amp; Grupo</strong>
+                <span id="tc2val">Pendiente</span>
+              </div>
+            </div>
+            <div class="step-track-item" id="track3">
+              <div class="step-track-circle" id="tc3">3</div>
+              <div class="step-track-label">
+                <strong>Alumnos</strong>
+                <span id="tc3val">Pendiente</span>
+              </div>
+            </div>
+            <div class="step-track-item" id="track4">
+              <div class="step-track-circle" id="tc4">4</div>
+              <div class="step-track-label">
+                <strong>Confirmación</strong>
+                <span id="tc4val">Pendiente</span>
+              </div>
+            </div>
           </div>
-          <div class="step-line"></div>
-          <div class="step" id="stepDot2">
-            <div class="step-circle">2</div>
-            <span>Elegir alumnos</span>
+
+          <!-- ── Pasos ── -->
+          <div class="wizard-steps">
+            <!-- PASO 1: PERIODO -->
+            <div class="card insc-step active" id="paso1">
+              <div class="step-header">
+                <div class="step-num-badge">1</div>
+                <div>
+                  <h2>Seleccionar periodo</h2>
+                  <p>Solo se muestran periodos vigentes o próximos</p>
+                </div>
+              </div>
+              <div id="periodosGrid" class="periodo-grid">
+                <div
+                  style="
+                    grid-column: 1/-1;
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--text-muted);
+                  "
+                >
+                  <iconify-icon icon="lucide:loader-2"></iconify-icon> Cargando…
+                </div>
+              </div>
+              <div class="wizard-nav">
+                <span></span>
+                <button
+                  class="btn btn-primary"
+                  onclick="irPaso2()"
+                  id="btnIrPaso2"
+                  disabled
+                >
+                  Siguiente
+                  <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 2: CARRERA + MATERIA + GRUPO -->
+            <div class="card insc-step" id="paso2">
+              <div class="step-header">
+                <div class="step-num-badge">2</div>
+                <div>
+                  <h2>Seleccionar grupo</h2>
+                  <p>
+                    Elige la carrera, luego la materia y finalmente el grupo
+                  </p>
+                </div>
+              </div>
+
+              <div class="filter-row">
+                <div class="field-group">
+                  <label>Carrera</label>
+                  <select id="selCarrera" onchange="onCarreraChange()">
+                    <option value="">— Selecciona una carrera —</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="secMaterias" style="display: none">
+                <div class="section-sep">Materias en la retícula</div>
+                <div id="materiasLista" class="materia-lista"></div>
+              </div>
+
+              <div id="secGrupos" style="display: none">
+                <div class="section-sep">
+                  Grupos disponibles del periodo seleccionado
+                </div>
+                <div id="gruposLista" class="grupo-lista"></div>
+              </div>
+
+              <div class="wizard-nav">
+                <button class="btn btn-outline" onclick="irPaso1()">
+                  <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
+                </button>
+                <button
+                  class="btn btn-primary"
+                  onclick="irPaso3()"
+                  id="btnIrPaso3"
+                  disabled
+                >
+                  Siguiente
+                  <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 3: ALUMNOS -->
+            <div class="card insc-step" id="paso3">
+              <div class="step-header">
+                <div class="step-num-badge">3</div>
+                <div>
+                  <h2>Seleccionar alumnos</h2>
+                  <p id="paso3Sub">
+                    Alumnos de la misma carrera aún no inscritos en este grupo
+                  </p>
+                </div>
+              </div>
+
+              <div class="alumnos-toolbar">
+                <input
+                  type="text"
+                  id="buscarAlumno"
+                  placeholder="🔍 Nombre o no. control…"
+                  oninput="filtrarAlumnos()"
+                />
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="seleccionarTodos()"
+                >
+                  <iconify-icon icon="mdi:check-all"></iconify-icon> Todos
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="deseleccionarTodos()"
+                >
+                  <iconify-icon icon="mdi:close"></iconify-icon> Limpiar
+                </button>
+              </div>
+
+              <div class="sel-info">
+                <iconify-icon
+                  icon="mdi:account-multiple-check-outline"
+                ></iconify-icon>
+                <span id="lblSel">0 alumnos seleccionados</span>
+                <span
+                  id="lblYaInscritos"
+                  style="
+                    margin-left: auto;
+                    font-size: 0.78rem;
+                    color: var(--text-muted);
+                  "
+                ></span>
+              </div>
+
+              <div class="tabla-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width: 36px">
+                        <input
+                          type="checkbox"
+                          id="chkTodos"
+                          onchange="toggleTodos(this)"
+                        />
+                      </th>
+                      <th>No. Control</th>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaAlumnos"></tbody>
+                </table>
+              </div>
+
+              <div class="wizard-nav">
+                <button class="btn btn-outline" onclick="irPaso2()">
+                  <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
+                </button>
+                <button
+                  class="btn btn-primary"
+                  onclick="irPaso4()"
+                  id="btnIrPaso4"
+                  disabled
+                >
+                  Revisar
+                  <iconify-icon icon="lucide:arrow-right"></iconify-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 4: CONFIRMACIÓN -->
+            <div class="card insc-step" id="paso4">
+              <div class="step-header">
+                <div class="step-num-badge">4</div>
+                <div>
+                  <h2>Confirmar inscripción</h2>
+                  <p>Revisa los detalles antes de inscribir</p>
+                </div>
+              </div>
+
+              <div class="resumen-box">
+                <div class="resumen-row">
+                  <span class="rr-label"
+                    ><iconify-icon
+                      icon="mdi:calendar-range-outline"
+                    ></iconify-icon
+                    >Periodo</span
+                  >
+                  <span class="rr-val" id="rs-periodo">—</span>
+                </div>
+                <div class="resumen-row">
+                  <span class="rr-label"
+                    ><iconify-icon icon="mdi:school-outline"></iconify-icon
+                    >Carrera</span
+                  >
+                  <span class="rr-val" id="rs-carrera">—</span>
+                </div>
+                <div class="resumen-row">
+                  <span class="rr-label"
+                    ><iconify-icon icon="lucide:book"></iconify-icon
+                    >Materia</span
+                  >
+                  <span class="rr-val" id="rs-materia">—</span>
+                </div>
+                <div class="resumen-row">
+                  <span class="rr-label"
+                    ><iconify-icon icon="lucide:library"></iconify-icon
+                    >Grupo</span
+                  >
+                  <span class="rr-val" id="rs-grupo">—</span>
+                </div>
+                <div class="resumen-row">
+                  <span class="rr-label"
+                    ><iconify-icon icon="lucide:graduation-cap"></iconify-icon
+                    >Maestro</span
+                  >
+                  <span class="rr-val" id="rs-maestro">—</span>
+                </div>
+                <div
+                  class="resumen-row"
+                  style="flex-direction: column; gap: 6px"
+                >
+                  <span class="rr-label">
+                    <iconify-icon
+                      icon="mdi:account-multiple-outline"
+                    ></iconify-icon>
+                    Alumnos a inscribir (<span id="rs-count">0</span>)
+                  </span>
+                  <div class="alumnos-chips" id="rs-alumnos"></div>
+                </div>
+              </div>
+
+              <div class="filter-row">
+                <div class="field-group" style="max-width: 240px">
+                  <label>Tipo de curso</label>
+                  <select id="tipoCurso">
+                    <option value="Ordinario">Ordinario</option>
+                    <option value="Recursado">Recursado</option>
+                    <option value="Especial">Especial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="wizard-nav">
+                <button class="btn btn-outline" onclick="irPaso3()">
+                  <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="confirmarInscripcion()"
+                  id="btnConfirmar"
+                >
+                  <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
+                  Inscribir alumnos
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="step-line"></div>
-          <div class="step" id="stepDot3">
-            <div class="step-circle">3</div>
-            <span>Confirmar</span>
-          </div>
+          <!-- /wizard-steps -->
         </div>
+        <!-- /wizard-layout -->
 
-        <!-- PASO 1 — GRUPO -->
-        <div class="card insc-step" id="paso1">
-          <div class="card-title">
-            <span class="step-number">1</span>
-            Seleccionar grupo de destino
-          </div>
-
-          <div class="config-grid">
-            <div class="field-group">
-              <label>Periodo escolar</label>
-              <select id="selPeriodo" onchange="filtrarGruposPorPeriodo()">
-                <option value="">Todos los periodos</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Materia</label>
-              <select id="selMateriaFiltro" onchange="filtrarGrupos()">
-                <option value="">Todas las materias</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="tabla-wrapper" style="margin-top: 16px">
-            <table>
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Grupo</th>
-                  <th>Materia</th>
-                  <th>Maestro</th>
-                  <th>Periodo</th>
-                  <th>Horario</th>
-                  <th>Capacidad</th>
-                </tr>
-              </thead>
-              <tbody id="tablaGrupos"></tbody>
-            </table>
-          </div>
-
-          <div class="acciones-row" style="margin-top: 16px">
-            <button
-              class="btn btn-primary"
-              onclick="irPaso2()"
-              id="btnIrPaso2"
-              disabled
-            >
-              Continuar <iconify-icon icon="lucide:arrow-right"></iconify-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- PASO 2 — ALUMNOS -->
-        <div class="card insc-step" id="paso2" style="display: none">
-          <div class="card-title">
-            <span class="step-number">2</span>
-            Seleccionar alumnos a inscribir
-            <span
-              id="grupoSelBadge"
-              style="margin-left: 8px"
-              class="badge-grupo"
-            ></span>
-          </div>
-
-          <div
-            style="
-              display: flex;
-              gap: 12px;
-              flex-wrap: wrap;
-              margin-bottom: 16px;
-              align-items: flex-end;
-            "
-          >
-            <div class="field-group" style="flex: 2; min-width: 200px">
-              <label>Buscar alumno</label>
-              <input
-                type="text"
-                id="buscarAlumno"
-                placeholder="Nombre o no_control..."
-                oninput="filtrarAlumnos()"
-              />
-            </div>
-            <div class="field-group" style="flex: 1; min-width: 160px">
-              <label>Carrera</label>
-              <select id="filtroCarreraAlumno" onchange="filtrarAlumnos()">
-                <option value="">Todas las carreras</option>
-              </select>
-            </div>
-            <div style="margin-bottom: 6px">
-              <button
-                class="btn btn-outline btn-sm"
-                onclick="seleccionarTodos()"
-              >
-                <iconify-icon icon="mdi:check-all"></iconify-icon> Seleccionar
-                todos
-              </button>
-              <button
-                class="btn btn-outline btn-sm"
-                style="margin-left: 6px"
-                onclick="deseleccionarTodos()"
-              >
-                <iconify-icon icon="mdi:close"></iconify-icon> Limpiar
-              </button>
-            </div>
-          </div>
-
-          <div
-            style="
-              display: flex;
-              gap: 4px;
-              margin-bottom: 10px;
-              font-size: 0.83rem;
-              color: var(--text-muted);
-            "
-          >
-            <iconify-icon icon="mdi:information-outline"></iconify-icon>
-            <span id="infoSeleccion">0 alumnos seleccionados</span>
-            <span style="margin-left: 8px" id="infoYaInscritos"></span>
-          </div>
-
-          <div class="tabla-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      id="chkTodos"
-                      onchange="toggleTodos(this)"
-                    />
-                  </th>
-                  <th>No. Control</th>
-                  <th>Nombre</th>
-                  <th>Carrera</th>
-                  <th>Correo</th>
-                  <th>Estatus</th>
-                </tr>
-              </thead>
-              <tbody id="tablaAlumnos"></tbody>
-            </table>
-          </div>
-
-          <div class="acciones-row" style="margin-top: 16px">
-            <button class="btn btn-outline" onclick="volverPaso1()">
-              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="irPaso3()"
-              id="btnIrPaso3"
-              disabled
-            >
-              Revisar selección
-              <iconify-icon icon="lucide:arrow-right"></iconify-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- PASO 3 — CONFIRMACIÓN -->
-        <div class="card insc-step" id="paso3" style="display: none">
-          <div class="card-title">
-            <span class="step-number">3</span>
-            Confirmar inscripción
-          </div>
-
-          <div class="resumen-insc" id="resumenInsc"></div>
-
-          <div class="field-group" style="max-width: 240px; margin-top: 12px">
-            <label>Tipo de curso</label>
-            <select id="tipoCurso">
-              <option value="Ordinario">Ordinario</option>
-              <option value="Recursado">Recursado</option>
-              <option value="Especial">Especial</option>
-            </select>
-          </div>
-
-          <div class="acciones-row" style="margin-top: 20px">
-            <button class="btn btn-outline" onclick="volverPaso2()">
-              <iconify-icon icon="lucide:arrow-left"></iconify-icon> Atrás
-            </button>
-            <button
-              class="btn btn-success"
-              onclick="confirmarInscripcion()"
-              id="btnConfirmar"
-            >
-              <iconify-icon icon="mdi:check-circle-outline"></iconify-icon>
-              Inscribir alumnos
-            </button>
-          </div>
-        </div>
-
-        <!-- PANEL: INSCRIPCIONES ACTUALES -->
-        <div class="card" style="margin-top: 8px">
+        <!-- INSCRIPCIONES RECIENTES -->
+        <div class="card recientes-card">
           <div class="card-title">
             <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
             Inscripciones recientes
@@ -273,51 +807,42 @@
               <iconify-icon icon="mdi:refresh"></iconify-icon>
             </button>
           </div>
-
-          <div class="card-filter-bar" style="margin-bottom: 16px">
-            <input
-              type="text"
-              id="buscarInsc"
-              placeholder="Buscar por nombre o no_control…"
-              oninput="filtrarTablaInsc()"
-              style="flex: 2; min-width: 200px"
-            />
-            <select
-              id="filtroGrupoInsc"
-              onchange="filtrarTablaInsc()"
-              style="min-width: 180px"
-            >
-              <option value="">Todos los grupos</option>
-            </select>
-            <select
-              id="filtroEstatusInsc"
-              onchange="filtrarTablaInsc()"
-              style="min-width: 130px"
-            >
-              <option value="">Todos los estatus</option>
-              <option value="Cursando">Cursando</option>
-              <option value="Baja">Baja</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Reprobado">Reprobado</option>
-            </select>
-          </div>
-
-          <div class="tabla-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>No. Control</th>
-                  <th>Alumno</th>
-                  <th>Materia / Grupo</th>
-                  <th>Maestro</th>
-                  <th>Periodo</th>
-                  <th>Tipo</th>
-                  <th>Estatus</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tablaInscripciones"></tbody>
-            </table>
+          <div class="card-body">
+            <div class="card-filter-bar">
+              <input
+                type="text"
+                id="buscarInsc"
+                placeholder="Buscar por nombre o no. control…"
+                oninput="filtrarTablaInsc()"
+              />
+              <select id="filtroGrupoInsc" onchange="filtrarTablaInsc()">
+                <option value="">Todos los grupos</option>
+              </select>
+              <select id="filtroEstatusInsc" onchange="filtrarTablaInsc()">
+                <option value="">Todos los estatus</option>
+                <option value="Cursando">Cursando</option>
+                <option value="Baja">Baja</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Reprobado">Reprobado</option>
+              </select>
+            </div>
+            <div class="tabla-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>No. Control</th>
+                    <th>Alumno</th>
+                    <th>Materia / Grupo</th>
+                    <th>Maestro</th>
+                    <th>Periodo</th>
+                    <th>Tipo</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaInscripciones"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -342,7 +867,7 @@
       </div>
     </div>
 
-    <!-- MODAL CSV INSCRIPCIONES -->
+    <!-- Modal CSV -->
     <div id="modalCSVInscripcion" class="modal-overlay">
       <div class="modal-panel modal-sm">
         <div class="modal-header">
@@ -381,8 +906,8 @@
             />
           </div>
           <div class="csv-format-hint">
-            Columnas requeridas: no_control, id_grupo, tipo_curso Ejemplo:
-            21VE0001,3,Ordinario 21VE0002,3,Recursado
+            Columnas requeridas: no_control, id_grupo, tipo_curso<br />
+            Ejemplo: 21VE0001,3,Ordinario
           </div>
           <div id="csvPreviewInsc"></div>
           <p
@@ -413,8 +938,8 @@
       </div>
     </div>
 
+    <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/inscripcion.js"></script>
-    <div id="toast-container"></div>
   </body>
 </html>

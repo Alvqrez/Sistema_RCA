@@ -359,12 +359,4 @@ function toggleCard(btn) {
   btn.title = collapsed ? "Expandir" : "Contraer";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  document
-    .querySelectorAll(".card-collapsible:not([data-open])")
-    .forEach((card) => {
-      card.classList.add("collapsed");
-      const btn = card.querySelector(".card-toggle-btn");
-      if (btn) btn.title = "Expandir";
-    });
-});
+// All collapsible cards start OPEN — user can collapse individually
