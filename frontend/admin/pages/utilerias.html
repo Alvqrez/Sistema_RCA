@@ -476,7 +476,7 @@
               >Administradores del sistema</span
             >
             <button class="btn btn-primary btn-sm" onclick="abrirModalAdmin()">
-              <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo admin
+              <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo administrador
             </button>
           </div>
           <div class="card-body" style="padding: 0">
@@ -544,10 +544,17 @@
           </div>
           <div id="camposNuevoAdmin">
             <div class="form-group">
-              <label
-                >Username <span style="color: var(--danger)">*</span></label
-              >
-              <input id="aUsername" type="text" placeholder="admin02" />
+              <label>RFC <span style="color: var(--danger)">*</span></label>
+              <input
+                id="aRfc"
+                type="text"
+                placeholder="Ej: GARL850101HDF"
+                maxlength="13"
+                oninput="this.value = this.value.toUpperCase()"
+              />
+              <small style="color: var(--text-muted); font-size: 0.72rem">
+                El RFC será el nombre de usuario del administrador
+              </small>
             </div>
             <div class="form-group">
               <label
@@ -915,7 +922,7 @@
             "aApPat",
             "aApMat",
             "aCorreo",
-            "aUsername",
+            "aRfc",
             "aPassword",
           ].forEach((id) => {
             const el = document.getElementById(id);
@@ -962,10 +969,10 @@
               correo_institucional,
             };
           } else {
-            const username = document.getElementById("aUsername").value.trim();
+            const username = document.getElementById("aRfc").value.trim();
             const password = document.getElementById("aPassword").value;
             if (!username || !password) {
-              errEl.textContent = "Username y contraseña son requeridos";
+              errEl.textContent = "RFC y contraseña son requeridos";
               errEl.style.display = "block";
               btn.disabled = false;
               return;

@@ -271,6 +271,9 @@ function filtrarGrupos() {
       <td><span class="badge ${badgeEst}">${g.estatus ?? "—"}</span></td>
       <td style="text-align:right">
         <div class="table-actions">
+          <button class="btn-icon" onclick="verAlumnosGrupo(${g.id_grupo},'${g.nombre_materia}')" title="Ver alumnos inscritos">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+          </button>
           <button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
@@ -467,3 +470,49 @@ async function exportarCSVGrupos() {
 document.addEventListener("click", (e) => {
   if (e.target.id === "modalImportGrupos") cerrarModalCSVGrupos();
 });
+
+// ── Ver alumnos inscritos en un grupo ─────────────────────────────────────
+async function verAlumnosGrupo(id_grupo, nombre_materia) {
+  const modal = document.getElementById("modalAlumnosGrupo");
+  const titulo = document.getElementById("modalAlumnosTitulo");
+  const tbody = document.getElementById("tablaAlumnosGrupo");
+  titulo.textContent = `Alumnos — ${nombre_materia} · Grupo #${id_grupo}`;
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">
+    <iconify-icon icon="lucide:loader-2" style="font-size:1.4rem;display:block;margin:0 auto 8px"></iconify-icon>Cargando…
+  </td></tr>`;
+  modal.classList.add("active");
+
+  try {
+    const r = await fetch(`${API_URL}/api/inscripciones/grupo/${id_grupo}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!r.ok) throw new Error("Error del servidor");
+    const lista = await r.json();
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">Sin alumnos inscritos en este grupo</td></tr>`;
+      return;
+    }
+    const colores = {
+      Cursando: "badge-pendiente",
+      Baja: "badge-np",
+      Aprobado: "badge-aprobado",
+      Reprobado: "badge-reprobado",
+    };
+    tbody.innerHTML = lista
+      .map(
+        (a) => `<tr>
+          <td><code style="font-size:.82rem">${a.no_control}</code></td>
+          <td>${a.nombre} ${a.apellido_paterno ?? ""} ${a.apellido_materno ?? ""}</td>
+          <td><span class="badge-tipo">${a.tipo_curso ?? "—"}</span></td>
+          <td><span class="badge ${colores[a.estatus] ?? "badge-pendiente"}">${a.estatus ?? "—"}</span></td>
+        </tr>`,
+      )
+      .join("");
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--danger)">Error al cargar alumnos</td></tr>`;
+  }
+}
+
+function cerrarModalAlumnosGrupo() {
+  document.getElementById("modalAlumnosGrupo").classList.remove("active");
+}

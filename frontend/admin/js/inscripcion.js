@@ -297,9 +297,14 @@ function renderGrupos() {
 
   lista.innerHTML = grupos
     .map((g) => {
-      const pct = Math.round(
-        ((g.alumnos_inscritos || 0) / (g.limite_alumnos || 30)) * 100,
-      );
+      // Contar inscritos activos desde todasInsc (conteo real)
+      const inscritosReales = todasInsc.filter(
+        (i) => i.id_grupo === g.id_grupo && i.estatus !== "Baja",
+      ).length;
+      const limite = g.limite_alumnos || 30;
+      const pct = Math.min(100, Math.round((inscritosReales / limite) * 100));
+      const barColor =
+        pct >= 100 ? "#ef4444" : pct >= 80 ? "#f59e0b" : "#3b82f6";
       return `
       <div class="grp-card" onclick="seleccionarGrupo(${g.id_grupo}, this)"
            data-id="${g.id_grupo}">
@@ -310,9 +315,12 @@ function renderGrupos() {
           ${g.aula ? `<span><iconify-icon icon="lucide:map-pin"></iconify-icon>${g.aula}</span>` : ""}
         </div>
         <div class="gc-cap">
-          <div class="cap-bar"><div class="cap-bar-fill" style="width:${pct}%"></div></div>
-          <span style="white-space:nowrap">${g.alumnos_inscritos || 0}/${g.limite_alumnos || 30}</span>
+          <div class="cap-bar"><div class="cap-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          <span style="white-space:nowrap;font-size:0.72rem">
+            <strong>${inscritosReales}</strong> inscritos / máx <strong>${limite}</strong>
+          </span>
         </div>
+        ${pct >= 100 ? `<div style="font-size:0.7rem;color:#ef4444;margin-top:4px;display:flex;align-items:center;gap:4px"><iconify-icon icon="lucide:alert-circle"></iconify-icon>Grupo lleno</div>` : ""}
       </div>`;
     })
     .join("");
@@ -332,10 +340,38 @@ function seleccionarGrupo(id, el) {
 }
 
 // ── Paso 3: Alumnos ────────────────────────────────────────────────────────
+
+/**
+ * Devuelve Set de no_control de alumnos ya inscritos en OTRO grupo
+ * de la misma materia+periodo (inscripción activa, no Baja).
+ * Estos alumnos NO pueden inscribirse nuevamente (mismo periodo = bloqueado).
+ */
+function calcularDuplicadosMismosPeriodo() {
+  if (!materiaSel || !periodoSel) return new Set();
+  // IDs de grupos con la misma clave_materia + id_periodo
+  const gruposConflicto = todosGrupos
+    .filter(
+      (g) =>
+        g.clave_materia === materiaSel.clave_materia &&
+        g.id_periodo === periodoSel.id_periodo &&
+        g.id_grupo !== (grupoSel?.id_grupo ?? -1),
+    )
+    .map((g) => g.id_grupo);
+
+  return new Set(
+    todasInsc
+      .filter(
+        (i) => gruposConflicto.includes(i.id_grupo) && i.estatus !== "Baja",
+      )
+      .map((i) => i.no_control),
+  );
+}
+
 function filtrarAlumnos() {
   const q = document.getElementById("buscarAlumno").value.toLowerCase();
+  const duplicados = calcularDuplicadosMismosPeriodo();
 
-  // Solo alumnos de la carrera elegida y no ya inscritos
+  // Solo alumnos de la carrera elegida y no ya inscritos en este grupo
   let lista = todosAlumnos.filter(
     (a) => a.id_carrera === carreraSel && !yaInscritos.has(a.no_control),
   );
@@ -348,26 +384,37 @@ function filtrarAlumnos() {
     );
   }
 
-  renderTablaAlumnos(lista);
+  renderTablaAlumnos(lista, duplicados);
 }
 
-function renderTablaAlumnos(alumnos) {
+function renderTablaAlumnos(alumnos, duplicados = new Set()) {
   const tbody = document.getElementById("tablaAlumnos");
   if (!alumnos.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">
       Sin alumnos disponibles para esta carrera / grupo
     </td></tr>`;
     return;
   }
   tbody.innerHTML = alumnos
     .map((a) => {
+      const esDuplicado = duplicados.has(a.no_control);
       const checked = alumnosSel.has(a.no_control) ? "checked" : "";
-      return `<tr>
-        <td><input type="checkbox" ${checked}
+      const rowStyle = esDuplicado
+        ? 'style="opacity:0.55;background:rgba(239,68,68,0.04)"'
+        : "";
+      const disabledAttr = esDuplicado ? "disabled" : "";
+      const badge = esDuplicado
+        ? `<span style="font-size:0.68rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap" title="Ya inscrito en otro grupo de esta materia en el mismo periodo">
+            <iconify-icon icon="lucide:ban" style="font-size:0.7rem;vertical-align:-1px"></iconify-icon> Ya inscrito
+          </span>`
+        : "";
+      return `<tr ${rowStyle}>
+        <td><input type="checkbox" ${checked} ${disabledAttr}
           onchange="toggleAlumno('${a.no_control}', this)" /></td>
         <td><code>${a.no_control}</code></td>
-        <td>${a.nombre} ${a.apellido_paterno} ${a.apellido_materno || ""}</td>
+        <td>${a.nombre} ${a.apellido_paterno} ${a.apellido_materno || ""}${badge}</td>
         <td style="font-size:0.8rem;color:var(--text-muted)">${a.correo_institucional || "—"}</td>
+        <td style="font-size:0.75rem;color:var(--text-muted)">${esDuplicado ? "Otro grupo" : ""}</td>
       </tr>`;
     })
     .join("");
@@ -461,6 +508,25 @@ async function confirmarInscripcion() {
   if (!grupoSel || alumnosSel.size === 0) return;
   const tipo = document.getElementById("tipoCurso").value;
   const btn = document.getElementById("btnConfirmar");
+
+  // Validar regla: un alumno solo puede estar en UN grupo de la misma materia+periodo
+  // (sin excepción — esta regla aplica siempre en el mismo periodo)
+  const duplicados = calcularDuplicadosMismosPeriodo();
+  const bloqueados = [...alumnosSel].filter((nc) => duplicados.has(nc));
+  if (bloqueados.length > 0) {
+    const nombres = bloqueados
+      .map((nc) => {
+        const a = todosAlumnos.find((x) => x.no_control === nc);
+        return a ? `${a.nombre} ${a.apellido_paterno} (${nc})` : nc;
+      })
+      .join(", ");
+    showToast(
+      `⚠️ ${bloqueados.length} alumno(s) ya inscritos en otro grupo de esta materia en el mismo periodo: ${nombres}. Quítalos de la selección.`,
+      "error",
+    );
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Inscribiendo…`;
 

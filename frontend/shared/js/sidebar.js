@@ -104,8 +104,12 @@ window.API_URL = "http://localhost:3000";
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
       },
+      {
+        href: "../../maestro/pages/utilerias_maestro.html",
+        texto: "Utilerías",
+        icono: "lucide:settings-2",
+      },
     ],
-
     administrador: [
       {
         href: "../../admin/pages/admin.html",

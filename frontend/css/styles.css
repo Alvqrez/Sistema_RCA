@@ -3598,9 +3598,9 @@ th.col-final {
   overflow: visible;
 }
 .sidebar-toggle-btn {
-  position: fixed;
+  position: absolute;
   top: 50%;
-  left: 226px; /* 240px sidebar - 14px (half button) */
+  right: -14px; /* Sobresale 14px del borde derecho del sidebar */
   transform: translateY(-50%);
   width: 28px;
   height: 28px;
@@ -3616,8 +3616,7 @@ th.col-final {
   transition:
     background 0.18s,
     color 0.18s,
-    border-color 0.18s,
-    left 0.22s ease;
+    border-color 0.18s;
   padding: 0;
   flex-shrink: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
@@ -3631,7 +3630,6 @@ th.col-final {
 }
 
 .sidebar.collapsed .sidebar-toggle-btn {
-  left: 50px; /* 64px - 14px */
   transform: translateY(-50%) rotate(180deg);
 }
 
@@ -5448,15 +5446,13 @@ body {
   color: #fca5a5 !important;
 }
 
-/* Toggle btn: un único estilo limpio */
+/* Toggle btn: estilos de color para modo oscuro */
 .sidebar-toggle-btn,
 .dark-mode .sidebar-toggle-btn {
   background: #0a1628 !important;
   border-color: #1a2e52 !important;
   color: #4d6484 !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
-  position: fixed !important;
-  z-index: 9000 !important;
 }
 .sidebar-toggle-btn:hover,
 .dark-mode .sidebar-toggle-btn:hover {

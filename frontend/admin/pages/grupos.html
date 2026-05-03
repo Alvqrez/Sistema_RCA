@@ -553,6 +553,48 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/grupos.js"></script>
+
+    <!-- Modal: alumnos inscritos en el grupo -->
+    <div
+      id="modalAlumnosGrupo"
+      class="modal-overlay"
+      onclick="if (event.target === this) cerrarModalAlumnosGrupo();"
+    >
+      <div class="modal-box" style="max-width: 640px">
+        <div class="modal-header">
+          <h3>
+            <iconify-icon
+              icon="lucide:users"
+              style="vertical-align: middle; margin-right: 6px"
+            ></iconify-icon>
+            <span id="modalAlumnosTitulo">Alumnos inscritos</span>
+          </h3>
+          <button class="modal-close-btn" onclick="cerrarModalAlumnosGrupo()">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 0">
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Control</th>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAlumnosGrupo"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalAlumnosGrupo()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
     <script>
       function toggleCard(btn) {
         const card = btn.closest(".card-collapsible");

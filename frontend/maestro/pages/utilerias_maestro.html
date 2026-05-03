@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Utilerías — Docente — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <style>
+      .util-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+      }
+      .util-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .util-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .util-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+      .util-icon-blue {
+        background: rgba(37, 99, 235, 0.12);
+        color: #2563eb;
+      }
+      .util-icon-green {
+        background: rgba(22, 163, 74, 0.12);
+        color: #16a34a;
+      }
+      .util-icon-amber {
+        background: rgba(217, 119, 6, 0.12);
+        color: #d97706;
+      }
+      .util-icon-indigo {
+        background: rgba(99, 102, 241, 0.12);
+        color: #6366f1;
+      }
+      .util-icon-rose {
+        background: rgba(225, 29, 72, 0.12);
+        color: #e11d48;
+      }
+      .util-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .util-card-desc {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-row label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+      .form-row input {
+        padding: 9px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.88rem;
+        color: var(--text-main);
+        background: var(--bg-app);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .form-row input:focus {
+        border-color: var(--primary);
+        background: var(--card-bg);
+      }
+      .msg-ok {
+        font-size: 0.82rem;
+        color: var(--success, #16a34a);
+        margin-top: 4px;
+        display: none;
+      }
+      .msg-err {
+        font-size: 0.82rem;
+        color: var(--danger, #dc2626);
+        margin-top: 4px;
+        display: none;
+      }
+
+      /* Accesos rápidos */
+      .quicklink-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .quicklink-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--bg-app);
+        border: 1px solid var(--border);
+        text-decoration: none;
+        color: var(--text-main);
+        font-size: 0.86rem;
+        font-weight: 500;
+        transition:
+          background 0.14s,
+          border-color 0.14s;
+      }
+      .quicklink-item:hover {
+        background: rgba(59, 130, 246, 0.07);
+        border-color: rgba(59, 130, 246, 0.3);
+        color: #3b82f6;
+      }
+      .quicklink-item iconify-icon {
+        font-size: 1.05rem;
+        flex-shrink: 0;
+      }
+
+      /* Calculadora */
+      .calc-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .calc-row input {
+        padding: 7px 10px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.86rem;
+        color: var(--text-main);
+        background: var(--bg-app);
+        outline: none;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      .calc-row input:focus {
+        border-color: var(--primary);
+      }
+      .calc-row label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-align: center;
+      }
+      .calc-result {
+        font-size: 1.4rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 12px;
+        border-radius: 10px;
+        background: var(--bg-app);
+        border: 1px solid var(--border);
+        margin-top: 4px;
+        color: var(--text-main);
+        letter-spacing: 0.04em;
+      }
+      .calc-result.aprobado {
+        color: #16a34a;
+        border-color: rgba(22, 163, 74, 0.3);
+        background: rgba(22, 163, 74, 0.06);
+      }
+      .calc-result.reprobado {
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.3);
+        background: rgba(220, 38, 38, 0.06);
+      }
+      .add-activity-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .add-activity-row button {
+        white-space: nowrap;
+      }
+
+      /* Tabla escala */
+      .escala-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+      .escala-table th {
+        background: rgba(0, 0, 0, 0.04);
+        padding: 6px 10px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+      .escala-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .dark-mode .escala-table th {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .escala-badge {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .esc-apr {
+        background: rgba(22, 163, 74, 0.12);
+        color: #16a34a;
+      }
+      .esc-rep {
+        background: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Utilerías</h1>
+            <p class="page-subtitle">
+              Herramientas y configuración para docentes
+            </p>
+          </div>
+        </div>
+
+        <div class="util-grid">
+          <!-- ── PERFIL DEL DOCENTE ─────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-blue">
+                <iconify-icon icon="lucide:user-cog"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Mi perfil</div>
+                <p class="util-card-desc">
+                  Información de tu cuenta y cambio de contraseña
+                </p>
+              </div>
+            </div>
+
+            <div
+              id="perfilInfo"
+              style="
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                padding: 10px 12px;
+                background: var(--bg-app);
+                border-radius: 8px;
+                line-height: 1.9;
+                border: 1px solid var(--border);
+              "
+            >
+              <strong style="color: var(--text-main)" id="perfilNombre"
+                >—</strong
+              ><br />
+              RFC / Usuario: <code id="perfilRfc">—</code><br />
+              Correo: <span id="perfilCorreo">—</span><br />
+              Rol: <span id="perfilRol">Docente</span>
+            </div>
+
+            <div class="form-row">
+              <label>Contraseña actual</label>
+              <input
+                type="password"
+                id="passActual"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="form-row">
+              <label>Nueva contraseña</label>
+              <input
+                type="password"
+                id="passNueva"
+                placeholder="Mínimo 6 caracteres"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="form-row">
+              <label>Confirmar nueva contraseña</label>
+              <input
+                type="password"
+                id="passConfirm"
+                placeholder="Repite la nueva contraseña"
+                autocomplete="new-password"
+              />
+            </div>
+            <p class="msg-ok" id="perfilOk">
+              ✓ Contraseña actualizada correctamente
+            </p>
+            <p class="msg-err" id="perfilErr"></p>
+            <button
+              class="btn btn-primary"
+              onclick="cambiarPassword()"
+              style="width: 100%"
+            >
+              <iconify-icon icon="lucide:lock-keyhole"></iconify-icon>
+              Actualizar contraseña
+            </button>
+          </div>
+
+          <!-- ── ACCESOS RÁPIDOS ────────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-indigo">
+                <iconify-icon icon="lucide:zap"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Accesos rápidos</div>
+                <p class="util-card-desc">
+                  Navega rápidamente a las secciones principales
+                </p>
+              </div>
+            </div>
+            <div class="quicklink-list">
+              <a class="quicklink-item" href="mis_grupos.html">
+                <iconify-icon icon="lucide:layout-dashboard"></iconify-icon>
+                Inicio — Mis grupos
+              </a>
+              <a class="quicklink-item" href="configurar_actividades.html">
+                <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+                Configurar actividades
+              </a>
+              <a class="quicklink-item" href="formulario.html">
+                <iconify-icon icon="lucide:pencil"></iconify-icon>
+                Capturar calificaciones
+              </a>
+              <a class="quicklink-item" href="gruposMaestro.html">
+                <iconify-icon icon="lucide:scale"></iconify-icon>
+                Peso por unidad
+              </a>
+              <a class="quicklink-item" href="asistencia.html">
+                <iconify-icon icon="lucide:calendar-check"></iconify-icon>
+                Registrar asistencia
+              </a>
+              <a class="quicklink-item" href="lista_asistencia.html">
+                <iconify-icon icon="lucide:calendar-clock"></iconify-icon>
+                Historial de asistencia
+              </a>
+              <a class="quicklink-item" href="alumnosMaestro.html">
+                <iconify-icon icon="lucide:search"></iconify-icon>
+                Buscar alumnos
+              </a>
+              <a class="quicklink-item" href="../../shared/pages/reportes.html">
+                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+                Reportes
+              </a>
+            </div>
+          </div>
+
+          <!-- ── CALCULADORA DE PROMEDIO PONDERADO ─────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-green">
+                <iconify-icon icon="lucide:calculator"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">
+                  Calculadora de promedio ponderado
+                </div>
+                <p class="util-card-desc">
+                  Simula el promedio de una unidad con tus actividades
+                </p>
+              </div>
+            </div>
+
+            <div id="calcActividades">
+              <!-- Las filas se generan dinámicamente -->
+            </div>
+
+            <div class="add-activity-row">
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="agregarFilaCalc()"
+                style="flex: 1"
+              >
+                <iconify-icon icon="lucide:plus"></iconify-icon> Agregar
+                actividad
+              </button>
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="limpiarCalc()"
+                title="Limpiar"
+              >
+                <iconify-icon icon="lucide:rotate-ccw"></iconify-icon>
+              </button>
+            </div>
+
+            <div
+              id="calcError"
+              style="font-size: 0.78rem; color: #ef4444; display: none"
+            ></div>
+            <div class="calc-result" id="calcResultado">— / 100</div>
+            <p
+              style="
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                margin: 0;
+                text-align: center;
+              "
+            >
+              La suma de ponderaciones debe ser exactamente 100%
+            </p>
+          </div>
+
+          <!-- ── ESCALA DE CALIFICACIONES TecNM ────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-amber">
+                <iconify-icon icon="lucide:book-open-check"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">
+                  Escala de calificaciones TecNM
+                </div>
+                <p class="util-card-desc">
+                  Referencia de criterios de evaluación institucionales
+                </p>
+              </div>
+            </div>
+            <table class="escala-table">
+              <thead>
+                <tr>
+                  <th>Calificación</th>
+                  <th>Descripción</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>95 – 100</strong></td>
+                  <td>Excelente</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>90 – 94</strong></td>
+                  <td>Muy bien</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>85 – 89</strong></td>
+                  <td>Bien</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>80 – 84</strong></td>
+                  <td>Suficiente</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>75 – 79</strong></td>
+                  <td>Regular</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>70 – 74</strong></td>
+                  <td>Mínimo aprobatorio</td>
+                  <td><span class="escala-badge esc-apr">Aprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>60 – 69</strong></td>
+                  <td>Reprobado</td>
+                  <td><span class="escala-badge esc-rep">Reprobado</span></td>
+                </tr>
+                <tr>
+                  <td><strong>0 – 59</strong></td>
+                  <td>Muy deficiente</td>
+                  <td><span class="escala-badge esc-rep">Reprobado</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div
+              style="
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                padding: 8px 10px;
+                background: var(--bg-app);
+                border-radius: 8px;
+                border: 1px solid var(--border);
+              "
+            >
+              <iconify-icon
+                icon="lucide:info"
+                style="vertical-align: -2px; margin-right: 4px"
+              ></iconify-icon>
+              <strong>Redondeo TecNM:</strong> fracción ≥ 0.5 sube al entero
+              inmediato superior (ej. 94.5 → 95). El <em>bonus</em> se aplica
+              antes del redondeo.
+            </div>
+          </div>
+
+          <!-- ── INFORMACIÓN DEL SISTEMA ────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-rose">
+                <iconify-icon icon="lucide:info"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Información del sistema</div>
+                <p class="util-card-desc">Versión y datos técnicos del RCA</p>
+              </div>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 0.83rem;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Sistema</span>
+                <span style="font-weight: 600">RCA v1.1</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Institución</span>
+                <span style="font-weight: 600">ITV · TecNM</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Backend</span>
+                <span>Node.js + Express</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span style="color: var(--text-muted)">Base de datos</span>
+                <span>MySQL 8.0</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 6px 0;
+                "
+              >
+                <span style="color: var(--text-muted)">Sesión activa</span>
+                <span id="infoSesion" style="font-size: 0.78rem">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /util-grid -->
+      </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script>
+      const tk = () => localStorage.getItem("token");
+
+      // ── Toast ─────────────────────────────────────────────────────
+      function toast(msg, tipo = "success") {
+        const c = document.getElementById("toast-container");
+        if (!c) return;
+        const t = document.createElement("div");
+        t.className = `toast toast-${tipo}`;
+        const icons = {
+          success: "lucide:check-circle",
+          error: "lucide:x-circle",
+          info: "lucide:info",
+        };
+        t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3200);
+      }
+
+      // ── Perfil ────────────────────────────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        soloPermitido("maestro");
+
+        const nombre = localStorage.getItem("nombre") || "—";
+        const rol = localStorage.getItem("rol") || "maestro";
+
+        let rfc = "—",
+          correo = "—";
+        try {
+          const payload = JSON.parse(atob(tk().split(".")[1]));
+          rfc = payload.username || "—";
+          document.getElementById("infoSesion").textContent =
+            `${rfc} · ${new Date().toLocaleDateString("es-MX")}`;
+        } catch (_) {}
+
+        document.getElementById("perfilNombre").textContent = nombre;
+        document.getElementById("perfilRfc").textContent = rfc;
+
+        // Intentar cargar datos del maestro para mostrar correo
+        fetch(`${API_URL}/api/maestros`, {
+          headers: { Authorization: `Bearer ${tk()}` },
+        })
+          .then((r) => r.json())
+          .then((lista) => {
+            const me = lista.find((m) => m.rfc === rfc);
+            if (me) {
+              document.getElementById("perfilCorreo").textContent =
+                me.correo_institucional || "—";
+            }
+          })
+          .catch(() => {});
+
+        iniciarCalc();
+      });
+
+      // ── Cambiar contraseña ────────────────────────────────────────
+      async function cambiarPassword() {
+        const actual = document.getElementById("passActual").value;
+        const nueva = document.getElementById("passNueva").value;
+        const confirm = document.getElementById("passConfirm").value;
+        const okEl = document.getElementById("perfilOk");
+        const errEl = document.getElementById("perfilErr");
+        okEl.style.display = errEl.style.display = "none";
+
+        if (!actual || !nueva || !confirm) {
+          errEl.textContent = "Completa todos los campos.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (nueva.length < 6) {
+          errEl.textContent =
+            "La nueva contraseña debe tener al menos 6 caracteres.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (nueva !== confirm) {
+          errEl.textContent = "Las contraseñas nuevas no coinciden.";
+          errEl.style.display = "block";
+          return;
+        }
+        try {
+          const r = await fetch(`${API_URL}/api/admin/mi-password`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tk()}`,
+            },
+            body: JSON.stringify({
+              passwordActual: actual,
+              nuevaPassword: nueva,
+            }),
+          });
+          const d = await r.json();
+          if (d.success) {
+            okEl.style.display = "block";
+            document.getElementById("passActual").value = "";
+            document.getElementById("passNueva").value = "";
+            document.getElementById("passConfirm").value = "";
+            toast("Contraseña actualizada");
+          } else {
+            errEl.textContent = d.error || "Error al actualizar.";
+            errEl.style.display = "block";
+          }
+        } catch {
+          errEl.textContent = "Error de conexión con el servidor.";
+          errEl.style.display = "block";
+        }
+      }
+
+      // ── Calculadora de promedio ponderado ─────────────────────────
+      let calcFilas = [];
+
+      function iniciarCalc() {
+        calcFilas = [];
+        agregarFilaCalc("Examen", 70);
+        agregarFilaCalc("Actividades", 30);
+        calcularPromedio();
+      }
+
+      function agregarFilaCalc(nombreDefault = "", pesoDefault = "") {
+        const id = Date.now() + Math.random();
+        calcFilas.push(id);
+        const cont = document.getElementById("calcActividades");
+        const div = document.createElement("div");
+        div.id = `fila_${id}`;
+        div.style.cssText =
+          "display:grid;grid-template-columns:1fr 70px 70px 28px;gap:6px;align-items:center;margin-bottom:6px";
+        div.innerHTML = `
+          <input type="text"   placeholder="Nombre (ej. Examen)" value="${nombreDefault}"
+                 style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem;background:var(--bg-app);color:var(--text-main);outline:none" />
+          <input type="number" placeholder="Calif." min="0" max="100" step="0.5"
+                 style="padding:7px 8px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem;background:var(--bg-app);color:var(--text-main);outline:none;text-align:center"
+                 oninput="calcularPromedio()" />
+          <input type="number" placeholder="%" min="0" max="100" step="1" value="${pesoDefault}"
+                 style="padding:7px 8px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.84rem;background:var(--bg-app);color:var(--text-main);outline:none;text-align:center"
+                 oninput="calcularPromedio()" />
+          <button onclick="eliminarFilaCalc('${id}')" style="width:26px;height:26px;border:none;background:rgba(220,38,38,.1);color:#dc2626;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem" title="Quitar">✕</button>
+        `;
+        cont.appendChild(div);
+        calcularPromedio();
+      }
+
+      function eliminarFilaCalc(id) {
+        calcFilas = calcFilas.filter((f) => f !== id);
+        const el = document.getElementById(`fila_${id}`);
+        if (el) el.remove();
+        calcularPromedio();
+      }
+
+      function limpiarCalc() {
+        document.getElementById("calcActividades").innerHTML = "";
+        calcFilas = [];
+        iniciarCalc();
+      }
+
+      function calcularPromedio() {
+        const errEl = document.getElementById("calcError");
+        const resEl = document.getElementById("calcResultado");
+        errEl.style.display = "none";
+
+        const filas = document.querySelectorAll("#calcActividades > div");
+        let sumaPesos = 0,
+          promedio = 0,
+          todosCompletos = true;
+
+        filas.forEach((fila) => {
+          const inputs = fila.querySelectorAll("input");
+          const calif = parseFloat(inputs[1].value);
+          const peso = parseFloat(inputs[2].value);
+          if (!isNaN(peso)) sumaPesos += peso;
+          if (!isNaN(calif) && !isNaN(peso)) {
+            promedio += calif * (peso / 100);
+          } else {
+            todosCompletos = false;
+          }
+        });
+
+        if (Math.abs(sumaPesos - 100) > 0.01 && sumaPesos > 0) {
+          errEl.textContent = `⚠️ Suma de ponderaciones: ${sumaPesos}% (debe ser exactamente 100%)`;
+          errEl.style.display = "block";
+        }
+
+        if (!todosCompletos || filas.length === 0) {
+          resEl.textContent = "— / 100";
+          resEl.className = "calc-result";
+          return;
+        }
+
+        // Redondeo TecNM: fracción ≥ 0.5 sube
+        const redondeado = Math.floor(promedio) + (promedio % 1 >= 0.5 ? 1 : 0);
+        resEl.textContent = `${redondeado} / 100`;
+        resEl.className = `calc-result ${redondeado >= 70 ? "aprobado" : "reprobado"}`;
+      }
+
+      // Spinner CSS
+      const s = document.createElement("style");
+      s.textContent = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
+      document.head.appendChild(s);
+    </script>
+  </body>
+</html>
