@@ -1930,10 +1930,11 @@
           btn.onclick = () => seleccionarUnidad(u.id_unidad);
           container.appendChild(btn);
         });
+        // Mostrar el contenedor una vez que hay pills
+        container.style.display = unidades.length ? "flex" : "none";
       };
 
       // ── Intercept seleccionarUnidad para activar pill ──────────────────
-      const _origSelUnidad = window.seleccionarUnidad;
       window.seleccionarUnidad = async function (id_unidad) {
         document.querySelectorAll(".unit-pill").forEach((p) => {
           p.classList.toggle(
@@ -1941,7 +1942,8 @@
             parseInt(p.dataset.id) === parseInt(id_unidad),
           );
         });
-        if (_origSelUnidad) await _origSelUnidad(id_unidad);
+        // seleccionarUnidadTab es la función real de formulario.js
+        await seleccionarUnidadTab(id_unidad);
       };
 
       // ── Interceptar guardarCalificaciones para marcar guardado ─────────

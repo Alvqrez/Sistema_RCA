@@ -413,7 +413,8 @@ async function seleccionarUnidadTab(id_unidad) {
   renderRubrosBar();
   renderTablaCalificaciones();
 
-  document.getElementById("accionesCaptura").style.display = "flex";
+  const _ac = document.getElementById("accionesCaptura");
+  if (_ac) _ac.style.display = "flex";
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 
@@ -491,11 +492,12 @@ function limpiarUnidad() {
   document
     .querySelectorAll(".unit-tab")
     .forEach((t) => t.classList.remove("active"));
-  document.getElementById("rubrosBar").innerHTML =
-    `<span style="font-size:0.78rem;color:var(--text-muted)">Selecciona una unidad</span>`;
-  document.getElementById("gradeTableWrap").innerHTML =
-    `<div class="empty-wrap"><iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon><p>Selecciona una unidad para comenzar</p></div>`;
-  document.getElementById("accionesCaptura").style.display = "none";
+  const _rb = document.getElementById("rubrosBar");
+  if (_rb) _rb.innerHTML = `<span style="font-size:0.78rem;color:var(--text-muted)">Selecciona una unidad</span>`;
+  const _gtw = document.getElementById("gradeTableWrap");
+  if (_gtw) _gtw.innerHTML = `<div class="empty-wrap"><iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon><p>Selecciona una unidad para comenzar</p></div>`;
+  const _ac2 = document.getElementById("accionesCaptura");
+  if (_ac2) _ac2.style.display = "none";
   actualizarEstadoBadge(false);
 }
 
@@ -566,6 +568,7 @@ async function cargarBonusUnidad() {
 
 function renderRubrosBar() {
   const bar = document.getElementById("rubrosBar");
+  if (!bar) return; // no existe en captura_calificaciones.html
   const unidad = estado.unidadesGrupo.find(
     (u) => u.id_unidad === estado.unidadId,
   );
