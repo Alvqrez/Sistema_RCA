@@ -209,8 +209,8 @@ async function cargarGrupo() {
   estado.rubrosState = {};
   bonusState = {};
 
-  document.getElementById("badgeGrupo").textContent =
-    sel.options[sel.selectedIndex].text;
+  const _bg2 = document.getElementById("badgeGrupo");
+  if (_bg2) _bg2.textContent = sel.options[sel.selectedIndex].text;
   actualizarEstadoBadge(false);
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
@@ -219,17 +219,18 @@ async function cargarGrupo() {
 
   // Show paso 3
   const paso3 = document.getElementById("cardPaso3");
-  paso3.style.display = "block";
-  paso3.classList.add("open");
+  if (paso3) { paso3.style.display = "block"; paso3.classList.add("open"); }
 
   // Show hint
   const hint = document.getElementById("hintConfigEval");
   if (hint) hint.style.display = "flex";
 
   // Mark paso 1 as done
-  document.getElementById("numPaso1").classList.add("done");
-  document.getElementById("numPaso1").innerHTML =
-    `<iconify-icon icon="lucide:check" style="font-size:.8rem"></iconify-icon>`;
+  const _n1 = document.getElementById("numPaso1");
+  if (_n1) {
+    _n1.classList.add("done");
+    _n1.innerHTML = `<iconify-icon icon="lucide:check" style="font-size:.8rem"></iconify-icon>`;
+  }
 
   await verificarUnidadesCerradas(id);
 }
@@ -290,14 +291,17 @@ function resetVista() {
     rubrosState: {},
   };
   bonusState = {};
-  document.getElementById("badgeGrupo").textContent = "Sin grupo seleccionado";
+  const _bg = document.getElementById("badgeGrupo");
+  if (_bg) _bg.textContent = "Sin grupo seleccionado";
   actualizarEstadoBadge(false);
-  document.getElementById("cardPaso3").style.display = "none";
-  document.getElementById("cardPaso4").style.display = "none";
-  document.getElementById("hintConfigEval").style.display = "none";
+  const _p3 = document.getElementById("cardPaso3");
+  if (_p3) _p3.style.display = "none";
+  const _p4 = document.getElementById("cardPaso4");
+  if (_p4) _p4.style.display = "none";
+  const _hint = document.getElementById("hintConfigEval");
+  if (_hint) _hint.style.display = "none";
   const n = document.getElementById("numPaso1");
-  n.classList.remove("done");
-  n.textContent = "1";
+  if (n) { n.classList.remove("done"); n.textContent = "1"; }
 }
 
 async function cargarUnidadesGrupo() {
@@ -336,17 +340,22 @@ async function cargarUnidadesGrupo() {
     estado.unidadesGrupo = [];
   }
 
-  // Render unit tabs
+  // Render unit tabs (solo en páginas que tienen #unitTabs)
   const tabsEl = document.getElementById("unitTabs");
-  tabsEl.innerHTML = estado.unidadesGrupo
-    .map(
-      (u) =>
-        `<button class="unit-tab" data-uid="${u.id_unidad}"
-       onclick="seleccionarUnidadTab(${u.id_unidad})">
-       Unidad ${u.numero_unidad}
-     </button>`,
-    )
-    .join("");
+  if (tabsEl) {
+    tabsEl.innerHTML = estado.unidadesGrupo
+      .map(
+        (u) =>
+          `<button class="unit-tab" data-uid="${u.id_unidad}"
+         onclick="seleccionarUnidadTab(${u.id_unidad})">
+         Unidad ${u.numero_unidad}
+       </button>`,
+      )
+      .join("");
+  } else {
+    // captura_calificaciones.html usa su propio renderUnitTabs interceptado
+    if (typeof renderUnitTabs === "function") renderUnitTabs(estado.unidadesGrupo);
+  }
 
   // Update "número de unidades" field
   const nu = document.getElementById("numUnidades");
