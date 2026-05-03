@@ -1,0 +1,1986 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Captura de Calificaciones — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <style>
+      /* ── Layout principal ───────────────────────────────────────────── */
+      .cc-layout {
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .cc-layout {
+          grid-template-columns: 1fr;
+        }
+        .alumno-nav {
+          position: static !important;
+        }
+      }
+
+      /* ── Panel lateral de alumnos ───────────────────────────────────── */
+      .alumno-nav {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        position: sticky;
+        top: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+      .alumno-nav-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-app);
+      }
+      .alumno-nav-head-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+      }
+      .alumno-nav-stats {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--primary);
+      }
+      .alumno-nav-search {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .alumno-nav-search input {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-app);
+        color: var(--text-main);
+        font-size: 0.82rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .alumno-nav-search input:focus {
+        border-color: var(--primary);
+      }
+      .alumno-list {
+        max-height: calc(100vh - 300px);
+        min-height: 120px;
+        overflow-y: auto;
+      }
+      .alumno-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.12s;
+        position: relative;
+      }
+      .alumno-item:last-child {
+        border-bottom: none;
+      }
+      .alumno-item:hover {
+        background: rgba(59, 130, 246, 0.05);
+      }
+      .alumno-item.active {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid var(--primary);
+        padding-left: 11px;
+      }
+      .alumno-item.guardado::after {
+        content: "✓";
+        position: absolute;
+        right: 12px;
+        font-size: 0.72rem;
+        color: #16a34a;
+        font-weight: 700;
+      }
+      .ai-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .ai-status-ok {
+        background: #16a34a;
+      }
+      .ai-status-rep {
+        background: #dc2626;
+      }
+      .ai-status-pen {
+        background: #d1d5db;
+      }
+      .ai-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ai-name {
+        font-size: 0.83rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ai-nc {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+      .ai-prom {
+        font-size: 0.8rem;
+        font-weight: 700;
+        min-width: 30px;
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      /* ── Panel derecho (captura) ─────────────────────────────────────── */
+      .cc-main {
+      }
+
+      /* Barra de grupo/unidad */
+      .cc-topbar {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .cc-topbar .field-group {
+        flex: 1;
+        min-width: 180px;
+      }
+
+      /* Pills de unidad */
+      .unit-pills {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .unit-pill {
+        padding: 6px 18px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 2px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .unit-pill:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+      .unit-pill.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+      .unit-pill.cerrada {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+        color: #b45309;
+      }
+      .unit-pill.cerrada.active {
+        background: #f59e0b;
+        border-color: #f59e0b;
+        color: #fff;
+      }
+
+      /* Estado vacío */
+      .cc-empty {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 60px 32px;
+        text-align: center;
+        color: var(--text-muted);
+      }
+      .cc-empty iconify-icon {
+        font-size: 2.8rem;
+        display: block;
+        margin: 0 auto 14px;
+      }
+      .cc-empty p {
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      /* Cabecera del alumno seleccionado */
+      .alumno-header-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow);
+      }
+      .big-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .alumno-head-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .alumno-head-info h2 {
+        margin: 0 0 3px;
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .alumno-head-info span {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .nav-btns {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .nav-btns span {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        padding: 0 4px;
+      }
+      .cal-badge-big {
+        font-size: 1.8rem;
+        font-weight: 800;
+        min-width: 70px;
+        text-align: center;
+        padding: 8px 14px;
+        border-radius: 12px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .cal-badge-big.apr {
+        background: rgba(22, 163, 74, 0.1);
+        color: #16a34a;
+      }
+      .cal-badge-big.rep {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+      }
+      .cal-badge-big.pen {
+        background: var(--bg-app);
+        color: var(--text-muted);
+        font-size: 1.2rem;
+      }
+
+      /* Banner unidad cerrada */
+      .banner-cerrada {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 10px;
+        padding: 10px 16px;
+        margin-bottom: 14px;
+        font-size: 0.84rem;
+        color: #92400e;
+      }
+      .dark-mode .banner-cerrada {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #fcd34d;
+      }
+
+      /* Tarjetas de actividades */
+      .act-card {
+        background: var(--card-bg);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+        transition: border-color 0.15s;
+      }
+      .act-card:focus-within {
+        border-color: var(--primary);
+      }
+      .act-card.disabled {
+        opacity: 0.65;
+        pointer-events: none;
+      }
+      .act-card-info strong {
+        display: block;
+        font-size: 0.92rem;
+        margin-bottom: 3px;
+      }
+      .act-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .act-tipo-chip {
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .act-peso-chip {
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .act-input-big {
+        width: 86px;
+        padding: 10px 8px;
+        text-align: center;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg-app);
+        color: var(--text-main);
+        font-size: 1.25rem;
+        font-weight: 700;
+        font-family: inherit;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        outline: none;
+      }
+      .act-input-big:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        background: var(--card-bg);
+      }
+      .act-input-big:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      /* Aporte visual bajo el input */
+      .act-aporte {
+        font-size: 0.69rem;
+        color: var(--text-muted);
+        text-align: center;
+        margin-top: 3px;
+      }
+
+      /* Panel de resumen */
+      .summary-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-top: 14px;
+        box-shadow: var(--shadow);
+      }
+      .summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 0.84rem;
+      }
+      .summary-row + .summary-row {
+        border-top: 1px solid var(--border);
+      }
+      .summary-label {
+        color: var(--text-muted);
+      }
+      .summary-val {
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .summary-total {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0 0;
+        margin-top: 6px;
+        border-top: 2px solid var(--border);
+      }
+      .summary-total-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .summary-total-val {
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+
+      /* Ring de progreso */
+      .prom-ring {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        flex-shrink: 0;
+      }
+      .prom-ring svg {
+        transform: rotate(-90deg);
+      }
+      .prom-ring-num {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.88rem;
+        font-weight: 800;
+      }
+
+      /* Bonus input inline */
+      .bonus-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 0;
+        border-top: 1px dashed var(--border);
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .bonus-row label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+      .bonus-input-sm {
+        width: 68px;
+        padding: 5px 7px;
+        text-align: center;
+        border: 1.5px solid rgba(245, 158, 11, 0.5);
+        border-radius: 8px;
+        background: rgba(245, 158, 11, 0.05);
+        color: var(--text-main);
+        font-size: 0.9rem;
+        font-weight: 700;
+        font-family: inherit;
+        outline: none;
+      }
+      .bonus-input-sm:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+      }
+      .bonus-just-input {
+        flex: 1;
+        min-width: 140px;
+        padding: 5px 10px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-app);
+        color: var(--text-main);
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+      }
+      .bonus-just-input:focus {
+        border-color: #f59e0b;
+      }
+
+      /* Acciones del alumno */
+      .alumno-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      /* Stats global — barra superior */
+      .stats-strip {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      .stat-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        font-size: 0.82rem;
+      }
+      .stat-chip strong {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      /* Toast */
+      .rca-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #fff;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s;
+        pointer-events: none;
+      }
+      .rca-toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .rca-toast-success {
+        background: var(--success);
+      }
+      .rca-toast-error {
+        background: #dc2626;
+      }
+      .rca-toast-info {
+        background: #2563eb;
+      }
+
+      /* Misc */
+      .hint-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--primary-light);
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: var(--primary);
+        margin-bottom: 14px;
+      }
+      .hint-banner a {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      /* CSV drop */
+      .csv-drop {
+        border: 2px dashed var(--border);
+        border-radius: 10px;
+        padding: 22px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .csv-drop:hover,
+      .csv-drop.drag-over {
+        border-color: var(--primary);
+        background: rgba(30, 64, 175, 0.04);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <!-- ══ HEADER ══════════════════════════════════════════════════ -->
+        <div class="page-header-v2" style="margin-bottom: 18px">
+          <div>
+            <h1>Captura de Calificaciones</h1>
+            <p class="page-subtitle" id="subtituloGrupo">
+              Selecciona un grupo para comenzar
+            </p>
+          </div>
+          <div class="header-actions">
+            <span
+              id="estadoBadge"
+              style="display: none"
+              class="status-pill warn"
+              style="display: inline-flex; align-items: center; gap: 5px"
+            >
+              <span
+                style="
+                  width: 7px;
+                  height: 7px;
+                  border-radius: 50%;
+                  background: currentColor;
+                  flex-shrink: 0;
+                "
+              ></span>
+              Sin configurar
+            </span>
+            <a
+              href="gruposMaestro.html"
+              class="btn btn-outline btn-sm"
+              style="text-decoration: none"
+            >
+              <iconify-icon icon="lucide:settings-2"></iconify-icon> Configurar
+              grupo
+            </a>
+          </div>
+        </div>
+
+        <!-- ══ BARRA GRUPO + UNIDADES ═══════════════════════════════════ -->
+        <div class="cc-topbar">
+          <div class="field-group">
+            <label>Grupo</label>
+            <select id="selGrupo" onchange="cargarGrupo()">
+              <option value="">— Selecciona un grupo —</option>
+            </select>
+          </div>
+          <button
+            class="btn btn-outline btn-sm"
+            style="align-self: flex-end"
+            onclick="abrirModalCSV()"
+            title="Importar calificaciones desde CSV"
+          >
+            <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon> CSV
+          </button>
+          <button
+            class="btn btn-outline btn-sm"
+            style="align-self: flex-end"
+            onclick="actualizarActividades()"
+            title="Recargar actividades"
+          >
+            <iconify-icon icon="lucide:refresh-cw"></iconify-icon>
+          </button>
+        </div>
+
+        <!-- Pills de unidad -->
+        <div class="unit-pills" id="unitPills" style="display: none"></div>
+
+        <!-- Hint config evaluación -->
+        <div class="hint-banner" id="hintConfigEval" style="display: none">
+          <iconify-icon
+            icon="lucide:info"
+            style="flex-shrink: 0"
+          ></iconify-icon>
+          Configura los rubros y ponderaciones de este grupo en
+          <a href="gruposMaestro.html">Configurar grupo →</a>
+        </div>
+
+        <!-- Banner unidad cerrada -->
+        <div class="banner-cerrada" id="bannerUnidadCerrada">
+          <iconify-icon
+            icon="mdi:lock-outline"
+            style="font-size: 1.2rem; color: #f59e0b; flex-shrink: 0"
+          ></iconify-icon>
+          <span
+            ><strong>Unidad cerrada.</strong> Las calificaciones ya fueron
+            asentadas. Para modificarlas se requiere autorización formal.</span
+          >
+        </div>
+
+        <!-- Stats strip -->
+        <div class="stats-strip" id="statsStrip" style="display: none">
+          <div class="stat-chip">
+            <iconify-icon
+              icon="lucide:users"
+              style="color: var(--primary)"
+            ></iconify-icon>
+            <strong id="statTotal">0</strong> alumnos
+          </div>
+          <div class="stat-chip">
+            <iconify-icon
+              icon="lucide:check-circle"
+              style="color: #16a34a"
+            ></iconify-icon>
+            <strong id="statApr">0</strong> aprobados
+          </div>
+          <div class="stat-chip">
+            <iconify-icon
+              icon="lucide:x-circle"
+              style="color: #dc2626"
+            ></iconify-icon>
+            <strong id="statRep">0</strong> reprobados
+          </div>
+          <div class="stat-chip">
+            <iconify-icon
+              icon="lucide:clock"
+              style="color: #f59e0b"
+            ></iconify-icon>
+            <strong id="statPen">0</strong> pendientes
+          </div>
+          <div class="stat-chip" style="margin-left: auto">
+            <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+            Promedio grupo: <strong id="statProm">—</strong>
+          </div>
+        </div>
+
+        <!-- ══ ESTADO VACÍO ═════════════════════════════════════════════ -->
+        <div class="cc-empty" id="ccEmpty">
+          <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
+          <p>Selecciona un grupo y una unidad para capturar calificaciones</p>
+        </div>
+
+        <!-- ══ LAYOUT ENFOCADO ══════════════════════════════════════════ -->
+        <div class="cc-layout" id="ccLayout" style="display: none">
+          <!-- ── Panel de alumnos ───────────────────────────────────── -->
+          <div class="alumno-nav">
+            <div class="alumno-nav-head">
+              <span class="alumno-nav-head-title">Alumnos</span>
+              <span class="alumno-nav-stats" id="navStats"></span>
+            </div>
+            <div class="alumno-nav-search">
+              <input
+                type="text"
+                id="buscarAlumno"
+                placeholder="🔍 Buscar…"
+                oninput="filtrarListaAlumnos(this.value)"
+              />
+            </div>
+            <div class="alumno-list" id="alumnoList"></div>
+          </div>
+
+          <!-- ── Panel de captura ───────────────────────────────────── -->
+          <div class="cc-main" id="ccMain">
+            <div class="cc-empty">
+              <iconify-icon icon="lucide:mouse-pointer-click"></iconify-icon>
+              <p>
+                Selecciona un alumno de la lista para capturar sus
+                calificaciones
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- /cc-layout -->
+
+        <!-- ══ CALIFICACIÓN FINAL DEL GRUPO ════════════════════════════ -->
+        <div id="seccionFinal" style="display: none; margin-top: 28px">
+          <div class="card">
+            <div
+              class="card-header"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+              "
+              onclick="toggleFinalSection()"
+            >
+              <span
+                style="
+                  width: 26px;
+                  height: 26px;
+                  border-radius: 50%;
+                  background: var(--success);
+                  color: #fff;
+                  display: flex;
+                  align-items: center;
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                  flex-shrink: 0;
+                  align-items: center;
+                  justify-content: center;
+                "
+                >✓</span
+              >
+              <span style="font-weight: 700; font-size: 1rem"
+                >Calificación final del grupo</span
+              >
+              <span
+                id="badgeFinalGrupo"
+                style="
+                  font-size: 0.75rem;
+                  color: var(--text-muted);
+                  margin-left: auto;
+                  margin-right: 8px;
+                "
+              ></span>
+              <iconify-icon
+                icon="lucide:chevron-down"
+                id="chevFinal"
+                style="transition: transform 0.25s; color: var(--text-muted)"
+              ></iconify-icon>
+            </div>
+            <div
+              id="finalContent"
+              style="padding: 20px; border-top: 1px solid var(--border)"
+            >
+              <div class="final-table-wrap" id="tablaFinalWrap">
+                <div
+                  style="
+                    text-align: center;
+                    padding: 36px;
+                    color: var(--text-muted);
+                  "
+                >
+                  <iconify-icon
+                    icon="mdi:calculator-variant-outline"
+                    style="font-size: 2rem; display: block; margin: 0 auto 10px"
+                  ></iconify-icon>
+                  <p style="margin: 0">
+                    Cierra las unidades para calcular la calificación final
+                  </p>
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  justify-content: flex-end;
+                  margin-top: 14px;
+                  padding-top: 14px;
+                  border-top: 1px solid var(--border);
+                "
+              >
+                <button
+                  class="btn btn-outline"
+                  onclick="recalcularCalificacionesFinal()"
+                >
+                  <iconify-icon
+                    icon="mdi:calculator-variant-outline"
+                  ></iconify-icon>
+                  Recalcular
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="guardarCalificacionesFinal()"
+                >
+                  <iconify-icon
+                    icon="mdi:check-decagram-outline"
+                  ></iconify-icon>
+                  Guardar calificaciones finales
+                </button>
+              </div>
+              <!-- Bonus Final -->
+              <div
+                style="
+                  margin-top: 22px;
+                  padding-top: 18px;
+                  border-top: 2px dashed var(--border);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <iconify-icon
+                    icon="mdi:star-plus-outline"
+                    style="font-size: 1.2rem; color: #7c3aed"
+                  ></iconify-icon>
+                  <span style="font-weight: 600; color: #7c3aed"
+                    >Bonus Final (nivel materia)</span
+                  >
+                  <span style="font-size: 0.75rem; color: var(--text-muted)"
+                    >— Se aplica sobre la calificación final calculada</span
+                  >
+                </div>
+                <div id="tablaBonusFinalWrap">
+                  <p style="font-size: 0.85rem; color: var(--text-muted)">
+                    Guarda las calificaciones finales primero para habilitar el
+                    bonus.
+                  </p>
+                </div>
+              </div>
+              <!-- Modificación Final -->
+              <div
+                style="
+                  margin-top: 22px;
+                  padding-top: 18px;
+                  border-top: 2px dashed var(--border);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <iconify-icon
+                    icon="mdi:pencil-circle-outline"
+                    style="font-size: 1.2rem; color: #dc2626"
+                  ></iconify-icon>
+                  <span style="font-weight: 600; color: #dc2626"
+                    >Modificación Final (ajuste manual)</span
+                  >
+                  <span style="font-size: 0.75rem; color: var(--text-muted)"
+                    >— Sobreescribe la calificación con justificación
+                    obligatoria</span
+                  >
+                </div>
+                <div id="tablaModificacionFinalWrap">
+                  <p style="font-size: 0.85rem; color: var(--text-muted)">
+                    Guarda las calificaciones finales primero para habilitar la
+                    modificación.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ══ MODALES (reutilizados de formulario.js) ══════════════════════ -->
+
+    <!-- Modal Bonus Final -->
+    <div
+      class="modal-overlay"
+      id="modalBonusFinal"
+      onclick="if (event.target === this) cerrarModalBonusFinal();"
+    >
+      <div class="modal-panel" style="max-width: 480px">
+        <div class="modal-header">
+          <span style="color: #7c3aed; font-weight: 700">
+            <iconify-icon icon="mdi:star-plus-outline"></iconify-icon> Asignar
+            Bonus Final
+          </span>
+          <button class="modal-close" onclick="cerrarModalBonusFinal()">
+            ✕
+          </button>
+        </div>
+        <div
+          class="modal-body"
+          style="
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+          "
+        >
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Alumno</label
+            >
+            <div
+              id="bonusFinalNombreAlumno"
+              style="font-size: 0.9rem; color: var(--text-muted)"
+            ></div>
+            <input type="hidden" id="bonusFinalNo_control" />
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Calificación actual</label
+            >
+            <div
+              id="bonusFinalCalActual"
+              style="font-size: 1.1rem; font-weight: 700"
+            ></div>
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Puntos a otorgar</label
+            >
+            <input
+              type="number"
+              id="bonusFinalPuntos"
+              min="0.1"
+              max="100"
+              step="0.5"
+              style="
+                width: 100%;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+              "
+            />
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+            >
+              Justificación <span style="color: #dc2626">*</span>
+            </label>
+            <textarea
+              id="bonusFinalJustificacion"
+              rows="3"
+              placeholder="Motivo del bonus (obligatorio)..."
+              style="
+                width: 100%;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+                resize: vertical;
+                font-family: inherit;
+              "
+            ></textarea>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button class="btn btn-outline" onclick="cerrarModalBonusFinal()">
+              Cancelar
+            </button>
+            <button
+              class="btn"
+              style="background: #7c3aed; color: #fff"
+              onclick="guardarBonusFinal()"
+            >
+              <iconify-icon icon="mdi:check"></iconify-icon> Asignar Bonus
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Modificación Final -->
+    <div
+      class="modal-overlay"
+      id="modalModificacionFinal"
+      onclick="if (event.target === this) cerrarModalModificacionFinal();"
+    >
+      <div class="modal-panel" style="max-width: 480px">
+        <div class="modal-header">
+          <span style="color: #dc2626; font-weight: 700">
+            <iconify-icon icon="mdi:pencil-circle-outline"></iconify-icon>
+            Modificación Final Manual
+          </span>
+          <button class="modal-close" onclick="cerrarModalModificacionFinal()">
+            ✕
+          </button>
+        </div>
+        <div
+          class="modal-body"
+          style="
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+          "
+        >
+          <div
+            style="
+              background: #fef2f2;
+              border: 1px solid #fecaca;
+              border-radius: 8px;
+              padding: 10px 12px;
+              font-size: 0.82rem;
+              color: #991b1b;
+            "
+          >
+            ⚠️ Esta operación sobreescribe la calificación final. Requiere
+            justificación obligatoria y queda registrada para auditoría.
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Alumno</label
+            >
+            <div
+              id="modifFinalNombreAlumno"
+              style="font-size: 0.9rem; color: var(--text-muted)"
+            ></div>
+            <input type="hidden" id="modifFinalNo_control" />
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Calificación actual</label
+            >
+            <div
+              id="modifFinalCalActual"
+              style="font-size: 1.1rem; font-weight: 700"
+            ></div>
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+              >Nueva calificación (0–100)</label
+            >
+            <input
+              type="number"
+              id="modifFinalNuevaCal"
+              min="0"
+              max="100"
+              step="1"
+              style="
+                width: 100%;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+              "
+            />
+          </div>
+          <div>
+            <label
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+              "
+            >
+              Justificación <span style="color: #dc2626">*</span>
+            </label>
+            <textarea
+              id="modifFinalJustificacion"
+              rows="3"
+              placeholder="Motivo de la modificación (obligatorio)..."
+              style="
+                width: 100%;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+                resize: vertical;
+                font-family: inherit;
+              "
+            ></textarea>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button
+              class="btn btn-outline"
+              onclick="cerrarModalModificacionFinal()"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn"
+              style="background: #dc2626; color: #fff"
+              onclick="guardarModificacionFinal()"
+            >
+              <iconify-icon icon="mdi:content-save-outline"></iconify-icon>
+              Aplicar Modificación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Justificación Bonus Unidad -->
+    <div
+      id="modalJustBonus"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          background: var(--card-bg);
+          border-radius: 14px;
+          width: min(440px, 100%);
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        "
+      >
+        <div
+          style="
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          <iconify-icon
+            icon="lucide:star"
+            style="color: var(--warning, #f59e0b); font-size: 1.2rem"
+          ></iconify-icon>
+          <h3 style="margin: 0; font-size: 0.98rem; font-weight: 700">
+            Justificación de bonus
+          </h3>
+          <button
+            onclick="cerrarModalJustBonus()"
+            style="
+              margin-left: auto;
+              width: 28px;
+              height: 28px;
+              border-radius: 7px;
+              border: none;
+              background: var(--bg-app);
+              cursor: pointer;
+              color: var(--text-muted);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div style="padding: 18px 20px; display: grid; gap: 12px">
+          <p style="margin: 0; font-size: 0.87rem; color: var(--text-muted)">
+            El alumno <strong id="justBonusNombre"></strong> tiene
+            <strong id="justBonusPts"></strong> pts de bonus. Ingresa la
+            justificación obligatoria:
+          </p>
+          <div style="display: grid; gap: 4px">
+            <label
+              style="
+                font-size: 0.76rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: var(--text-muted);
+              "
+            >
+              Justificación <span style="color: var(--danger)">*</span>
+            </label>
+            <textarea
+              id="justBonusInput"
+              rows="3"
+              placeholder="Ej. Desempeño sobresaliente en proyecto de unidad..."
+              style="
+                padding: 9px 12px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--card-bg);
+                color: var(--text-main);
+                font-size: 0.88rem;
+                font-family: inherit;
+                resize: vertical;
+              "
+            ></textarea>
+          </div>
+        </div>
+        <div
+          style="
+            padding: 12px 20px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            border-top: 1px solid var(--border);
+          "
+        >
+          <button class="btn btn-outline" onclick="cerrarModalJustBonus()">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="confirmarJustBonus()">
+            <iconify-icon icon="lucide:check"></iconify-icon> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal CSV -->
+    <div
+      class="modal-overlay"
+      id="modalCSV"
+      onclick="if (event.target === this) cerrarModalCSV();"
+    >
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+          >
+            <iconify-icon
+              icon="mdi:file-delimited-outline"
+              style="color: var(--primary)"
+            ></iconify-icon>
+            Importar CSV
+          </h2>
+          <button class="modal-close" onclick="cerrarModalCSV()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 0.82rem;
+              color: var(--text-muted);
+              margin: 0 0 10px;
+            "
+          >
+            Formato: <code>no_control,calificacion</code>
+          </p>
+          <div class="field-group" style="margin-bottom: 12px">
+            <label>Actividad</label>
+            <select id="selCSVActividad">
+              <option value="">— Selecciona actividad —</option>
+            </select>
+          </div>
+          <div
+            class="csv-drop"
+            id="csvDropZone"
+            ondragover="
+              event.preventDefault();
+              this.classList.add('drag-over');
+            "
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="manejarArchivoCSV(event)"
+          >
+            <iconify-icon
+              icon="mdi:file-upload-outline"
+              style="
+                font-size: 2.2rem;
+                color: var(--text-muted);
+                display: block;
+                margin: 0 auto 8px;
+              "
+            ></iconify-icon>
+            <p
+              style="
+                color: var(--text-muted);
+                margin: 0 0 8px;
+                font-size: 0.84rem;
+              "
+            >
+              Arrastra aquí o
+            </p>
+            <label
+              class="btn btn-outline"
+              style="
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+              "
+            >
+              <iconify-icon icon="mdi:folder-open-outline"></iconify-icon>
+              Seleccionar
+              <input
+                type="file"
+                id="inputCSV"
+                accept=".csv"
+                style="display: none"
+                onchange="manejarArchivoCSV(event)"
+              />
+            </label>
+          </div>
+          <div id="csvPreview" style="margin-top: 10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Cambios sin guardar -->
+    <div
+      id="modalCambiosSinGuardar"
+      class="modal-overlay"
+      style="z-index: 9999"
+    >
+      <div
+        class="modal-panel modal-sm"
+        style="max-width: 420px; text-align: center"
+      >
+        <div style="padding: 32px 28px 0">
+          <div
+            style="
+              width: 56px;
+              height: 56px;
+              border-radius: 50%;
+              background: rgba(245, 158, 11, 0.12);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 18px;
+            "
+          >
+            <iconify-icon
+              icon="lucide:alert-triangle"
+              style="font-size: 1.8rem; color: #f59e0b"
+            ></iconify-icon>
+          </div>
+          <h2
+            style="
+              font-size: 1.1rem;
+              font-weight: 700;
+              margin-bottom: 8px;
+              color: var(--text-main);
+            "
+          >
+            Cambios sin guardar
+          </h2>
+          <p
+            style="
+              font-size: 0.88rem;
+              color: var(--text-muted);
+              line-height: 1.55;
+            "
+          >
+            Tienes calificaciones o datos que
+            <strong>no han sido guardados</strong>.<br />
+            ¿Salir de todas formas y perder los cambios?
+          </p>
+        </div>
+        <div
+          class="modal-footer"
+          style="justify-content: center; gap: 12px; padding: 24px 28px"
+        >
+          <button class="btn btn-outline" onclick="cancelarSalirSinGuardar()">
+            <iconify-icon icon="lucide:arrow-left"></iconify-icon> Seguir
+            editando
+          </button>
+          <button
+            class="btn"
+            onclick="confirmarSalirSinGuardar()"
+            style="background: #ef4444; color: #fff; border-color: #ef4444"
+          >
+            <iconify-icon icon="lucide:log-out"></iconify-icon> Salir sin
+            guardar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../maestro/js/formulario.js"></script>
+    <script>
+      /* ── Extiende formulario.js con la UI del Concepto C ── */
+
+      const AVATAR_COLORS = [
+        "#3b82f6",
+        "#8b5cf6",
+        "#ec4899",
+        "#f59e0b",
+        "#10b981",
+        "#ef4444",
+        "#6366f1",
+        "#14b8a6",
+        "#f97316",
+        "#64748b",
+      ];
+      let alumnoSelIdx = 0;
+      let alumnosFiltrados = [];
+
+      // ── Interceptar renderTablaCalificaciones de formulario.js ─────────
+      // La función original genera una tabla. La reemplazamos con el UI Concepto C.
+      const _originalRenderTabla = window.renderTablaCalificaciones;
+      window.renderTablaCalificaciones = function () {
+        renderConceptoC();
+      };
+
+      function renderConceptoC() {
+        const { alumnos, actividades, grupoId, unidadId } = estado;
+
+        // Ocultar vacío, mostrar layout
+        document.getElementById("ccEmpty").style.display = "none";
+        document.getElementById("ccLayout").style.display = "grid";
+        document.getElementById("statsStrip").style.display = "flex";
+        document.getElementById("unitPills").style.display = "flex";
+
+        if (!alumnos.length) {
+          document.getElementById("alumnoList").innerHTML =
+            `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:.84rem">
+               Sin alumnos inscritos en este grupo
+             </div>`;
+          return;
+        }
+
+        alumnosFiltrados = [...alumnos];
+        alumnoSelIdx = Math.min(alumnoSelIdx, alumnos.length - 1);
+        renderListaAlumnos();
+        renderAlumnoFocused(alumnoSelIdx);
+        actualizarStats();
+      }
+
+      function renderListaAlumnos() {
+        const list = document.getElementById("alumnoList");
+        list.innerHTML = "";
+        alumnosFiltrados.forEach((al, i) => {
+          const idxOrig = estado.alumnos.findIndex(
+            (a) => a.no_control === al.no_control,
+          );
+          const prom = calcularCalFinal(al.no_control);
+          const promStr = prom !== null ? Math.round(prom) : "—";
+          const dotClass =
+            prom === null
+              ? "ai-status-pen"
+              : prom >= 70
+                ? "ai-status-ok"
+                : "ai-status-rep";
+          const promColor =
+            prom === null
+              ? "var(--text-muted)"
+              : prom >= 70
+                ? "#16a34a"
+                : "#dc2626";
+          const isActive =
+            estado.alumnos[alumnoSelIdx]?.no_control === al.no_control;
+          const isGuardado = _guardados.has(al.no_control);
+          const div = document.createElement("div");
+          div.className =
+            "alumno-item" +
+            (isActive ? " active" : "") +
+            (isGuardado ? " guardado" : "");
+          div.innerHTML = `
+            <span class="ai-status ${dotClass}"></span>
+            <div class="ai-info">
+              <div class="ai-name">${al.nombre}</div>
+              <div class="ai-nc">${al.no_control}</div>
+            </div>
+            <span class="ai-prom" style="color:${promColor}">${promStr}</span>`;
+          div.onclick = () => {
+            alumnoSelIdx = idxOrig;
+            renderListaAlumnos();
+            renderAlumnoFocused(alumnoSelIdx);
+          };
+          list.appendChild(div);
+        });
+
+        const navStats = document.getElementById("navStats");
+        const ok = estado.alumnos.filter((a) => {
+          const p = calcularCalFinal(a.no_control);
+          return p !== null && p >= 70;
+        }).length;
+        navStats.textContent = `${ok}/${estado.alumnos.length} ✓`;
+      }
+
+      const _guardados = new Set();
+
+      function renderAlumnoFocused(idx) {
+        const al = estado.alumnos[idx];
+        if (!al) return;
+        const main = document.getElementById("ccMain");
+        const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+        const initials = al.nombre
+          .split(" ")
+          .slice(0, 2)
+          .map((w) => w[0] || "")
+          .join("")
+          .toUpperCase();
+        const prom = calcularCalFinal(al.no_control);
+        const promRound =
+          prom !== null ? Math.floor(prom) + (prom % 1 >= 0.5 ? 1 : 0) : null;
+        const badgeClass = prom === null ? "pen" : prom >= 70 ? "apr" : "rep";
+        const promStr = promRound !== null ? promRound : "?";
+        const prevDisabled = idx === 0 ? "disabled" : "";
+        const nextDisabled =
+          idx === estado.alumnos.length - 1 ? "disabled" : "";
+        const unidadCerrada = estado.unidadCerrada;
+
+        // Generar tarjetas de actividades
+        let actsHTML = "";
+        if (!estado.actividades.length) {
+          actsHTML = `<div class="hint-banner">
+            <iconify-icon icon="lucide:info" style="flex-shrink:0"></iconify-icon>
+            Esta unidad no tiene actividades. Ve a
+            <a href="configurar_actividades.html">Configurar actividades →</a>
+          </div>`;
+        } else {
+          const tipoColores = {
+            Examen: { bg: "rgba(245,158,11,.14)", color: "#b45309" },
+            Tarea: { bg: "rgba(59,130,246,.14)", color: "#1d4ed8" },
+            Práctica: { bg: "rgba(139,92,246,.14)", color: "#6d28d9" },
+            Proyecto: { bg: "rgba(16,185,129,.14)", color: "#065f46" },
+            Asistencia: { bg: "rgba(20,184,166,.14)", color: "#0f766e" },
+          };
+          estado.actividades.forEach((a) => {
+            const r = estado.resultados[al.no_control]?.[a.id_actividad];
+            const val = r?.estatus === "NP" ? "" : (r?.cal ?? "");
+            const peso = parseFloat(a.ponderacion);
+            const aporte =
+              val !== "" ? ((parseFloat(val) * peso) / 100).toFixed(1) : "—";
+            const tc = tipoColores[a.tipo_actividad] || {
+              bg: "rgba(100,116,139,.14)",
+              color: "#475569",
+            };
+            const disabledAttr = unidadCerrada ? "disabled" : "";
+            actsHTML += `
+              <div class="act-card${unidadCerrada ? " disabled" : ""}">
+                <div class="act-card-info">
+                  <strong>${a.nombre_actividad}</strong>
+                  <div class="act-card-meta">
+                    <span class="act-tipo-chip" style="background:${tc.bg};color:${tc.color}">
+                      ${a.tipo_actividad || "Actividad"}
+                    </span>
+                    <span class="act-peso-chip">Ponderación: <strong>${peso.toFixed(0)}%</strong></span>
+                  </div>
+                </div>
+                <div style="text-align:center">
+                  <input class="act-input-big grade-input"
+                    type="number" min="0" max="100" step="0.5"
+                    data-actividad="${a.id_actividad}"
+                    data-no_control="${al.no_control}"
+                    data-ponderacion="${a.ponderacion}"
+                    value="${val}" placeholder="—"
+                    ${disabledAttr}
+                    oninput="onCalInput(this);recalcularFila('${al.no_control}');_actualizarPromRing('${al.no_control}')" />
+                  <div class="act-aporte" id="aporte_${al.no_control}_${a.id_actividad}">
+                    Aporte: ${aporte} pts
+                  </div>
+                </div>
+              </div>`;
+          });
+        }
+
+        // Bonus
+        const bon = getBonus(al.no_control);
+        const promSinBonus = calcularBaseScore(al.no_control);
+        const circ = 2 * Math.PI * 26;
+        const pct = prom !== null ? Math.min(100, prom) : 0;
+        const dashF = ((circ * pct) / 100).toFixed(1);
+        const dashR = (circ - parseFloat(dashF)).toFixed(1);
+        const circColor =
+          prom === null ? "#d1d5db" : prom >= 70 ? "#16a34a" : "#dc2626";
+
+        main.innerHTML = `
+          <!-- Cabecera alumno -->
+          <div class="alumno-header-card">
+            <div class="big-avatar" style="background:${color}">${initials}</div>
+            <div class="alumno-head-info">
+              <h2>${al.nombre}</h2>
+              <span>No. control: ${al.no_control}</span>
+            </div>
+            <div class="nav-btns">
+              <button class="btn btn-outline btn-sm" ${prevDisabled} onclick="navAlumno(-1)">
+                <iconify-icon icon="lucide:chevron-left"></iconify-icon> Anterior
+              </button>
+              <span>${idx + 1} / ${estado.alumnos.length}</span>
+              <button class="btn btn-outline btn-sm" ${nextDisabled} onclick="navAlumno(1)">
+                Siguiente <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+              </button>
+            </div>
+            <div class="cal-badge-big ${badgeClass}" id="bigCalBadge">${promStr}</div>
+          </div>
+
+          <!-- Actividades -->
+          <div id="actsContainer">${actsHTML}</div>
+
+          <!-- Resumen + bonus + botones -->
+          <div class="summary-card">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
+              <div>
+                ${estado.actividades
+                  .map((a) => {
+                    const r =
+                      estado.resultados[al.no_control]?.[a.id_actividad];
+                    const val = r?.estatus === "NP" ? 0 : (r?.cal ?? null);
+                    const aporte =
+                      val !== null
+                        ? ((val * parseFloat(a.ponderacion)) / 100).toFixed(2)
+                        : "—";
+                    return `<div class="summary-row">
+                    <span class="summary-label">${a.nombre_actividad} (${parseFloat(a.ponderacion).toFixed(0)}%)</span>
+                    <span class="summary-val" id="sum_${al.no_control}_${a.id_actividad}">${aporte} pts</span>
+                  </div>`;
+                  })
+                  .join("")}
+                <div class="summary-total">
+                  <span class="summary-total-label">Promedio ponderado</span>
+                  <span class="summary-total-val" id="sumBase"
+                    style="color:${promSinBonus === null ? "var(--text-muted)" : promSinBonus >= 70 ? "#16a34a" : "#dc2626"}">
+                    ${promSinBonus !== null ? promSinBonus.toFixed(1) : "—"}
+                  </span>
+                </div>
+              </div>
+              <!-- Ring -->
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="prom-ring">
+                  <svg width="64" height="64" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="var(--border)" stroke-width="5"/>
+                    <circle id="ringArc" cx="32" cy="32" r="26" fill="none"
+                      stroke="${circColor}" stroke-width="5"
+                      stroke-dasharray="${dashF} ${dashR}" stroke-linecap="round"/>
+                  </svg>
+                  <div class="prom-ring-num" id="ringNum">
+                    ${prom !== null ? prom.toFixed(1) : "—"}
+                  </div>
+                </div>
+                <span style="font-size:.7rem;color:var(--text-muted);text-align:center">Prom.<br>con bonus</span>
+              </div>
+            </div>
+
+            <!-- Bonus -->
+            <div class="bonus-row">
+              <iconify-icon icon="mdi:star-plus-outline" style="color:#f59e0b;font-size:1.2rem"></iconify-icon>
+              <label>Bonus unidad:</label>
+              <input class="bonus-input-sm bonus-pts-input" type="number" min="0" max="10" step="0.5"
+                data-no_control="${al.no_control}"
+                value="${bon.puntos ?? ""}" placeholder="pts"
+                ${unidadCerrada ? "disabled" : ""}
+                oninput="onBonusInput('${al.no_control}',this.value);_actualizarPromRing('${al.no_control}')" />
+              <span style="font-size:.8rem;color:var(--text-muted)">pts</span>
+              <input class="bonus-just-input bonus-just-input-side" type="text"
+                data-no_control="${al.no_control}"
+                value="${(bon.justificacion ?? "").replace(/"/g, "&quot;")}"
+                placeholder="Justificación del bonus *"
+                ${unidadCerrada ? "disabled" : ""}
+                oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
+            </div>
+
+            <!-- Acciones -->
+            <div class="alumno-actions">
+              <button class="btn btn-outline" onclick="guardarCalificaciones()" ${unidadCerrada ? "disabled" : ""}>
+                <iconify-icon icon="mdi:content-save-outline"></iconify-icon> Guardar
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="navAlumno(1)" ${nextDisabled}>
+                Siguiente alumno <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+              </button>
+              <button class="btn btn-success" onclick="guardarYCerrarUnidad()" ${unidadCerrada ? "disabled" : ""}>
+                <iconify-icon icon="mdi:check-decagram-outline"></iconify-icon>
+                ${unidadCerrada ? "Unidad cerrada" : "Guardar y cerrar unidad"}
+              </button>
+            </div>
+          </div>`;
+      }
+
+      function navAlumno(dir) {
+        const nuevo = alumnoSelIdx + dir;
+        if (nuevo < 0 || nuevo >= estado.alumnos.length) return;
+        alumnoSelIdx = nuevo;
+        renderListaAlumnos();
+        renderAlumnoFocused(alumnoSelIdx);
+      }
+
+      function filtrarListaAlumnos(q) {
+        q = q.toLowerCase().trim();
+        alumnosFiltrados = q
+          ? estado.alumnos.filter(
+              (a) =>
+                a.nombre.toLowerCase().includes(q) ||
+                a.no_control.toLowerCase().includes(q),
+            )
+          : [...estado.alumnos];
+        renderListaAlumnos();
+      }
+
+      // Actualizar anillo de progreso en tiempo real
+      function _actualizarPromRing(no_control) {
+        if (estado.alumnos[alumnoSelIdx]?.no_control !== no_control) return;
+        const prom = calcularCalFinal(no_control);
+        const base = calcularBaseScore(no_control);
+        const circ = 2 * Math.PI * 26;
+        const pct = prom !== null ? Math.min(100, prom) : 0;
+        const dashF = ((circ * pct) / 100).toFixed(1);
+        const dashR = (circ - parseFloat(dashF)).toFixed(1);
+        const circColor =
+          prom === null ? "#d1d5db" : prom >= 70 ? "#16a34a" : "#dc2626";
+        const promRound =
+          prom !== null ? Math.floor(prom) + (prom % 1 >= 0.5 ? 1 : 0) : null;
+
+        const arc = document.getElementById("ringArc");
+        const ringNum = document.getElementById("ringNum");
+        const badge = document.getElementById("bigCalBadge");
+        const sumBase = document.getElementById("sumBase");
+
+        if (arc) {
+          arc.setAttribute("stroke", circColor);
+          arc.setAttribute("stroke-dasharray", `${dashF} ${dashR}`);
+        }
+        if (ringNum)
+          ringNum.textContent = prom !== null ? prom.toFixed(1) : "—";
+        if (badge) {
+          badge.textContent = promRound !== null ? promRound : "?";
+          badge.className =
+            "cal-badge-big " +
+            (prom === null ? "pen" : prom >= 70 ? "apr" : "rep");
+        }
+        if (sumBase) {
+          sumBase.textContent = base !== null ? base.toFixed(1) : "—";
+          sumBase.style.color =
+            base === null
+              ? "var(--text-muted)"
+              : base >= 70
+                ? "#16a34a"
+                : "#dc2626";
+        }
+
+        // Actualizar aportes individuales
+        estado.actividades.forEach((a) => {
+          const inp = document.querySelector(
+            `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`,
+          );
+          const apEl = document.getElementById(
+            `aporte_${no_control}_${a.id_actividad}`,
+          );
+          if (apEl && inp) {
+            const v = parseFloat(inp.value);
+            apEl.textContent = isNaN(v)
+              ? "Aporte: — pts"
+              : `Aporte: ${((v * parseFloat(a.ponderacion)) / 100).toFixed(1)} pts`;
+          }
+        });
+
+        // Actualizar resumen
+        estado.actividades.forEach((a) => {
+          const inp = document.querySelector(
+            `input[data-actividad="${a.id_actividad}"][data-no_control="${no_control}"]`,
+          );
+          const sumEl = document.getElementById(
+            `sum_${no_control}_${a.id_actividad}`,
+          );
+          if (sumEl && inp) {
+            const v = parseFloat(inp.value);
+            sumEl.textContent = isNaN(v)
+              ? "— pts"
+              : `${((v * parseFloat(a.ponderacion)) / 100).toFixed(2)} pts`;
+          }
+        });
+
+        actualizarStats();
+        renderListaAlumnos();
+      }
+
+      function actualizarStats() {
+        const total = estado.alumnos.length;
+        const apr = estado.alumnos.filter((a) => {
+          const p = calcularCalFinal(a.no_control);
+          return p !== null && p >= 70;
+        }).length;
+        const rep = estado.alumnos.filter((a) => {
+          const p = calcularCalFinal(a.no_control);
+          return p !== null && p < 70;
+        }).length;
+        const pen = total - apr - rep;
+        const proms = estado.alumnos
+          .map((a) => calcularCalFinal(a.no_control))
+          .filter((p) => p !== null);
+        const prom = proms.length
+          ? (proms.reduce((s, v) => s + v, 0) / proms.length).toFixed(1)
+          : "—";
+
+        const set = (id, v) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = v;
+        };
+        set("statTotal", total);
+        set("statApr", apr);
+        set("statRep", rep);
+        set("statPen", pen);
+        set("statProm", prom);
+      }
+
+      // ── Intercept para renderizar pills de unidad en el nuevo layout ───
+      const _origRenderUnitTabs = window.renderUnitTabs;
+      window.renderUnitTabs = function (unidades) {
+        const container = document.getElementById("unitPills");
+        if (!container) {
+          if (_origRenderUnitTabs) _origRenderUnitTabs(unidades);
+          return;
+        }
+        container.innerHTML = "";
+        unidades.forEach((u) => {
+          const isCerrada = u.cerrada;
+          const btn = document.createElement("button");
+          btn.className = "unit-pill" + (isCerrada ? " cerrada" : "");
+          btn.dataset.id = u.id_unidad;
+          btn.innerHTML = `${isCerrada ? '<iconify-icon icon="mdi:lock" style="font-size:.75rem"></iconify-icon>' : ""}Unidad ${u.numero_unidad}`;
+          btn.onclick = () => seleccionarUnidad(u.id_unidad);
+          container.appendChild(btn);
+        });
+      };
+
+      // ── Intercept seleccionarUnidad para activar pill ──────────────────
+      const _origSelUnidad = window.seleccionarUnidad;
+      window.seleccionarUnidad = async function (id_unidad) {
+        document.querySelectorAll(".unit-pill").forEach((p) => {
+          p.classList.toggle(
+            "active",
+            parseInt(p.dataset.id) === parseInt(id_unidad),
+          );
+        });
+        if (_origSelUnidad) await _origSelUnidad(id_unidad);
+      };
+
+      // ── Interceptar guardarCalificaciones para marcar guardado ─────────
+      const _origGuardar = window.guardarCalificaciones;
+      window.guardarCalificaciones = async function () {
+        if (_origGuardar) await _origGuardar();
+        const nc = estado.alumnos[alumnoSelIdx]?.no_control;
+        if (nc) {
+          _guardados.add(nc);
+          renderListaAlumnos();
+        }
+      };
+
+      // ── Toggle sección final ───────────────────────────────────────────
+      function toggleFinalSection() {
+        const c = document.getElementById("finalContent");
+        const i = document.getElementById("chevFinal");
+        if (c) c.style.display = c.style.display === "none" ? "block" : "none";
+        if (i)
+          i.style.transform =
+            c?.style.display === "none" ? "" : "rotate(180deg)";
+      }
+
+      // ── Mostrar sección final cuando el grupo tiene unidades cerradas ──
+      const _origCargarGrupo = window.cargarGrupo;
+      window.cargarGrupo = async function () {
+        if (_origCargarGrupo) await _origCargarGrupo();
+        // Mostrar subtítulo
+        const sel = document.getElementById("selGrupo");
+        const txt = sel?.options[sel.selectedIndex]?.text || "";
+        const sub = document.getElementById("subtituloGrupo");
+        if (sub && txt && txt !== "— Selecciona un grupo —")
+          sub.textContent = txt;
+        // Mostrar sección final si hay unidades
+        if (estado.unidadesGrupo?.length) {
+          document.getElementById("seccionFinal").style.display = "block";
+          recalcularCalificacionesFinal();
+        }
+      };
+    </script>
+  </body>
+</html>

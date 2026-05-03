@@ -30,8 +30,13 @@ window.API_URL = "http://localhost:3000";
     alumno: [
       {
         href: "../../alumno/pages/portalAlumno.html",
-        texto: "Mis calificaciones", // antes: "Mi portal" — poco descriptivo
+        texto: "Mis calificaciones",
         icono: "lucide:layout-dashboard",
+      },
+      {
+        href: "../../alumno/pages/utilerias_alumno.html",
+        texto: "Utilerías",
+        icono: "lucide:settings-2",
       },
     ],
 
@@ -93,7 +98,7 @@ window.API_URL = "http://localhost:3000";
         icono: "mdi:file-document-edit-outline",
         hijos: [
           {
-            href: "../../maestro/pages/formulario.html",
+            href: "../../maestro/pages/captura_calificaciones.html",
             texto: "Capturar calificaciones",
             icono: "lucide:pencil",
           },
