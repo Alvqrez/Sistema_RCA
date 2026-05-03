@@ -609,6 +609,48 @@
         border-color: var(--primary);
         background: rgba(30, 64, 175, 0.04);
       }
+
+      /* ── Tabs de sección final ── */
+      .final-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 11px 18px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: var(--text-muted);
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition:
+          color 0.15s,
+          border-color 0.15s;
+        position: relative;
+        top: 1px;
+      }
+      .final-tab:hover {
+        color: var(--text-main);
+      }
+      .final-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: transparent;
+      }
+      .final-tab.locked {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .ftab-lock {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 2px;
+        color: var(--text-muted);
+      }
+      .final-tab.unlocked .ftab-lock {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -779,7 +821,8 @@
 
         <!-- ══ CALIFICACIÓN FINAL DEL GRUPO ════════════════════════════ -->
         <div id="seccionFinal" style="display: none; margin-top: 28px">
-          <div class="card">
+          <div class="card" style="overflow: hidden">
+            <!-- Cabecera colapsable -->
             <div
               class="card-header"
               style="
@@ -799,11 +842,10 @@
                   color: #fff;
                   display: flex;
                   align-items: center;
+                  justify-content: center;
                   font-size: 0.85rem;
                   font-weight: 700;
                   flex-shrink: 0;
-                  align-items: center;
-                  justify-content: center;
                 "
                 >✓</span
               >
@@ -825,82 +867,151 @@
                 style="transition: transform 0.25s; color: var(--text-muted)"
               ></iconify-icon>
             </div>
-            <div
-              id="finalContent"
-              style="padding: 20px; border-top: 1px solid var(--border)"
-            >
-              <div class="final-table-wrap" id="tablaFinalWrap">
+
+            <!-- Cuerpo colapsable -->
+            <div id="finalContent" style="border-top: 1px solid var(--border)">
+              <!-- ── Barra de tabs ── -->
+              <div
+                style="
+                  display: flex;
+                  border-bottom: 1px solid var(--border);
+                  padding: 0 20px;
+                  background: var(--bg-app);
+                "
+              >
+                <button
+                  class="final-tab active"
+                  id="ftab-cal"
+                  onclick="switchFinalTab('cal')"
+                >
+                  <iconify-icon
+                    icon="mdi:calculator-variant-outline"
+                  ></iconify-icon>
+                  Calificaciones
+                </button>
+                <button
+                  class="final-tab"
+                  id="ftab-bonus"
+                  onclick="switchFinalTab('bonus')"
+                  title="Disponible tras guardar calificaciones finales"
+                >
+                  <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
+                  Bonus final
+                  <span class="ftab-lock" id="ftab-bonus-lock"
+                    ><iconify-icon
+                      icon="lucide:lock"
+                      style="font-size: 0.7rem"
+                    ></iconify-icon
+                  ></span>
+                </button>
+                <button
+                  class="final-tab"
+                  id="ftab-mod"
+                  onclick="switchFinalTab('mod')"
+                  title="Disponible tras guardar calificaciones finales"
+                >
+                  <iconify-icon icon="mdi:pencil-circle-outline"></iconify-icon>
+                  Modificación
+                  <span class="ftab-lock" id="ftab-mod-lock"
+                    ><iconify-icon
+                      icon="lucide:lock"
+                      style="font-size: 0.7rem"
+                    ></iconify-icon
+                  ></span>
+                </button>
+              </div>
+
+              <!-- ── Panel: Calificaciones ── -->
+              <div id="fpanel-cal" class="final-panel" style="padding: 20px">
+                <div class="final-table-wrap" id="tablaFinalWrap">
+                  <div
+                    style="
+                      text-align: center;
+                      padding: 36px;
+                      color: var(--text-muted);
+                    "
+                  >
+                    <iconify-icon
+                      icon="mdi:calculator-variant-outline"
+                      style="
+                        font-size: 2rem;
+                        display: block;
+                        margin: 0 auto 10px;
+                      "
+                    ></iconify-icon>
+                    <p style="margin: 0">
+                      Cierra las unidades para calcular la calificación final
+                    </p>
+                  </div>
+                </div>
                 <div
                   style="
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                    margin-top: 14px;
+                    padding-top: 14px;
+                    border-top: 1px solid var(--border);
+                  "
+                >
+                  <button
+                    class="btn btn-outline"
+                    onclick="recalcularCalificacionesFinal()"
+                  >
+                    <iconify-icon
+                      icon="mdi:calculator-variant-outline"
+                    ></iconify-icon>
+                    Recalcular
+                  </button>
+                  <button
+                    class="btn btn-success"
+                    onclick="guardarCalificacionesFinal()"
+                  >
+                    <iconify-icon
+                      icon="mdi:check-decagram-outline"
+                    ></iconify-icon>
+                    Guardar calificaciones finales
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── Panel: Bonus final ── -->
+              <div
+                id="fpanel-bonus"
+                class="final-panel"
+                style="display: none; padding: 20px"
+              >
+                <div
+                  id="fpanel-bonus-locked"
+                  style="
+                    display: none;
                     text-align: center;
-                    padding: 36px;
+                    padding: 40px 20px;
                     color: var(--text-muted);
                   "
                 >
                   <iconify-icon
-                    icon="mdi:calculator-variant-outline"
-                    style="font-size: 2rem; display: block; margin: 0 auto 10px"
+                    icon="lucide:lock"
+                    style="
+                      font-size: 2rem;
+                      display: block;
+                      margin: 0 auto 12px;
+                      color: var(--text-muted);
+                    "
                   ></iconify-icon>
-                  <p style="margin: 0">
-                    Cierra las unidades para calcular la calificación final
+                  <p
+                    style="
+                      margin: 0 0 4px;
+                      font-weight: 600;
+                      color: var(--text-main);
+                    "
+                  >
+                    Sección bloqueada
                   </p>
-                </div>
-              </div>
-              <div
-                style="
-                  display: flex;
-                  gap: 8px;
-                  justify-content: flex-end;
-                  margin-top: 14px;
-                  padding-top: 14px;
-                  border-top: 1px solid var(--border);
-                "
-              >
-                <button
-                  class="btn btn-outline"
-                  onclick="recalcularCalificacionesFinal()"
-                >
-                  <iconify-icon
-                    icon="mdi:calculator-variant-outline"
-                  ></iconify-icon>
-                  Recalcular
-                </button>
-                <button
-                  class="btn btn-success"
-                  onclick="guardarCalificacionesFinal()"
-                >
-                  <iconify-icon
-                    icon="mdi:check-decagram-outline"
-                  ></iconify-icon>
-                  Guardar calificaciones finales
-                </button>
-              </div>
-              <!-- Bonus Final -->
-              <div
-                style="
-                  margin-top: 22px;
-                  padding-top: 18px;
-                  border-top: 2px dashed var(--border);
-                "
-              >
-                <div
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-bottom: 12px;
-                  "
-                >
-                  <iconify-icon
-                    icon="mdi:star-plus-outline"
-                    style="font-size: 1.2rem; color: #7c3aed"
-                  ></iconify-icon>
-                  <span style="font-weight: 600; color: #7c3aed"
-                    >Bonus Final (nivel materia)</span
-                  >
-                  <span style="font-size: 0.75rem; color: var(--text-muted)"
-                    >— Se aplica sobre la calificación final calculada</span
-                  >
+                  <p style="margin: 0; font-size: 0.84rem">
+                    Primero guarda las calificaciones finales en la pestaña
+                    <strong>Calificaciones</strong>.
+                  </p>
                 </div>
                 <div id="tablaBonusFinalWrap">
                   <p style="font-size: 0.85rem; color: var(--text-muted)">
@@ -909,33 +1020,44 @@
                   </p>
                 </div>
               </div>
-              <!-- Modificación Final -->
+
+              <!-- ── Panel: Modificación final ── -->
               <div
-                style="
-                  margin-top: 22px;
-                  padding-top: 18px;
-                  border-top: 2px dashed var(--border);
-                "
+                id="fpanel-mod"
+                class="final-panel"
+                style="display: none; padding: 20px"
               >
                 <div
+                  id="fpanel-mod-locked"
                   style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-bottom: 12px;
+                    display: none;
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: var(--text-muted);
                   "
                 >
                   <iconify-icon
-                    icon="mdi:pencil-circle-outline"
-                    style="font-size: 1.2rem; color: #dc2626"
+                    icon="lucide:lock"
+                    style="
+                      font-size: 2rem;
+                      display: block;
+                      margin: 0 auto 12px;
+                      color: var(--text-muted);
+                    "
                   ></iconify-icon>
-                  <span style="font-weight: 600; color: #dc2626"
-                    >Modificación Final (ajuste manual)</span
+                  <p
+                    style="
+                      margin: 0 0 4px;
+                      font-weight: 600;
+                      color: var(--text-main);
+                    "
                   >
-                  <span style="font-size: 0.75rem; color: var(--text-muted)"
-                    >— Sobreescribe la calificación con justificación
-                    obligatoria</span
-                  >
+                    Sección bloqueada
+                  </p>
+                  <p style="margin: 0; font-size: 0.84rem">
+                    Primero guarda las calificaciones finales en la pestaña
+                    <strong>Calificaciones</strong>.
+                  </p>
                 </div>
                 <div id="tablaModificacionFinalWrap">
                   <p style="font-size: 0.85rem; color: var(--text-muted)">
@@ -945,6 +1067,7 @@
                 </div>
               </div>
             </div>
+            <!-- /finalContent -->
           </div>
         </div>
       </main>
@@ -1967,6 +2090,42 @@
             c?.style.display === "none" ? "" : "rotate(180deg)";
       }
 
+      // ── Tabs de la sección final ───────────────────────────────────────
+      let _finalesGuardadas = false;
+
+      function switchFinalTab(tab) {
+        // Bloquear bonus/mod si no hay finales guardadas
+        if ((tab === "bonus" || tab === "mod") && !_finalesGuardadas) {
+          const lockMsg =
+            tab === "bonus"
+              ? "Primero guarda las calificaciones finales (pestaña Calificaciones)."
+              : "Primero guarda las calificaciones finales (pestaña Calificaciones).";
+          mostrarToast(lockMsg, "error");
+          return;
+        }
+        // Activar tab visual
+        ["cal", "bonus", "mod"].forEach((t) => {
+          document
+            .getElementById(`ftab-${t}`)
+            ?.classList.toggle("active", t === tab);
+          const panel = document.getElementById(`fpanel-${t}`);
+          if (panel) panel.style.display = t === tab ? "block" : "none";
+        });
+      }
+
+      function _desbloquearTabsFinales() {
+        _finalesGuardadas = true;
+        ["bonus", "mod"].forEach((t) => {
+          const btn = document.getElementById(`ftab-${t}`);
+          if (btn) {
+            btn.classList.remove("locked");
+            btn.classList.add("unlocked");
+          }
+          const locked = document.getElementById(`fpanel-${t}-locked`);
+          if (locked) locked.style.display = "none";
+        });
+      }
+
       // ── Mostrar sección final cuando el grupo tiene unidades cerradas ──
       const _origCargarGrupo = window.cargarGrupo;
       window.cargarGrupo = async function () {
@@ -1980,8 +2139,31 @@
         // Mostrar sección final si hay unidades
         if (estado.unidadesGrupo?.length) {
           document.getElementById("seccionFinal").style.display = "block";
-          calcularVistaFinal(); // solo muestra datos existentes, sin error si no hay califs finales
+          calcularVistaFinal();
         }
+        // Resetear estado de tabs al cambiar de grupo
+        _finalesGuardadas = false;
+        ["bonus", "mod"].forEach((t) => {
+          document.getElementById(`ftab-${t}`)?.classList.add("locked");
+          document
+            .getElementById(`ftab-${t}`)
+            ?.classList.remove("unlocked", "active");
+          const panel = document.getElementById(`fpanel-${t}`);
+          if (panel) panel.style.display = "none";
+          const locked = document.getElementById(`fpanel-${t}-locked`);
+          if (locked) locked.style.display = "";
+        });
+        // Volver al tab de Calificaciones
+        document.getElementById("ftab-cal")?.classList.add("active");
+        document.getElementById("fpanel-cal").style.display = "block";
+      };
+
+      // Intercept guardarCalificacionesFinal para desbloquear tabs
+      const _origGuardarFinal = window.guardarCalificacionesFinal;
+      window.guardarCalificacionesFinal = async function () {
+        if (_origGuardarFinal) await _origGuardarFinal();
+        // Si llegó aquí sin error, desbloquear
+        _desbloquearTabsFinales();
       };
     </script>
   </body>

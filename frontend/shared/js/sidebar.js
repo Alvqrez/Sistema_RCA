@@ -110,6 +110,11 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:bar-chart-2",
       },
       {
+        href: "../../shared/pages/estadisticas.html",
+        texto: "Estadísticas",
+        icono: "lucide:chart-bar",
+      },
+      {
         href: "../../maestro/pages/utilerias_maestro.html",
         texto: "Utilerías",
         icono: "lucide:settings-2",
@@ -193,6 +198,11 @@ window.API_URL = "http://localhost:3000";
         href: "../../shared/pages/reportes.html",
         texto: "Reportes",
         icono: "lucide:bar-chart-2",
+      },
+      {
+        href: "../../shared/pages/estadisticas.html",
+        texto: "Estadísticas",
+        icono: "lucide:chart-bar",
       },
       {
         href: "../../admin/pages/utilerias.html",
