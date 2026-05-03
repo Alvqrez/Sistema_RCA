@@ -14,7 +14,7 @@ router.get("/grupos", verificarToken, (req, res) => {
     SELECT g.id_grupo, g.id_periodo,
            m.nombre_materia, m.clave_materia,
            CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
-           p.descripcion AS periodo, p.anio, g.estatus
+           p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
     JOIN maestro mae    ON g.rfc  = mae.rfc
@@ -41,7 +41,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   const sqlGrupo = `
     SELECT g.id_grupo, m.nombre_materia, m.clave_materia, m.no_unidades,
            CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
-           p.descripcion AS periodo, p.anio, g.estatus
+           p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
     JOIN maestro mae    ON g.rfc  = mae.rfc

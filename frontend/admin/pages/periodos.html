@@ -370,6 +370,29 @@
           document.getElementById("pDiaFin").value = rango.diaF;
         hintI.textContent = "Mes fijo: " + rango.lblI + " " + anio;
         hintF.textContent = "Mes fijo: " + rango.lblF + " " + anio;
+
+        // Auto-calcular estatus solo en modo "nuevo periodo"
+        if (!editandoId) calcularEstatusAuto();
+      }
+
+      /* Calcula y asigna el estatus automáticamente según las fechas */
+      function calcularEstatusAuto() {
+        const fi = construirFecha("inicio");
+        const ff = construirFecha("fin");
+        if (!fi || !ff) return;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const inicio = new Date(fi + "T00:00:00");
+        const fin = new Date(ff + "T00:00:00");
+        let estatus;
+        if (fin < hoy) {
+          estatus = "Concluido";
+        } else if (inicio > hoy) {
+          estatus = "Proximo";
+        } else {
+          estatus = "Vigente";
+        }
+        document.getElementById("pEstatus").value = estatus;
       }
 
       /* Construye YYYY-MM-DD desde descripcion, año y dia */
@@ -394,6 +417,9 @@
         document.getElementById("pDiaInicio").value = "";
         document.getElementById("pDiaFin").value = "";
         document.getElementById("pEstatus").value = "Proximo";
+        document.getElementById("pEstatus").disabled = true;
+        document.getElementById("pEstatus").title =
+          "Se calcula automáticamente según las fechas";
         document.getElementById("pInicioHint").textContent = "";
         document.getElementById("pFinHint").textContent = "";
         document.getElementById("modalPeriodoTitulo").innerHTML =
@@ -423,6 +449,8 @@
           ? parseInt(ff.split("-")[2])
           : "";
         document.getElementById("pEstatus").value = p.estatus;
+        document.getElementById("pEstatus").disabled = false;
+        document.getElementById("pEstatus").title = "";
         document.getElementById("modalPeriodoTitulo").innerHTML =
           '<iconify-icon icon="mdi:pencil-outline" style="vertical-align:middle;margin-right:6px"></iconify-icon>Editar: ' +
           p.descripcion +

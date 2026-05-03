@@ -311,7 +311,7 @@ async function onMateriaChange() {
 
   // Cargar unidades de la materia
   try {
-    const res = await fetch(`${BASE}/api/unidades/materia/${claveMateria}`, {
+    const res = await fetch(`${API_URL}/api/unidades/materia/${claveMateria}`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     const unidades = res.ok ? await res.json() : [];
@@ -359,7 +359,7 @@ async function guardarActividad() {
   }
 
   try {
-    const res = await fetch(`${BASE}/api/materia-actividades`, {
+    const res = await fetch(`${API_URL}/api/materia-actividades`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -389,7 +389,7 @@ async function guardarActividad() {
 async function eliminarActividad(id, nombre) {
   if (!confirm(`¿Eliminar la actividad "${nombre}"?`)) return;
   try {
-    const res = await fetch(`${BASE}/api/materia-actividades/${id}`, {
+    const res = await fetch(`${API_URL}/api/materia-actividades/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${tk()}` },
     });
