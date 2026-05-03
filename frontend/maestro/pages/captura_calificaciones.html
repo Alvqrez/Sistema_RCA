@@ -615,20 +615,19 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 11px 18px;
+        padding: 12px 18px;
         font-size: 0.84rem;
         font-weight: 600;
         font-family: inherit;
         color: var(--text-muted);
         background: transparent;
         border: none;
-        border-bottom: 2px solid transparent;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
         cursor: pointer;
         transition:
           color 0.15s,
           border-color 0.15s;
-        position: relative;
-        top: 1px;
       }
       .final-tab:hover {
         color: var(--text-main);
@@ -636,7 +635,6 @@
       .final-tab.active {
         color: var(--primary);
         border-bottom-color: var(--primary);
-        background: transparent;
       }
       .final-tab.locked {
         opacity: 0.45;
@@ -821,15 +819,19 @@
 
         <!-- ══ CALIFICACIÓN FINAL DEL GRUPO ════════════════════════════ -->
         <div id="seccionFinal" style="display: none; margin-top: 28px">
-          <div class="card" style="overflow: hidden">
+          <div
+            class="card"
+            style="padding: 0; overflow: hidden; transform: none !important"
+          >
             <!-- Cabecera colapsable -->
             <div
-              class="card-header"
               style="
                 display: flex;
                 align-items: center;
                 gap: 10px;
                 cursor: pointer;
+                padding: 16px 20px;
+                background: var(--card-bg);
               "
               onclick="toggleFinalSection()"
             >
@@ -849,7 +851,12 @@
                 "
                 >✓</span
               >
-              <span style="font-weight: 700; font-size: 1rem"
+              <span
+                style="
+                  font-weight: 700;
+                  font-size: 1rem;
+                  color: var(--text-main);
+                "
                 >Calificación final del grupo</span
               >
               <span
@@ -874,7 +881,7 @@
               <div
                 style="
                   display: flex;
-                  border-bottom: 1px solid var(--border);
+                  border-bottom: 2px solid var(--border);
                   padding: 0 20px;
                   background: var(--bg-app);
                 "

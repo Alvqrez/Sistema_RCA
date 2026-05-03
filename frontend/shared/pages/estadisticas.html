@@ -8,199 +8,196 @@
         document.documentElement.classList.add("dark-mode");
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="../../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="../../css/styles.css" />
     <style>
-      /* ── Layout ─────────────────────────────── */
-      .est-header-row {
+      .est-sel-row {
         display: flex;
         align-items: flex-end;
         gap: 14px;
         flex-wrap: wrap;
-        margin-bottom: 22px;
+        margin-bottom: 24px;
       }
-      .est-header-row .field-group { flex: 1; min-width: 200px; }
+      .est-sel-row .field-group {
+        flex: 1;
+        min-width: 220px;
+      }
 
-      /* ── KPI Strip ──────────────────────────── */
       .kpi-strip {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
         gap: 12px;
-        margin-bottom: 24px;
+        margin-bottom: 22px;
       }
       .kpi-card {
         background: var(--card-bg);
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 16px 20px;
+        padding: 16px 18px 14px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
         box-shadow: var(--shadow);
         position: relative;
         overflow: hidden;
-        transition: box-shadow 0.15s;
       }
-      .kpi-card:hover { box-shadow: var(--shadow-lg); }
       .kpi-accent {
         position: absolute;
-        left: 0; top: 0; bottom: 0;
+        left: 0;
+        top: 0;
+        bottom: 0;
         width: 4px;
         border-radius: 14px 0 0 14px;
       }
       .kpi-label {
-        font-size: 0.72rem;
+        font-size: 0.69rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--text-muted);
       }
       .kpi-value {
-        font-size: 1.9rem;
+        font-size: 2rem;
         font-weight: 800;
         line-height: 1;
         color: var(--text-main);
       }
       .kpi-sub {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         color: var(--text-muted);
       }
 
-      /* ── Bar Chart ──────────────────────────── */
-      .chart-section {
+      .chart-card {
         background: var(--card-bg);
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 20px 24px;
-        margin-bottom: 24px;
+        padding: 18px 22px 14px;
+        margin-bottom: 22px;
         box-shadow: var(--shadow);
       }
-      .chart-title {
-        font-size: 0.85rem;
+      .chart-label {
+        font-size: 0.82rem;
         font-weight: 700;
         color: var(--text-main);
-        margin-bottom: 16px;
+        margin-bottom: 14px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
       }
       .chart-bars {
         display: flex;
         align-items: flex-end;
-        gap: 6px;
-        height: 120px;
-        padding-bottom: 24px;
-        position: relative;
+        gap: 4px;
+        height: 110px;
         border-bottom: 2px solid var(--border);
+        overflow-x: auto;
       }
-      .chart-bar-wrap {
-        flex: 1;
+      .chart-bar-col {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-end;
+        min-width: 28px;
+        flex: 1;
         height: 100%;
-        gap: 4px;
+        gap: 3px;
       }
       .chart-bar {
         width: 100%;
         min-height: 2px;
-        border-radius: 6px 6px 0 0;
-        transition: height 0.5s ease;
-        position: relative;
-        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+        transition: opacity 0.15s;
       }
-      .chart-bar:hover::after {
-        content: attr(data-tip);
-        position: absolute;
-        top: -28px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--text-main);
-        color: var(--card-bg);
-        font-size: 0.68rem;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 5px;
-        white-space: nowrap;
-        z-index: 10;
+      .chart-bar:hover {
+        opacity: 0.72;
       }
-      .chart-bar-label {
-        font-size: 0.62rem;
+      .chart-name {
+        font-size: 0.58rem;
         color: var(--text-muted);
         text-align: center;
-        margin-top: 4px;
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
         max-width: 100%;
+        margin-top: 4px;
       }
-
-      /* ── Distribution pills ─────────────────── */
       .dist-row {
         display: flex;
-        gap: 8px;
-        margin-top: 14px;
+        gap: 7px;
+        margin-top: 12px;
         flex-wrap: wrap;
       }
       .dist-pill {
-        padding: 3px 12px;
+        padding: 2px 10px;
         border-radius: 999px;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
       }
 
-      /* ── Tabla de alumnos ───────────────────── */
-      .est-table-wrap {
+      .est-table-card {
         background: var(--card-bg);
         border: 1px solid var(--border);
         border-radius: 14px;
         overflow: hidden;
         box-shadow: var(--shadow);
-        margin-bottom: 24px;
+        margin-bottom: 22px;
       }
-      .est-table-head {
+      .est-table-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 20px;
+        padding: 12px 18px;
         border-bottom: 1px solid var(--border);
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
+        background: var(--bg-app);
       }
       .est-table-title {
-        font-size: 0.88rem;
+        font-size: 0.85rem;
         font-weight: 700;
         color: var(--text-main);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
       }
       .est-search {
-        padding: 7px 12px;
+        padding: 6px 11px;
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: var(--bg-app);
+        background: var(--card-bg);
         color: var(--text-main);
-        font-size: 0.82rem;
+        font-size: 0.81rem;
         font-family: inherit;
         outline: none;
         min-width: 180px;
         transition: border-color 0.15s;
       }
-      .est-search:focus { border-color: var(--primary); }
+      .est-search:focus {
+        border-color: var(--primary);
+      }
 
-      .est-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+      .est-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
       .est-table th {
         background: var(--bg-app);
-        padding: 10px 16px;
+        padding: 9px 14px;
         text-align: left;
+        font-size: 0.68rem;
         font-weight: 700;
-        font-size: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--text-muted);
@@ -209,109 +206,164 @@
         cursor: pointer;
         user-select: none;
       }
-      .est-table th:hover { color: var(--primary); }
-      .est-table th.sort-asc::after { content: " ↑"; color: var(--primary); }
-      .est-table th.sort-desc::after { content: " ↓"; color: var(--primary); }
+      .est-table th:hover {
+        color: var(--primary);
+      }
+      .est-table th.sort-asc::after {
+        content: " ↑";
+        color: var(--primary);
+      }
+      .est-table th.sort-desc::after {
+        content: " ↓";
+        color: var(--primary);
+      }
       .est-table td {
-        padding: 10px 16px;
+        padding: 9px 14px;
         border-bottom: 1px solid var(--border);
         vertical-align: middle;
       }
-      .est-table tr:last-child td { border-bottom: none; }
-      .est-table tr:hover td { background: rgba(0,0,0,0.02); }
-      .dark-mode .est-table tr:hover td { background: rgba(255,255,255,0.03); }
+      .est-table tr:last-child td {
+        border-bottom: none;
+      }
+      .est-table tbody tr:hover td {
+        background: rgba(0, 0, 0, 0.018);
+      }
+      .dark-mode .est-table tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .al-cell {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .al-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.69rem;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .al-name {
+        font-weight: 600;
+        font-size: 0.83rem;
+        color: var(--text-main);
+      }
+      .al-nc {
+        font-size: 0.69rem;
+        color: var(--text-muted);
+      }
 
       .cal-chip {
         display: inline-block;
-        padding: 2px 10px;
+        padding: 2px 9px;
         border-radius: 999px;
-        font-size: 0.75rem;
+        font-size: 0.74rem;
         font-weight: 800;
-        min-width: 38px;
+        min-width: 36px;
         text-align: center;
       }
-      .cal-apr { background: rgba(22,163,74,.12); color: #16a34a; }
-      .cal-rep { background: rgba(220,38,38,.12); color: #dc2626; }
-      .cal-pen { background: rgba(100,116,139,.12); color: var(--text-muted); }
-      .dark-mode .cal-apr { background: rgba(52,211,153,.15); color: #34d399; }
-      .dark-mode .cal-rep { background: rgba(248,113,113,.15); color: #f87171; }
+      .chip-apr {
+        background: rgba(22, 163, 74, 0.11);
+        color: #16a34a;
+      }
+      .chip-rep {
+        background: rgba(220, 38, 38, 0.11);
+        color: #dc2626;
+      }
+      .chip-pen {
+        background: rgba(100, 116, 139, 0.11);
+        color: var(--text-muted);
+      }
+      .dark-mode .chip-apr {
+        background: rgba(52, 211, 153, 0.14);
+        color: #34d399;
+      }
+      .dark-mode .chip-rep {
+        background: rgba(248, 113, 113, 0.14);
+        color: #f87171;
+      }
 
-      .unit-mini {
+      .unit-box {
         display: inline-block;
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        background: var(--bg-app);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 0.71rem;
+        font-weight: 700;
         border: 1px solid var(--border);
-        min-width: 30px;
+        min-width: 28px;
         text-align: center;
         margin: 1px;
       }
 
-      .alumno-avatar {
-        width: 32px; height: 32px;
-        border-radius: 50%;
+      .export-btn {
         display: inline-flex;
-        align-items: center; justify-content: center;
-        font-size: 0.75rem; font-weight: 800;
-        color: #fff;
-        flex-shrink: 0;
-        margin-right: 8px;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 13px;
+        border-radius: 8px;
+        font-size: 0.79rem;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text-main);
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.13s;
       }
-      .alumno-cell { display: flex; align-items: center; }
-      .alumno-cell .info { display: flex; flex-direction: column; }
-      .alumno-cell .nm { font-weight: 600; color: var(--text-main); }
-      .alumno-cell .nc { font-size: 0.7rem; color: var(--text-muted); }
+      .export-btn:hover {
+        background: var(--bg-app);
+      }
 
-      /* ── Empty state ────────────────────────── */
       .est-empty {
         text-align: center;
-        padding: 60px 32px;
+        padding: 64px 32px;
         color: var(--text-muted);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
       }
-      .est-empty iconify-icon { font-size: 2.8rem; display: block; margin: 0 auto 14px; }
-      .est-empty p { margin: 0; font-size: 0.9rem; }
+      .est-empty iconify-icon {
+        font-size: 2.6rem;
+        display: block;
+        margin: 0 auto 12px;
+      }
+      .est-empty p {
+        margin: 0;
+        font-size: 0.88rem;
+      }
 
-      /* ── Loading ────────────────────────────── */
       .est-loading {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        padding: 40px;
+        padding: 48px;
         color: var(--text-muted);
         font-size: 0.88rem;
       }
       .spinner {
-        width: 20px; height: 20px;
+        width: 20px;
+        height: 20px;
         border: 2px solid var(--border);
         border-top-color: var(--primary);
         border-radius: 50%;
         animation: spin 0.7s linear infinite;
       }
-      @keyframes spin { to { transform: rotate(360deg); } }
-
-      /* ── Unidades summary per student row ───── */
-      .unidades-cell { display: flex; flex-wrap: wrap; gap: 3px; }
-
-      /* ── Export btn ─────────────────────────── */
-      .export-btn {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 8px;
-        font-size: 0.8rem; font-weight: 600;
-        border: 1px solid var(--border);
-        background: var(--card-bg); color: var(--text-main);
-        cursor: pointer; font-family: inherit;
-        transition: background 0.14s;
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
-      .export-btn:hover { background: var(--bg-app); }
-
-      /* ── Responsive ─────────────────────────── */
-      @media (max-width: 700px) {
-        .kpi-strip { grid-template-columns: repeat(2, 1fr); }
-        .est-table th:nth-child(n+5),
-        .est-table td:nth-child(n+5) { display: none; }
+      @media (max-width: 680px) {
+        .kpi-strip {
+          grid-template-columns: repeat(2, 1fr);
+        }
       }
     </style>
   </head>
@@ -319,121 +371,129 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-
-        <!-- ── HEADER ──────────────────────────────────────────────── -->
-        <div class="page-header-v2" style="margin-bottom: 20px">
+        <div class="page-header-v2" style="margin-bottom: 22px">
           <div>
             <h1>Estadísticas</h1>
-            <p class="page-subtitle" id="subtituloEst">Selecciona un grupo para ver las estadísticas</p>
+            <p class="page-subtitle" id="subtituloEst">
+              Selecciona un grupo para ver sus estadísticas académicas
+            </p>
           </div>
           <div class="header-actions">
-            <button class="export-btn" onclick="exportarCSV()" id="btnExport" style="display:none">
-              <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon> Exportar CSV
+            <button
+              class="export-btn"
+              id="btnExport"
+              onclick="exportarCSV()"
+              style="display: none"
+            >
+              <iconify-icon icon="mdi:file-delimited-outline"></iconify-icon>
+              Exportar CSV
             </button>
           </div>
         </div>
 
-        <!-- ── SELECTOR DE GRUPO ───────────────────────────────────── -->
-        <div class="est-header-row">
+        <div class="est-sel-row">
           <div class="field-group">
             <label>Grupo</label>
             <select id="selGrupo" onchange="cargarEstadisticas()">
               <option value="">— Selecciona un grupo —</option>
             </select>
           </div>
-          <div class="field-group" id="filtroUnidadWrap" style="display:none">
-            <label>Filtrar unidad</label>
+          <div class="field-group" id="filtroUnidadWrap" style="display: none">
+            <label>Filtrar columna de unidad</label>
             <select id="filtroUnidad" onchange="renderTabla()">
               <option value="">Todas las unidades</option>
             </select>
           </div>
         </div>
 
-        <!-- ── ESTADO VACÍO INICIAL ───────────────────────────────── -->
         <div class="est-empty" id="estEmpty">
           <iconify-icon icon="lucide:bar-chart-3"></iconify-icon>
-          <p>Selecciona un grupo para visualizar sus estadísticas académicas</p>
+          <p>Selecciona un grupo para visualizar sus estadísticas</p>
         </div>
 
-        <!-- ── LOADING ────────────────────────────────────────────── -->
-        <div class="est-loading" id="estLoading" style="display:none">
+        <div class="est-loading" id="estLoading" style="display: none">
           <div class="spinner"></div>
           Cargando estadísticas…
         </div>
 
-        <!-- ── KPI STRIP ──────────────────────────────────────────── -->
-        <div class="kpi-strip" id="kpiStrip" style="display:none">
+        <div class="kpi-strip" id="kpiStrip" style="display: none">
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:var(--primary)"></div>
+            <div class="kpi-accent" style="background: var(--primary)"></div>
             <div class="kpi-label">Total alumnos</div>
             <div class="kpi-value" id="kpiTotal">0</div>
             <div class="kpi-sub">inscritos en el grupo</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:#16a34a"></div>
+            <div class="kpi-accent" style="background: #16a34a"></div>
             <div class="kpi-label">Aprobados</div>
-            <div class="kpi-value" style="color:#16a34a" id="kpiApr">0</div>
-            <div class="kpi-sub" id="kpiAprPct">— %</div>
+            <div class="kpi-value" style="color: #16a34a" id="kpiApr">0</div>
+            <div class="kpi-sub" id="kpiAprPct">—</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:#dc2626"></div>
+            <div class="kpi-accent" style="background: #dc2626"></div>
             <div class="kpi-label">Reprobados</div>
-            <div class="kpi-value" style="color:#dc2626" id="kpiRep">0</div>
-            <div class="kpi-sub" id="kpiRepPct">— %</div>
+            <div class="kpi-value" style="color: #dc2626" id="kpiRep">0</div>
+            <div class="kpi-sub" id="kpiRepPct">—</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:#7c3aed"></div>
+            <div class="kpi-accent" style="background: var(--primary)"></div>
             <div class="kpi-label">Promedio grupo</div>
-            <div class="kpi-value" style="color:var(--primary)" id="kpiProm">—</div>
-            <div class="kpi-sub">promedio ponderado</div>
+            <div class="kpi-value" style="color: var(--primary)" id="kpiProm">
+              —
+            </div>
+            <div class="kpi-sub">de calificaciones registradas</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:#f59e0b"></div>
+            <div class="kpi-accent" style="background: #f59e0b"></div>
             <div class="kpi-label">Calific. más alta</div>
-            <div class="kpi-value" style="color:#d97706" id="kpiMax">—</div>
-            <div class="kpi-sub" id="kpiMaxNombre">—</div>
+            <div class="kpi-value" style="color: #d97706" id="kpiMax">—</div>
+            <div class="kpi-sub" id="kpiMaxNom">—</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-accent" style="background:#64748b"></div>
+            <div class="kpi-accent" style="background: #64748b"></div>
             <div class="kpi-label">Calific. más baja</div>
             <div class="kpi-value" id="kpiMin">—</div>
-            <div class="kpi-sub" id="kpiMinNombre">—</div>
+            <div class="kpi-sub" id="kpiMinNom">—</div>
           </div>
         </div>
 
-        <!-- ── GRÁFICA DE BARRAS ──────────────────────────────────── -->
-        <div class="chart-section" id="chartSection" style="display:none">
-          <div class="chart-title">
-            <iconify-icon icon="lucide:bar-chart-2" style="color:var(--primary)"></iconify-icon>
+        <div class="chart-card" id="chartCard" style="display: none">
+          <div class="chart-label">
+            <iconify-icon
+              icon="lucide:bar-chart-2"
+              style="color: var(--primary)"
+            ></iconify-icon>
             Distribución de calificaciones por alumno
           </div>
           <div class="chart-bars" id="chartBars"></div>
           <div class="dist-row" id="distRow"></div>
         </div>
 
-        <!-- ── TABLA DE ALUMNOS ───────────────────────────────────── -->
-        <div class="est-table-wrap" id="estTableWrap" style="display:none">
-          <div class="est-table-head">
+        <div class="est-table-card" id="estTableCard" style="display: none">
+          <div class="est-table-top">
             <span class="est-table-title">
               <iconify-icon icon="lucide:users"></iconify-icon>
               Detalle por alumno
             </span>
-            <input class="est-search" type="text" id="buscarAlumno"
-              placeholder="🔍 Buscar alumno o N°control…"
-              oninput="renderTabla()" />
+            <input
+              class="est-search"
+              type="text"
+              id="buscarAlumno"
+              placeholder="🔍 Buscar nombre o N° control…"
+              oninput="renderTabla()"
+            />
           </div>
-          <div style="overflow-x:auto">
-            <table class="est-table" id="estTable">
+          <div style="overflow-x: auto">
+            <table class="est-table">
               <thead id="estThead"></thead>
               <tbody id="estTbody"></tbody>
             </table>
           </div>
         </div>
-
       </main>
     </div>
-
     <div id="toast-container"></div>
+
     <script src="../../shared/js/sidebar.js"></script>
     <script>
       const tk = () => localStorage.getItem("token");
@@ -444,394 +504,453 @@
         if (!c) return;
         const t = document.createElement("div");
         t.className = `toast toast-${tipo}`;
-        const icons = { success:"lucide:check-circle", error:"lucide:x-circle", info:"lucide:info" };
-        t.innerHTML = `<iconify-icon icon="${icons[tipo]||icons.info}"></iconify-icon>${msg}`;
+        const icons = {
+          success: "lucide:check-circle",
+          error: "lucide:x-circle",
+          info: "lucide:info",
+        };
+        t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
         c.appendChild(t);
-        setTimeout(() => t.remove(), 3200);
+        setTimeout(() => t.remove(), 3000);
       }
 
-      // ── Estado global ────────────────────────────────────────────────
-      let estState = {
-        grupoInfo: null,
-        alumnos: [],        // [{no_control, nombre, apellido_paterno, apellido_materno}]
-        unidades: [],       // [{id_unidad, nombre_unidad, numero_unidad}]
-        calUnidad: [],      // [{no_control, id_unidad, calificacion_unidad_final, estatus_unidad}]
-        calFinal: [],       // [{no_control, calificacion_global, estatus}]
-      };
+      let _data = null;
+      let _sortCol = null,
+        _sortDir = 1;
+      const COLORS = [
+        "#3b82f6",
+        "#8b5cf6",
+        "#ec4899",
+        "#f59e0b",
+        "#10b981",
+        "#ef4444",
+        "#6366f1",
+        "#14b8a6",
+        "#f97316",
+        "#64748b",
+      ];
 
-      const AVATAR_COLORS = ["#3b82f6","#8b5cf6","#ec4899","#f59e0b","#10b981","#ef4444","#6366f1","#14b8a6","#f97316","#64748b"];
-
-      // ── Inicializar ─────────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
         soloPermitido("maestro", "administrador");
         cargarGrupos();
       });
 
       async function cargarGrupos() {
-        const endpoint = rol === "administrador"
-          ? `${API_URL}/api/grupos`
-          : `${API_URL}/api/grupos/mis-grupos`;
+        const url =
+          rol === "administrador"
+            ? `${API_URL}/api/grupos`
+            : `${API_URL}/api/grupos/mis-grupos`;
         try {
-          const r = await fetch(endpoint, { headers: { Authorization: `Bearer ${tk()}` } });
+          const r = await fetch(url, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          });
           const grupos = await r.json();
           const sel = document.getElementById("selGrupo");
-          grupos.forEach(g => {
-            const opt = document.createElement("option");
-            opt.value = g.id_grupo;
-            opt.textContent = `${g.id_grupo} — ${g.nombre_materia} (${g.descripcion_periodo || g.anio || ""})${g.nombre_maestro ? " · " + g.nombre_maestro : ""}`;
-            sel.appendChild(opt);
+          grupos.forEach((g) => {
+            const o = document.createElement("option");
+            o.value = g.id_grupo;
+            const per = g.descripcion_periodo || g.anio || "";
+            const mae = g.nombre_maestro ? ` · ${g.nombre_maestro}` : "";
+            o.textContent = `${g.id_grupo} — ${g.nombre_materia} (${per})${mae}`;
+            sel.appendChild(o);
           });
         } catch {
           toast("Error al cargar grupos", "error");
         }
       }
 
+      /* ── Carga: un solo endpoint que tiene todo ─────────── */
       async function cargarEstadisticas() {
         const grupoId = document.getElementById("selGrupo").value;
         if (!grupoId) {
           resetUI();
           return;
         }
-
         setLoading(true);
-
         try {
-          const hdrs = { headers: { Authorization: `Bearer ${tk()}` } };
+          const r = await fetch(`${API_URL}/api/reportes/grupo/${grupoId}`, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          });
+          if (!r.ok) throw new Error("Error " + r.status);
+          _data = await r.json();
 
-          // Parallel fetch: grupo info + alumnos + unidades + cal_unidad + cal_final
-          const [grupoRes, alumnosRes, unidadesRes, calUnidadRes, calFinalRes] = await Promise.all([
-            fetch(`${API_URL}/api/grupos/${grupoId}`, hdrs),
-            fetch(`${API_URL}/api/grupos/${grupoId}/alumnos`, hdrs),
-            fetch(`${API_URL}/api/grupos/${grupoId}/unidades`, hdrs),
-            fetch(`${API_URL}/api/calificaciones/grupo/${grupoId}`, hdrs),
-            fetch(`${API_URL}/api/calificaciones/final/grupo/${grupoId}`, hdrs),
-          ]);
+          const g = _data.grupo || {};
+          document.getElementById("subtituloEst").textContent = [
+            g.nombre_materia || grupoId,
+            g.periodo || g.anio,
+            g.nombre_maestro,
+          ]
+            .filter(Boolean)
+            .join(" · ");
 
-          const [grupoInfo, alumnos, unidades, calUnidad, calFinal] = await Promise.all([
-            grupoRes.json(),
-            alumnosRes.ok ? alumnosRes.json() : [],
-            unidadesRes.ok ? unidadesRes.json() : [],
-            calUnidadRes.ok ? calUnidadRes.json() : [],
-            calFinalRes.ok ? calFinalRes.json() : [],
-          ]);
-
-          estState = { grupoInfo, alumnos, unidades, calUnidad, calFinal };
-
-          document.getElementById("subtituloEst").textContent =
-            `${grupoInfo.nombre_materia || grupoId} · ${grupoInfo.descripcion_periodo || ""} · ${grupoInfo.nombre_maestro || ""}`;
-
-          poblarFiltroUnidad(unidades);
+          poblarFiltroUnidad(_data.unidades || []);
           renderKPIs();
           renderChart();
           renderTabla();
           setLoading(false);
           showContent();
-
-        } catch(e) {
+        } catch (e) {
           console.error(e);
           setLoading(false);
-          toast("Error al cargar estadísticas del grupo", "error");
+          toast("Error al cargar estadísticas", "error");
+          resetUI();
         }
       }
 
-      // ── Helpers de alumno ────────────────────────────────────────────
-      function getCalFinalAlumno(no_control) {
-        const cf = estState.calFinal.find(c => c.no_control === no_control);
-        return cf ? parseFloat(cf.calificacion_global) : null;
-      }
-
-      function getCalUnidadAlumno(no_control, id_unidad) {
-        const cu = estState.calUnidad.find(c =>
-          c.no_control === no_control && c.id_unidad === id_unidad
-        );
-        return cu ? parseFloat(cu.calificacion_unidad_final ?? cu.promedio_ponderado) : null;
-      }
-
-      function getPromAlumno(no_control) {
-        // Prefer stored final grade, otherwise average of unit grades
-        const fin = getCalFinalAlumno(no_control);
-        if (fin !== null) return fin;
-        const calus = estState.unidades.map(u => getCalUnidadAlumno(no_control, u.id_unidad)).filter(v => v !== null);
-        if (!calus.length) return null;
-        return calus.reduce((a,b) => a+b, 0) / calus.length;
+      /* ── Helpers ───────────────────────────────────────── */
+      // Devuelve la mejor calificación disponible para un alumno:
+      // 1) calificacion_oficial guardada, 2) promedio de unidades registradas
+      function getCalFinal(al) {
+        if (al.calificacion_oficial != null)
+          return parseFloat(al.calificacion_oficial);
+        const vals = Object.values(al.unidades || {})
+          .map((u) =>
+            u.calificacion != null ? parseFloat(u.calificacion) : null,
+          )
+          .filter((v) => v !== null);
+        return vals.length
+          ? vals.reduce((a, b) => a + b, 0) / vals.length
+          : null;
       }
 
       function roundTecNM(v) {
-        if (v === null) return null;
+        if (v == null) return null;
         return Math.floor(v) + (v % 1 >= 0.5 ? 1 : 0);
       }
 
-      // ── Filtro de unidad ─────────────────────────────────────────────
+      // nombre_completo viene "ApellidoPat ApellidoMat, Nombre"
+      function primerNombre(al) {
+        const s = al.nombre_completo || al.no_control;
+        const parts = s.split(",");
+        return (
+          (parts[1] || "").trim().split(" ")[0] || parts[0].trim().split(" ")[0]
+        );
+      }
+
+      /* ── Filtro de unidad ──────────────────────────────── */
       function poblarFiltroUnidad(unidades) {
         const sel = document.getElementById("filtroUnidad");
         sel.innerHTML = '<option value="">Todas las unidades</option>';
-        unidades.forEach(u => {
-          const opt = document.createElement("option");
-          opt.value = u.id_unidad;
-          opt.textContent = `Unidad ${u.numero_unidad || ""} — ${u.nombre_unidad || ""}`;
-          sel.appendChild(opt);
+        unidades.forEach((u) => {
+          const o = document.createElement("option");
+          o.value = u.id_unidad;
+          o.textContent = u.nombre_unidad || `Unidad ${u.id_unidad}`;
+          sel.appendChild(o);
         });
-        document.getElementById("filtroUnidadWrap").style.display = unidades.length ? "" : "none";
+        document.getElementById("filtroUnidadWrap").style.display =
+          unidades.length ? "" : "none";
       }
 
-      // ── KPIs ─────────────────────────────────────────────────────────
+      /* ── KPIs ──────────────────────────────────────────── */
       function renderKPIs() {
-        const { alumnos } = estState;
+        const alumnos = _data.alumnos || [];
+        const proms = alumnos.map((a) => getCalFinal(a));
+        const conCal = proms.filter((p) => p !== null);
         const total = alumnos.length;
-        const proms = alumnos.map(a => getPromAlumno(a.no_control));
-        const conCal = proms.filter(p => p !== null);
+        const apr = conCal.filter((p) => roundTecNM(p) >= 70).length;
+        const rep = conCal.filter((p) => roundTecNM(p) < 70).length;
+        const prom = conCal.length
+          ? (conCal.reduce((a, b) => a + b, 0) / conCal.length).toFixed(1)
+          : "—";
 
-        const apr = conCal.filter(p => roundTecNM(p) >= 70).length;
-        const rep = conCal.filter(p => roundTecNM(p) < 70).length;
-        const prom = conCal.length ? (conCal.reduce((a,b)=>a+b,0)/conCal.length).toFixed(1) : "—";
-
-        let maxVal = null, maxNombre = "—", minVal = null, minNombre = "—";
+        let maxV = null,
+          maxN = "—",
+          minV = null,
+          minN = "—";
         alumnos.forEach((a, i) => {
           const p = proms[i];
           if (p === null) return;
-          if (maxVal === null || p > maxVal) { maxVal = p; maxNombre = nombreCorto(a); }
-          if (minVal === null || p < minVal) { minVal = p; minNombre = nombreCorto(a); }
+          if (maxV === null || p > maxV) {
+            maxV = p;
+            maxN = primerNombre(a);
+          }
+          if (minV === null || p < minV) {
+            minV = p;
+            minN = primerNombre(a);
+          }
         });
 
-        const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-        set("kpiTotal", total);
-        set("kpiApr", apr);
-        set("kpiAprPct", total ? `${((apr/total)*100).toFixed(0)} % del grupo` : "—");
-        set("kpiRep", rep);
-        set("kpiRepPct", total ? `${((rep/total)*100).toFixed(0)} % del grupo` : "—");
-        set("kpiProm", prom);
-        set("kpiMax", maxVal !== null ? roundTecNM(maxVal) : "—");
-        set("kpiMaxNombre", maxNombre);
-        set("kpiMin", minVal !== null ? roundTecNM(minVal) : "—");
-        set("kpiMinNombre", minNombre);
+        const s = (id, v) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = v;
+        };
+        s("kpiTotal", total);
+        s("kpiApr", apr);
+        s(
+          "kpiAprPct",
+          total ? `${((apr / total) * 100).toFixed(0)}% del grupo` : "—",
+        );
+        s("kpiRep", rep);
+        s(
+          "kpiRepPct",
+          total ? `${((rep / total) * 100).toFixed(0)}% del grupo` : "—",
+        );
+        s("kpiProm", prom);
+        s("kpiMax", maxV !== null ? roundTecNM(maxV) : "—");
+        s("kpiMaxNom", maxN);
+        s("kpiMin", minV !== null ? roundTecNM(minV) : "—");
+        s("kpiMinNom", minN);
       }
 
-      function nombreCorto(a) {
-        return `${a.nombre?.split(" ")[0] || ""} ${a.apellido_paterno || ""}`.trim();
-      }
-
-      // ── Gráfica de barras ────────────────────────────────────────────
+      /* ── Gráfica ────────────────────────────────────────── */
       function renderChart() {
-        const { alumnos } = estState;
-        const container = document.getElementById("chartBars");
-        container.innerHTML = "";
-
+        const alumnos = _data.alumnos || [];
+        const c = document.getElementById("chartBars");
+        c.innerHTML = "";
         if (!alumnos.length) return;
 
-        const vals = alumnos.map(a => getPromAlumno(a.no_control));
-        const maxV = Math.max(...vals.filter(v=>v!==null), 100) || 100;
+        const vals = alumnos.map((a) => getCalFinal(a));
+        const maxV = Math.max(...vals.filter((v) => v !== null), 100) || 100;
 
-        alumnos.forEach((a, i) => {
+        alumnos.forEach((al, i) => {
           const v = vals[i];
           const pct = v !== null ? (v / maxV) * 100 : 0;
-          const color = v === null ? "#d1d5db" : roundTecNM(v) >= 70 ? "#16a34a" : "#dc2626";
-          const tip = v !== null ? `${nombreCorto(a)}: ${roundTecNM(v)}` : `${nombreCorto(a)}: Sin dato`;
-          const wrap = document.createElement("div");
-          wrap.className = "chart-bar-wrap";
-          wrap.innerHTML = `
-            <div class="chart-bar" data-tip="${tip}"
-              style="height:${Math.max(2, pct)}%;background:${color};opacity:0.85"></div>
-            <div class="chart-bar-label">${nombreCorto(a).split(" ")[0]}</div>`;
-          container.appendChild(wrap);
+          const r = roundTecNM(v);
+          const color =
+            v === null ? "var(--border)" : r >= 70 ? "#16a34a" : "#dc2626";
+          const tip =
+            v !== null
+              ? `${primerNombre(al)}: ${r}`
+              : `${primerNombre(al)}: sin datos`;
+          const col = document.createElement("div");
+          col.className = "chart-bar-col";
+          col.innerHTML = `<div class="chart-bar" style="height:${Math.max(2, pct)}%;background:${color}" title="${tip}"></div>
+            <div class="chart-name">${primerNombre(al)}</div>`;
+          c.appendChild(col);
         });
 
-        // Distribution pills
         const dist = document.getElementById("distRow");
-        const totConCal = vals.filter(v=>v!==null).length;
-        const ranges = [
-          { label:"95–100", min:95, max:101, color:"#16a34a" },
-          { label:"80–94",  min:80, max:95,  color:"#22c55e" },
-          { label:"70–79",  min:70, max:80,  color:"#84cc16" },
-          { label:"65–69",  min:65, max:70,  color:"#f59e0b" },
-          { label:"0–64",   min:0,  max:65,  color:"#dc2626" },
+        const rangos = [
+          { l: "95–100", min: 95, max: 101, c: "#16a34a" },
+          { l: "80–94", min: 80, max: 95, c: "#22c55e" },
+          { l: "70–79", min: 70, max: 80, c: "#84cc16" },
+          { l: "65–69", min: 65, max: 70, c: "#f59e0b" },
+          { l: "0–64", min: 0, max: 65, c: "#dc2626" },
         ];
-        dist.innerHTML = ranges.map(r => {
-          const cnt = vals.filter(v => v!==null && roundTecNM(v)>=r.min && roundTecNM(v)<r.max).length;
-          if (!cnt) return "";
-          return `<span class="dist-pill" style="background:${r.color}20;color:${r.color}">
-            <strong>${cnt}</strong> ${r.label}
-          </span>`;
-        }).join("");
+        dist.innerHTML = rangos
+          .map((r) => {
+            const cnt = vals.filter((v) => {
+              if (v === null) return false;
+              const rv = roundTecNM(v);
+              return rv >= r.min && rv < r.max;
+            }).length;
+            return cnt
+              ? `<span class="dist-pill" style="background:${r.c}18;color:${r.c}"><strong>${cnt}</strong> ${r.l}</span>`
+              : "";
+          })
+          .join("");
       }
 
-      // ── Tabla ────────────────────────────────────────────────────────
+      /* ── Tabla ──────────────────────────────────────────── */
       function renderTabla() {
-        const { alumnos, unidades } = estState;
-        const q = document.getElementById("buscarAlumno")?.value?.toLowerCase().trim() || "";
+        if (!_data) return;
+        const { alumnos, unidades } = _data;
+        const q = (document.getElementById("buscarAlumno")?.value || "")
+          .toLowerCase()
+          .trim();
         const filtroU = document.getElementById("filtroUnidad")?.value || "";
 
-        const alumnosFiltrados = q
-          ? alumnos.filter(a =>
-              nombreCorto(a).toLowerCase().includes(q) ||
-              a.no_control.toLowerCase().includes(q))
+        const filtrados = q
+          ? alumnos.filter(
+              (a) =>
+                (a.nombre_completo || "").toLowerCase().includes(q) ||
+                a.no_control.toLowerCase().includes(q),
+            )
           : alumnos;
 
-        // Build header
-        const thead = document.getElementById("estThead");
-        const unidadesMostrar = filtroU
-          ? unidades.filter(u => u.id_unidad == filtroU)
+        const uMostrar = filtroU
+          ? unidades.filter((u) => String(u.id_unidad) === filtroU)
           : unidades;
 
-        thead.innerHTML = `<tr>
+        document.getElementById("estThead").innerHTML = `<tr>
           <th onclick="sortBy('nombre')">Alumno</th>
-          <th onclick="sortBy('no_control')">N° Control</th>
-          ${unidadesMostrar.map(u => `<th>U${u.numero_unidad || ""}</th>`).join("")}
+          <th onclick="sortBy('nc')">N° Control</th>
+          ${uMostrar.map((u) => `<th style="text-align:center">${u.nombre_unidad || "Unidad"}</th>`).join("")}
           <th onclick="sortBy('final')" style="text-align:center">Final</th>
-          <th style="text-align:center">Estatus</th>
-        </tr>`;
+          <th style="text-align:center">Estatus</th></tr>`;
 
-        const tbody = document.getElementById("estTbody");
-        if (!alumnosFiltrados.length) {
-          tbody.innerHTML = `<tr><td colspan="${4 + unidadesMostrar.length}" style="text-align:center;padding:30px;color:var(--text-muted)">Sin alumnos que coincidan</td></tr>`;
+        if (!filtrados.length) {
+          document.getElementById("estTbody").innerHTML =
+            `<tr><td colspan="${4 + uMostrar.length}" style="text-align:center;padding:28px;color:var(--text-muted)">Sin alumnos que coincidan</td></tr>`;
           return;
         }
 
-        let rows = alumnosFiltrados.map((a, i) => {
-          const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-          const initials = (a.nombre||"").split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
-          const prom = getPromAlumno(a.no_control);
-          const promRound = roundTecNM(prom);
-          const isApr = promRound !== null && promRound >= 70;
-          const isRep = promRound !== null && promRound < 70;
+        let rows = filtrados.map((al, i) => {
+          const color = COLORS[i % COLORS.length];
+          const inits = (al.nombre_completo || al.no_control)
+            .split(/[\s,]+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((w) => w[0] || "")
+            .join("")
+            .toUpperCase();
 
-          const unitCells = unidadesMostrar.map(u => {
-            const cal = getCalUnidadAlumno(a.no_control, u.id_unidad);
-            if (cal === null) return `<td><span class="unit-mini" style="color:var(--text-muted)">—</span></td>`;
-            const r = roundTecNM(cal);
-            const color2 = r >= 70 ? "#16a34a" : "#dc2626";
-            return `<td><span class="unit-mini" style="color:${color2};border-color:${color2}20">${r}</span></td>`;
-          }).join("");
+          const fin = getCalFinal(al),
+            finR = roundTecNM(fin);
+          const isApr = finR !== null && finR >= 70,
+            isRep = finR !== null && finR < 70;
+          const chipC =
+            finR === null ? "chip-pen" : isApr ? "chip-apr" : "chip-rep";
 
-          const chipClass = promRound === null ? "cal-pen" : isApr ? "cal-apr" : "cal-rep";
-          const estatusText = promRound === null ? "Pendiente" : isApr ? "Aprobado" : "Reprobado";
+          const unitCells = uMostrar
+            .map((u) => {
+              const cu = (al.unidades || {})[u.id_unidad];
+              if (!cu || cu.calificacion == null)
+                return `<td style="text-align:center"><span class="unit-box" style="color:var(--text-muted)">—</span></td>`;
+              const cv = roundTecNM(parseFloat(cu.calificacion));
+              const uc = cv >= 70 ? "#16a34a" : "#dc2626";
+              return `<td style="text-align:center"><span class="unit-box" style="color:${uc};border-color:${uc}22">${cv}</span></td>`;
+            })
+            .join("");
 
-          return `<tr data-prom="${prom ?? -1}" data-nombre="${nombreCorto(a)}" data-nc="${a.no_control}">
-            <td>
-              <div class="alumno-cell">
-                <div class="alumno-avatar" style="background:${color}">${initials}</div>
-                <div class="info">
-                  <span class="nm">${nombreCorto(a)}</span>
-                  ${a.nombre?.split(" ").length > 1 ? `<span class="nc">${a.nombre}</span>` : ""}
-                </div>
-              </div>
-            </td>
-            <td style="font-family:monospace;font-size:0.8rem">${a.no_control}</td>
+          const estText =
+            finR === null ? "Pendiente" : isApr ? "Aprobado" : "Reprobado";
+          const estClass =
+            finR === null ? "warn" : isApr ? "success" : "danger";
+          const nombre = (al.nombre_completo || "").trim();
+
+          return `<tr data-nc="${al.no_control}" data-nombre="${nombre}" data-final="${fin ?? -1}">
+            <td><div class="al-cell">
+              <div class="al-avatar" style="background:${color}">${inits}</div>
+              <div><div class="al-name">${nombre}</div><div class="al-nc">${al.no_control}</div></div>
+            </div></td>
+            <td style="font-family:monospace;font-size:.78rem">${al.no_control}</td>
             ${unitCells}
-            <td style="text-align:center">
-              <span class="cal-chip ${chipClass}">${promRound !== null ? promRound : "—"}</span>
-            </td>
-            <td style="text-align:center">
-              <span class="status-pill ${promRound === null ? "warn" : isApr ? "success" : "danger"}"
-                style="font-size:0.7rem">${estatusText}</span>
-            </td>
+            <td style="text-align:center"><span class="cal-chip ${chipC}">${finR !== null ? finR : "—"}</span></td>
+            <td style="text-align:center"><span class="status-pill ${estClass}" style="font-size:.69rem">${estText}</span></td>
           </tr>`;
         });
 
-        // Apply current sort
-        if (_sortCol) {
-          rows = sortRows(rows, _sortCol, _sortDir);
-        }
-
-        tbody.innerHTML = rows.join("");
+        if (_sortCol) rows = sortRows(rows);
+        document.getElementById("estTbody").innerHTML = rows.join("");
       }
 
-      // ── Sorting ──────────────────────────────────────────────────────
-      let _sortCol = null, _sortDir = 1;
+      /* ── Sorting ────────────────────────────────────────── */
       function sortBy(col) {
-        if (_sortCol === col) _sortDir *= -1;
-        else { _sortCol = col; _sortDir = 1; }
-        // Update header classes
-        document.querySelectorAll(".est-table th").forEach(th => {
-          th.classList.remove("sort-asc","sort-desc");
-        });
-        const thIndex = { nombre:0, no_control:1, final: estState.unidades.length+2 }[col];
+        _sortDir = _sortCol === col ? _sortDir * -1 : 1;
+        _sortCol = col;
+        document
+          .querySelectorAll(".est-table th")
+          .forEach((th) => th.classList.remove("sort-asc", "sort-desc"));
+        const idx = {
+          nombre: 0,
+          nc: 1,
+          final: (_data?.unidades?.length || 0) + 2,
+        }[col];
         const ths = document.querySelectorAll(".est-table th");
-        if (ths[thIndex]) ths[thIndex].classList.add(_sortDir===1?"sort-asc":"sort-desc");
+        if (ths[idx])
+          ths[idx].classList.add(_sortDir === 1 ? "sort-asc" : "sort-desc");
         renderTabla();
       }
 
-      function sortRows(rows, col, dir) {
+      function sortRows(rows) {
         return [...rows].sort((a, b) => {
-          const rowA = document.createElement("tbody");
-          const rowB = document.createElement("tbody");
-          rowA.innerHTML = a; rowB.innerHTML = b;
-          const trA = rowA.firstChild, trB = rowB.firstChild;
-          let va, vb;
-          if (col === "final") {
-            va = parseFloat(trA.dataset.prom); vb = parseFloat(trB.dataset.prom);
-            return dir * (va - vb);
-          }
-          if (col === "nombre") {
-            va = trA.dataset.nombre || ""; vb = trB.dataset.nombre || "";
-            return dir * va.localeCompare(vb, "es");
-          }
-          if (col === "no_control") {
-            va = trA.dataset.nc || ""; vb = trB.dataset.nc || "";
-            return dir * va.localeCompare(vb);
-          }
+          const tA = document.createElement("tbody"),
+            tB = document.createElement("tbody");
+          tA.innerHTML = a;
+          tB.innerHTML = b;
+          const rA = tA.firstChild,
+            rB = tB.firstChild;
+          if (_sortCol === "final")
+            return (
+              _sortDir *
+              (parseFloat(rA.dataset.final) - parseFloat(rB.dataset.final))
+            );
+          if (_sortCol === "nombre")
+            return (
+              _sortDir *
+              (rA.dataset.nombre || "").localeCompare(
+                rB.dataset.nombre || "",
+                "es",
+              )
+            );
+          if (_sortCol === "nc")
+            return (
+              _sortDir *
+              (rA.dataset.nc || "").localeCompare(rB.dataset.nc || "")
+            );
           return 0;
         });
       }
 
-      // ── Export CSV ───────────────────────────────────────────────────
+      /* ── Export CSV ─────────────────────────────────────── */
       function exportarCSV() {
-        const { alumnos, unidades, grupoInfo } = estState;
-        const headers = ["No. Control","Nombre",
-          ...unidades.map(u => `Unidad ${u.numero_unidad}`),
-          "Final","Estatus"];
-        const rows = alumnos.map(a => {
-          const units = unidades.map(u => {
-            const cal = getCalUnidadAlumno(a.no_control, u.id_unidad);
-            return cal !== null ? roundTecNM(cal) : "";
+        if (!_data) return;
+        const { alumnos, unidades, grupo } = _data;
+        const hdr = [
+          "N° Control",
+          "Alumno",
+          ...unidades.map((u) => u.nombre_unidad || "Unidad"),
+          "Final",
+          "Estatus",
+        ];
+        const rows = alumnos.map((al) => {
+          const units = unidades.map((u) => {
+            const cu = (al.unidades || {})[u.id_unidad];
+            return cu && cu.calificacion != null
+              ? roundTecNM(parseFloat(cu.calificacion))
+              : "";
           });
-          const prom = getPromAlumno(a.no_control);
-          const promR = roundTecNM(prom);
+          const fin = getCalFinal(al),
+            finR = roundTecNM(fin);
+          const est =
+            finR === null ? "Pendiente" : finR >= 70 ? "Aprobado" : "Reprobado";
           return [
-            a.no_control,
-            `${a.nombre} ${a.apellido_paterno}`,
+            al.no_control,
+            al.nombre_completo || "",
             ...units,
-            promR !== null ? promR : "",
-            promR === null ? "Pendiente" : promR >= 70 ? "Aprobado" : "Reprobado"
+            finR ?? "",
+            est,
           ];
         });
-        const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
-        const blob = new Blob(["\ufeff"+csv], { type:"text/csv;charset=utf-8" });
+        const csv = [hdr, ...rows]
+          .map((r) => r.map((v) => `"${v}"`).join(","))
+          .join("\n");
+        const blob = new Blob(["\ufeff" + csv], {
+          type: "text/csv;charset=utf-8",
+        });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `estadisticas_${grupoInfo?.id_grupo || "grupo"}.csv`;
+        a.download = `estadisticas_${grupo?.id_grupo || "grupo"}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         toast("CSV exportado", "success");
       }
 
-      // ── UI helpers ───────────────────────────────────────────────────
+      /* ── UI helpers ─────────────────────────────────────── */
       function resetUI() {
-        document.getElementById("estEmpty").style.display = "";
-        document.getElementById("kpiStrip").style.display = "none";
-        document.getElementById("chartSection").style.display = "none";
-        document.getElementById("estTableWrap").style.display = "none";
-        document.getElementById("btnExport").style.display = "none";
-        document.getElementById("filtroUnidadWrap").style.display = "none";
-        document.getElementById("subtituloEst").textContent = "Selecciona un grupo para ver las estadísticas";
+        ["estEmpty"].forEach(
+          (id) => (document.getElementById(id).style.display = ""),
+        );
+        [
+          "kpiStrip",
+          "chartCard",
+          "estTableCard",
+          "btnExport",
+          "filtroUnidadWrap",
+        ].forEach((id) => (document.getElementById(id).style.display = "none"));
+        document.getElementById("subtituloEst").textContent =
+          "Selecciona un grupo para ver sus estadísticas académicas";
+        _data = null;
       }
 
       function setLoading(v) {
-        document.getElementById("estLoading").style.display = v ? "flex" : "none";
+        document.getElementById("estLoading").style.display = v
+          ? "flex"
+          : "none";
         document.getElementById("estEmpty").style.display = v ? "none" : "";
-        if (v) {
-          document.getElementById("kpiStrip").style.display = "none";
-          document.getElementById("chartSection").style.display = "none";
-          document.getElementById("estTableWrap").style.display = "none";
-          document.getElementById("btnExport").style.display = "none";
-        }
+        if (v)
+          ["kpiStrip", "chartCard", "estTableCard", "btnExport"].forEach(
+            (id) => (document.getElementById(id).style.display = "none"),
+          );
       }
 
       function showContent() {
         document.getElementById("estEmpty").style.display = "none";
         document.getElementById("kpiStrip").style.display = "grid";
-        document.getElementById("chartSection").style.display = "";
-        document.getElementById("estTableWrap").style.display = "";
+        document.getElementById("chartCard").style.display = "";
+        document.getElementById("estTableCard").style.display = "";
         document.getElementById("btnExport").style.display = "";
       }
     </script>
