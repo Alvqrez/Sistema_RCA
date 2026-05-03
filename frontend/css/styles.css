@@ -165,6 +165,7 @@ body {
   flex-direction: column;
   overflow: visible;
   transition: width 0.22s ease;
+  z-index: 200; /* Asegura que el botón toggle sobresalga sobre el .content */
 }
 
 .sidebar nav {

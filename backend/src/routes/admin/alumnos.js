@@ -8,7 +8,7 @@ const { verificarToken, soloAdmin } = require("../../middleware/auth");
 // GET — todos los alumnos
 router.get("/", verificarToken, (req, res) => {
   db.query(
-    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, tel_celular FROM Alumno",
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, tel_celular FROM alumno",
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -38,7 +38,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 // GET — un alumno por no_control
 router.get("/:no_control", verificarToken, (req, res) => {
   db.query(
-    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, curp, fecha_nacimiento, genero, tel_celular, tel_casa, direccion, correo_personal FROM Alumno WHERE no_control = ?",
+    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, curp, fecha_nacimiento, genero, tel_celular, tel_casa, direccion, correo_personal FROM alumno WHERE no_control = ?",
     [req.params.no_control],
     (err, results) => {
       if (err)

@@ -43,17 +43,17 @@
         padding: 8px 6px;
         border-radius: 8px;
         position: relative;
-        z-index: 1; /* Asegura que cada paso se apile sobre el pseudo-elemento ::after del paso anterior */
       }
       .step-track-item:not(:last-child)::after {
         content: "";
         position: absolute;
-        left: 17px;
-        top: 36px;
+        left: 18px; /* centrado bajo el círculo de 26px + 6px padding */
+        top: 42px; /* abajo del círculo */
         width: 2px;
-        height: calc(100% - 10px);
+        height: calc(100% - 14px);
         background: var(--border);
         border-radius: 2px;
+        z-index: 0;
       }
       .step-track-item.done::after {
         background: #22c55e;
@@ -73,6 +73,8 @@
         font-weight: 700;
         color: var(--text-muted);
         background: var(--card-bg);
+        /* box-shadow crea un "halo" del mismo color del fondo que tapa la línea que pasa detrás */
+        box-shadow: 0 0 0 4px var(--card-bg);
         flex-shrink: 0;
         transition: all 0.2s;
         z-index: 1;
@@ -82,11 +84,13 @@
         border-color: #3b82f6;
         color: #3b82f6;
         background: rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 4px var(--card-bg);
       }
       .step-track-item.done .step-track-circle {
         border-color: #22c55e;
         background: #22c55e;
         color: #fff;
+        box-shadow: 0 0 0 4px var(--card-bg);
       }
       .step-track-label {
         display: flex;
