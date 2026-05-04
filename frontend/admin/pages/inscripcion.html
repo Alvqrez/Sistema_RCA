@@ -862,19 +862,57 @@
     </div>
 
     <!-- Modal baja -->
-    <div class="modal-overlay" id="modalBaja">
-      <div class="modal">
-        <div class="modal-icon exit">
-          <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
-        </div>
-        <h3>Dar de baja</h3>
-        <p>¿Cambiar estatus de la inscripción a <strong>Baja</strong>?</p>
-        <div class="modal-buttons">
-          <button class="btn btn-danger" id="btnConfirmarBaja">
+    <!-- Modal: Dar de baja -->
+    <div class="modal-overlay" id="modalBaja" onclick="if(event.target===this)cerrarModal('modalBaja')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-header">
+          <h3 style="display:flex;align-items:center;gap:8px">
+            <iconify-icon icon="mdi:account-remove-outline" style="color:var(--warning)"></iconify-icon>
             Dar de baja
+          </h3>
+          <button class="modal-close-btn" onclick="cerrarModal('modalBaja')">
+            <iconify-icon icon="mdi:close"></iconify-icon>
           </button>
-          <button class="btn btn-outline" onclick="cerrarModal('modalBaja')">
-            Cancelar
+        </div>
+        <div style="padding:20px 22px">
+          <p style="margin:0;color:var(--text-secondary)">
+            ¿Cambiar el estatus de la inscripción a <strong>Baja</strong>?<br>
+            <span style="font-size:.84rem;color:var(--text-muted)">El alumno no podrá recibir nuevas calificaciones.</span>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalBaja')">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarBaja">
+            <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
+            Confirmar baja
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Confirmar eliminar inscripción -->
+    <div class="modal-overlay" id="modalEliminarInsc" onclick="if(event.target===this)cerrarModal('modalEliminarInsc')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-header">
+          <h3 style="display:flex;align-items:center;gap:8px">
+            <iconify-icon icon="lucide:trash-2" style="color:var(--danger)"></iconify-icon>
+            Eliminar inscripción
+          </h3>
+          <button class="modal-close-btn" onclick="cerrarModal('modalEliminarInsc')">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div style="padding:20px 22px">
+          <p style="margin:0;color:var(--text-secondary)">
+            ¿Eliminar la inscripción de <strong id="elimInscNombre"></strong>?<br>
+            <span style="font-size:.84rem;color:var(--text-muted)">Esta acción no se puede deshacer.</span>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalEliminarInsc')">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarEliminarInsc">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon>
+            Eliminar
           </button>
         </div>
       </div>

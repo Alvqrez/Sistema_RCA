@@ -483,8 +483,9 @@ async function verAlumnosGrupo(id_grupo, nombre_materia) {
   modal.classList.add("active");
 
   try {
+    const tkn = localStorage.getItem("token");
     const r = await fetch(`${API_URL}/api/inscripciones/grupo/${id_grupo}`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${tkn}` },
     });
     if (!r.ok) throw new Error("Error del servidor");
     const lista = await r.json();

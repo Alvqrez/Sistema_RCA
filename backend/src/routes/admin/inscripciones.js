@@ -69,7 +69,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   `;
   db.query(sql, [req.params.id_grupo], (err, r) => {
     if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
+      return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
     res.json(r);
   });
 });

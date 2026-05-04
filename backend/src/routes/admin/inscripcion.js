@@ -38,7 +38,7 @@ let pasoActual = 1;
 async function cargarPeriodos() {
   try {
     const r = await fetch(`${API_URL}/api/periodos`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     const periodos = await r.json();
     // Solo Vigente y Proximo
@@ -97,7 +97,7 @@ function seleccionarPeriodo(id, el) {
 async function cargarGruposGlobal() {
   try {
     const r = await fetch(`${API_URL}/api/grupos`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     todosGrupos = await r.json();
     // Populate filtro de recientes
@@ -114,7 +114,7 @@ async function cargarGruposGlobal() {
 async function cargarMaterias() {
   try {
     const r = await fetch(`${API_URL}/api/materias`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     todasMaterias = await r.json();
   } catch {}
@@ -123,7 +123,7 @@ async function cargarMaterias() {
 async function cargarCarreras() {
   try {
     const r = await fetch(`${API_URL}/api/carreras`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     todasCarreras = await r.json();
     const sel = document.getElementById("selCarrera");
@@ -139,7 +139,7 @@ async function cargarCarreras() {
 async function cargarAlumnos() {
   try {
     const r = await fetch(`${API_URL}/api/alumnos`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     todosAlumnos = await r.json();
   } catch {}
@@ -192,7 +192,7 @@ async function irPaso3() {
     const r = await fetch(
       `${API_URL}/api/inscripciones/grupo/${grupoSel.id_grupo}`,
       {
-        headers: { Authorization: `Bearer ${token()}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       },
     );
     if (r.ok) {
@@ -530,20 +530,16 @@ async function confirmarInscripcion() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Inscribiendo…`;
 
-  const payload = [...alumnosSel].map((nc) => ({
-    no_control: nc,
-    id_grupo: grupoSel.id_grupo,
-    tipo_curso: tipo,
-  }));
+  const no_controls = [...alumnosSel];
 
   try {
     const r = await fetch(`${API_URL}/api/inscripciones/bulk`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      body: JSON.stringify({ inscripciones: payload }),
+      body: JSON.stringify({ no_controls, id_grupo: grupoSel.id_grupo, tipo_curso: tipo }),
     });
     const data = await r.json();
     if (r.ok) {
@@ -589,7 +585,7 @@ function resetWizard() {
 async function cargarInscripciones() {
   try {
     const r = await fetch(`${API_URL}/api/inscripciones`, {
-      headers: { Authorization: `Bearer ${token()}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     todasInsc = await r.json();
     filtrarTablaInsc();
@@ -662,7 +658,7 @@ function abrirModalBaja(no_control, id_grupo) {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token()}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({ estatus: "Baja" }),
         },
@@ -680,30 +676,30 @@ function abrirModalBaja(no_control, id_grupo) {
   };
 }
 
-function eliminarInscripcion(no_control, id_grupo) {
-  const nombre = document.querySelector(`tr td code`)?.textContent || no_control;
-  document.getElementById("elimInscNombre").textContent = `${no_control} del grupo #${id_grupo}`;
-  document.getElementById("modalEliminarInsc").classList.add("active");
-  document.getElementById("btnConfirmarEliminarInsc").onclick = async () => {
-    cerrarModal("modalEliminarInsc");
-    try {
-      const r = await fetch(
-        `${API_URL}/api/inscripciones/${no_control}/${id_grupo}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token()}` },
-        },
-      );
-      if (r.ok) {
-        showToast("Inscripción eliminada", "success");
-        await cargarInscripciones();
-      } else {
-        showToast("Error al eliminar", "error");
-      }
-    } catch {
-      showToast("Error de conexión", "error");
+async function eliminarInscripcion(no_control, id_grupo) {
+  if (
+    !confirm(
+      `¿Eliminar la inscripción de ${no_control} del grupo #${id_grupo}?`,
+    )
+  )
+    return;
+  try {
+    const r = await fetch(
+      `${API_URL}/api/inscripciones/${no_control}/${id_grupo}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      },
+    );
+    if (r.ok) {
+      showToast("Inscripción eliminada", "success");
+      await cargarInscripciones();
+    } else {
+      showToast("Error al eliminar", "error");
     }
-  };
+  } catch {
+    showToast("Error de conexión", "error");
+  }
 }
 
 // ── CSV ────────────────────────────────────────────────────────────────────
@@ -773,7 +769,7 @@ async function importarCSVInsc() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify({ inscripciones: csvInscData }),
     });
