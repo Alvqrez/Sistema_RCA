@@ -65,8 +65,7 @@ router.get("/:id", verificarToken, (req, res) => {
 });
 
 router.post("/", soloAdmin, (req, res) => {
-  const { clave_materia, nombre_unidad, temario, estatus, fecha_cierre } =
-    req.body;
+  const { clave_materia, nombre_unidad } = req.body;
 
   if (!clave_materia || !nombre_unidad) {
     return res
@@ -75,15 +74,8 @@ router.post("/", soloAdmin, (req, res) => {
   }
 
   db.query(
-    `INSERT INTO unidad (clave_materia, nombre_unidad, temario, estatus, fecha_cierre)
-         VALUES (?, ?, ?, ?, ?)`,
-    [
-      clave_materia,
-      nombre_unidad,
-      temario ?? null,
-      estatus ?? "Pendiente",
-      fecha_cierre ?? null,
-    ],
+    `INSERT INTO unidad (clave_materia, nombre_unidad) VALUES (?, ?)`,
+    [clave_materia, nombre_unidad],
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -97,17 +89,11 @@ router.post("/", soloAdmin, (req, res) => {
 });
 
 router.put("/:id", soloAdmin, (req, res) => {
-  const { nombre_unidad, temario, estatus, fecha_cierre } = req.body;
+  const { nombre_unidad } = req.body;
 
   db.query(
-    `UPDATE unidad SET nombre_unidad = ?, temario = ?, estatus = ?, fecha_cierre = ? WHERE id_unidad = ?`,
-    [
-      nombre_unidad,
-      temario ?? null,
-      estatus ?? "Pendiente",
-      fecha_cierre ?? null,
-      req.params.id,
-    ],
+    `UPDATE unidad SET nombre_unidad = ? WHERE id_unidad = ?`,
+    [nombre_unidad, req.params.id],
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -184,15 +170,14 @@ router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
           for (let i = 0; i < unidades.length; i++) {
             const u = unidades[i];
             const nombre = u.nombre_unidad.trim();
-            const temario = u.temario ?? null;
 
             if (existentes[i]) {
               // Actualizar la unidad ya existente en esa posición
               ops.push(
                 new Promise((resolve, reject) => {
                   db.query(
-                    "UPDATE unidad SET nombre_unidad = ?, temario = ? WHERE id_unidad = ?",
-                    [nombre, temario, existentes[i].id_unidad],
+                    "UPDATE unidad SET nombre_unidad = ? WHERE id_unidad = ?",
+                    [nombre, existentes[i].id_unidad],
                     (err) =>
                       err
                         ? reject(err)
@@ -208,8 +193,8 @@ router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
               ops.push(
                 new Promise((resolve, reject) => {
                   db.query(
-                    "INSERT INTO unidad (clave_materia, nombre_unidad, temario) VALUES (?, ?, ?)",
-                    [clave, nombre, temario],
+                    "INSERT INTO unidad (clave_materia, nombre_unidad) VALUES (?, ?)",
+                    [clave, nombre],
                     (err, result) =>
                       err
                         ? reject(err)
