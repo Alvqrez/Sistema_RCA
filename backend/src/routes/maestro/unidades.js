@@ -23,7 +23,9 @@ router.get("/materia/:clave", verificarToken, (req, res) => {
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      res.json(results);
+      // numero_unidad = posición relativa dentro de la materia (1, 2, 3...)
+      const conNumero = results.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
+      res.json(conNumero);
     },
   );
 });

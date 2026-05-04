@@ -1,16 +1,10 @@
 -- ============================================================
 --  Sistema de Registro y Cálculo de Resultados Académicos
---  Esquema — versión 7  (correcciones de normalización)
+--  Esquema — versión 9
 --  Instituto Tecnológico de Veracruz
 --
 --  CAMBIOS RESPECTO A v6 — CORRECCIONES 1NF / 2NF / 3NF
 --  ─────────────────────────────────────────────────────────
---  1NF  • maestro.direccion VARCHAR(200)  →  6 columnas atómicas
---       • alumno.direccion  VARCHAR(200)  →  6 columnas atómicas
---         (El documento de análisis lista explícitamente: calle,
---          número, colonia, ciudad, estado, CP como atributos
---          separados. Guardarlos en un solo campo rompe la atomicidad.)
---
 --  3NF  • periodo_escolar.anio eliminado: el año se deriva
 --         funcionalmente de fecha_inicio (anio → fecha_inicio → anio),
 --         lo que introduce una dependencia transitiva.
@@ -81,9 +75,6 @@ CREATE TABLE `administrador` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN 1NF — Maestro
---  direccion VARCHAR(200) → 6 columnas atómicas
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `maestro` (
   `rfc`               VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del docente',
   `nombre`            VARCHAR(80)   NOT NULL,
@@ -96,14 +87,7 @@ CREATE TABLE `maestro` (
   `correo_personal`   VARCHAR(100)  NULL DEFAULT NULL,
   `tel_celular`       VARCHAR(15)   NULL DEFAULT NULL,
   `tel_oficina`       VARCHAR(15)   NULL DEFAULT NULL,
-  -- ── Dirección descompuesta (1NF) ─────────────────────────────────────────
-  `dir_calle`         VARCHAR(100)  NULL DEFAULT NULL  COMMENT '1NF: calle',
-  `dir_numero`        VARCHAR(20)   NULL DEFAULT NULL  COMMENT '1NF: número exterior/interior',
-  `dir_colonia`       VARCHAR(80)   NULL DEFAULT NULL  COMMENT '1NF: colonia',
-  `dir_ciudad`        VARCHAR(80)   NULL DEFAULT NULL  COMMENT '1NF: ciudad/municipio',
-  `dir_estado`        VARCHAR(60)   NULL DEFAULT NULL  COMMENT '1NF: estado',
-  `dir_cp`            CHAR(5)       NULL DEFAULT NULL  COMMENT '1NF: código postal',
-  -- ─────────────────────────────────────────────────────────────────────────
+  `direccion`         VARCHAR(200)  NULL DEFAULT NULL,
   `tipo_contrato`     VARCHAR(40)   NULL DEFAULT NULL  COMMENT 'Ej. Tiempo completo, Hora-semana-mes',
   `estatus`           ENUM('Activo','Licencia','Inactivo') NOT NULL DEFAULT 'Activo',
   `fecha_ingreso`     DATE          NULL DEFAULT NULL,
@@ -136,9 +120,6 @@ CREATE TABLE `carrera` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN 1NF — Alumno
---  direccion VARCHAR(200) → 6 columnas atómicas
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `alumno` (
   `no_control`           VARCHAR(15)   NOT NULL,
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
@@ -152,14 +133,7 @@ CREATE TABLE `alumno` (
   `correo_personal`      VARCHAR(100)  NULL DEFAULT NULL,
   `tel_celular`          VARCHAR(15)   NULL DEFAULT NULL,
   `tel_casa`             VARCHAR(15)   NULL DEFAULT NULL,
-  -- ── Dirección descompuesta (1NF) ─────────────────────────────────────────
-  `dir_calle`            VARCHAR(100)  NULL DEFAULT NULL  COMMENT '1NF: calle',
-  `dir_numero`           VARCHAR(20)   NULL DEFAULT NULL  COMMENT '1NF: número exterior/interior',
-  `dir_colonia`          VARCHAR(80)   NULL DEFAULT NULL  COMMENT '1NF: colonia',
-  `dir_ciudad`           VARCHAR(80)   NULL DEFAULT NULL  COMMENT '1NF: ciudad/municipio',
-  `dir_estado`           VARCHAR(60)   NULL DEFAULT NULL  COMMENT '1NF: estado',
-  `dir_cp`               CHAR(5)       NULL DEFAULT NULL  COMMENT '1NF: código postal',
-  -- ─────────────────────────────────────────────────────────────────────────
+  `direccion`            VARCHAR(200)  NULL DEFAULT NULL,
   PRIMARY KEY (`no_control`),
   UNIQUE INDEX `uq_Alumno_CURP` (`curp`),
   INDEX `fk_Alumno_Car` (`id_carrera`),
@@ -191,7 +165,7 @@ CREATE TABLE `periodo_escolar` (
   `override_manual` TINYINT(1)    NOT NULL DEFAULT 0
     COMMENT 'Si es 1 el scheduler respeta el estatus manual y no lo sobreescribe',
   PRIMARY KEY (`id_periodo`),
-  UNIQUE INDEX `uq_periodo_descripcion` (`descripcion`)
+  UNIQUE INDEX `uq_periodo_desc_inicio` (`descripcion`, `fecha_inicio`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
@@ -202,7 +176,6 @@ CREATE TABLE `periodo_escolar` (
 CREATE TABLE `materia` (
   `clave_materia`    VARCHAR(15)      NOT NULL,
   `nombre_materia`   VARCHAR(100)     NOT NULL,
-  `caracterizacion`  TEXT             NULL DEFAULT NULL,
   `creditos_totales` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `horas_teoricas`   TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `horas_practicas`  TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -301,9 +274,6 @@ CREATE TABLE `unidad` (
   `id_unidad`     INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `clave_materia` VARCHAR(15)   NOT NULL,
   `nombre_unidad` VARCHAR(100)  NOT NULL,
-  `temario`       TEXT          NULL DEFAULT NULL,
-  `estatus`       ENUM('Pendiente','En curso','Cerrada') NOT NULL DEFAULT 'Pendiente',
-  `fecha_cierre`  DATE          NULL DEFAULT NULL,
   PRIMARY KEY (`id_unidad`),
   INDEX `fk_Unidad_Mat` (`clave_materia`),
   CONSTRAINT `fk_Unidad_Mat`
@@ -720,9 +690,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  FIN DEL ESQUEMA v7 + PERIODOS AUTOMÁTICOS
 --
 --  RESUMEN DE CAMBIOS DE NORMALIZACIÓN (heredados de v7):
---  1NF  maestro.direccion   → dir_calle, dir_numero, dir_colonia,
---                             dir_ciudad, dir_estado, dir_cp
---  1NF  alumno.direccion    → mismos 6 campos
+--  direccion de maestro y alumno se mantiene como VARCHAR(200) simple
 --  3NF  periodo_escolar     → eliminado `anio` (derivado de fecha_inicio)
 --  3NF  config_eval_unidad  → eliminado `cal_examen` (en resultado_actividad)
 --  DIS  modificacionfinal   → nueva PK auto-incremental (múltiples por par)

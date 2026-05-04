@@ -318,7 +318,7 @@ async function onMateriaChange() {
     const selUnidad = document.getElementById("mUnidad");
     selUnidad.innerHTML = `<option value="">— Selecciona una unidad —</option>`;
     unidades.forEach((u) => {
-      selUnidad.innerHTML += `<option value="${u.id_unidad}">Unidad ${u.id_unidad}: ${u.nombre_unidad || ""}</option>`;
+      selUnidad.innerHTML += `<option value="${u.id_unidad}">Unidad ${u.numero_unidad}: ${u.nombre_unidad || ""}</option>`;
     });
     wrapU.style.display = "grid";
     hint.style.display = "flex";
