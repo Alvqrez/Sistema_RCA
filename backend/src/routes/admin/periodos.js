@@ -115,15 +115,30 @@ router.put("/:id", soloAdmin, (req, res) => {
   }
 });
 
-// DELETE
+// DELETE — solo si no hay grupos que usen el periodo
 router.delete("/:id", soloAdmin, (req, res) => {
+  const id = req.params.id;
+
+  // Verificar si el periodo tiene grupos asociados
   db.query(
-    "DELETE FROM periodo_escolar WHERE id_periodo = ?",
-    [req.params.id],
-    (err, r) => {
+    "SELECT COUNT(*) AS total FROM grupo WHERE id_periodo = ?",
+    [id],
+    (err, rows) => {
       if (err) return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
-      if (r.affectedRows === 0) return res.status(404).json({ error: "Periodo no encontrado" });
-      res.json({ success: true });
+      if (rows[0].total > 0)
+        return res.status(409).json({
+          error: `No se puede eliminar: el periodo tiene ${rows[0].total} grupo(s) asignado(s). Elimina los grupos primero.`
+        });
+
+      db.query(
+        "DELETE FROM periodo_escolar WHERE id_periodo = ?",
+        [id],
+        (err2, r) => {
+          if (err2) return res.status(500).json({ error: "Error interno del servidor", detalle: err2.message });
+          if (r.affectedRows === 0) return res.status(404).json({ error: "Periodo no encontrado" });
+          res.json({ success: true });
+        }
+      );
     }
   );
 });

@@ -418,10 +418,10 @@
           const col = { Vigente: "badge-aprobado", Concluido: "badge-np", Proximo: "badge-pendiente" }[p.estatus] || "badge-pendiente";
           const anio = p.anio || (p.fecha_inicio ? p.fecha_inicio.toString().split("T")[0].substring(0,4) : "—");
           const btnDel = p.estatus !== "Vigente"
-            ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(${p.id_periodo})" title="Eliminar">
+            ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarPeriodo(${p.id_periodo})" title="Eliminar periodo">
                 <iconify-icon icon="mdi:delete-outline"></iconify-icon>
                </button>`
-            : "";
+            : `<span style="font-size:.75rem;color:var(--text-muted)" title="No se puede eliminar el periodo vigente">—</span>`;
           tbody.innerHTML += `<tr>
             <td style="font-size:.78rem;color:var(--text-muted);font-weight:600">#${p.id_periodo}</td>
             <td><strong>${p.descripcion}</strong></td>
@@ -429,12 +429,7 @@
             <td style="font-size:.82rem">${fmtFecha(p.fecha_inicio)}</td>
             <td style="font-size:.82rem">${fmtFecha(p.fecha_fin)}</td>
             <td><span class="badge-estatus ${col}">${p.estatus}</span></td>
-            <td style="display:flex;gap:6px">
-              <button class="btn btn-sm btn-outline" onclick='abrirModalEstatus(${JSON.stringify(p).replace(/'/g,"&#39;")})' title="Cambiar estatus">
-                <iconify-icon icon="mdi:tag-edit-outline"></iconify-icon>
-              </button>
-              ${btnDel}
-            </td>
+            <td>${btnDel}</td>
           </tr>`;
         });
       }
