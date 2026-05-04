@@ -518,16 +518,15 @@
           <button class="modal-close" onclick="cerrarModalAdmin()">✕</button>
         </div>
         <div class="modal-body">
+          <!-- Datos oficiales -->
+          <p id="labelDatosOficiales" style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px">Datos oficiales</p>
           <div class="form-group">
             <label>Nombre <span style="color: var(--danger)">*</span></label>
             <input id="aNombre" type="text" placeholder="Juan" />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
             <div class="form-group">
-              <label
-                >Apellido paterno
-                <span style="color: var(--danger)">*</span></label
-              >
+              <label>Apellido paterno <span style="color: var(--danger)">*</span></label>
               <input id="aApPat" type="text" placeholder="García" />
             </div>
             <div class="form-group">
@@ -536,11 +535,20 @@
             </div>
           </div>
           <div class="form-group">
-            <label
-              >Correo institucional
-              <span style="color: var(--danger)">*</span></label
-            >
+            <label>Correo institucional <span style="color: var(--danger)">*</span></label>
             <input id="aCorreo" type="email" placeholder="admin@itv.edu.mx" />
+          </div>
+          <!-- Datos personales -->
+          <p style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 10px;padding-top:14px;border-top:1px solid var(--border)">Datos personales</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+            <div class="form-group">
+              <label>Correo personal</label>
+              <input id="aCorreoPersonal" type="email" placeholder="correo@gmail.com" />
+            </div>
+            <div class="form-group">
+              <label>Tel. celular</label>
+              <input id="aTelCelular" type="tel" placeholder="10 dígitos" maxlength="15" />
+            </div>
           </div>
           <div id="camposNuevoAdmin">
             <div class="form-group">
@@ -912,6 +920,8 @@
               if (!a) return;
               document.getElementById("aNombre").value = a.nombre;
               document.getElementById("aApPat").value = a.apellido_paterno;
+              document.getElementById("aCorreoPersonal").value = a.correo_personal ?? "";
+              document.getElementById("aTelCelular").value = a.tel_celular ?? "";
               document.getElementById("aApMat").value =
                 a.apellido_materno ?? "";
               document.getElementById("aCorreo").value = a.correo_institucional;
@@ -922,6 +932,8 @@
             "aApPat",
             "aApMat",
             "aCorreo",
+            "aCorreoPersonal",
+            "aTelCelular",
             "aRfc",
             "aPassword",
           ].forEach((id) => {
@@ -962,11 +974,15 @@
           if (_editAdminId) {
             url = `${API_URL}/api/admin/administradores/${_editAdminId}`;
             method = "PUT";
+            const correo_personal_edit = document.getElementById("aCorreoPersonal").value.trim() || null;
+            const tel_celular_edit = document.getElementById("aTelCelular").value.trim() || null;
             body = {
               nombre,
               apellido_paterno,
               apellido_materno,
               correo_institucional,
+              correo_personal: correo_personal_edit,
+              tel_celular: tel_celular_edit,
             };
           } else {
             const username = document.getElementById("aRfc").value.trim();
@@ -986,12 +1002,16 @@
             }
             url = `${API_URL}/api/admin/administradores`;
             method = "POST";
+            const correo_personal = document.getElementById("aCorreoPersonal").value.trim() || null;
+            const tel_celular = document.getElementById("aTelCelular").value.trim() || null;
             body = {
               rfc: username,
               nombre,
               apellido_paterno,
               apellido_materno,
               correo_institucional,
+              correo_personal,
+              tel_celular,
               password,
             };
           }

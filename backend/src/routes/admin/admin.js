@@ -335,18 +335,20 @@ module.exports = router;
 
 // PUT — editar administrador
 router.put("/administradores/:id", soloAdmin, (req, res) => {
-  const { nombre, apellido_paterno, apellido_materno, correo_institucional } =
+  const { nombre, apellido_paterno, apellido_materno, correo_institucional, correo_personal, tel_celular } =
     req.body;
   if (!nombre || !apellido_paterno || !correo_institucional) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
   db.query(
-    "UPDATE administrador SET nombre=?, apellido_paterno=?, apellido_materno=?, correo_institucional=? WHERE rfc=?",
+    "UPDATE administrador SET nombre=?, apellido_paterno=?, apellido_materno=?, correo_institucional=?, correo_personal=?, tel_celular=? WHERE rfc=?",
     [
       nombre,
       apellido_paterno,
       apellido_materno ?? null,
       correo_institucional,
+      correo_personal ?? null,
+      tel_celular ?? null,
       req.params.id,
     ],
     (err, r) => {
