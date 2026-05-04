@@ -32,12 +32,24 @@
 --       • actividad agrega FK hacia grupo_unidad(id_grupo, id_unidad)
 --         para garantizar que no se creen actividades en
 --         combinaciones grupo-unidad que no existan.
+--
+--  + NUEVO: Sistema de estatus automático para periodo_escolar
+--           • Columna override_manual agregada a periodo_escolar
+--           • Event Scheduler diario que recalcula estatus por fecha
+--           • Procedimiento cambiar_estatus_periodo() para cambio manual
+--           • Procedimiento quitar_override_periodo() para volver al automático
 -- ============================================================
+
+-- Quitar modo seguro
+SET SQL_SAFE_UPDATES = 0;
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS,   UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE,
     SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- Activar el Event Scheduler (necesario para el estatus automático)
+SET GLOBAL event_scheduler = ON;
 
 -- ── Base de datos ─────────────────────────────────────────────────────────────
 DROP DATABASE IF EXISTS `rca_sistema`;
@@ -165,20 +177,25 @@ CREATE TABLE `alumno` (
 --  Se elimina la columna `anio` porque depende transitivamente
 --  de fecha_inicio: PK → fecha_inicio → anio.
 --  Usar YEAR(fecha_inicio) en las consultas que necesiten el año.
+--
+--  + NUEVO: override_manual — si es TRUE el scheduler no toca el estatus,
+--           permitiendo cambios manuales sin que se sobreescriban al día siguiente.
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `periodo_escolar` (
-  `id_periodo`   INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `descripcion`  VARCHAR(60)   NOT NULL  COMMENT 'Ej. Enero-Junio 2025',
+  `id_periodo`      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `descripcion`     VARCHAR(60)   NOT NULL  COMMENT 'Ej. Enero-Junio 2025',
   -- `anio` ELIMINADO — se obtiene con YEAR(fecha_inicio) (3NF)
-  `fecha_inicio` DATE          NOT NULL,
-  `fecha_fin`    DATE          NOT NULL,
-  `estatus`      ENUM('Vigente','Concluido','Proximo') NOT NULL DEFAULT 'Proximo',
+  `fecha_inicio`    DATE          NOT NULL,
+  `fecha_fin`       DATE          NOT NULL,
+  `estatus`         ENUM('Vigente','Concluido','Proximo') NOT NULL DEFAULT 'Proximo',
+  `override_manual` TINYINT(1)    NOT NULL DEFAULT 0
+    COMMENT 'Si es 1 el scheduler respeta el estatus manual y no lo sobreescribe',
   PRIMARY KEY (`id_periodo`),
   UNIQUE INDEX `uq_periodo_descripcion` (`descripcion`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
-  COMMENT='Ciclo académico semestral';
+  COMMENT='Ciclo académico semestral con estatus automático por fecha';
 
 
 -- Materia (sin cambios)
@@ -373,7 +390,6 @@ CREATE TABLE `actividad` (
   PRIMARY KEY (`id_actividad`),
   INDEX `fk_Activ_GrupoUnidad` (`id_grupo`, `id_unidad`),
   INDEX `fk_Activ_Tipo`        (`id_tipo_actividad`),
-  -- Nueva FK que garantiza que el par (grupo, unidad) exista en grupo_unidad
   CONSTRAINT `fk_Activ_GrupoUnidad`
     FOREIGN KEY (`id_grupo`, `id_unidad`) REFERENCES `grupo_unidad` (`id_grupo`, `id_unidad`)
     ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -390,9 +406,7 @@ CREATE TABLE `actividad` (
 --  CORRECCIÓN 3NF — Config evaluación por unidad
 --  Se elimina cal_examen: es una calificación que ya existe en
 --  resultado_actividad (o se puede derivar de ella). Almacenarla aquí
---  crea una dependencia transitiva:
---    (id_grupo, id_unidad) → id_actividad_examen → cal_examen
---  y produce inconsistencias cuando se modifica la calificación del examen.
+--  crea una dependencia transitiva y produce inconsistencias.
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `config_evaluacion_unidad` (
   `id_grupo`        INT UNSIGNED NOT NULL,
@@ -553,8 +567,7 @@ CREATE TABLE `bonusfinal` (
 -- ─────────────────────────────────────────────────────────────────────────────
 --  CORRECCIÓN DISEÑO — Modificación final
 --  La PK compuesta (no_control, id_grupo) solo permitía UNA modificación
---  por alumno-grupo. El análisis requiere múltiples modificaciones con
---  auditoría completa. Se agrega id_modificacion como PK auto-incremental.
+--  por alumno-grupo. Se agrega id_modificacion como PK auto-incremental.
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `modificacionfinal` (
   `id_modificacion`     INT UNSIGNED NOT NULL AUTO_INCREMENT
@@ -598,33 +611,93 @@ INSERT INTO `tipo_actividad` (`nombre`, `descripcion`) VALUES
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  RESTAURAR MODOS
+--  SISTEMA DE ESTATUS AUTOMÁTICO — periodo_escolar
 -- ─────────────────────────────────────────────────────────────────────────────
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+-- Actualización inicial al ejecutar el script
+-- (aplica el estatus correcto con base en la fecha de hoy)
+UPDATE periodo_escolar
+SET estatus =
+  CASE
+    WHEN CURDATE() < fecha_inicio THEN 'Proximo'
+    WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
+    WHEN CURDATE() > fecha_fin THEN 'Concluido'
+  END
+WHERE override_manual = 0;
 
 
--- ============================================================
---  FIN DEL ESQUEMA v7
---  Resumen de cambios de normalización:
---
---  1NF  maestro.direccion   → dir_calle, dir_numero, dir_colonia,
---                             dir_ciudad, dir_estado, dir_cp
---  1NF  alumno.direccion    → mismos 6 campos
---  3NF  periodo_escolar     → eliminado `anio` (derivado de fecha_inicio)
---  3NF  config_eval_unidad  → eliminado `cal_examen` (en resultado_actividad)
---  DIS  modificacionfinal   → nueva PK auto-incremental (múltiples por par)
---  REF  actividad           → nueva FK hacia grupo_unidad(id_grupo,id_unidad)
--- ============================================================
+-- Evento automático diario
+-- Recalcula el estatus de todos los periodos sin override manual
+DROP EVENT IF EXISTS evt_actualizar_estatus_periodos;
 
--- ============================================================
--- PATCH: Cambiar username de alumnos a su número de control
--- Ejecutar UNA VEZ en MySQL Workbench si ya tienes datos en la BD
--- ============================================================
+CREATE EVENT evt_actualizar_estatus_periodos
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP
+DO
+  UPDATE periodo_escolar
+  SET estatus =
+    CASE
+      WHEN CURDATE() < fecha_inicio THEN 'Proximo'
+      WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
+      WHEN CURDATE() > fecha_fin THEN 'Concluido'
+    END
+  WHERE override_manual = 0;
 
--- Actualiza el username de cada usuario tipo 'alumno' para que
--- sea igual a su id_referencia (número de control)
+
+-- ─────────────────────────────────────────────────────────────────────────────
+--  PROCEDIMIENTOS — Control manual de estatus
+-- ─────────────────────────────────────────────────────────────────────────────
+
+DROP PROCEDURE IF EXISTS cambiar_estatus_periodo;
+
+DELIMITER //
+
+-- Cambia el estatus manualmente y activa el override
+-- para que el scheduler no lo sobreescriba
+-- Uso: CALL cambiar_estatus_periodo(2, 'Concluido');
+CREATE PROCEDURE cambiar_estatus_periodo(
+  IN p_id_periodo INT UNSIGNED,
+  IN p_estatus    VARCHAR(20)
+)
+BEGIN
+  UPDATE periodo_escolar
+  SET estatus         = p_estatus,
+      override_manual = 1
+  WHERE id_periodo = p_id_periodo;
+END //
+
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS quitar_override_periodo;
+
+DELIMITER //
+
+-- Regresa el periodo al control automático y recalcula
+-- su estatus de inmediato con base en la fecha actual
+-- Uso: CALL quitar_override_periodo(2);
+CREATE PROCEDURE quitar_override_periodo(
+  IN p_id_periodo INT UNSIGNED
+)
+BEGIN
+  UPDATE periodo_escolar
+  SET override_manual = 0,
+      estatus =
+        CASE
+          WHEN CURDATE() < fecha_inicio THEN 'Proximo'
+          WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
+          WHEN CURDATE() > fecha_fin THEN 'Concluido'
+        END
+  WHERE id_periodo = p_id_periodo;
+END //
+
+DELIMITER ;
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+--  PATCH: Cambiar username de alumnos a su número de control
+--  Ejecutar UNA VEZ si ya tienes datos en la BD
+-- ─────────────────────────────────────────────────────────────────────────────
 UPDATE usuario
 SET username = id_referencia
 WHERE rol = 'alumno';
@@ -633,3 +706,31 @@ WHERE rol = 'alumno';
 SELECT username, id_referencia, rol
 FROM usuario
 WHERE rol = 'alumno';
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+--  RESTAURAR MODOS
+-- ─────────────────────────────────────────────────────────────────────────────
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+
+-- ============================================================
+--  FIN DEL ESQUEMA v7 + PERIODOS AUTOMÁTICOS
+--
+--  RESUMEN DE CAMBIOS DE NORMALIZACIÓN (heredados de v7):
+--  1NF  maestro.direccion   → dir_calle, dir_numero, dir_colonia,
+--                             dir_ciudad, dir_estado, dir_cp
+--  1NF  alumno.direccion    → mismos 6 campos
+--  3NF  periodo_escolar     → eliminado `anio` (derivado de fecha_inicio)
+--  3NF  config_eval_unidad  → eliminado `cal_examen` (en resultado_actividad)
+--  DIS  modificacionfinal   → nueva PK auto-incremental (múltiples por par)
+--  REF  actividad           → nueva FK hacia grupo_unidad(id_grupo,id_unidad)
+--
+--  NUEVO EN ESTE ARCHIVO:
+--  +    periodo_escolar     → columna override_manual TINYINT(1) DEFAULT 0
+--  +    evt_actualizar_estatus_periodos → evento diario automático
+--  +    cambiar_estatus_periodo()       → cambio manual con override
+--  +    quitar_override_periodo()       → regresa al control automático
+-- ============================================================
