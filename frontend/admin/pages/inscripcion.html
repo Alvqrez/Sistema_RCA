@@ -863,19 +863,17 @@
 
     <!-- Modal baja -->
     <!-- Modal: Dar de baja -->
-    <div class="modal-overlay" id="modalBaja" onclick="if(event.target===this)cerrarModal('modalBaja')">
-      <div class="modal-box" style="max-width:420px">
+    <div class="modal-overlay" id="modalBaja">
+      <div class="modal-panel modal-sm">
         <div class="modal-header">
-          <h3 style="display:flex;align-items:center;gap:8px">
-            <iconify-icon icon="mdi:account-remove-outline" style="color:var(--warning)"></iconify-icon>
+          <h2 style="display:flex;align-items:center;gap:8px">
+            <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
             Dar de baja
-          </h3>
-          <button class="modal-close-btn" onclick="cerrarModal('modalBaja')">
-            <iconify-icon icon="mdi:close"></iconify-icon>
-          </button>
+          </h2>
+          <button class="modal-close" onclick="cerrarModal('modalBaja')">✕</button>
         </div>
-        <div style="padding:20px 22px">
-          <p style="margin:0;color:var(--text-secondary)">
+        <div class="modal-body">
+          <p style="margin:0">
             ¿Cambiar el estatus de la inscripción a <strong>Baja</strong>?<br>
             <span style="font-size:.84rem;color:var(--text-muted)">El alumno no podrá recibir nuevas calificaciones.</span>
           </p>
@@ -891,19 +889,17 @@
     </div>
 
     <!-- Modal: Confirmar eliminar inscripción -->
-    <div class="modal-overlay" id="modalEliminarInsc" onclick="if(event.target===this)cerrarModal('modalEliminarInsc')">
-      <div class="modal-box" style="max-width:420px">
+    <div class="modal-overlay" id="modalEliminarInsc">
+      <div class="modal-panel modal-sm">
         <div class="modal-header">
-          <h3 style="display:flex;align-items:center;gap:8px">
-            <iconify-icon icon="lucide:trash-2" style="color:var(--danger)"></iconify-icon>
+          <h2 style="display:flex;align-items:center;gap:8px">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon>
             Eliminar inscripción
-          </h3>
-          <button class="modal-close-btn" onclick="cerrarModal('modalEliminarInsc')">
-            <iconify-icon icon="mdi:close"></iconify-icon>
-          </button>
+          </h2>
+          <button class="modal-close" onclick="cerrarModal('modalEliminarInsc')">✕</button>
         </div>
-        <div style="padding:20px 22px">
-          <p style="margin:0;color:var(--text-secondary)">
+        <div class="modal-body">
+          <p style="margin:0">
             ¿Eliminar la inscripción de <strong id="elimInscNombre"></strong>?<br>
             <span style="font-size:.84rem;color:var(--text-muted)">Esta acción no se puede deshacer.</span>
           </p>

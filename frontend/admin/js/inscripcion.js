@@ -653,7 +653,7 @@ function renderTablaInsc(insc) {
 let bajaCtx = null;
 function abrirModalBaja(no_control, id_grupo) {
   bajaCtx = { no_control, id_grupo };
-  document.getElementById("modalBaja").classList.add("active");
+  document.getElementById("modalBaja").classList.add("visible");
   document.getElementById("btnConfirmarBaja").onclick = async () => {
     try {
       const r = await fetch(
@@ -683,7 +683,7 @@ function abrirModalBaja(no_control, id_grupo) {
 function eliminarInscripcion(no_control, id_grupo) {
   const nombre = document.querySelector(`tr td code`)?.textContent || no_control;
   document.getElementById("elimInscNombre").textContent = `${no_control} del grupo #${id_grupo}`;
-  document.getElementById("modalEliminarInsc").classList.add("active");
+  document.getElementById("modalEliminarInsc").classList.add("visible");
   document.getElementById("btnConfirmarEliminarInsc").onclick = async () => {
     cerrarModal("modalEliminarInsc");
     try {
