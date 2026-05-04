@@ -987,11 +987,11 @@
             url = `${API_URL}/api/admin/administradores`;
             method = "POST";
             body = {
+              rfc: username,
               nombre,
               apellido_paterno,
               apellido_materno,
               correo_institucional,
-              username,
               password,
             };
           }
