@@ -678,6 +678,25 @@
                 ></span>
               </div>
 
+              <!-- Contador de créditos (solo periodos semestrales) -->
+              <div id="creditosWidget" style="display:none;margin:8px 0 4px;padding:10px 14px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border-color)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:0.82rem">
+                  <span style="display:flex;align-items:center;gap:6px;color:var(--text-muted)">
+                    <iconify-icon icon="mdi:school-outline"></iconify-icon>
+                    Carga académica del alumno seleccionado
+                  </span>
+                  <span id="creditosTexto" style="font-weight:600;font-size:0.85rem">— / 36 créditos</span>
+                </div>
+                <div style="height:7px;background:var(--bg-app);border-radius:999px;overflow:hidden">
+                  <div id="creditosBarra" style="height:100%;border-radius:999px;transition:width 0.3s,background 0.3s;width:0%;background:#3b82f6"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.7rem;color:var(--text-muted)">
+                  <span>Mínimo: 20</span>
+                  <span id="creditosAviso" style="font-size:0.72rem"></span>
+                  <span>Máximo: 36</span>
+                </div>
+              </div>
+
               <div class="tabla-wrapper">
                 <table>
                   <thead>

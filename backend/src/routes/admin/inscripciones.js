@@ -36,7 +36,7 @@ router.get("/", verificarToken, (req, res) => {
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const sql = `
     SELECT i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
-           m.nombre_materia, m.clave_materia,
+           m.nombre_materia, m.clave_materia, m.creditos_totales,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
            cf.calificacion_oficial, cf.estatus_final
@@ -128,32 +128,98 @@ router.post("/", soloAdmin, (req, res) => {
         }
       }
 
-      // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
-      const sql = `
-      INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso)
-      VALUES (?, ?, CURDATE(), 'Cursando', ?)
-    `;
-      db.query(
-        sql,
-        [no_control, id_grupo, tipo_curso || "Ordinario"],
-        (err, result) => {
-          if (err)
-            return res.status(500).json({
-              error: "Error interno del servidor",
-              detalle: err.message,
-            });
+      // ── Validación de créditos (solo periodos semestrales) ──────────────
+      const sqlPeriodoTipo = `
+        SELECT p.descripcion
+        FROM grupo g
+        JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
+        WHERE g.id_grupo = ?
+      `;
+      db.query(sqlPeriodoTipo, [id_grupo], (errP, periodoRows) => {
+        if (errP)
+          return res.status(500).json({ error: "Error interno del servidor" });
 
-          if (result.affectedRows === 0)
-            return res.status(200).json({
-              success: true,
-              mensaje: "El alumno ya estaba inscrito (sin cambios)",
-            });
+        const desc = (periodoRows[0]?.descripcion || "").toLowerCase();
+        const esSemestral =
+          desc.includes("enero") || desc.includes("agosto");
 
-          res
-            .status(201)
-            .json({ success: true, mensaje: "Alumno inscrito correctamente" });
-        },
-      );
+        if (!esSemestral) {
+          // Periodo de verano — sin límite de créditos, insertar directo
+          return insertarInscripcion();
+        }
+
+        // Sumar créditos actuales del alumno en este periodo
+        const sqlCreditos = `
+          SELECT COALESCE(SUM(m.creditos_totales), 0) AS total
+          FROM inscripcion i
+          JOIN grupo g      ON g.id_grupo = i.id_grupo
+          JOIN materia m    ON m.clave_materia = g.clave_materia
+          WHERE i.no_control = ?
+            AND g.id_periodo = (SELECT id_periodo FROM grupo WHERE id_grupo = ?)
+            AND i.estatus = 'Cursando'
+        `;
+        db.query(sqlCreditos, [no_control, id_grupo], (errC, credRows) => {
+          if (errC)
+            return res.status(500).json({ error: "Error interno del servidor" });
+
+          const creditosActuales = parseFloat(credRows[0]?.total || 0);
+
+          // Créditos de la materia nueva
+          const sqlNuevos = `
+            SELECT m.creditos_totales
+            FROM grupo g JOIN materia m ON m.clave_materia = g.clave_materia
+            WHERE g.id_grupo = ?
+          `;
+          db.query(sqlNuevos, [id_grupo], (errN, nuevosRows) => {
+            if (errN)
+              return res.status(500).json({ error: "Error interno del servidor" });
+
+            const creditosNuevos = parseFloat(nuevosRows[0]?.creditos_totales || 0);
+            const total = creditosActuales + creditosNuevos;
+
+            if (total > 36) {
+              return res.status(400).json({
+                error: `El alumno excedería la carga máxima de 36 créditos. ` +
+                  `Tiene ${creditosActuales} créditos y esta materia agrega ${creditosNuevos} (total: ${total}).`,
+                creditos_actuales: creditosActuales,
+                creditos_nuevos: creditosNuevos,
+                total,
+              });
+            }
+
+            insertarInscripcion();
+          });
+        });
+      });
+
+      function insertarInscripcion() {
+        // INSERT IGNORE: idempotente, reimportar el mismo CSV no falla
+        const sql = `
+          INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso)
+          VALUES (?, ?, CURDATE(), 'Cursando', ?)
+        `;
+        db.query(
+          sql,
+          [no_control, id_grupo, tipo_curso || "Ordinario"],
+          (err, result) => {
+            if (err)
+              return res.status(500).json({
+                error: "Error interno del servidor",
+                detalle: err.message,
+              });
+
+            if (result.affectedRows === 0)
+              return res.status(200).json({
+                success: true,
+                mensaje: "El alumno ya estaba inscrito (sin cambios)",
+              });
+
+            res
+              .status(201)
+              .json({ success: true, mensaje: "Alumno inscrito correctamente" });
+          },
+        );
+      }
     });
   }); // cierre sqlDuplicado
 });
@@ -195,27 +261,120 @@ router.post("/bulk", soloAdmin, (req, res) => {
       .status(400)
       .json({ error: "No_controls y grupo son requeridos" });
 
-  const fecha = new Date().toISOString().split("T")[0];
-  const vals = registros.map((r) => [
-    r.no_control,
-    r.id_grupo,
-    fecha,
-    "Cursando",
-    r.tipo_curso,
-  ]);
+  // Detectar si el periodo es semestral (Enero o Agosto) para validar créditos
+  const sqlPeriodoDesc = `
+    SELECT p.descripcion, g.id_periodo,
+           m.creditos_totales AS creditos_nuevos
+    FROM grupo g
+    JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
+    JOIN materia m ON m.clave_materia = g.clave_materia
+    WHERE g.id_grupo = ?
+  `;
 
-  db.query(
-    "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
-    [vals],
-    (err, r) => {
-      if (err)
-        return res.status(500).json({
-          error: "Error interno del servidor",
-          detalle: err.message,
-        });
-      res.status(201).json({ success: true, insertados: r.affectedRows });
-    },
-  );
+  // Obtener todos los id_grupo únicos del lote
+  const gruposUnicos = [...new Set(registros.map((r) => r.id_grupo))];
+
+  // Consultar info de cada grupo único
+  Promise.all(
+    gruposUnicos.map(
+      (idg) =>
+        new Promise((resolve, reject) =>
+          db.query(sqlPeriodoDesc, [idg], (e, rows) =>
+            e ? reject(e) : resolve({ idg, info: rows[0] }),
+          ),
+        ),
+    ),
+  )
+    .then((gruposInfo) => {
+      const grupoMap = {}; // id_grupo → { descripcion, id_periodo, creditos_nuevos }
+      gruposInfo.forEach(({ idg, info }) => (grupoMap[idg] = info));
+
+      // Para cada alumno en cada grupo semestral, verificar créditos
+      const validaciones = registros.map(
+        (reg) =>
+          new Promise((resolve) => {
+            const info = grupoMap[reg.id_grupo];
+            if (!info) return resolve({ reg, ok: true });
+
+            const desc = (info.descripcion || "").toLowerCase();
+            const esSemestral =
+              desc.includes("enero") || desc.includes("agosto");
+
+            if (!esSemestral) return resolve({ reg, ok: true });
+
+            const sqlCred = `
+              SELECT COALESCE(SUM(m.creditos_totales), 0) AS total
+              FROM inscripcion i
+              JOIN grupo g   ON g.id_grupo = i.id_grupo
+              JOIN materia m ON m.clave_materia = g.clave_materia
+              WHERE i.no_control = ?
+                AND g.id_periodo = ?
+                AND i.estatus = 'Cursando'
+            `;
+            db.query(
+              sqlCred,
+              [reg.no_control, info.id_periodo],
+              (e, rows) => {
+                if (e) return resolve({ reg, ok: true }); // si falla la validación, dejamos pasar
+                const actuales = parseFloat(rows[0]?.total || 0);
+                const nuevos = parseFloat(info.creditos_nuevos || 0);
+                const total = actuales + nuevos;
+                if (total > 36) {
+                  return resolve({
+                    reg,
+                    ok: false,
+                    razon: `Excede 36 créditos (tiene ${actuales}, agrega ${nuevos})`,
+                  });
+                }
+                resolve({ reg, ok: true });
+              },
+            );
+          }),
+      );
+
+      Promise.all(validaciones).then((resultados) => {
+        const aprobados = resultados.filter((r) => r.ok).map((r) => r.reg);
+        const rechazados = resultados
+          .filter((r) => !r.ok)
+          .map((r) => ({ no_control: r.reg.no_control, razon: r.razon }));
+
+        if (!aprobados.length) {
+          return res.status(400).json({
+            error: "Ningún alumno pudo inscribirse por límite de créditos.",
+            rechazados,
+          });
+        }
+
+        const fecha = new Date().toISOString().split("T")[0];
+        const vals = aprobados.map((r) => [
+          r.no_control,
+          r.id_grupo,
+          fecha,
+          "Cursando",
+          r.tipo_curso,
+        ]);
+
+        db.query(
+          "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+          [vals],
+          (err, r) => {
+            if (err)
+              return res.status(500).json({
+                error: "Error interno del servidor",
+                detalle: err.message,
+              });
+            res.status(201).json({
+              success: true,
+              insertados: r.affectedRows,
+              rechazados,
+            });
+          },
+        );
+      });
+    })
+    .catch(() =>
+      res.status(500).json({ error: "Error interno del servidor" }),
+    );
 });
 
 // PUT — cambiar estatus de inscripción

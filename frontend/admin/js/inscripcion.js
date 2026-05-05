@@ -209,6 +209,12 @@ async function irPaso3() {
   alumnosSel.clear();
   actualizarContadorAlumnos();
   filtrarAlumnos();
+
+  // Mostrar widget de créditos solo en periodos semestrales
+  const desc = (periodoSel?.descripcion || "").toLowerCase();
+  const esSemestral = desc.includes("enero") || desc.includes("agosto");
+  document.getElementById("creditosWidget").style.display = esSemestral ? "block" : "none";
+  if (esSemestral) actualizarBarraCreditos();
 }
 
 function irPaso4() {
@@ -424,6 +430,76 @@ function toggleAlumno(no_control, chk) {
   if (chk.checked) alumnosSel.add(no_control);
   else alumnosSel.delete(no_control);
   actualizarContadorAlumnos();
+
+  // Actualizar barra de créditos si el widget está visible y hay exactamente 1 alumno seleccionado
+  if (document.getElementById("creditosWidget").style.display !== "none") {
+    actualizarBarraCreditos();
+  }
+}
+
+// ── Barra de créditos ──────────────────────────────────────────────────────
+async function actualizarBarraCreditos() {
+  const widget = document.getElementById("creditosWidget");
+  if (!widget || widget.style.display === "none") return;
+
+  // Si hay exactamente 1 alumno seleccionado, mostrar sus créditos
+  // Si hay 0 o más de 1, mostrar estado neutro
+  if (alumnosSel.size !== 1) {
+    document.getElementById("creditosTexto").textContent =
+      alumnosSel.size === 0 ? "— / 36 créditos" : `${alumnosSel.size} alumnos seleccionados`;
+    document.getElementById("creditosBarra").style.width = "0%";
+    document.getElementById("creditosBarra").style.background = "#3b82f6";
+    document.getElementById("creditosAviso").textContent = "";
+    return;
+  }
+
+  const no_control = [...alumnosSel][0];
+  try {
+    // Obtener inscripciones actuales del alumno
+    const r = await fetch(`${API_URL}/api/inscripciones/alumno/${no_control}`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
+    if (!r.ok) return;
+    const inscripciones = await r.json();
+
+    // Sumar créditos de materias activas en periodos semestrales del mismo año
+    let creditosActuales = 0;
+    inscripciones
+      .filter((i) => {
+        const pDesc = (i.periodo || "").toLowerCase();
+        return (pDesc.includes("enero") || pDesc.includes("agosto")) && i.estatus === "Cursando";
+      })
+      .forEach((i) => {
+        creditosActuales += parseFloat(i.creditos_totales || 0);
+      });
+
+    // Créditos de la materia nueva (desde todasMaterias)
+    const matNueva = todasMaterias.find((m) => m.clave_materia === materiaSel?.clave_materia);
+    const creditosNuevos = parseFloat(matNueva?.creditos_totales || 0);
+    const total = creditosActuales + creditosNuevos;
+    const pct = Math.min(100, (total / 36) * 100);
+
+    let color = "#3b82f6"; // azul normal
+    let aviso = "";
+    if (total > 36) {
+      color = "#ef4444"; // rojo — excede
+      aviso = "⚠️ Excede el máximo";
+    } else if (total >= 30) {
+      color = "#f59e0b"; // amarillo — cerca del límite
+      aviso = "Cerca del límite";
+    } else if (creditosActuales === 0 && creditosNuevos === 0) {
+      aviso = "";
+    }
+
+    document.getElementById("creditosTexto").textContent =
+      `${total} / 36 créditos (actuales: ${creditosActuales} + nueva: ${creditosNuevos})`;
+    document.getElementById("creditosBarra").style.width = `${pct}%`;
+    document.getElementById("creditosBarra").style.background = color;
+    document.getElementById("creditosAviso").textContent = aviso;
+    document.getElementById("creditosAviso").style.color = color;
+  } catch {
+    // silencioso si falla
+  }
 }
 
 function actualizarContadorAlumnos() {
@@ -546,11 +622,12 @@ async function confirmarInscripcion() {
     const data = await r.json();
     if (r.ok) {
       const ok = data.insertados ?? alumnosSel.size;
-      const err = data.errores?.length ?? 0;
-      showToast(
-        `✅ ${ok} alumno${ok !== 1 ? "s" : ""} inscrito${ok !== 1 ? "s" : ""}${err > 0 ? ` (${err} omitidos)` : ""}`,
-        "success",
-      );
+      const rechazados = data.rechazados || [];
+      let msg = `✅ ${ok} alumno${ok !== 1 ? "s" : ""} inscrito${ok !== 1 ? "s" : ""}`;
+      if (rechazados.length > 0) {
+        msg += ` — ⚠️ ${rechazados.length} omitido${rechazados.length !== 1 ? "s" : ""} por exceder créditos`;
+      }
+      showToast(msg, rechazados.length > 0 ? "info" : "success");
       // Reset wizard
       resetWizard();
       await cargarInscripciones();
