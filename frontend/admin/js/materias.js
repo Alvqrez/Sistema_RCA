@@ -17,7 +17,7 @@ const tabla = document.getElementById("tablaMaterias");
 async function cargarCarrerasCatalogo() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${API_URL}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras?soloAceptadas=1`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     carrerasDisponibles = await r.json();

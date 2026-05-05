@@ -6,7 +6,7 @@ async function cargarCarrerasEnSelect(selectId) {
   if (!select) return;
 
   try {
-    const response = await fetch(`${API_URL}/api/carreras`, {
+    const response = await fetch(`${API_URL}/api/carreras?soloAceptadas=1`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

@@ -126,7 +126,7 @@ function renderTabla(datos, rol) {
 async function cargarCarrerasSelect() {
   const token = localStorage.getItem("token");
   try {
-    const r = await fetch(`${API_URL}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras?soloAceptadas=1`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const carreras = await r.json();

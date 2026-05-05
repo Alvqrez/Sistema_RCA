@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ─── Cargar catálogos ─────────────────────────────────────────────────────────
 async function cargarCarreras() {
   try {
-    const res = await fetch(`${API_URL}/api/carreras`, {
+    const res = await fetch(`${API_URL}/api/carreras?soloAceptadas=1`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (res.ok) todasCarreras = await res.json();

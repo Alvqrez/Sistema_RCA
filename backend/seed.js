@@ -51,8 +51,8 @@ async function seed() {
       `INSERT IGNORE INTO administrador
                (rfc,nombre,apellido_paterno,apellido_materno,
                 correo_institucional,correo_personal,tel_celular,activo)
-             VALUES (?,'Admin','Sistema','TecNM',
-                    'admin@itver.edu.mx','admin.sistema@gmail.com','2291000001',1)`,
+             VALUES (?,'Leonardo','Álvarez','Díaz',
+                    'lealvarez@itver.edu.mx','leonardo.alvarez@gmail.com','2291000001',1)`,
       [rfcAdmin],
     );
     await q(
@@ -870,6 +870,109 @@ async function seed() {
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO tipo_actividad (id_tipo,nombre) VALUES
                (1,'Examen'),(2,'Tarea'),(3,'Práctica'),(4,'Proyecto'),(5,'Participación')`);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 11b. ACTIVIDADES PREDEFINIDAS (materia_actividad) — catálogo admin
+    //      Estas aparecen en actividadesAdmin.html
+    // ══════════════════════════════════════════════════════════════════════
+    const actPred = [
+      ["FBD001", 1, "Examen U1: Modelo ER", 1],
+      ["FBD001", 1, "Tarea: Diagrama ER", 2],
+      ["FBD001", 1, "Práctica: Entidades y relaciones", 3],
+      ["FBD001", 2, "Examen U2: Modelo Relacional", 1],
+      ["FBD001", 2, "Tarea: Normalización", 2],
+      ["FBD001", 3, "Examen U3: SQL", 1],
+      ["FBD001", 3, "Práctica: Consultas SQL", 3],
+      ["FBD001", 3, "Proyecto Final BD", 4],
+      ["POO001", 4, "Examen U1: Clases y Objetos", 1],
+      ["POO001", 4, "Tarea: Diagrama UML", 2],
+      ["POO001", 4, "Práctica: Implementación de clases", 3],
+      ["POO001", 5, "Examen U2: Herencia", 1],
+      ["POO001", 5, "Práctica: Polimorfismo", 3],
+      ["POO001", 6, "Examen U3: Patrones", 1],
+      ["POO001", 6, "Proyecto: Patrón de diseño", 4],
+      ["ADS001", 7, "Examen U1: Requerimientos", 1],
+      ["ADS001", 7, "Tarea: Casos de uso", 2],
+      ["ADS001", 8, "Examen U2: Diseño", 1],
+      ["ADS001", 8, "Proyecto: Diseño del sistema", 4],
+      ["RED001", 9, "Examen U1: OSI y TCP/IP", 1],
+      ["RED001", 9, "Tarea: Modelos de red", 2],
+      ["RED001", 10, "Examen U2: Enrutamiento", 1],
+      ["RED001", 10, "Práctica: Config router", 3],
+      ["RED001", 11, "Examen U3: Transporte", 1],
+      ["RED001", 12, "Examen U4: Seguridad", 1],
+      ["RED001", 12, "Proyecto: Seguridad en red", 4],
+      ["APM001", 13, "Examen U1: Fundamentos ML", 1],
+      ["APM001", 13, "Tarea: Tipos de aprendizaje", 2],
+      ["APM001", 14, "Examen U2: Algoritmos", 1],
+      ["APM001", 14, "Práctica: Regresión lineal", 3],
+      ["APM001", 15, "Examen U3: Redes Neuronales", 1],
+      ["APM001", 15, "Proyecto: Modelo ML", 4],
+      ["VIS001", 16, "Examen U1: Procesamiento imágenes", 1],
+      ["VIS001", 16, "Práctica: Filtros", 3],
+      ["VIS001", 17, "Examen U2: Detección objetos", 1],
+      ["VIS001", 17, "Proyecto: Detector objetos", 4],
+      ["NLP001", 18, "Examen U1: Tokenización", 1],
+      ["NLP001", 18, "Tarea: Análisis léxico", 2],
+      ["NLP001", 19, "Examen U2: Modelos de lenguaje", 1],
+      ["NLP001", 19, "Práctica: LM básico", 3],
+      ["NLP001", 20, "Proyecto Final NLP", 4],
+      ["EST001", 21, "Examen U1: Probabilidad", 1],
+      ["EST001", 21, "Tarea: Ejercicios probabilidad", 2],
+      ["EST001", 22, "Examen U2: Distribuciones", 1],
+      ["EST001", 23, "Examen U3: Inferencia", 1],
+      ["EST001", 23, "Práctica: Prueba de hipótesis", 3],
+      ["EST001", 24, "Examen U4: Regresión", 1],
+      ["EST001", 24, "Proyecto: Análisis estadístico", 4],
+      ["ADM001", 25, "Examen U1: Teoría Administrativa", 1],
+      ["ADM001", 25, "Tarea: Escuelas administrativas", 2],
+      ["ADM001", 26, "Examen U2: Planeación", 1],
+      ["ADM001", 26, "Proyecto: Plan estratégico", 4],
+      ["ADM001", 27, "Examen U3: Control", 1],
+      ["FIN001", 28, "Examen U1: Fundamentos", 1],
+      ["FIN001", 28, "Tarea: Conceptos financieros", 2],
+      ["FIN001", 29, "Examen U2: Estados financieros", 1],
+      ["FIN001", 29, "Práctica: Análisis de estados", 3],
+      ["FIN001", 30, "Examen U3: Presupuestos", 1],
+      ["FIN001", 31, "Examen U4: Inversión", 1],
+      ["FIN001", 31, "Proyecto: Plan de inversión", 4],
+      ["MKT001", 32, "Examen U1: Investigación mercados", 1],
+      ["MKT001", 32, "Práctica: Encuesta mercado", 3],
+      ["MKT001", 33, "Examen U2: Estrategias", 1],
+      ["MKT001", 33, "Proyecto: Plan de marketing", 4],
+      ["LOG001", 34, "Examen U1: Inventarios", 1],
+      ["LOG001", 34, "Tarea: Sistemas de inventario", 2],
+      ["LOG001", 35, "Examen U2: Distribución", 1],
+      ["LOG001", 35, "Práctica: Rutas distribución", 3],
+      ["LOG001", 36, "Examen U3: Tecnologías", 1],
+      ["LOG001", 36, "Proyecto: Sistema logístico", 4],
+      ["MAT001", 37, "Examen U1: Álgebra Lineal", 1],
+      ["MAT001", 37, "Tarea: Matrices y vectores", 2],
+      ["MAT001", 38, "Examen U2: Cálculo Diferencial", 1],
+      ["MAT001", 38, "Práctica: Derivadas", 3],
+      ["MAT001", 39, "Examen U3: Cálculo Integral", 1],
+      ["MAT001", 39, "Tarea: Integrales", 2],
+      ["MAT001", 40, "Examen U4: Ec. Diferenciales", 1],
+      ["MAT001", 40, "Práctica: EDOs", 3],
+      ["MAT001", 41, "Examen U5: Cálculo Vectorial", 1],
+      ["MAT001", 41, "Proyecto Final MAT", 4],
+      ["ETI001", 42, "Examen U1: Fundamentos Éticos", 1],
+      ["ETI001", 42, "Ensayo: Dilema ético", 2],
+      ["ETI001", 43, "Examen U2: Ética Profesional", 1],
+      ["ETI001", 43, "Proyecto: Código de ética", 4],
+      ["ING001", 44, "Examen U1: Comprensión lectora", 1],
+      ["ING001", 44, "Tarea: Resumen texto técnico", 2],
+      ["ING001", 45, "Examen U2: Redacción técnica", 1],
+      ["ING001", 45, "Proyecto: Presentación técnica", 4],
+    ];
+    for (const [cm, iu, na, it] of actPred)
+      await q(
+        `INSERT IGNORE INTO materia_actividad (clave_materia,id_unidad,nombre_actividad,id_tipo) VALUES (?,?,?,?)`,
+        [cm, iu, na, it],
+      );
+    console.log(
+      `✓ Act.predef → ${actPred.length} actividades predefinidas para 15 materias`,
+    );
 
     // ══════════════════════════════════════════════════════════════════════
     // 12. ACTIVIDADES — solo para G1 (FBD001) y G10 (MAT001)

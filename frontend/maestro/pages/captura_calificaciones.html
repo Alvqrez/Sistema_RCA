@@ -721,14 +721,21 @@
         <!-- Pills de unidad -->
         <div class="unit-pills" id="unitPills" style="display: none"></div>
 
-        <!-- Hint config evaluación -->
-        <div class="hint-banner" id="hintConfigEval" style="display: none">
-          <iconify-icon
-            icon="lucide:info"
-            style="flex-shrink: 0"
-          ></iconify-icon>
-          Configura los rubros y ponderaciones de este grupo en
-          <a href="gruposMaestro.html">Configurar grupo →</a>
+        <!-- Notificación config evaluación -->
+        <div id="hintConfigEval" style="display:none;margin-bottom:12px;
+          background:var(--bg-secondary);border:1px solid var(--border);
+          border-left:4px solid var(--primary);border-radius:10px;
+          padding:12px 16px;display:none;align-items:flex-start;gap:12px">
+          <iconify-icon icon="lucide:info" style="color:var(--primary);font-size:1.1rem;flex-shrink:0;margin-top:2px"></iconify-icon>
+          <div style="flex:1;font-size:.86rem">
+            <strong>Sin rubros configurados</strong><br>
+            <span style="color:var(--text-muted)">Configura los rubros y ponderaciones de este grupo en Configurar grupo antes de registrar calificaciones.</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <a href="gruposMaestro.html" class="btn btn-sm btn-primary">Ir</a>
+            <button class="btn btn-sm btn-outline" onclick="olvidarHintConfig()" title="No volver a mostrar">Olvidar</button>
+            <button class="btn btn-sm btn-outline" onclick="document.getElementById('hintConfigEval').style.display='none'" title="Cerrar">Ok</button>
+          </div>
         </div>
 
         <!-- Banner unidad cerrada -->
@@ -2133,6 +2140,11 @@
         });
       }
 
+      function olvidarHintConfig() {
+        localStorage.setItem("hint_config_eval_olvidado", "1");
+        document.getElementById("hintConfigEval").style.display = "none";
+      }
+
       // ── Mostrar sección final cuando el grupo tiene unidades cerradas ──
       const _origCargarGrupo = window.cargarGrupo;
       window.cargarGrupo = async function () {
@@ -2148,6 +2160,31 @@
           document.getElementById("seccionFinal").style.display = "block";
           calcularVistaFinal();
         }
+        // Mostrar notificación de configurar grupo si no hay actividades
+        if (!localStorage.getItem("hint_config_eval_olvidado")) {
+          const tieneActs = estado.actividades && estado.actividades.length > 0;
+          const hint = document.getElementById("hintConfigEval");
+          if (!tieneActs && estado.grupoId) {
+            hint.style.display = "flex";
+          } else {
+            hint.style.display = "none";
+          }
+        }
+
+        // Si hay alumnos pero no actividades, mostrar la lista igual
+        if (estado.alumnos?.length && (!estado.actividades || !estado.actividades.length) && estado.grupoId) {
+          document.getElementById("ccEmpty").style.display = "none";
+          document.getElementById("ccLayout").style.display = "grid";
+          document.getElementById("statsStrip").style.display = "flex";
+          const list = document.getElementById("alumnoList");
+          list.innerHTML = estado.alumnos.map(a =>
+            `<div class="alumno-item" style="padding:10px 14px;cursor:default">
+              <div style="font-weight:600;font-size:.88rem">${a.nombre || ""} ${a.apellido_paterno || ""}</div>
+              <div style="font-size:.76rem;color:var(--text-muted)">${a.no_control}</div>
+            </div>`
+          ).join("");
+        }
+
         // Resetear estado de tabs al cambiar de grupo
         _finalesGuardadas = false;
         ["bonus", "mod"].forEach((t) => {

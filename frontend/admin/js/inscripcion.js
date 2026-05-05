@@ -122,7 +122,7 @@ async function cargarMaterias() {
 
 async function cargarCarreras() {
   try {
-    const r = await fetch(`${API_URL}/api/carreras`, {
+    const r = await fetch(`${API_URL}/api/carreras?soloAceptadas=1`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     todasCarreras = await r.json();

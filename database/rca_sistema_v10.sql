@@ -1,6 +1,6 @@
 -- ============================================================
 --  Sistema de Registro y Cálculo de Resultados Académicos
---  Esquema — versión 9
+--  Esquema — versión 10
 --  Instituto Tecnológico de Veracruz
 --
 --  CAMBIOS RESPECTO A v6 — CORRECCIONES 1NF / 2NF / 3NF
@@ -111,6 +111,10 @@ CREATE TABLE `carrera` (
   `modalidad`       ENUM('Presencial','A distancia','Mixta') NULL DEFAULT 'Presencial',
   `total_semestres` TINYINT UNSIGNED  NULL DEFAULT NULL,
   `total_creditos`  SMALLINT UNSIGNED NULL DEFAULT NULL,
+  `estatus`         ENUM('Pendiente','Aceptada','Rechazada') NOT NULL DEFAULT 'Pendiente',
+  `creado_por`      VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la creó',
+  `aprobado_por`    VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la aprobó',
+  `fecha_creacion`  DATETIME      NULL DEFAULT NOW(),
   PRIMARY KEY (`id_carrera`),
   UNIQUE INDEX `uq_Carrera_nombre` (`nombre_carrera`)
 ) ENGINE=InnoDB
