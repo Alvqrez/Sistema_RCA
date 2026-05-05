@@ -466,5 +466,46 @@
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/unidades.js"></script>
+    <!-- Modal: Advertencia editar unidades -->
+    <div class="modal-overlay" id="modalAdvertenciaUnidades">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2 style="display: flex; align-items: center; gap: 8px">
+            <iconify-icon
+              icon="lucide:alert-triangle"
+              style="color: var(--warning)"
+            ></iconify-icon>
+            Antes de continuar
+          </h2>
+        </div>
+        <div class="modal-body">
+          <p style="margin: 0">
+            Deberás crear las unidades <strong>en orden</strong> y de la misma
+            forma en la que aparecen en el
+            <strong>programa oficial de la materia</strong>.<br /><br />
+            <span style="font-size: 0.84rem; color: var(--text-muted)">
+              Si eliminas una unidad que ya tiene actividades o calificaciones
+              registradas, esos datos se perderán.
+            </span>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="
+              document
+                .getElementById('modalAdvertenciaUnidades')
+                .classList.remove('visible')
+            "
+          >
+            Cancelar
+          </button>
+          <button class="btn btn-primary" onclick="confirmarEditarUnidades()">
+            <iconify-icon icon="lucide:check"></iconify-icon>
+            Aceptar y continuar
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

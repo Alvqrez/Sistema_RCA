@@ -248,6 +248,153 @@ function renderizarFormulario(n, nombreMateria, existentes) {
   document.getElementById("estadoGuardado").textContent = "";
 }
 
+// ─── Formulario editable con agregar/eliminar unidades ────────────────────────
+let unidadesEditables = []; // array de nombres durante edición
+
+function renderizarFormularioEditable(nombreMateria, existentes) {
+  // Inicializar con los nombres actuales
+  unidadesEditables = existentes.map((u) => u.nombre_unidad || "");
+  if (unidadesEditables.length === 0) unidadesEditables.push("");
+
+  const card = document.getElementById("cardConfigUnidades");
+  const titulo = document.getElementById("tituloConfig");
+  const instrucciones = document.getElementById("instruccionesConfig");
+  const grid = document.getElementById("gridUnidades");
+
+  titulo.textContent = `Editar unidades — ${nombreMateria}`;
+  instrucciones.textContent =
+    "Agrega, elimina o renombra unidades. Ordénalas según el programa oficial.";
+
+  function rebuild() {
+    grid.innerHTML = "";
+
+    // Separador
+    const sep = document.createElement("div");
+    sep.style.cssText =
+      "font-size:.72rem;font-weight:700;text-transform:uppercase;" +
+      "letter-spacing:.06em;color:var(--text-muted);margin:4px 0 8px";
+    sep.textContent = "Nombres de las unidades";
+    grid.appendChild(sep);
+
+    unidadesEditables.forEach((nombre, i) => {
+      const row = document.createElement("div");
+      row.className = "unidad-row";
+      row.style.cssText = "display:flex;gap:8px;align-items:center";
+      row.innerHTML = `
+        <div class="unidad-numero">${i + 1}</div>
+        <input type="text" class="unidad-input" style="flex:1"
+          value="${escHtml(nombre)}"
+          placeholder="Ej. Unidad ${i + 1}: Introducción al tema"
+          maxlength="100"
+          oninput="unidadesEditables[${i}]=this.value" />
+        ${
+          unidadesEditables.length > 1
+            ? `<button type="button" class="btn btn-sm btn-danger-outline"
+               onclick="eliminarUnidadEditable(${i})" title="Eliminar unidad">
+               <iconify-icon icon="lucide:trash-2"></iconify-icon>
+             </button>`
+            : ""
+        }
+      `;
+      grid.appendChild(row);
+    });
+
+    // Botón agregar
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn btn-outline btn-sm";
+    addBtn.style.cssText =
+      "margin-top:10px;display:flex;align-items:center;gap:6px";
+    addBtn.innerHTML = `<iconify-icon icon="mdi:plus"></iconify-icon> Agregar unidad`;
+    addBtn.onclick = () => {
+      unidadesEditables.push("");
+      rebuild();
+    };
+    grid.appendChild(addBtn);
+
+    // Botón guardar
+    const saveRow = document.createElement("div");
+    saveRow.style.cssText = "margin-top:14px;display:flex;gap:8px";
+    saveRow.innerHTML = `
+      <button type="button" class="btn btn-primary" onclick="guardarUnidadesEditables()">
+        <iconify-icon icon="mdi:content-save-outline"></iconify-icon> Guardar unidades
+      </button>
+      <button type="button" class="btn btn-outline" onclick="cancelarEdicion()">Cancelar</button>
+    `;
+    grid.appendChild(saveRow);
+  }
+
+  rebuild();
+  card.style.display = "block";
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function eliminarUnidadEditable(idx) {
+  unidadesEditables.splice(idx, 1);
+  renderizarFormularioEditable(
+    materiaActual.nombre_materia,
+    unidadesEditables.map((n) => ({ nombre_unidad: n })),
+  );
+}
+
+function cancelarEdicion() {
+  document.getElementById("cardConfigUnidades").style.display = "none";
+  document.getElementById("estadoGuardado").textContent = "";
+}
+
+async function guardarUnidadesEditables() {
+  if (!materiaActual) return;
+  const nombres = unidadesEditables
+    .map((n) => n.trim())
+    .filter((n) => n.length > 0);
+  if (nombres.length === 0) {
+    showToast("Debes tener al menos una unidad", "error");
+    return;
+  }
+  if (nombres.some((n) => n.length === 0)) {
+    showToast("Todas las unidades deben tener nombre", "error");
+    return;
+  }
+
+  const { clave_materia } = materiaActual;
+  try {
+    const r = await fetch(
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          clave_materia,
+          unidades: nombres.map((n, i) => ({
+            nombre_unidad: n,
+            numero: i + 1,
+          })),
+          tipos_permitidos: tiposSeleccionados,
+        }),
+      },
+    );
+    if (r.ok) {
+      showToast("Unidades guardadas correctamente");
+      // Actualizar la materia con el nuevo número
+      await q(`UPDATE materia SET no_unidades=? WHERE clave_materia=?`, [
+        nombres.length,
+        clave_materia,
+      ]);
+      materiaActual.no_unidades = nombres.length;
+      await cargarUnidades(clave_materia);
+      document.getElementById("cardConfigUnidades").style.display = "none";
+    } else {
+      const d = await r.json();
+      showToast(d.error || "Error al guardar", "error");
+    }
+  } catch {
+    showToast("Error de conexión", "error");
+  }
+}
+
 // ─── Toggle chip ───────────────────────────────────────────────────────────────
 function toggleChip(btn) {
   btn.classList.toggle("activo");
@@ -478,13 +625,17 @@ function renderizarBloqueado(unidades, nombreMateria) {
 // ─── Editar unidades ──────────────────────────────────────────────────────────
 function editarUnidades() {
   if (!materiaActual) return;
+  // Mostrar advertencia antes de entrar al editor
+  document.getElementById("modalAdvertenciaUnidades").classList.add("visible");
+}
+
+function confirmarEditarUnidades() {
+  document
+    .getElementById("modalAdvertenciaUnidades")
+    .classList.remove("visible");
   const btnRow = document.getElementById("btnGuardar")?.closest("div");
   if (btnRow) btnRow.style.display = "";
-  renderizarFormulario(
-    materiaActual.no_unidades,
-    materiaActual.nombre_materia,
-    unidadesGuardadas,
-  );
+  renderizarFormularioEditable(materiaActual.nombre_materia, unidadesGuardadas);
 }
 
 // ─── Actividades de la materia (definidas por el Admin) ────────────────────────
