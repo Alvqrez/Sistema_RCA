@@ -400,8 +400,8 @@ Para reportar bugs o solicitar features, abre un [Issue](https://github.com/tu-u
 
 <div align="center">
 
-**Hecho con ❤️ por el equipo de desarrollo**
+**Hecho con muchas ideas y café por el equipo de desarrollo**
 
-Instituto Tecnológico de Veracruz — 2024
+Instituto Tecnológico de Veracruz — 2026
 
 </div>
