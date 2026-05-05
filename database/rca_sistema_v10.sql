@@ -125,7 +125,7 @@ CREATE TABLE `carrera` (
 
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `alumno` (
-  `no_control`           VARCHAR(15)   NOT NULL,
+  `no_control`           VARCHAR(8)   NOT NULL,
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
   `nombre`               VARCHAR(80)   NOT NULL,
   `apellido_paterno`     VARCHAR(50)   NOT NULL,
