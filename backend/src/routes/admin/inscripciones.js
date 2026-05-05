@@ -69,7 +69,9 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   `;
   db.query(sql, [req.params.id_grupo], (err, r) => {
     if (err)
-      return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
+      return res
+        .status(500)
+        .json({ error: "Error interno del servidor", detalle: err.message });
     res.json(r);
   });
 });
@@ -157,59 +159,63 @@ router.post("/", soloAdmin, (req, res) => {
 });
 
 // POST — inscripción masiva (varios alumnos a un grupo)
+// Acepta dos formatos:
+//   Formato A (wizard): { no_controls: [...], id_grupo, tipo_curso }
+//   Formato B (CSV):    { inscripciones: [{no_control, id_grupo, tipo_curso}] }
 router.post("/bulk", soloAdmin, (req, res) => {
-  const { no_controls, id_grupo, tipo_curso } = req.body;
-  if (!no_controls?.length || !id_grupo)
+  let registros = []; // [{no_control, id_grupo, tipo_curso}]
+
+  if (
+    Array.isArray(req.body.inscripciones) &&
+    req.body.inscripciones.length > 0
+  ) {
+    // Formato B
+    registros = req.body.inscripciones
+      .map((r) => ({
+        no_control: r.no_control,
+        id_grupo: parseInt(r.id_grupo),
+        tipo_curso: r.tipo_curso || "Ordinario",
+      }))
+      .filter((r) => r.no_control && r.id_grupo);
+  } else if (
+    Array.isArray(req.body.no_controls) &&
+    req.body.no_controls.length > 0 &&
+    req.body.id_grupo
+  ) {
+    // Formato A
+    registros = req.body.no_controls.map((nc) => ({
+      no_control: nc,
+      id_grupo: parseInt(req.body.id_grupo),
+      tipo_curso: req.body.tipo_curso || "Ordinario",
+    }));
+  }
+
+  if (!registros.length)
     return res
       .status(400)
       .json({ error: "No_controls y grupo son requeridos" });
 
-  // BUG 3 FIX: verificar capacidad antes de inserción masiva
-  const sqlCapacidad = `
-    SELECT g.limite_alumnos,
-           COUNT(i.no_control) AS inscritos_actuales
-    FROM grupo g
-    LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
-    WHERE g.id_grupo = ?
-    GROUP BY g.id_grupo, g.limite_alumnos
-  `;
-  db.query(sqlCapacidad, [id_grupo], (errCap, capRows) => {
-    if (errCap)
-      return res.status(500).json({ error: "Error interno del servidor" });
+  const fecha = new Date().toISOString().split("T")[0];
+  const vals = registros.map((r) => [
+    r.no_control,
+    r.id_grupo,
+    fecha,
+    "Cursando",
+    r.tipo_curso,
+  ]);
 
-    if (capRows.length > 0) {
-      const { limite_alumnos, inscritos_actuales } = capRows[0];
-      if (
-        limite_alumnos &&
-        inscritos_actuales + no_controls.length > limite_alumnos
-      ) {
-        const disponibles = Math.max(0, limite_alumnos - inscritos_actuales);
-        return res.status(400).json({
-          error: `Capacidad insuficiente. El grupo tiene espacio para ${disponibles} alumno(s) más (límite: ${limite_alumnos}).`,
+  db.query(
+    "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+    [vals],
+    (err, r) => {
+      if (err)
+        return res.status(500).json({
+          error: "Error interno del servidor",
+          detalle: err.message,
         });
-      }
-    }
-
-    const vals = no_controls.map((m) => [
-      m,
-      id_grupo,
-      new Date().toISOString().split("T")[0],
-      "Cursando",
-      tipo_curso || "Ordinario",
-    ]);
-    db.query(
-      "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
-      [vals],
-      (err, r) => {
-        if (err)
-          return res.status(500).json({
-            error: "Error interno del servidor",
-            detalle: err.message,
-          });
-        res.status(201).json({ success: true, insertados: r.affectedRows });
-      },
-    );
-  });
+      res.status(201).json({ success: true, insertados: r.affectedRows });
+    },
+  );
 });
 
 // PUT — cambiar estatus de inscripción

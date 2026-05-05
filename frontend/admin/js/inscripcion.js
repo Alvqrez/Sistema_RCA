@@ -530,12 +530,6 @@ async function confirmarInscripcion() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Inscribiendo…`;
 
-  const payload = [...alumnosSel].map((nc) => ({
-    no_control: nc,
-    id_grupo: grupoSel.id_grupo,
-    tipo_curso: tipo,
-  }));
-
   try {
     const r = await fetch(`${API_URL}/api/inscripciones/bulk`, {
       method: "POST",
@@ -543,11 +537,15 @@ async function confirmarInscripcion() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token()}`,
       },
-      body: JSON.stringify({ inscripciones: payload }),
+      body: JSON.stringify({
+        no_controls: [...alumnosSel],
+        id_grupo: grupoSel.id_grupo,
+        tipo_curso: tipo,
+      }),
     });
     const data = await r.json();
     if (r.ok) {
-      const ok = data.insertados ?? payload.length;
+      const ok = data.insertados ?? alumnosSel.size;
       const err = data.errores?.length ?? 0;
       showToast(
         `✅ ${ok} alumno${ok !== 1 ? "s" : ""} inscrito${ok !== 1 ? "s" : ""}${err > 0 ? ` (${err} omitidos)` : ""}`,
@@ -681,8 +679,10 @@ function abrirModalBaja(no_control, id_grupo) {
 }
 
 function eliminarInscripcion(no_control, id_grupo) {
-  const nombre = document.querySelector(`tr td code`)?.textContent || no_control;
-  document.getElementById("elimInscNombre").textContent = `${no_control} del grupo #${id_grupo}`;
+  const nombre =
+    document.querySelector(`tr td code`)?.textContent || no_control;
+  document.getElementById("elimInscNombre").textContent =
+    `${no_control} del grupo #${id_grupo}`;
   document.getElementById("modalEliminarInsc").classList.add("visible");
   document.getElementById("btnConfirmarEliminarInsc").onclick = async () => {
     cerrarModal("modalEliminarInsc");

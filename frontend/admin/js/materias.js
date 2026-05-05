@@ -4,6 +4,7 @@ let materiaEditando = null;
 let carrerasDisponibles = []; // catálogo completo de carreras
 let carrerasPendientes = []; // carreras a vincular al guardar (nuevas)
 let carrerasEliminar = []; // carreras a desvincular al guardar
+let todasMaterias = []; // caché para filtrado
 
 const form = document.getElementById("formMateria");
 const tabla = document.getElementById("tablaMaterias");
@@ -49,10 +50,50 @@ async function cargarMaterias() {
     window.location.href = "../../shared/pages/login.html";
     return;
   }
-  const materias = await response.json();
+  todasMaterias = await response.json();
+  // Poblar filtro de carreras
+  const filtroCarrera = document.getElementById("filtroCarreraMateria");
+  if (filtroCarrera) {
+    const carrerasEnUso = new Map();
+    todasMaterias.forEach((m) => {
+      (m.carreras || []).forEach((c) => {
+        if (!carrerasEnUso.has(c.id_carrera))
+          carrerasEnUso.set(c.id_carrera, c.nombre_carrera || c.id_carrera);
+      });
+    });
+    filtroCarrera.innerHTML = '<option value="">Todas las carreras</option>';
+    [...carrerasEnUso.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([id, nombre]) => {
+        filtroCarrera.innerHTML += `<option value="${id}">${id} — ${nombre}</option>`;
+      });
+  }
+  filtrarMaterias();
+}
+
+function filtrarMaterias() {
+  const q = (
+    document.getElementById("filtroNombreMateria")?.value || ""
+  ).toLowerCase();
+  const carrera = document.getElementById("filtroCarreraMateria")?.value || "";
+  let lista = todasMaterias;
+  if (q)
+    lista = lista.filter(
+      (m) =>
+        m.clave_materia.toLowerCase().includes(q) ||
+        m.nombre_materia.toLowerCase().includes(q),
+    );
+  if (carrera)
+    lista = lista.filter((m) =>
+      (m.carreras || []).some((c) => c.id_carrera === carrera),
+    );
+  renderTablaMaterias(lista);
+}
+
+function renderTablaMaterias(materias) {
   tabla.innerHTML = "";
   if (!materias.length) {
-    tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Sin materias registradas</td></tr>`;
+    tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Sin materias encontradas</td></tr>`;
     return;
   }
   const rol = localStorage.getItem("rol");
@@ -76,8 +117,8 @@ async function cargarMaterias() {
         <td>
           ${
             rol === "administrador"
-              ? `<button class="btn-editar" onclick="editarMateria('${m.clave_materia}')">Editar</button>
-               <button class="btn-eliminar" onclick="eliminarMateria('${m.clave_materia}')">Eliminar</button>`
+              ? `<button class="btn-icon" title="Editar" onclick="editarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
+               <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>`
               : "—"
           }
         </td>

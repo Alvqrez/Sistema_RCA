@@ -633,8 +633,7 @@ function confirmarEditarUnidades() {
   document
     .getElementById("modalAdvertenciaUnidades")
     .classList.remove("visible");
-  const btnRow = document.getElementById("btnGuardar")?.closest("div");
-  if (btnRow) btnRow.style.display = "";
+  // No mostramos btnRow (el formulario editable ya incluye su propio botón "Guardar unidades")
   renderizarFormularioEditable(materiaActual.nombre_materia, unidadesGuardadas);
 }
 

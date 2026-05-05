@@ -57,6 +57,49 @@
             </button>
           </div>
           <div class="card-body">
+            <!-- Filtros -->
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-bottom: 14px;
+                align-items: center;
+              "
+            >
+              <input
+                type="text"
+                id="filtroNombreMateria"
+                placeholder="🔍 Buscar por nombre o clave…"
+                oninput="filtrarMaterias()"
+                style="
+                  flex: 1;
+                  min-width: 200px;
+                  padding: 8px 12px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 0.875rem;
+                  background: var(--bg-app);
+                  color: var(--text-main);
+                  font-family: inherit;
+                "
+              />
+              <select
+                id="filtroCarreraMateria"
+                onchange="filtrarMaterias()"
+                style="
+                  padding: 8px 12px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 0.875rem;
+                  background: var(--bg-app);
+                  color: var(--text-main);
+                  font-family: inherit;
+                "
+              >
+                <option value="">Todas las carreras</option>
+              </select>
+            </div>
             <table>
               <thead>
                 <tr>
