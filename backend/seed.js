@@ -36,11 +36,11 @@ async function seed() {
     // 2. CARRERAS
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO carrera
-               (id_carrera,nombre_carrera,siglas,plan_estudios,modalidad,total_semestres,total_creditos)
+               (id_carrera,nombre_carrera,siglas,plan_estudios,modalidad,total_semestres,total_creditos,estatus)
              VALUES
-               ('ISC','Ingeniería en Sistemas Computacionales','ISC','ISIC-2010-224','Presencial',9,345),
-               ('IIA','Ingeniería en Inteligencia Artificial', 'IIA','IAIA-2022-310','Presencial',9,370),
-               ('IGE','Ingeniería en Gestión Empresarial',     'IGE','IIGE-2010-315','Presencial',9,330)`);
+               ('ISC','Ingeniería en Sistemas Computacionales','ISC','ISIC-2010-224','Presencial',9,345,'Aceptada'),
+               ('IIA','Ingeniería en Inteligencia Artificial', 'IIA','IAIA-2022-310','Presencial',9,370,'Aceptada'),
+               ('IGE','Ingeniería en Gestión Empresarial',     'IGE','IIGE-2010-315','Presencial',9,330,'Aceptada')`);
     console.log("✓ Carreras   → ISC, IIA, IGE");
 
     // ══════════════════════════════════════════════════════════════════════
