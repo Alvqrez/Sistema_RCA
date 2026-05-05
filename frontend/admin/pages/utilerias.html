@@ -65,6 +65,10 @@
         background: rgba(217, 119, 6, 0.12);
         color: #d97706;
       }
+      .util-icon-teal {
+        background: rgba(13, 148, 136, 0.12);
+        color: #0d9488;
+      }
       .util-card-title {
         font-size: 1rem;
         font-weight: 700;
@@ -140,6 +144,48 @@
       .backup-info strong {
         color: var(--text-main);
       }
+      .restore-zone {
+        border: 2px dashed var(--border);
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .restore-zone:hover,
+      .restore-zone.drag-over {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.04);
+      }
+      .restore-zone input[type="file"] {
+        display: none;
+      }
+      .restore-filename {
+        font-size: 0.8rem;
+        color: var(--primary);
+        margin-top: 6px;
+        font-weight: 600;
+      }
+      .restore-summary {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        line-height: 1.8;
+        background: var(--bg-app);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-top: 6px;
+        display: none;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -156,7 +202,7 @@
         </div>
 
         <div class="util-grid">
-          <!-- ── PERFIL DE USUARIO ────────────────────────────────── -->
+          <!-- ── PERFIL DE USUARIO ──────────────────────────────────── -->
           <div class="util-card">
             <div class="util-card-header">
               <div class="util-icon util-icon-blue">
@@ -169,7 +215,6 @@
                 </p>
               </div>
             </div>
-
             <div
               id="perfilInfo"
               style="
@@ -187,7 +232,6 @@
               Usuario: <code id="perfilUsername">—</code><br />
               Rol: <span id="perfilRol">—</span>
             </div>
-
             <div class="form-row">
               <label>Contraseña actual</label>
               <input
@@ -229,7 +273,7 @@
             </button>
           </div>
 
-          <!-- ── EXPORTACIONES CSV ───────────────────────────────── -->
+          <!-- ── EXPORTACIONES CSV ──────────────────────────────────── -->
           <div class="util-card">
             <div class="util-card-header">
               <div class="util-icon util-icon-green">
@@ -336,25 +380,25 @@
             </div>
           </div>
 
-          <!-- ── RESPALDO COMPLETO ───────────────────────────────── -->
+          <!-- ── RESPALDO: GENERAR ──────────────────────────────────── -->
           <div class="util-card">
             <div class="util-card-header">
               <div class="util-icon util-icon-purple">
                 <iconify-icon icon="lucide:database-backup"></iconify-icon>
               </div>
               <div>
-                <div class="util-card-title">Respaldo del sistema</div>
+                <div class="util-card-title">Generar respaldo</div>
                 <p class="util-card-desc">
-                  Genera y descarga una copia de seguridad completa
+                  Copia de seguridad completa del sistema
                 </p>
               </div>
             </div>
             <div class="backup-info">
-              El respaldo incluye:
+              Incluye:
               <strong
                 >alumnos, maestros, materias, grupos, inscripciones, unidades,
                 actividades, calificaciones y bonus</strong
-              >. Se descarga como archivo JSON con fecha y hora.
+              >. Descarga como JSON con fecha y hora.
             </div>
             <button
               class="btn btn-primary"
@@ -381,7 +425,87 @@
             </p>
           </div>
 
-          <!-- ── INFORMACIÓN DEL SISTEMA ────────────────────────── -->
+          <!-- ── RESPALDO: RESTAURAR ────────────────────────────────── -->
+          <div class="util-card">
+            <div class="util-card-header">
+              <div class="util-icon util-icon-teal">
+                <iconify-icon icon="lucide:upload-cloud"></iconify-icon>
+              </div>
+              <div>
+                <div class="util-card-title">Importar respaldo</div>
+                <p class="util-card-desc">
+                  Restaura datos desde un archivo JSON de respaldo
+                </p>
+              </div>
+            </div>
+            <div class="backup-info" style="color: var(--warning, #d97706)">
+              <iconify-icon
+                icon="lucide:triangle-alert"
+                style="vertical-align: middle; margin-right: 4px"
+              ></iconify-icon>
+              Solo importa registros <strong>nuevos</strong> (no sobreescribe
+              datos existentes). Usa el archivo generado por esta misma
+              herramienta.
+            </div>
+
+            <!-- Zona drag & drop -->
+            <div
+              class="restore-zone"
+              id="restoreZone"
+              onclick="document.getElementById('restoreFileInput').click()"
+              ondragover="
+                event.preventDefault();
+                this.classList.add('drag-over');
+              "
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleRestoreDrop(event)"
+            >
+              <iconify-icon
+                icon="lucide:file-json"
+                style="font-size: 2rem; color: var(--text-muted)"
+              ></iconify-icon>
+              <p
+                style="
+                  margin: 6px 0 0;
+                  font-size: 0.82rem;
+                  color: var(--text-muted);
+                "
+              >
+                Haz clic o arrastra un archivo <strong>.json</strong> de
+                respaldo
+              </p>
+              <div
+                class="restore-filename"
+                id="restoreFilename"
+                style="display: none"
+              ></div>
+              <input
+                type="file"
+                id="restoreFileInput"
+                accept=".json"
+                onchange="handleRestoreFile(this.files[0])"
+              />
+            </div>
+
+            <div class="restore-summary" id="restoreSummary"></div>
+
+            <button
+              class="btn btn-primary"
+              id="btnRestaurar"
+              onclick="importarBackup()"
+              style="width: 100%"
+              disabled
+            >
+              <iconify-icon icon="lucide:upload-cloud"></iconify-icon> Restaurar
+              respaldo
+            </button>
+            <p class="msg-ok" id="restoreOk">
+              ✓ Respaldo importado correctamente
+            </p>
+            <p class="msg-err" id="restoreErr"></p>
+          </div>
+
+          <!-- ── INFORMACIÓN DEL SISTEMA ────────────────────────────── -->
           <div class="util-card">
             <div class="util-card-header">
               <div class="util-icon util-icon-amber">
@@ -457,8 +581,9 @@
             </div>
           </div>
         </div>
+        <!-- /util-grid -->
 
-        <!-- ── ADMINISTRADORES ───────────────────────────────────────── -->
+        <!-- ── ADMINISTRADORES ─────────────────────────────────────────── -->
         <div class="card" style="margin-top: 24px">
           <div
             class="card-title"
@@ -468,13 +593,13 @@
               justify-content: space-between;
             "
           >
-            <span
-              ><iconify-icon
+            <span>
+              <iconify-icon
                 icon="lucide:shield-check"
                 style="vertical-align: middle; margin-right: 6px"
-              ></iconify-icon
-              >Administradores del sistema</span
-            >
+              ></iconify-icon>
+              Administradores del sistema
+            </span>
             <button class="btn btn-primary btn-sm" onclick="abrirModalAdmin()">
               <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo administrador
             </button>
@@ -486,13 +611,14 @@
                   <tr>
                     <th>Nombre</th>
                     <th>Correo institucional</th>
+                    <th>Tel. celular</th>
                     <th style="text-align: center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tablaAdmins">
                   <tr>
                     <td
-                      colspan="3"
+                      colspan="4"
                       style="
                         text-align: center;
                         padding: 24px;
@@ -510,49 +636,103 @@
       </main>
     </div>
 
-    <!-- Modal nuevo / editar admin -->
+    <!-- ── Modal: Crear / Editar administrador ───────────────────────── -->
     <div id="modalAdmin" class="modal-overlay">
-      <div class="modal-panel" style="max-width: 460px">
+      <div class="modal-panel" style="max-width: 480px">
         <div class="modal-header">
           <h2 id="modalAdminTitulo" class="modal-title">Nuevo administrador</h2>
           <button class="modal-close" onclick="cerrarModalAdmin()">✕</button>
         </div>
         <div class="modal-body">
           <!-- Datos oficiales -->
-          <div id="seccionDatosOficiales">
-            <p style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px">Datos oficiales</p>
+          <p
+            style="
+              font-size: 0.72rem;
+              font-weight: 700;
+              color: var(--text-muted);
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin: 0 0 10px;
+            "
+          >
+            Datos oficiales
+          </p>
+          <div class="form-group">
+            <label>Nombre <span style="color: var(--danger)">*</span></label>
+            <input id="aNombre" type="text" placeholder="Juan" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
             <div class="form-group">
-              <label>Nombre <span style="color: var(--danger)">*</span></label>
-              <input id="aNombre" type="text" placeholder="Juan" />
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
-              <div class="form-group">
-                <label>Apellido paterno <span style="color: var(--danger)">*</span></label>
-                <input id="aApPat" type="text" placeholder="García" />
-              </div>
-              <div class="form-group">
-                <label>Apellido materno</label>
-                <input id="aApMat" type="text" placeholder="López" />
-              </div>
+              <label
+                >Apellido paterno
+                <span style="color: var(--danger)">*</span></label
+              >
+              <input id="aApPat" type="text" placeholder="García" />
             </div>
             <div class="form-group">
-              <label>Correo institucional <span style="color: var(--danger)">*</span></label>
-              <input id="aCorreo" type="email" placeholder="admin@itv.edu.mx" />
+              <label>Apellido materno</label>
+              <input id="aApMat" type="text" placeholder="López" />
             </div>
           </div>
+          <div class="form-group">
+            <label
+              >Correo institucional
+              <span style="color: var(--danger)">*</span></label
+            >
+            <input id="aCorreo" type="email" placeholder="admin@itv.edu.mx" />
+          </div>
+
           <!-- Datos personales -->
-          <p style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 10px;padding-top:14px;border-top:1px solid var(--border)">Datos personales</p>
+          <p
+            style="
+              font-size: 0.72rem;
+              font-weight: 700;
+              color: var(--text-muted);
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin: 14px 0 10px;
+              padding-top: 14px;
+              border-top: 1px solid var(--border);
+            "
+          >
+            Datos personales
+          </p>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
             <div class="form-group">
               <label>Correo personal</label>
-              <input id="aCorreoPersonal" type="email" placeholder="correo@gmail.com" />
+              <input
+                id="aCorreoPersonal"
+                type="email"
+                placeholder="correo@gmail.com"
+              />
             </div>
             <div class="form-group">
               <label>Tel. celular</label>
-              <input id="aTelCelular" type="tel" placeholder="10 dígitos" maxlength="15" />
+              <input
+                id="aTelCelular"
+                type="tel"
+                placeholder="10 dígitos"
+                maxlength="15"
+              />
             </div>
           </div>
+
+          <!-- Campos solo al CREAR (RFC + contraseña) -->
           <div id="camposNuevoAdmin">
+            <p
+              style="
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin: 14px 0 10px;
+                padding-top: 14px;
+                border-top: 1px solid var(--border);
+              "
+            >
+              Credenciales de acceso
+            </p>
             <div class="form-group">
               <label>RFC <span style="color: var(--danger)">*</span></label>
               <input
@@ -577,11 +757,13 @@
               />
             </div>
           </div>
+
           <div
             id="adminFormError"
             class="error-msg"
             style="display: none; margin-top: 8px"
           ></div>
+
           <div class="modal-footer" style="padding: 0; margin-top: 12px">
             <button class="btn btn-outline" onclick="cerrarModalAdmin()">
               Cancelar
@@ -599,13 +781,59 @@
       </div>
     </div>
 
-    <div id="toast-container"></div>
+    <!-- ── Modal: Desactivar administrador ──────────────────────────── -->
+    <div class="modal-overlay" id="modalElimAdmin">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2 style="display: flex; align-items: center; gap: 8px">
+            <iconify-icon icon="mdi:shield-off-outline"></iconify-icon>
+            Desactivar administrador
+          </h2>
+          <button
+            class="modal-close"
+            onclick="
+              document
+                .getElementById('modalElimAdmin')
+                .classList.remove('visible')
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin: 0">
+            ¿Desactivar a <strong id="elimAdminNombre"></strong>?<br />
+            <span style="font-size: 0.84rem; color: var(--text-muted)">
+              Su cuenta quedará inactiva pero el registro se conserva.
+            </span>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="
+              document
+                .getElementById('modalElimAdmin')
+                .classList.remove('visible')
+            "
+          >
+            Cancelar
+          </button>
+          <button class="btn btn-danger" id="btnConfirmarElimAdmin">
+            <iconify-icon icon="mdi:shield-off-outline"></iconify-icon>
+            Desactivar
+          </button>
+        </div>
+      </div>
+    </div>
 
+    <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
+
     <script>
       const tk = () => localStorage.getItem("token");
 
-      // ── Toast ─────────────────────────────────────────────────────
+      // ── Toast ────────────────────────────────────────────────────────
       function toast(msg, tipo = "success") {
         const c = document.getElementById("toast-container");
         if (!c) return;
@@ -621,20 +849,29 @@
         setTimeout(() => t.remove(), 3200);
       }
 
-      // ── Cargar info del perfil ────────────────────────────────────
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      // ── Inicialización ────────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
         soloPermitido("administrador");
         cargarAdmins();
+
         const nombre = localStorage.getItem("nombre") || "—";
         const rol = localStorage.getItem("rol") || "—";
-        // Decode username from token
         let username = "—";
         try {
           const payload = JSON.parse(atob(tk().split(".")[1]));
           username = payload.username || "—";
           document.getElementById("infoSesion").textContent =
             `${username} · ${new Date().toLocaleDateString("es-MX")}`;
-        } catch (_) {}
+        } catch {}
         document.getElementById("perfilNombre").textContent = nombre;
         document.getElementById("perfilUsername").textContent = username;
         document.getElementById("perfilRol").textContent =
@@ -643,9 +880,33 @@
             maestro: "Docente",
             alumno: "Alumno",
           }[rol] || rol;
+
+        // Confirmar eliminación de admin
+        document.getElementById("btnConfirmarElimAdmin").onclick = async () => {
+          if (!_elimAdminCtx) return;
+          document.getElementById("modalElimAdmin").classList.remove("visible");
+          try {
+            const r = await fetch(
+              `${API_URL}/api/admin/administradores/${_elimAdminCtx.id}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${tk()}` },
+              },
+            );
+            const data = await r.json();
+            if (!r.ok) {
+              toast(data.error || "Error al desactivar", "error");
+              return;
+            }
+            toast("Administrador desactivado", "success");
+            await cargarAdmins();
+          } catch {
+            toast("Error de conexión", "error");
+          }
+        };
       });
 
-      // ── Cambiar contraseña ────────────────────────────────────────
+      // ── Cambiar contraseña ─────────────────────────────────────────────
       async function cambiarPassword() {
         const actual = document.getElementById("passActual").value;
         const nueva = document.getElementById("passNueva").value;
@@ -670,7 +931,6 @@
           errEl.style.display = "block";
           return;
         }
-
         try {
           const r = await fetch(`${API_URL}/api/admin/mi-password`, {
             method: "PUT",
@@ -686,9 +946,9 @@
           const d = await r.json();
           if (d.success) {
             okEl.style.display = "block";
-            document.getElementById("passActual").value = "";
-            document.getElementById("passNueva").value = "";
-            document.getElementById("passConfirm").value = "";
+            ["passActual", "passNueva", "passConfirm"].forEach(
+              (id) => (document.getElementById(id).value = ""),
+            );
             toast("Contraseña actualizada");
           } else {
             errEl.textContent = d.error || "Error al actualizar.";
@@ -700,7 +960,8 @@
         }
       }
 
-      // ── Exportar CSV por módulo ───────────────────────────────────
+      // ── Exportar CSV ───────────────────────────────────────────────────
+      // Las columnas coinciden exactamente con los campos devueltos por cada endpoint
       const csvEndpoints = {
         alumnos: {
           url: "/api/alumnos",
@@ -711,6 +972,14 @@
             "apellido_materno",
             "id_carrera",
             "correo_institucional",
+          ],
+          headers: [
+            "No. Control",
+            "Nombre",
+            "Ap. Paterno",
+            "Ap. Materno",
+            "Carrera",
+            "Correo Institucional",
           ],
         },
         maestros: {
@@ -724,6 +993,15 @@
             "departamento",
             "estatus",
           ],
+          headers: [
+            "RFC",
+            "Nombre",
+            "Ap. Paterno",
+            "Ap. Materno",
+            "Correo Institucional",
+            "Departamento",
+            "Estatus",
+          ],
         },
         materias: {
           url: "/api/materias",
@@ -734,6 +1012,14 @@
             "horas_teoricas",
             "horas_practicas",
             "no_unidades",
+          ],
+          headers: [
+            "Clave",
+            "Nombre",
+            "Créditos",
+            "Hrs. Teoría",
+            "Hrs. Práctica",
+            "No. Unidades",
           ],
         },
         grupos: {
@@ -750,6 +1036,18 @@
             "aula",
             "estatus",
           ],
+          headers: [
+            "ID Grupo",
+            "Clave Materia",
+            "Materia",
+            "RFC Maestro",
+            "Maestro",
+            "Periodo",
+            "Límite",
+            "Horario",
+            "Aula",
+            "Estatus",
+          ],
         },
         inscripciones: {
           url: "/api/inscripciones",
@@ -762,6 +1060,16 @@
             "tipo_curso",
             "estatus",
             "fecha_inscripcion",
+          ],
+          headers: [
+            "No. Control",
+            "Grupo",
+            "Alumno",
+            "Materia",
+            "Periodo",
+            "Tipo",
+            "Estatus",
+            "Fecha Inscripción",
           ],
         },
         calificaciones: {
@@ -776,6 +1084,16 @@
             "calificacion_unidad_final",
             "estatus_unidad",
           ],
+          headers: [
+            "No. Control",
+            "Alumno",
+            "ID Unidad",
+            "Unidad",
+            "Grupo",
+            "Promedio Pond.",
+            "Cal. Final Unidad",
+            "Estatus",
+          ],
         },
       };
 
@@ -785,12 +1103,17 @@
           const r = await fetch(`${API_URL}${cfg.url}`, {
             headers: { Authorization: `Bearer ${tk()}` },
           });
+          if (!r.ok) {
+            toast(`Error al obtener ${modulo}`, "error");
+            return;
+          }
           const datos = await r.json();
-          if (!datos.length) {
+          if (!Array.isArray(datos) || !datos.length) {
             toast(`Sin datos en ${modulo}`, "info");
             return;
           }
-          const rows = [cfg.cols.join(",")];
+          // Encabezado legible + filas de datos
+          const rows = [cfg.headers.join(",")];
           datos.forEach((d) =>
             rows.push(
               cfg.cols
@@ -798,7 +1121,8 @@
                 .join(","),
             ),
           );
-          const blob = new Blob([rows.join("\n")], {
+          const bom = "\uFEFF"; // BOM para Excel en español
+          const blob = new Blob([bom + rows.join("\n")], {
             type: "text/csv;charset=utf-8;",
           });
           const a = document.createElement("a");
@@ -811,7 +1135,7 @@
         }
       }
 
-      // ── Respaldo JSON completo ────────────────────────────────────
+      // ── Respaldo: Generar y descargar ─────────────────────────────────
       async function descargarBackup() {
         const btn = document.getElementById("btnBackup");
         const okEl = document.getElementById("backupOk");
@@ -819,7 +1143,6 @@
         okEl.style.display = errEl.style.display = "none";
         btn.disabled = true;
         btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Generando…`;
-
         try {
           const r = await fetch(`${API_URL}/api/admin/backup`, {
             headers: { Authorization: `Bearer ${tk()}` },
@@ -843,7 +1166,121 @@
         }
       }
 
-      // ── ADMINISTRADORES ────────────────────────────────────────────
+      // ── Respaldo: Importar ────────────────────────────────────────────
+      let _backupData = null;
+
+      function handleRestoreDrop(e) {
+        e.preventDefault();
+        document.getElementById("restoreZone").classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) handleRestoreFile(file);
+      }
+
+      function handleRestoreFile(file) {
+        if (!file || !file.name.endsWith(".json")) {
+          toast("Selecciona un archivo .json de respaldo", "error");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (parsed.sistema !== "RCA" || !parsed.datos) {
+              throw new Error("Formato inválido");
+            }
+            _backupData = parsed;
+            document.getElementById("restoreFilename").textContent = file.name;
+            document.getElementById("restoreFilename").style.display = "block";
+
+            // Mostrar resumen del contenido
+            const d = parsed.datos;
+            const sumEl = document.getElementById("restoreSummary");
+            const lineas = [
+              `📅 Fecha del respaldo: <strong>${new Date(parsed.fecha_backup).toLocaleString("es-MX")}</strong>`,
+              `👤 Alumnos: <strong>${(d.alumnos || []).length}</strong>`,
+              `🧑‍🏫 Maestros: <strong>${(d.maestros || []).length}</strong>`,
+              `📚 Materias: <strong>${(d.materias || []).length}</strong>`,
+              `🏫 Grupos: <strong>${(d.grupos || []).length}</strong>`,
+              `📋 Inscripciones: <strong>${(d.inscripciones || []).length}</strong>`,
+              `📊 Calificaciones (unidad): <strong>${(d.calificaciones_unidad || []).length}</strong>`,
+            ];
+            sumEl.innerHTML = lineas.join("<br/>");
+            sumEl.style.display = "block";
+            document.getElementById("btnRestaurar").disabled = false;
+            document.getElementById("restoreOk").style.display = "none";
+            document.getElementById("restoreErr").style.display = "none";
+          } catch {
+            toast(
+              "El archivo no es un respaldo válido del sistema RCA",
+              "error",
+            );
+            _backupData = null;
+            document.getElementById("btnRestaurar").disabled = true;
+            document.getElementById("restoreSummary").style.display = "none";
+            document.getElementById("restoreFilename").style.display = "none";
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      async function importarBackup() {
+        if (!_backupData) return;
+        const btn = document.getElementById("btnRestaurar");
+        const okEl = document.getElementById("restoreOk");
+        const errEl = document.getElementById("restoreErr");
+        okEl.style.display = errEl.style.display = "none";
+        btn.disabled = true;
+        btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Importando…`;
+
+        try {
+          const r = await fetch(`${API_URL}/api/admin/backup/restore`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tk()}`,
+            },
+            body: JSON.stringify(_backupData),
+          });
+          const data = await r.json();
+          if (!r.ok) {
+            errEl.textContent = data.error || "Error al importar el respaldo.";
+            errEl.style.display = "block";
+            toast("Error al importar respaldo", "error");
+            return;
+          }
+          // Mostrar resumen de lo importado
+          const s = data.resumen || {};
+          const total = Object.values(s).reduce(
+            (acc, v) => acc + (v.insertadas || 0),
+            0,
+          );
+          const omitidas = Object.values(s).reduce(
+            (acc, v) => acc + (v.omitidas || 0),
+            0,
+          );
+          const sumEl = document.getElementById("restoreSummary");
+          const lineas = Object.entries(s).map(
+            ([k, v]) =>
+              `${k}: <strong>${v.insertadas}</strong> nuevos, ${v.omitidas} omitidos`,
+          );
+          sumEl.innerHTML = `
+            <strong style="color:var(--success,#16a34a)">✓ Importación completada</strong><br/>
+            Total nuevos registros: <strong>${total}</strong> | Omitidos (ya existían): ${omitidas}<br/><br/>
+            ${lineas.join("<br/>")}
+          `;
+          okEl.style.display = "block";
+          toast(`Respaldo importado: ${total} registros nuevos`, "success");
+        } catch {
+          errEl.textContent = "Error de conexión con el servidor.";
+          errEl.style.display = "block";
+          toast("Error al importar respaldo", "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<iconify-icon icon="lucide:upload-cloud"></iconify-icon> Restaurar respaldo`;
+        }
+      }
+
+      // ── Administradores ───────────────────────────────────────────────
       let _editAdminId = null;
 
       async function cargarAdmins() {
@@ -851,44 +1288,48 @@
           const r = await fetch(`${API_URL}/api/admin/administradores`, {
             headers: { Authorization: `Bearer ${tk()}` },
           });
+          if (!r.ok) throw new Error();
           const lista = await r.json();
           const tbody = document.getElementById("tablaAdmins");
+
           if (!lista.length) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted)">Sin administradores registrados</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted)">Sin administradores registrados</td></tr>`;
             return;
           }
-          // Obtener id del admin actual para protegerlo
+
           let miId = null;
           try {
             miId = JSON.parse(atob(tk().split(".")[1])).id_referencia;
           } catch {}
+
           tbody.innerHTML = lista
             .map(
               (a) => `
             <tr>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
-                  <div class="avatar-initials" style="width:32px;height:32px;font-size:.8rem;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">
+                  <div style="width:32px;height:32px;font-size:.8rem;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">
                     ${esc((a.nombre[0] ?? "") + (a.apellido_paterno[0] ?? ""))}
                   </div>
                   <div>
                     <div style="font-weight:600">${esc(a.nombre)} ${esc(a.apellido_paterno)}</div>
                     ${a.apellido_materno ? `<div style="font-size:.75rem;color:var(--text-muted)">${esc(a.apellido_materno)}</div>` : ""}
+                    <div style="font-size:.72rem;color:var(--text-muted)">RFC: ${esc(a.rfc)}</div>
                   </div>
                 </div>
               </td>
               <td style="font-size:.85rem">${esc(a.correo_institucional)}</td>
+              <td style="font-size:.85rem">${esc(a.tel_celular || "—")}</td>
               <td style="text-align:center">
                 <div style="display:flex;gap:6px;justify-content:center">
-                  <button class="btn btn-sm btn-outline" onclick="editarAdmin('${a.rfc}')" title="Editar">
+                  <button class="btn btn-sm btn-outline" onclick="editarAdmin('${esc(a.rfc)}')" title="Editar">
                     <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
                   </button>
                   ${
                     String(a.rfc) !== String(miId)
-                      ? `
-                  <button class="btn btn-sm btn-danger-outline" onclick="eliminarAdmin('${a.rfc}','${esc(a.nombre)} ${esc(a.apellido_paterno)}')"  title="Desactivar">
-                    <iconify-icon icon="mdi:delete-outline"></iconify-icon>
-                  </button>`
+                      ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarAdmin('${esc(a.rfc)}','${esc(a.nombre)} ${esc(a.apellido_paterno)}')" title="Desactivar">
+                         <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+                       </button>`
                       : `<span style="font-size:.72rem;color:var(--text-muted);padding:4px 8px">(tú)</span>`
                   }
                 </div>
@@ -911,13 +1352,17 @@
         document.getElementById("camposNuevoAdmin").style.display = id
           ? "none"
           : "block";
-        // Campos oficiales: solo lectura al editar, editables al crear
-        ["aNombre","aApPat","aApMat","aCorreo"].forEach(fid => {
+
+        // Campos de datos oficiales: solo lectura al editar
+        ["aNombre", "aApPat", "aApMat", "aCorreo"].forEach((fid) => {
           const el = document.getElementById(fid);
-          if (el) { el.disabled = !!id; el.style.opacity = id ? "0.6" : "1"; }
+          if (el) {
+            el.disabled = !!id;
+            el.style.opacity = id ? "0.6" : "1";
+          }
         });
+
         if (id) {
-          // Buscar en tabla (simplificado: llamar a la API)
           fetch(`${API_URL}/api/admin/administradores`, {
             headers: { Authorization: `Bearer ${tk()}` },
           })
@@ -927,11 +1372,13 @@
               if (!a) return;
               document.getElementById("aNombre").value = a.nombre;
               document.getElementById("aApPat").value = a.apellido_paterno;
-              document.getElementById("aCorreoPersonal").value = a.correo_personal ?? "";
-              document.getElementById("aTelCelular").value = a.tel_celular ?? "";
               document.getElementById("aApMat").value =
                 a.apellido_materno ?? "";
               document.getElementById("aCorreo").value = a.correo_institucional;
+              document.getElementById("aCorreoPersonal").value =
+                a.correo_personal ?? "";
+              document.getElementById("aTelCelular").value =
+                a.tel_celular ?? "";
             });
         } else {
           [
@@ -943,8 +1390,8 @@
             "aTelCelular",
             "aRfc",
             "aPassword",
-          ].forEach((id) => {
-            const el = document.getElementById(id);
+          ].forEach((fid) => {
+            const el = document.getElementById(fid);
             if (el) el.value = "";
           });
         }
@@ -959,6 +1406,7 @@
       async function guardarAdmin() {
         const errEl = document.getElementById("adminFormError");
         errEl.style.display = "none";
+
         const nombre = document.getElementById("aNombre").value.trim();
         const apellido_paterno = document.getElementById("aApPat").value.trim();
         const apellido_materno =
@@ -966,6 +1414,10 @@
         const correo_institucional = document
           .getElementById("aCorreo")
           .value.trim();
+        const correo_personal =
+          document.getElementById("aCorreoPersonal").value.trim() || null;
+        const tel_celular =
+          document.getElementById("aTelCelular").value.trim() || null;
 
         if (!nombre || !apellido_paterno || !correo_institucional) {
           errEl.textContent = "Los campos marcados con * son obligatorios";
@@ -978,24 +1430,29 @@
 
         try {
           let url, method, body;
+
           if (_editAdminId) {
             url = `${API_URL}/api/admin/administradores/${_editAdminId}`;
             method = "PUT";
-            const correo_personal_edit = document.getElementById("aCorreoPersonal").value.trim() || null;
-            const tel_celular_edit = document.getElementById("aTelCelular").value.trim() || null;
             body = {
               nombre,
               apellido_paterno,
               apellido_materno,
               correo_institucional,
-              correo_personal: correo_personal_edit,
-              tel_celular: tel_celular_edit,
+              correo_personal,
+              tel_celular,
             };
           } else {
-            const username = document.getElementById("aRfc").value.trim();
+            const rfc = document.getElementById("aRfc").value.trim();
             const password = document.getElementById("aPassword").value;
-            if (!username || !password) {
+            if (!rfc || !password) {
               errEl.textContent = "RFC y contraseña son requeridos";
+              errEl.style.display = "block";
+              btn.disabled = false;
+              return;
+            }
+            if (rfc.length < 12 || rfc.length > 13) {
+              errEl.textContent = "El RFC debe tener entre 12 y 13 caracteres";
               errEl.style.display = "block";
               btn.disabled = false;
               return;
@@ -1009,10 +1466,8 @@
             }
             url = `${API_URL}/api/admin/administradores`;
             method = "POST";
-            const correo_personal = document.getElementById("aCorreoPersonal").value.trim() || null;
-            const tel_celular = document.getElementById("aTelCelular").value.trim() || null;
             body = {
-              rfc: username,
+              rfc,
               nombre,
               apellido_paterno,
               apellido_materno,
@@ -1022,6 +1477,7 @@
               password,
             };
           }
+
           const r = await fetch(url, {
             method,
             headers: {
@@ -1031,6 +1487,7 @@
             body: JSON.stringify(body),
           });
           const data = await r.json();
+
           if (!r.ok) {
             errEl.textContent = data.error || "Error al guardar";
             errEl.style.display = "block";
@@ -1060,68 +1517,12 @@
         document.getElementById("elimAdminNombre").textContent = nombre;
         document.getElementById("modalElimAdmin").classList.add("visible");
       }
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("btnConfirmarElimAdmin").onclick = async () => {
-          if (!_elimAdminCtx) return;
-          document.getElementById("modalElimAdmin").classList.remove("visible");
-          try {
-            const r = await fetch(`${API_URL}/api/admin/administradores/${_elimAdminCtx.id}`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${tk()}` },
-            });
-            const data = await r.json();
-            if (!r.ok) { toast(data.error || "Error al desactivar", "error"); return; }
-            toast("Administrador desactivado", "success");
-            await cargarAdmins();
-          } catch { toast("Error de conexión", "error"); }
-        };
-      });
 
-      function esc(s) {
-        return String(s ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      // Cerrar modal admin al click fuera
+      // Cerrar modal al hacer click fuera
       document.getElementById("modalAdmin").addEventListener("click", (e) => {
         if (e.target === document.getElementById("modalAdmin"))
           cerrarModalAdmin();
       });
-
-      // Spinner CSS
-      const s = document.createElement("style");
-      s.textContent = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
-      document.head.appendChild(s);
     </script>
-    <!-- Modal: Desactivar administrador -->
-    <div class="modal-overlay" id="modalElimAdmin">
-      <div class="modal-panel modal-sm">
-        <div class="modal-header">
-          <h2 style="display:flex;align-items:center;gap:8px">
-            <iconify-icon icon="mdi:shield-off-outline"></iconify-icon>
-            Desactivar administrador
-          </h2>
-          <button class="modal-close" onclick="document.getElementById('modalElimAdmin').classList.remove('visible')">✕</button>
-        </div>
-        <div class="modal-body">
-          <p style="margin:0">
-            ¿Desactivar a <strong id="elimAdminNombre"></strong>?<br>
-            <span style="font-size:.84rem;color:var(--text-muted)">Su cuenta quedará inactiva pero el registro se conserva.</span>
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="document.getElementById('modalElimAdmin').classList.remove('visible')">Cancelar</button>
-          <button class="btn btn-danger" id="btnConfirmarElimAdmin">
-            <iconify-icon icon="mdi:shield-off-outline"></iconify-icon>
-            Desactivar
-          </button>
-        </div>
-      </div>
-    </div>
-
   </body>
 </html>

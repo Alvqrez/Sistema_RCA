@@ -1,9 +1,9 @@
-// src/routes/admin.js
+// src/routes/admin/admin.js
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../../db");
-const { soloAdmin } = require("../../middleware/auth");
+const { soloAdmin, verificarToken } = require("../../middleware/auth");
 
 // GET — estadísticas generales del sistema (dashboard)
 router.get("/stats", soloAdmin, (req, res) => {
@@ -25,11 +25,9 @@ router.get("/stats", soloAdmin, (req, res) => {
       WHERE i.estatus = 'Cursando' AND cf.calificacion_oficial IS NULL
     `,
   };
-
   const keys = Object.keys(queries);
   const results = {};
   let done = 0;
-
   keys.forEach((key) => {
     db.query(queries[key], (err, rows) => {
       results[key] = err ? 0 : (rows[0]?.total ?? 0);
@@ -40,79 +38,61 @@ router.get("/stats", soloAdmin, (req, res) => {
 
 // GET — todos los usuarios del sistema
 router.get("/usuarios", soloAdmin, (req, res) => {
-  const query = `
-        SELECT
-            u.id_usuario,
-            u.username,
-            u.rol,
-            u.id_referencia,
-            u.activo,
-            u.fecha_creacion,
-            u.ultimo_acceso
-        FROM usuario u
-        ORDER BY u.rol, u.username
-    `;
-
-  db.query(query, (err, results) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(results);
-  });
+  db.query(
+    `SELECT id_usuario, username, rol, id_referencia, activo, fecha_creacion, ultimo_acceso
+     FROM usuario ORDER BY rol, username`,
+    (err, results) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(results);
+    },
+  );
 });
 
 // POST — crear usuario para cualquier rol
 router.post("/usuarios", soloAdmin, async (req, res) => {
   const { username, password, rol, id_referencia } = req.body;
-
-  if (!username || !password || !rol || !id_referencia) {
+  if (!username || !password || !rol || !id_referencia)
     return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
-
-  if (!["administrador", "maestro", "alumno"].includes(rol)) {
+  if (!["administrador", "maestro", "alumno"].includes(rol))
     return res.status(400).json({ error: "Rol inválido" });
-  }
-
   try {
     const hash = await bcrypt.hash(password, 10);
-
-    const query = `
-            INSERT INTO usuario (username, pwd, rol, id_referencia)
-            VALUES (?, ?, ?, ?)
-        `;
-
-    db.query(query, [username, hash, rol, id_referencia], (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({ error: "El username ya existe" });
+    db.query(
+      "INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, ?, ?)",
+      [username, hash, rol, id_referencia],
+      (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY")
+            return res.status(409).json({ error: "El username ya existe" });
+          return res.status(500).json({ error: "Error interno del servidor" });
         }
-        return res.status(500).json({ error: "Error interno del servidor" });
-      }
-      res.status(201).json({
-        success: true,
-        mensaje: "Usuario creado",
-        id_usuario: result.insertId,
-      });
-    });
-  } catch (err) {
+        res
+          .status(201)
+          .json({
+            success: true,
+            mensaje: "Usuario creado",
+            id_usuario: result.insertId,
+          });
+      },
+    );
+  } catch {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// PUT — activar o desactivar usuario
+// PUT — activar/desactivar usuario
 router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
   const { activo } = req.body;
-
-  if (activo === undefined) {
+  if (activo === undefined)
     return res.status(400).json({ error: "El campo activo es requerido" });
-  }
-
   db.query(
     "UPDATE usuario SET activo = ? WHERE id_usuario = ?",
     [activo ? 1 : 0, req.params.id],
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      if (result.affectedRows === 0)
+      if (!result.affectedRows)
         return res.status(404).json({ error: "Usuario no encontrado" });
       res.json({
         success: true,
@@ -122,43 +102,47 @@ router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
   );
 });
 
-// PUT — resetear contraseña
+// PUT — resetear contraseña de usuario por admin
 router.put("/usuarios/:id/password", soloAdmin, async (req, res) => {
   const { nuevaPassword } = req.body;
-
-  if (!nuevaPassword) {
+  if (!nuevaPassword)
     return res.status(400).json({ error: "La nueva contraseña es requerida" });
-  }
-
   try {
     const hash = await bcrypt.hash(nuevaPassword, 10);
-
     db.query(
       "UPDATE usuario SET pwd = ? WHERE id_usuario = ?",
       [hash, req.params.id],
       (err, result) => {
         if (err)
           return res.status(500).json({ error: "Error interno del servidor" });
-        if (result.affectedRows === 0)
+        if (!result.affectedRows)
           return res.status(404).json({ error: "Usuario no encontrado" });
         res.json({ success: true, mensaje: "Contraseña actualizada" });
       },
     );
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// GET — todos los administradores
+// ── ADMINISTRADORES ────────────────────────────────────────────────────────────
+
+// GET — todos los administradores activos
 router.get("/administradores", soloAdmin, (req, res) => {
-  db.query("SELECT * FROM administrador WHERE activo = 1", (err, results) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    res.json(results);
-  });
+  db.query(
+    `SELECT rfc, nombre, apellido_paterno, apellido_materno,
+            correo_institucional, correo_personal, tel_celular, activo
+     FROM administrador WHERE activo = 1`,
+    (err, results) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(results);
+    },
+  );
 });
 
-// POST — crear administrador + su usuario (RFC = PK y username automático)
+// POST — crear administrador + usuario (RFC = PK y username)
+// CORRECCIÓN: ahora guarda correo_personal y tel_celular correctamente
 router.post("/administradores", soloAdmin, async (req, res) => {
   const {
     rfc,
@@ -166,6 +150,8 @@ router.post("/administradores", soloAdmin, async (req, res) => {
     apellido_paterno,
     apellido_materno,
     correo_institucional,
+    correo_personal,
+    tel_celular,
     password,
   } = req.body;
 
@@ -175,73 +161,139 @@ router.post("/administradores", soloAdmin, async (req, res) => {
     !apellido_paterno ||
     !correo_institucional ||
     !password
-  ) {
-    return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
+  )
+    return res
+      .status(400)
+      .json({
+        error:
+          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, password)",
+      });
 
-  if (rfc.length < 12 || rfc.length > 13) {
+  if (rfc.length < 12 || rfc.length > 13)
     return res
       .status(400)
       .json({ error: "El RFC debe tener entre 12 y 13 caracteres" });
-  }
 
   try {
     const hash = await bcrypt.hash(password, 10);
     const rfcUpper = rfc.toUpperCase();
 
-    // Primero crea el administrador (rfc = PK)
     db.query(
-      `INSERT INTO administrador (rfc, nombre, apellido_paterno, apellido_materno, correo_institucional)
-             VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO administrador
+         (rfc, nombre, apellido_paterno, apellido_materno,
+          correo_institucional, correo_personal, tel_celular)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         rfcUpper,
         nombre,
         apellido_paterno,
         apellido_materno ?? null,
         correo_institucional,
+        correo_personal ?? null,
+        tel_celular ?? null,
       ],
       (err) => {
         if (err) {
-          if (err.code === "ER_DUP_ENTRY") {
+          if (err.code === "ER_DUP_ENTRY")
             return res
               .status(409)
               .json({ error: "Ya existe un administrador con ese RFC" });
-          }
           return res.status(500).json({ error: "Error interno del servidor" });
         }
-
-        // Luego crea su usuario (username = RFC, id_referencia = RFC)
         db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia)
-                     VALUES (?, ?, 'administrador', ?)`,
+          "INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'administrador', ?)",
           [rfcUpper, hash, rfcUpper],
           (err2) => {
             if (err2) {
-              if (err2.code === "ER_DUP_ENTRY") {
+              if (err2.code === "ER_DUP_ENTRY")
                 return res
                   .status(409)
                   .json({ error: "Ya existe un usuario con ese RFC" });
-              }
               return res
                 .status(500)
                 .json({ error: "Error interno del servidor" });
             }
-            res.status(201).json({
-              success: true,
-              mensaje: "Administrador creado",
-              rfc: rfcUpper,
-            });
+            res
+              .status(201)
+              .json({
+                success: true,
+                mensaje: "Administrador creado",
+                rfc: rfcUpper,
+              });
           },
         );
       },
     );
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
+// PUT — editar administrador (datos personales y de contacto)
+router.put("/administradores/:id", soloAdmin, (req, res) => {
+  const {
+    nombre,
+    apellido_paterno,
+    apellido_materno,
+    correo_institucional,
+    correo_personal,
+    tel_celular,
+  } = req.body;
+
+  if (!nombre || !apellido_paterno || !correo_institucional)
+    return res.status(400).json({ error: "Faltan campos requeridos" });
+
+  db.query(
+    `UPDATE administrador
+     SET nombre=?, apellido_paterno=?, apellido_materno=?,
+         correo_institucional=?, correo_personal=?, tel_celular=?
+     WHERE rfc=?`,
+    [
+      nombre,
+      apellido_paterno,
+      apellido_materno ?? null,
+      correo_institucional,
+      correo_personal ?? null,
+      tel_celular ?? null,
+      req.params.id,
+    ],
+    (err, r) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!r.affectedRows)
+        return res.status(404).json({ error: "Administrador no encontrado" });
+      res.json({ success: true, mensaje: "Administrador actualizado" });
+    },
+  );
+});
+
+// DELETE — desactivar administrador (soft delete)
+router.delete("/administradores/:id", soloAdmin, (req, res) => {
+  if (String(req.usuario.id_referencia) === String(req.params.id))
+    return res
+      .status(400)
+      .json({ error: "No puedes desactivar tu propia cuenta" });
+
+  db.query(
+    "UPDATE administrador SET activo=0 WHERE rfc=?",
+    [req.params.id],
+    (err, r) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!r.affectedRows)
+        return res.status(404).json({ error: "Administrador no encontrado" });
+      db.query(
+        "UPDATE usuario SET activo=0 WHERE id_referencia=? AND rol='administrador'",
+        [req.params.id],
+        () => res.json({ success: true, mensaje: "Administrador desactivado" }),
+      );
+    },
+  );
+});
+
+// ── RESPALDO ───────────────────────────────────────────────────────────────────
+
 // GET — exportar respaldo completo del sistema en JSON
-// Incluye: alumnos, maestros, materias, grupos, inscripciones, unidades, actividades
 router.get("/backup", soloAdmin, (req, res) => {
   const tablas = {
     alumnos:
@@ -260,6 +312,7 @@ router.get("/backup", soloAdmin, (req, res) => {
     bonus_unidad: "SELECT * FROM bonusunidad",
     bonus_final: "SELECT * FROM bonusfinal",
   };
+
   const keys = Object.keys(tablas);
   const resultado = {};
   let pendientes = keys.length;
@@ -284,20 +337,84 @@ router.get("/backup", soloAdmin, (req, res) => {
   });
 });
 
-// PUT — cambiar contraseña del usuario autenticado (perfil propio)
-router.put("/mi-password", async (req, res) => {
-  // Acepta cualquier rol autenticado
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer "))
-    return res.status(401).json({ error: "No autorizado" });
-  const jwt = require("jsonwebtoken");
-  let payload;
-  try {
-    payload = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
-  } catch {
-    return res.status(401).json({ error: "Token inválido" });
+// POST — importar / restaurar respaldo JSON
+// Usa INSERT IGNORE para no romper datos existentes con la misma PK
+router.post("/backup/restore", soloAdmin, (req, res) => {
+  const { datos, sistema } = req.body;
+
+  if (!datos || sistema !== "RCA")
+    return res
+      .status(400)
+      .json({ error: "El archivo no es un respaldo válido del sistema RCA" });
+
+  // Orden respetando dependencias de FK
+  const orden = [
+    { clave: "carreras", tabla: "carrera" },
+    { clave: "periodos", tabla: "periodo_escolar" },
+    { clave: "materias", tabla: "materia" },
+    { clave: "alumnos", tabla: "alumno" },
+    { clave: "maestros", tabla: "maestro" },
+    { clave: "grupos", tabla: "grupo" },
+    { clave: "inscripciones", tabla: "inscripcion" },
+    { clave: "unidades", tabla: "unidad" },
+    { clave: "actividades", tabla: "actividad" },
+    { clave: "calificaciones_unidad", tabla: "calificacion_unidad" },
+    { clave: "calificaciones_final", tabla: "calificacion_final" },
+    { clave: "bonus_unidad", tabla: "bonusunidad" },
+    { clave: "bonus_final", tabla: "bonusfinal" },
+  ];
+
+  const resumen = {};
+  let idx = 0;
+
+  function procesarSiguiente() {
+    if (idx >= orden.length) {
+      return res.json({
+        success: true,
+        mensaje: "Respaldo restaurado correctamente",
+        resumen,
+      });
+    }
+
+    const { clave, tabla } = orden[idx++];
+    const filas = datos[clave];
+
+    if (!filas || !Array.isArray(filas) || filas.length === 0) {
+      resumen[clave] = { insertadas: 0, omitidas: 0 };
+      return procesarSiguiente();
+    }
+
+    let insertadas = 0,
+      omitidas = 0,
+      pendientes = filas.length;
+
+    filas.forEach((fila) => {
+      const cols = Object.keys(fila);
+      const vals = cols.map((c) => fila[c]);
+      const colsStr = cols.map((c) => `\`${c}\``).join(", ");
+      const placeholders = cols.map(() => "?").join(", ");
+      const sql = `INSERT IGNORE INTO \`${tabla}\` (${colsStr}) VALUES (${placeholders})`;
+
+      db.query(sql, vals, (err, r) => {
+        if (err || !r.affectedRows) omitidas++;
+        else insertadas++;
+        if (--pendientes === 0) {
+          resumen[clave] = { insertadas, omitidas };
+          procesarSiguiente();
+        }
+      });
+    });
   }
+
+  procesarSiguiente();
+});
+
+// ── PERFIL PROPIO ──────────────────────────────────────────────────────────────
+
+// PUT — cambiar contraseña del usuario autenticado (cualquier rol)
+router.put("/mi-password", verificarToken, async (req, res) => {
   const { passwordActual, nuevaPassword } = req.body;
+
   if (!passwordActual || !nuevaPassword)
     return res.status(400).json({ error: "Faltan campos requeridos" });
   if (nuevaPassword.length < 6)
@@ -307,18 +424,19 @@ router.put("/mi-password", async (req, res) => {
 
   db.query(
     "SELECT id_usuario, pwd FROM usuario WHERE id_usuario = ?",
-    [payload.id_usuario],
+    [req.usuario.id_usuario],
     async (err, rows) => {
       if (err || !rows.length)
         return res.status(404).json({ error: "Usuario no encontrado" });
-      const bcrypt = require("bcrypt");
+
       const valida = await bcrypt.compare(passwordActual, rows[0].pwd);
       if (!valida)
         return res.status(401).json({ error: "Contraseña actual incorrecta" });
+
       const hash = await bcrypt.hash(nuevaPassword, 10);
       db.query(
         "UPDATE usuario SET pwd = ? WHERE id_usuario = ?",
-        [hash, payload.id_usuario],
+        [hash, req.usuario.id_usuario],
         (e) => {
           if (e) return res.status(500).json({ error: "Error interno" });
           res.json({
@@ -331,58 +449,5 @@ router.put("/mi-password", async (req, res) => {
   );
 });
 
+// IMPORTANTE: module.exports SIEMPRE al final para que todas las rutas queden registradas
 module.exports = router;
-
-// PUT — editar administrador
-router.put("/administradores/:id", soloAdmin, (req, res) => {
-  const { nombre, apellido_paterno, apellido_materno, correo_institucional, correo_personal, tel_celular } =
-    req.body;
-  if (!nombre || !apellido_paterno || !correo_institucional) {
-    return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
-  db.query(
-    "UPDATE administrador SET nombre=?, apellido_paterno=?, apellido_materno=?, correo_institucional=?, correo_personal=?, tel_celular=? WHERE rfc=?",
-    [
-      nombre,
-      apellido_paterno,
-      apellido_materno ?? null,
-      correo_institucional,
-      correo_personal ?? null,
-      tel_celular ?? null,
-      req.params.id,
-    ],
-    (err, r) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!r.affectedRows)
-        return res.status(404).json({ error: "No encontrado" });
-      res.json({ success: true, mensaje: "Administrador actualizado" });
-    },
-  );
-});
-
-// DELETE — desactivar administrador (soft delete)
-router.delete("/administradores/:id", soloAdmin, (req, res) => {
-  if (String(req.usuario.id_referencia) === String(req.params.id)) {
-    return res
-      .status(400)
-      .json({ error: "No puedes eliminar tu propia cuenta" });
-  }
-  db.query(
-    "UPDATE administrador SET activo=0 WHERE rfc=?",
-    [req.params.id],
-    (err, r) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!r.affectedRows)
-        return res.status(404).json({ error: "No encontrado" });
-      db.query(
-        "UPDATE usuario SET activo=0 WHERE id_referencia=? AND rol='administrador'",
-        [req.params.id],
-        () => {
-          res.json({ success: true, mensaje: "Administrador desactivado" });
-        },
-      );
-    },
-  );
-});
