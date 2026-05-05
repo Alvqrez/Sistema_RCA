@@ -101,7 +101,7 @@ app.post("/login", (req, res) => {
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
 
 // ADMIN
-app.use("/api/alumnos", require("./src/routes/admin/alumnos"));
+app.use("/api/alumnos", require("./src/routes/admin/alumnos")); //
 app.use("/api/maestros", require("./src/routes/admin/maestros"));
 app.use("/api/inscripciones", require("./src/routes/admin/inscripciones"));
 app.use("/api/admin", require("./src/routes/admin/admin"));

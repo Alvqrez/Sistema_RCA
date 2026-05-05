@@ -35,18 +35,6 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-//_________
-// GENERAR NÚMERO DE CONTROL (para frontend)
-router.get("/generar-no-control", soloAdmin, async (req, res) => {
-  try {
-    const no_control = await generarNumeroControl();
-    res.json({ no_control });
-  } catch (error) {
-    res.status(500).json({ error: "Error al generar número de control" });
-  }
-});
-//____________________
-
 
 // GET — un alumno por no_control
 router.get("/:no_control", verificarToken, (req, res) => {
@@ -65,33 +53,7 @@ router.get("/:no_control", verificarToken, (req, res) => {
   );
 });
 
-//________________________
-function generarNumeroControl() {
-  return new Promise((resolve, reject) => {
-    const year = new Date().getFullYear().toString().slice(-2); // "24"
-    const fijo = "02";
 
-    db.query(
-      "SELECT no_control FROM alumno WHERE no_control LIKE ? ORDER BY no_control DESC LIMIT 1",
-      [`${year}${fijo}%`],
-      (err, results) => {
-        if (err) return reject(err);
-
-        let consecutivo = "0001";
-
-        if (results.length > 0) {
-          const ultimo = results[0].no_control;
-          const numero = parseInt(ultimo.slice(4)) + 1;
-          consecutivo = numero.toString().padStart(4, "0");
-        }
-
-        const nuevo = `${year}${fijo}${consecutivo}`;
-        resolve(nuevo);
-      }
-    );
-  });
-}
-//___________________________
 
 // POST — registrar alumno (solo maestro)
 router.post("/", soloAdmin, async (req, res) => {
@@ -116,8 +78,8 @@ router.post("/", soloAdmin, async (req, res) => {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
-  const no_control = await generarNumeroControl();
-
+  const no_control = req.body.no_control;
+  
   // El username del alumno siempre es su número de control
   const usernameAlumno = no_control;
 

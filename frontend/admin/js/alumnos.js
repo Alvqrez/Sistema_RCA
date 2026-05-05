@@ -142,24 +142,7 @@ async function cargarCarrerasSelect() {
   }
 }
 
-//_____
-async function cargarNoControl() {
-  try {
-    const res = await fetch(`${API_URL}/api/alumnos/generar-no-control`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      }
-    });
 
-    const data = await res.json();
-
-    document.getElementById("f_no_control").value = data.no_control;
-
-  } catch (error) {
-    console.error("Error generando número de control", error);
-  }
-}
-//_______________
 
 // Modal: cursos inscritos del alumno
 async function abrirModalCursos(no_control) {
@@ -225,14 +208,12 @@ async function abrirModalNuevo() {
   no_controlEditando = null;
 
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
-  document.getElementById("f_no_control").disabled = false;
+ document.getElementById("f_no_control").disabled = true;
   document.getElementById("f_carrera").disabled = false;
   document.getElementById("grupoUsername").style.display = "";
   document.getElementById("grupoPassword").style.display = "";
 
   limpiarForm();
-
-  await cargarNoControl(); // <----------
 
   abrirModal("modalAlumno");
 }
