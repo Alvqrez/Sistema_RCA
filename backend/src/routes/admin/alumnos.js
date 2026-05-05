@@ -52,35 +52,64 @@ router.get("/:no_control", verificarToken, (req, res) => {
   );
 });
 
+//________________________
+async function generarNumeroControl() {
+  const year = new Date().getFullYear().toString().slice(-2); // "24"
+  const fijo = "02";
+  const prefijo = `${year}${fijo}`; // "2402"
+
+  return new Promise((resolve, reject) => {
+    db.query(
+      `SELECT no_control 
+       FROM alumno 
+       WHERE no_control LIKE ? 
+       ORDER BY no_control DESC 
+       LIMIT 1`,
+      [`${prefijo}%`],
+      (err, results) => {
+        if (err) return reject(err);
+
+        let consecutivo = 1;
+
+        if (results.length > 0) {
+          const ultimo = results[0].no_control;
+          const numero = parseInt(ultimo.slice(4)); // últimos 4 dígitos
+          consecutivo = numero + 1;
+        }
+
+        const consecutivoStr = String(consecutivo).padStart(4, "0");
+
+        resolve(`${prefijo}${consecutivoStr}`);
+      },
+    );
+  });
+}
+//___________________________
+
 // POST — registrar alumno (solo maestro)
 router.post("/", soloAdmin, async (req, res) => {
   const {
-    nombre,
-    apellido_paterno,
-    apellido_materno,
-    no_control,
-    id_carrera,
-    correo_institucional,
-    curp,
-    fecha_nacimiento,
-    genero,
-    tel_celular,
-    tel_casa,
-    direccion,
-    correo_personal,
-    username,
-    password,
-  } = req.body;
+  nombre,
+  apellido_paterno,
+  apellido_materno,
+  id_carrera,
+  correo_institucional,
+  curp,
+  fecha_nacimiento,
+  genero,
+  tel_celular,
+  tel_casa,
+  direccion,
+  correo_personal,
+  username,
+  password,
+} = req.body;
 
-  if (
-    !nombre ||
-    !no_control ||
-    !id_carrera ||
-    !correo_institucional ||
-    !password
-  ) {
+  if (!nombre || !id_carrera || !correo_institucional || !password){
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
+
+  const no_control = await generarNumeroControl();
 
   // El username del alumno siempre es su número de control
   const usernameAlumno = no_control;
