@@ -34,7 +34,6 @@
             <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo alumno
           </button>
         </div>
-<<<<<<< HEAD
         <div class="modal-body">
           <p class="form-section-title">Datos de acceso</p>
           <div class="form-grid-2">
@@ -62,95 +61,6 @@
                 readonly
                 placeholder="Se asigna automáticamente"
                 style="
-=======
-      </div>
-
-      <div class="stats-row">
-        <div class="stat-card">
-          <iconify-icon icon="lucide:users"></iconify-icon>
-          <div>
-            <p id="statTotal">—</p>
-            <span>Total alumnos</span>
-          </div>
-        </div>
-        <div class="stat-card stat-success">
-          <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-          <div>
-            <p id="statCarreras">—</p>
-            <span>Carreras distintas</span>
-          </div>
-        </div>
-        <div class="stat-card stat-purple">
-          <iconify-icon icon="lucide:filter"></iconify-icon>
-          <div>
-            <p id="statFiltrados">—</p>
-            <span>Mostrando</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-filter-bar">
-          <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o No. control…"
-            oninput="filtrar()" />
-          <select id="filtroCarrera" onchange="filtrar()">
-            <option value="">Todas las carreras</option>
-          </select>
-        </div>
-        <div style="overflow-x: auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Alumno</th>
-                <th>No. Control</th>
-                <th>Carrera</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th style="text-align: right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaAlumnos">
-              <tr>
-                <td colspan="7">
-                  <div class="empty-state">
-                    <iconify-icon icon="lucide:loader-2"></iconify-icon>
-                    <p>Cargando…</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- MODAL ALUMNO -->
-  <div id="modalAlumno" class="modal-overlay">
-    <div class="modal-panel">
-      <div class="modal-header">
-        <h2 id="modalTitulo">Nuevo alumno</h2>
-        <button class="modal-close" onclick="cerrarModal('modalAlumno')">
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="form-section-title">Datos de acceso</p>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label>No. de Control *</label>
-            <input type="text" id="f_no_control" placeholder="Ej: 21VE0001" maxlength="8" />
-          </div>
-          <div class="form-group">
-            <label>Carrera *</label>
-            <select id="f_carrera">
-              <option value="">— Selecciona —</option>
-            </select>
-          </div>
-          <div class="form-group" id="grupoUsername">
-            <label>Usuario (login)</label>
-            <input type="text" id="f_username" readonly placeholder="Se asigna automáticamente" style="
->>>>>>> b0feaba7fc098a7cc11f517ea977fdfc4164dfcd
                   background: var(--bg-app);
                   cursor: default;
                   color: var(--text-muted);

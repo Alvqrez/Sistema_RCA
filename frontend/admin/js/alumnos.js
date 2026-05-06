@@ -208,7 +208,7 @@ async function abrirModalNuevo() {
   no_controlEditando = null;
 
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
-  document.getElementById("f_no_control").disabled = true; // siempre generado automáticamente
+  document.getElementById("f_no_control").disabled = true; // siempre se generara automáticamente
   document.getElementById("f_carrera").disabled = false;
   document.getElementById("grupoUsername").style.display = "";
   document.getElementById("grupoPassword").style.display = "";

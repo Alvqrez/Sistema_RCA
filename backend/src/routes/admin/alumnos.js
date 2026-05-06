@@ -53,7 +53,6 @@ router.get("/:no_control", verificarToken, (req, res) => {
   );
 });
 
-<<<<<<< HEAD
 //________________________
 async function generarNumeroControl() {
   const year = new Date().getFullYear().toString().slice(-2); // "26"
@@ -81,9 +80,6 @@ async function generarNumeroControl() {
   });
 }
 //___________________________
-=======
-
->>>>>>> b0feaba7fc098a7cc11f517ea977fdfc4164dfcd
 
 // POST — registrar alumno (solo maestro)
 router.post("/", soloAdmin, async (req, res) => {
