@@ -554,6 +554,71 @@
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/grupos.js"></script>
 
+    <!-- Modal: Editar grupo -->
+    <div id="modalEditGrupo" class="modal-overlay" onclick="if(event.target===this)cerrarModalEditGrupo()">
+      <div class="modal-panel" style="max-width:440px">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <iconify-icon icon="lucide:pencil" style="vertical-align:middle;margin-right:6px"></iconify-icon>
+            Editar grupo — <span id="editGrupoId" style="color:var(--primary)"></span>
+          </h2>
+          <button class="modal-close" onclick="cerrarModalEditGrupo()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Límite de alumnos</label>
+            <input type="number" id="editLimite" min="1" max="100" placeholder="30" />
+          </div>
+          <div class="form-group">
+            <label>Aula</label>
+            <input type="text" id="editAula" placeholder="Ej: A-204" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>Horario</label>
+            <div style="margin-bottom:8px">
+              <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:6px">Días de clase:</div>
+              <div class="dias-grid" id="editDiasGrid">
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Lun" />Lun</label>
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Mar" />Mar</label>
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Mie" />Mie</label>
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Jue" />Jue</label>
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Vie" />Vie</label>
+                <label class="dia-chip" onclick="toggleDiaEdit(this)"><input type="checkbox" value="Sab" />Sab</label>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="fgroup">
+                <label>Hora inicio</label>
+                <input type="time" id="editHoraInicio" step="1800" onchange="actualizarEditHorarioPreview()" />
+              </div>
+              <div class="fgroup">
+                <label>Hora fin</label>
+                <input type="time" id="editHoraFin" step="1800" onchange="actualizarEditHorarioPreview()" />
+              </div>
+            </div>
+            <div class="horario-preview" id="editHorarioPreview" style="margin-top:6px">
+              <span style="color:var(--text-muted)">Selecciona días y horas para ver el horario</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Estatus</label>
+            <select id="editEstatus">
+              <option value="Activo">Activo</option>
+              <option value="Cerrado">Cerrado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div id="editGrupoError" class="error-msg" style="display:none;margin-top:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalEditGrupo()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEdicionGrupo()">
+            <iconify-icon icon="lucide:save"></iconify-icon> Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: alumnos inscritos en el grupo -->
     <div
       id="modalAlumnosGrupo"
@@ -604,5 +669,24 @@
           : "Contraer";
       }
     </script>
+
+    <!-- Modal confirmación eliminar grupo -->
+    <div id="modalElimGrupo" class="modal-overlay" onclick="if(event.target===this)document.getElementById('modalElimGrupo').classList.remove('active')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-header">
+          <h3>Eliminar grupo</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('modalElimGrupo').classList.remove('active')">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>¿Eliminar este grupo? Se perderán las inscripciones y actividades asociadas.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="document.getElementById('modalElimGrupo').classList.remove('active')">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarElimGrupo">Eliminar</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

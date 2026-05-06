@@ -164,7 +164,7 @@ function horariosSolapan(ini1, fin1, ini2, fin2) {
   return s1 < e2 && s2 < e1;
 }
 
-// POST — crear grupo con validación de unicidad y conflicto de aula
+// POST — crear grupo con validación de unicidad y conflicto de aula/maestro
 router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, rfc, id_periodo, limite_alumnos, horario, aula } =
     req.body;
@@ -175,21 +175,39 @@ router.post("/", soloAdmin, (req, res) => {
     });
   }
 
-  // Si hay aula Y horario, verificar conflicto de salón en ese periodo
-  if (aula && horario) {
-    const nuevoH = parsearHorario(horario);
+  const nuevoH = horario ? parsearHorario(horario) : null;
 
-    if (nuevoH) {
-      db.query(
-        `SELECT id_grupo, horario FROM grupo WHERE id_periodo = ? AND aula = ? AND horario IS NOT NULL`,
-        [id_periodo, aula],
-        (err, existentes) => {
-          if (err)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
+  // Obtener todos los grupos del mismo periodo para validar conflictos
+  db.query(
+    `SELECT id_grupo, rfc, aula, horario FROM grupo WHERE id_periodo = ? AND horario IS NOT NULL`,
+    [id_periodo],
+    (err, existentes) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
 
-          const conflicto = existentes.find((g) => {
+      if (nuevoH) {
+        // Conflicto de maestro: mismo maestro, días y horas solapadas
+        const conflictoMaestro = existentes.find((g) => {
+          if (g.rfc !== rfc) return false;
+          const exH = parsearHorario(g.horario);
+          if (!exH) return false;
+          return (
+            diasSolapan(nuevoH.dias, exH.dias) &&
+            horariosSolapan(nuevoH.inicio, nuevoH.fin, exH.inicio, exH.fin)
+          );
+        });
+
+        if (conflictoMaestro) {
+          return res.status(409).json({
+            conflict: true,
+            error: `El maestro ya tiene otro grupo en ese horario (Grupo #${conflictoMaestro.id_grupo}: ${conflictoMaestro.horario}). Los días y horas se solapan.`,
+          });
+        }
+
+        // Conflicto de aula: mismo salón, días y horas solapadas
+        if (aula) {
+          const conflictoAula = existentes.find((g) => {
+            if (g.aula !== aula) return false;
             const exH = parsearHorario(g.horario);
             if (!exH) return false;
             return (
@@ -198,38 +216,17 @@ router.post("/", soloAdmin, (req, res) => {
             );
           });
 
-          if (conflicto) {
+          if (conflictoAula) {
             return res.status(409).json({
               conflict: true,
-              error: `El aula "${aula}" ya está ocupada ese horario (Grupo #${conflicto.id_grupo}: ${conflicto.horario}). Elige otro salón u otro horario.`,
+              error: `El aula "${aula}" ya está ocupada ese horario (Grupo #${conflictoAula.id_grupo}: ${conflictoAula.horario}). Elige otro salón u otro horario.`,
             });
           }
+        }
+      }
 
-          // Sin conflicto → insertar
-          insertarGrupo(
-            res,
-            clave_materia,
-            rfc,
-            id_periodo,
-            limite_alumnos,
-            horario,
-            aula,
-          );
-        },
-      );
-      return; // esperar callback
-    }
-  }
-
-  // Sin aula o sin horario → insertar directamente
-  insertarGrupo(
-    res,
-    clave_materia,
-    rfc,
-    id_periodo,
-    limite_alumnos,
-    horario,
-    aula,
+      insertarGrupo(res, clave_materia, rfc, id_periodo, limite_alumnos, horario, aula);
+    },
   );
 });
 

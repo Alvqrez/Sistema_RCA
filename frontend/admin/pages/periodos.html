@@ -434,19 +434,44 @@
         });
       }
 
-      async function eliminarPeriodo(id) {
-        if (!confirm("¿Eliminar este periodo? Solo es posible si no tiene grupos asignados.")) return;
-        const r = await fetch(API_URL + "/api/periodos/" + id, {
-          method: "DELETE",
-          headers: { Authorization: "Bearer " + tk() }
-        });
-        const d = await r.json();
-        if (d.success) { showToast("Periodo eliminado"); cargarPeriodos(); }
-        else showToast(d.error || "Error al eliminar", "error");
+      let _elimPeriodoId = null;
+
+      function eliminarPeriodo(id) {
+        _elimPeriodoId = id;
+        document.getElementById("modalElimPeriodo").classList.add("active");
+        document.getElementById("btnConfirmarElimPeriodo").onclick = async () => {
+          document.getElementById("modalElimPeriodo").classList.remove("active");
+          const r = await fetch(API_URL + "/api/periodos/" + _elimPeriodoId, {
+            method: "DELETE",
+            headers: { Authorization: "Bearer " + tk() }
+          });
+          const d = await r.json();
+          if (d.success) { showToast("Periodo eliminado"); cargarPeriodos(); }
+          else showToast(d.error || "Error al eliminar", "error");
+        };
       }
 
       soloPermitido?.("administrador");
       cargarPeriodos();
     </script>
+
+    <!-- Modal confirmación eliminar periodo -->
+    <div id="modalElimPeriodo" class="modal-overlay" onclick="if(event.target===this)document.getElementById('modalElimPeriodo').classList.remove('active')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-header">
+          <h3>Eliminar periodo</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('modalElimPeriodo').classList.remove('active')">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>¿Eliminar este periodo? Solo es posible si no tiene grupos asignados.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="document.getElementById('modalElimPeriodo').classList.remove('active')">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarElimPeriodo">Eliminar</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

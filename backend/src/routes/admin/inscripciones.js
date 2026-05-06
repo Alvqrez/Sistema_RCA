@@ -391,7 +391,6 @@ router.post("/bulk", soloAdmin, (req, res) => {
           .map((r) => ({ no_control: r.reg.no_control, razon: r.razon }));
 
         if (!aprobados.length) {
-          // Determinar si todos fueron rechazados por verano o por créditos
           const todosVerano = rechazados.every((r) => r.razon?.includes("verano"));
           const errorMsg = todosVerano
             ? "Ningún alumno pudo inscribirse por límite de materias en periodo de verano (máximo 2 por verano)."
@@ -399,30 +398,99 @@ router.post("/bulk", soloAdmin, (req, res) => {
           return res.status(400).json({ error: errorMsg, rechazados });
         }
 
-        const fecha = new Date().toISOString().split("T")[0];
-        const vals = aprobados.map((r) => [
-          r.no_control,
-          r.id_grupo,
-          fecha,
-          "Cursando",
-          r.tipo_curso,
-        ]);
+        // Verificar capacidad máxima de cada grupo antes de insertar
+        const gruposAprobados = [...new Set(aprobados.map((r) => r.id_grupo))];
+        Promise.all(
+          gruposAprobados.map(
+            (idg) =>
+              new Promise((resolve, reject) =>
+                db.query(
+                  `SELECT g.limite_alumnos, COUNT(i.no_control) AS inscritos_actuales
+                   FROM grupo g
+                   LEFT JOIN inscripcion i ON i.id_grupo = g.id_grupo AND i.estatus != 'Baja'
+                   WHERE g.id_grupo = ?
+                   GROUP BY g.id_grupo, g.limite_alumnos`,
+                  [idg],
+                  (e, rows) => (e ? reject(e) : resolve({ idg, cap: rows[0] })),
+                ),
+              ),
+          ),
+        ).then((caps) => {
+          const capMap = {};
+          caps.forEach(({ idg, cap }) => (capMap[idg] = cap));
 
-        db.query(
-          "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
-          [vals],
-          (err, r) => {
-            if (err)
-              return res.status(500).json({
-                error: "Error interno del servidor",
-                detalle: err.message,
-              });
-            res.status(201).json({
-              success: true,
-              insertados: r.affectedRows,
-              rechazados,
+          // Filtrar aprobados que no excedan la capacidad del grupo
+          const aprobadosFinal = [];
+          const rechazadosCapacidad = [];
+
+          // Agrupar aprobados por grupo para contar cuántos se van a inscribir
+          const porGrupo = {};
+          aprobados.forEach((r) => {
+            if (!porGrupo[r.id_grupo]) porGrupo[r.id_grupo] = [];
+            porGrupo[r.id_grupo].push(r);
+          });
+
+          Object.entries(porGrupo).forEach(([idg, regs]) => {
+            const cap = capMap[parseInt(idg)];
+            const limite = cap?.limite_alumnos || 0;
+            const actuales = cap?.inscritos_actuales || 0;
+            if (limite && actuales >= limite) {
+              regs.forEach((r) =>
+                rechazadosCapacidad.push({
+                  no_control: r.no_control,
+                  razon: `El grupo #${idg} ya está lleno (${actuales}/${limite})`,
+                }),
+              );
+            } else if (limite && actuales + regs.length > limite) {
+              const espacios = limite - actuales;
+              regs.slice(0, espacios).forEach((r) => aprobadosFinal.push(r));
+              regs.slice(espacios).forEach((r) =>
+                rechazadosCapacidad.push({
+                  no_control: r.no_control,
+                  razon: `El grupo #${idg} no tiene suficiente espacio (${actuales}/${limite})`,
+                }),
+              );
+            } else {
+              regs.forEach((r) => aprobadosFinal.push(r));
+            }
+          });
+
+          const todosRechazados = [...rechazados, ...rechazadosCapacidad];
+
+          if (!aprobadosFinal.length) {
+            return res.status(400).json({
+              error: "Ningún alumno pudo inscribirse. Los grupos están llenos.",
+              rechazados: todosRechazados,
             });
-          },
+          }
+
+          const fecha = new Date().toISOString().split("T")[0];
+          const vals = aprobadosFinal.map((r) => [
+            r.no_control,
+            r.id_grupo,
+            fecha,
+            "Cursando",
+            r.tipo_curso,
+          ]);
+
+          db.query(
+            "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+            [vals],
+            (err, r) => {
+              if (err)
+                return res.status(500).json({
+                  error: "Error interno del servidor",
+                  detalle: err.message,
+                });
+              res.status(201).json({
+                success: true,
+                insertados: r.affectedRows,
+                rechazados: todosRechazados,
+              });
+            },
+          );
+        }).catch(() =>
+          res.status(500).json({ error: "Error interno del servidor" }),
         );
       });
     })

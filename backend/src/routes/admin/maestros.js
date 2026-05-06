@@ -40,6 +40,8 @@ router.post("/", soloAdmin, async (req, res) => {
     apellido_paterno,
     apellido_materno,
     curp,
+    fecha_nacimiento,
+    genero,
     correo_institucional,
     correo_personal,
     tel_celular,
@@ -70,16 +72,18 @@ router.post("/", soloAdmin, async (req, res) => {
     const rfcClean = rfc?.trim().toUpperCase() || null;
     db.query(
       `INSERT INTO maestro (rfc, nombre, apellido_paterno, apellido_materno,
-          curp, correo_institucional, correo_personal, tel_celular, tel_oficina,
+          curp, fecha_nacimiento, genero,
+          correo_institucional, correo_personal, tel_celular, tel_oficina,
           direccion, tipo_contrato, estatus, fecha_ingreso, grado_academico, especialidad, departamento)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         rfcClean,
         nombre,
         apellido_paterno,
         apellido_materno ?? null,
-        // curp puede ser null — el schema fue corregido a NULL DEFAULT NULL
         curp?.trim().toUpperCase() || null,
+        fecha_nacimiento ?? null,
+        genero ?? null,
         correo_institucional,
         correo_personal ?? null,
         tel_celular ?? null,
@@ -129,6 +133,8 @@ router.put("/:id", soloAdmin, (req, res) => {
     apellido_paterno,
     apellido_materno,
     curp,
+    fecha_nacimiento,
+    genero,
     correo_institucional,
     correo_personal,
     tel_celular,
@@ -149,6 +155,7 @@ router.put("/:id", soloAdmin, (req, res) => {
   db.query(
     `UPDATE maestro
      SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, curp = ?,
+         fecha_nacimiento = ?, genero = ?,
          correo_institucional = ?, correo_personal = ?, tel_celular = ?, tel_oficina = ?,
          direccion = ?, tipo_contrato = ?, estatus = ?, fecha_ingreso = ?,
          grado_academico = ?, especialidad = ?, departamento = ?
@@ -158,6 +165,8 @@ router.put("/:id", soloAdmin, (req, res) => {
       apellido_paterno,
       apellido_materno ?? null,
       curp ?? null,
+      fecha_nacimiento ?? null,
+      genero ?? null,
       correo_institucional,
       correo_personal ?? null,
       tel_celular ?? null,

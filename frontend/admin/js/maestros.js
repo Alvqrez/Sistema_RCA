@@ -2,6 +2,34 @@ let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
 
+// Genera correo institucional automáticamente: nombre.InicialPatInicialMat@veracruz.tecnm.mx
+function generarCorreoMaestro() {
+  const nombre = document.getElementById("f_nombre")?.value.trim() || "";
+  const apPat = document.getElementById("f_ap_pat")?.value.trim() || "";
+  const apMat = document.getElementById("f_ap_mat")?.value.trim() || "";
+
+  if (!nombre || !apPat) {
+    document.getElementById("f_correo").value = "";
+    return;
+  }
+
+  // Primera palabra del nombre, sin acentos, en minúsculas
+  const primerNombre = nombre.split(" ")[0]
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const inicialPat = apPat[0]
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const inicialMat = apMat
+    ? apMat[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    : "";
+
+  const correo = `${primerNombre}.${inicialPat}${inicialMat}@veracruz.tecnm.mx`;
+  document.getElementById("f_correo").value = correo;
+}
+
 function toast(msg, tipo = "success") {
   const c = document.getElementById("toast-container");
   if (!c) return;
@@ -181,11 +209,12 @@ function editarMaestro(ne) {
   // Rellenar campos — Tab Esencial
   document.getElementById("f_rfc").value = m.rfc ?? "";
   document.getElementById("f_rfc").disabled = true; // RFC no se puede cambiar al editar
-  document.getElementById("f_correo").value = m.correo_institucional ?? "";
   document.getElementById("f_nombre").value = m.nombre ?? "";
   document.getElementById("f_ap_pat").value = m.apellido_paterno ?? "";
   document.getElementById("f_ap_mat").value = m.apellido_materno ?? "";
   document.getElementById("f_estatus").value = m.estatus ?? "Activo";
+  // Generar correo automáticamente al editar
+  generarCorreoMaestro();
 
   // Tab Personal
   document.getElementById("f_curp").value = m.curp ?? "";
@@ -234,7 +263,7 @@ async function guardarMaestro() {
       return;
     }
     if (!correo) {
-      mostrarError("El correo institucional es obligatorio.", "esencial");
+      mostrarError("No se pudo generar el correo institucional. Verifica nombre y apellidos.", "esencial");
       return;
     }
     if (!pwd) {

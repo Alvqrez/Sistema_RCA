@@ -96,6 +96,40 @@ function toggleDia(chip) {
   }, 0);
 }
 
+// ── Equivalentes para el modal de edición ────────────────────────────────────
+function toggleDiaEdit(chip) {
+  setTimeout(() => {
+    const cb = chip.querySelector("input[type='checkbox']");
+    chip.classList.toggle("selected", cb.checked);
+    actualizarEditHorarioPreview();
+  }, 0);
+}
+
+function getEditDiasSeleccionados() {
+  return [
+    ...document.querySelectorAll("#editDiasGrid input[type='checkbox']:checked"),
+  ].map((cb) => cb.value);
+}
+
+function obtenerHorarioEdit() {
+  const dias = getEditDiasSeleccionados();
+  const inicio = document.getElementById("editHoraInicio").value;
+  const fin = document.getElementById("editHoraFin").value;
+  if (!dias.length || !inicio || !fin) return null;
+  return `${dias.join("-")} ${inicio}-${fin}`;
+}
+
+function actualizarEditHorarioPreview() {
+  const h = obtenerHorarioEdit();
+  const el = document.getElementById("editHorarioPreview");
+  if (!el) return;
+  if (h) {
+    el.innerHTML = `<iconify-icon icon="lucide:clock" style="vertical-align:middle;margin-right:4px"></iconify-icon><strong>${h}</strong>`;
+  } else {
+    el.innerHTML = `<span style="color:var(--text-muted)">Selecciona días y horas para ver el horario</span>`;
+  }
+}
+
 function getDiasSeleccionados() {
   return [
     ...document.querySelectorAll("#diasGrid input[type='checkbox']:checked"),
@@ -274,6 +308,9 @@ function filtrarGrupos() {
           <button class="btn-icon" onclick="verAlumnosGrupo(${g.id_grupo},'${g.nombre_materia}')" title="Ver alumnos inscritos">
             <iconify-icon icon="lucide:users"></iconify-icon>
           </button>
+          <button class="btn-icon" onclick="editarGrupo(${g.id_grupo})" title="Editar grupo">
+            <iconify-icon icon="lucide:pencil"></iconify-icon>
+          </button>
           <button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
@@ -283,23 +320,24 @@ function filtrarGrupos() {
   });
 }
 
-async function eliminarGrupo(id) {
-  if (
-    !confirm(
-      "Eliminar este grupo? Se perderan las inscripciones y actividades asociadas.",
-    )
-  )
-    return;
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/api/grupos/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (data.success) {
-    toastGrupo("Grupo eliminado");
-    cargarGrupos();
-  } else toastGrupo(data.error || "Error al eliminar", "error");
+let _elimGrupoId = null;
+
+function eliminarGrupo(id) {
+  _elimGrupoId = id;
+  document.getElementById("modalElimGrupo").classList.add("active");
+  document.getElementById("btnConfirmarElimGrupo").onclick = async () => {
+    document.getElementById("modalElimGrupo").classList.remove("active");
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/grupos/${_elimGrupoId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.success) {
+      toastGrupo("Grupo eliminado");
+      cargarGrupos();
+    } else toastGrupo(data.error || "Error al eliminar", "error");
+  };
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -516,4 +554,91 @@ async function verAlumnosGrupo(id_grupo, nombre_materia) {
 
 function cerrarModalAlumnosGrupo() {
   document.getElementById("modalAlumnosGrupo").classList.remove("active");
+}
+
+// ─── Editar Grupo ─────────────────────────────────────────────────────────────
+let _editGrupoId = null;
+
+async function editarGrupo(id_grupo) {
+  _editGrupoId = id_grupo;
+  const token = localStorage.getItem("token");
+  try {
+    const r = await fetch(`${API_URL}/api/grupos/${id_grupo}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) throw new Error();
+    const g = await r.json();
+
+    document.getElementById("editGrupoId").textContent = `Grupo #${id_grupo}`;
+    document.getElementById("editLimite").value = g.limite_alumnos ?? 30;
+    document.getElementById("editAula").value = g.aula ?? "";
+    document.getElementById("editEstatus").value = g.estatus ?? "Activo";
+    document.getElementById("editGrupoError").style.display = "none";
+
+    // Parsear horario existente y poblar los controles
+    const horarioStr = g.horario ?? "";
+    const partes = horarioStr.trim().split(" ");
+    const dias = partes[0] ? partes[0].split("-") : [];
+    const horas = partes[1] ? partes[1].split("-") : [];
+
+    // Resetear checkboxes de días
+    document.querySelectorAll("#editDiasGrid .dia-chip").forEach((chip) => {
+      const cb = chip.querySelector("input");
+      const marcado = dias.includes(cb.value);
+      cb.checked = marcado;
+      chip.classList.toggle("selected", marcado);
+    });
+
+    document.getElementById("editHoraInicio").value = horas[0] ?? "";
+    document.getElementById("editHoraFin").value = horas[1] ?? "";
+    actualizarEditHorarioPreview();
+
+    document.getElementById("modalEditGrupo").classList.add("visible");
+  } catch {
+    alert("No se pudo cargar la información del grupo.");
+  }
+}
+
+function cerrarModalEditGrupo() {
+  document.getElementById("modalEditGrupo").classList.remove("visible");
+  _editGrupoId = null;
+}
+
+async function guardarEdicionGrupo() {
+  if (!_editGrupoId) return;
+  const token = localStorage.getItem("token");
+  const errEl = document.getElementById("editGrupoError");
+  errEl.style.display = "none";
+
+  const body = {
+    limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
+    aula: document.getElementById("editAula").value.trim() || null,
+    horario: obtenerHorarioEdit() || null,
+    estatus: document.getElementById("editEstatus").value,
+  };
+
+  try {
+    const r = await fetch(`${API_URL}/api/grupos/${_editGrupoId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      errEl.textContent = data.error || "Error al guardar";
+      errEl.style.display = "block";
+      return;
+    }
+    cerrarModalEditGrupo();
+    cargarGrupos();
+    // toast si existe
+    if (typeof toast === "function")
+      toast("Grupo actualizado correctamente", "success");
+  } catch {
+    errEl.textContent = "Error de conexión con el servidor.";
+    errEl.style.display = "block";
+  }
 }
