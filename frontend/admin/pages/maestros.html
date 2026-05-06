@@ -119,10 +119,17 @@
       }
 
       /* ── Panel más ancho para acomodar tabs ─────────────────────────── */
+      #modalMaestro {
+        padding: 20px;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+
       #modalMaestro .modal-panel {
         max-width: 680px;
         width: 95vw;
-        max-height: 90vh !important;
+        max-height: calc(90vh - 40px) !important;
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;
@@ -136,6 +143,11 @@
 
       #modalMaestro .modal-footer {
         flex-shrink: 0 !important;
+        border-top: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
       }
 
       /* ── Badge de estatus inline ───────────────────────────────────── */
@@ -604,5 +616,32 @@
 
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/maestros.js"></script>
+
+    <!-- Modal confirmación genérico -->
+    <div id="modalConfirm" class="modal-overlay" onclick="if(event.target===this)_confirmCancel()">
+      <div class="modal-box" style="max-width:400px">
+        <div class="modal-header">
+          <h3 id="modalConfirmTitle">Confirmar acción</h3>
+        </div>
+        <div class="modal-body">
+          <p id="modalConfirmMsg" style="margin:0"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="_confirmCancel()">Cancelar</button>
+          <button class="btn btn-danger" id="modalConfirmOk">Confirmar</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      function showConfirm(msg, onOk, title) {
+        document.getElementById("modalConfirmMsg").textContent = msg;
+        document.getElementById("modalConfirmTitle").textContent = title || "Confirmar acción";
+        document.getElementById("modalConfirmOk").onclick = () => { _confirmCancel(); onOk(); };
+        document.getElementById("modalConfirm").classList.add("visible");
+      }
+      function _confirmCancel() {
+        document.getElementById("modalConfirm").classList.remove("visible");
+      }
+    </script>
   </body>
 </html>
