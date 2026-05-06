@@ -274,6 +274,9 @@ function filtrarGrupos() {
           <button class="btn-icon" onclick="verAlumnosGrupo(${g.id_grupo},'${g.nombre_materia}')" title="Ver alumnos inscritos">
             <iconify-icon icon="lucide:users"></iconify-icon>
           </button>
+          <button class="btn-icon" onclick="editarGrupo(${g.id_grupo})" title="Editar grupo">
+            <iconify-icon icon="lucide:pencil"></iconify-icon>
+          </button>
           <button class="btn-icon btn-del" onclick="eliminarGrupo(${g.id_grupo})" title="Eliminar grupo">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
@@ -516,4 +519,73 @@ async function verAlumnosGrupo(id_grupo, nombre_materia) {
 
 function cerrarModalAlumnosGrupo() {
   document.getElementById("modalAlumnosGrupo").classList.remove("active");
+}
+
+// ─── Editar Grupo ─────────────────────────────────────────────────────────────
+let _editGrupoId = null;
+
+async function editarGrupo(id_grupo) {
+  _editGrupoId = id_grupo;
+  const token = localStorage.getItem("token");
+  try {
+    const r = await fetch(`${API_URL}/api/grupos/${id_grupo}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) throw new Error();
+    const g = await r.json();
+
+    document.getElementById("editGrupoId").textContent = `Grupo #${id_grupo}`;
+    document.getElementById("editLimite").value = g.limite_alumnos ?? 30;
+    document.getElementById("editAula").value = g.aula ?? "";
+    document.getElementById("editHorario").value = g.horario ?? "";
+    document.getElementById("editEstatus").value = g.estatus ?? "Activo";
+    document.getElementById("editGrupoError").style.display = "none";
+    document.getElementById("modalEditGrupo").classList.add("visible");
+  } catch {
+    alert("No se pudo cargar la información del grupo.");
+  }
+}
+
+function cerrarModalEditGrupo() {
+  document.getElementById("modalEditGrupo").classList.remove("visible");
+  _editGrupoId = null;
+}
+
+async function guardarEdicionGrupo() {
+  if (!_editGrupoId) return;
+  const token = localStorage.getItem("token");
+  const errEl = document.getElementById("editGrupoError");
+  errEl.style.display = "none";
+
+  const body = {
+    limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
+    aula: document.getElementById("editAula").value.trim() || null,
+    horario: document.getElementById("editHorario").value.trim() || null,
+    estatus: document.getElementById("editEstatus").value,
+  };
+
+  try {
+    const r = await fetch(`${API_URL}/api/grupos/${_editGrupoId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      errEl.textContent = data.error || "Error al guardar";
+      errEl.style.display = "block";
+      return;
+    }
+    cerrarModalEditGrupo();
+    cargarGrupos();
+    // toast si existe
+    if (typeof toast === "function")
+      toast("Grupo actualizado correctamente", "success");
+  } catch {
+    errEl.textContent = "Error de conexión con el servidor.";
+    errEl.style.display = "block";
+  }
 }

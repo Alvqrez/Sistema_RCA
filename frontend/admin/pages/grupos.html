@@ -554,6 +554,48 @@
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/grupos.js"></script>
 
+    <!-- Modal: Editar grupo -->
+    <div id="modalEditGrupo" class="modal-overlay" onclick="if(event.target===this)cerrarModalEditGrupo()">
+      <div class="modal-panel" style="max-width:440px">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <iconify-icon icon="lucide:pencil" style="vertical-align:middle;margin-right:6px"></iconify-icon>
+            Editar grupo — <span id="editGrupoId" style="color:var(--primary)"></span>
+          </h2>
+          <button class="modal-close" onclick="cerrarModalEditGrupo()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Límite de alumnos</label>
+            <input type="number" id="editLimite" min="1" max="100" placeholder="30" />
+          </div>
+          <div class="form-group">
+            <label>Aula</label>
+            <input type="text" id="editAula" placeholder="Ej: A-204" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>Horario</label>
+            <input type="text" id="editHorario" placeholder="Ej: Lun-Mié 07:00-09:00" />
+          </div>
+          <div class="form-group">
+            <label>Estatus</label>
+            <select id="editEstatus">
+              <option value="Activo">Activo</option>
+              <option value="Cerrado">Cerrado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div id="editGrupoError" class="error-msg" style="display:none;margin-top:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalEditGrupo()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEdicionGrupo()">
+            <iconify-icon icon="lucide:save"></iconify-icon> Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: alumnos inscritos en el grupo -->
     <div
       id="modalAlumnosGrupo"

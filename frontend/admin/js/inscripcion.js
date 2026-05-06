@@ -215,7 +215,9 @@ async function irPaso3() {
   const esSemestral = desc.includes("enero") || desc.includes("agosto");
   const esVerano = desc.includes("verano");
   const mostrarWidget = esSemestral || esVerano;
-  document.getElementById("creditosWidget").style.display = mostrarWidget ? "block" : "none";
+  document.getElementById("creditosWidget").style.display = mostrarWidget
+    ? "block"
+    : "none";
 
   // Actualizar etiquetas del widget según tipo
   if (esVerano) {
@@ -262,19 +264,25 @@ async function irPaso4() {
         filtrarAlumnos(); // refrescar tabla para quitar checks
 
         const esVerano = rechazados[0]?.es_verano;
-        const nombres = rechazados.map((x) => {
-          const a = todosAlumnos.find((al) => al.no_control === x.no_control);
-          const nombre = a ? `${a.nombre} ${a.apellido_paterno}` : x.no_control;
-          const detalle = esVerano
-            ? `${x.carga_actual}/2 materias`
-            : `${x.carga_actual}+${x.agrega}=${x.total} cred.`;
-          return `${nombre} (${detalle})`;
-        }).join(", ");
+        const nombres = rechazados
+          .map((x) => {
+            const a = todosAlumnos.find((al) => al.no_control === x.no_control);
+            const nombre = a
+              ? `${a.nombre} ${a.apellido_paterno}`
+              : x.no_control;
+            const detalle = esVerano
+              ? `${x.carga_actual}/2 materias`
+              : `${x.carga_actual}+${x.agrega}=${x.total} cred.`;
+            return `${nombre} (${detalle})`;
+          })
+          .join(", ");
 
-        const tipoLimite = esVerano ? "límite de verano (máx. 2)" : "límite de créditos (máx. 36)";
+        const tipoLimite = esVerano
+          ? "límite de verano (máx. 2)"
+          : "límite de créditos (máx. 36)";
         showToast(
           `⚠️ Se removieron ${rechazados.length} alumno(s) por ${tipoLimite}: ${nombres}`,
-          "error"
+          "error",
         );
 
         if (!alumnosSel.size) {
@@ -488,15 +496,23 @@ function renderTablaAlumnos(alumnos, duplicados = new Set()) {
       // Calcular carga actual del alumno desde todasInsc (sin fetch)
       const descPer = (periodoSel?.descripcion || "").toLowerCase();
       const esVeranoLocal = descPer.includes("verano");
-      const esSemestralLocal = descPer.includes("enero") || descPer.includes("agosto");
+      const esSemestralLocal =
+        descPer.includes("enero") || descPer.includes("agosto");
       let badgeCarga = "";
       if (esSemestralLocal || esVeranoLocal) {
         const inscAlumno = todasInsc.filter(
-          (i) => i.no_control === a.no_control && i.estatus === "Cursando"
+          (i) => i.no_control === a.no_control && i.estatus === "Cursando",
         );
         if (esVeranoLocal) {
-          const matVerano = inscAlumno.filter((i) => (i.periodo || "").toLowerCase().includes("verano")).length;
-          const color = matVerano >= 2 ? "#ef4444" : matVerano === 1 ? "#f59e0b" : "#6b7280";
+          const matVerano = inscAlumno.filter((i) =>
+            (i.periodo || "").toLowerCase().includes("verano"),
+          ).length;
+          const color =
+            matVerano >= 2
+              ? "#ef4444"
+              : matVerano === 1
+                ? "#f59e0b"
+                : "#6b7280";
           badgeCarga = `<span style="font-size:0.68rem;color:${color};background:${color}18;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap">
             ${matVerano}/2 verano
           </span>`;
@@ -507,15 +523,18 @@ function renderTablaAlumnos(alumnos, duplicados = new Set()) {
               return pd.includes("enero") || pd.includes("agosto");
             })
             .reduce((acc, i) => {
-              const mat = todasMaterias.find((m) => m.clave_materia === i.clave_materia);
+              const mat = todasMaterias.find(
+                (m) => m.clave_materia === i.clave_materia,
+              );
               return acc + (mat ? parseFloat(mat.creditos_totales || 0) : 0);
             }, 0);
           const color = credActuales >= 30 ? "#f59e0b" : "#6b7280";
-          badgeCarga = credActuales > 0
-            ? `<span style="font-size:0.68rem;color:${color};background:${color}18;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap">
+          badgeCarga =
+            credActuales > 0
+              ? `<span style="font-size:0.68rem;color:${color};background:${color}18;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap">
                 ${credActuales} cred.
               </span>`
-            : "";
+              : "";
         }
       }
 
@@ -554,7 +573,9 @@ async function actualizarBarraCreditos() {
 
   if (alumnosSel.size !== 1) {
     document.getElementById("creditosTexto").textContent =
-      alumnosSel.size === 0 ? textoNeutro : `${alumnosSel.size} alumnos seleccionados`;
+      alumnosSel.size === 0
+        ? textoNeutro
+        : `${alumnosSel.size} alumnos seleccionados`;
     document.getElementById("creditosBarra").style.width = "0%";
     document.getElementById("creditosBarra").style.background = "#3b82f6";
     document.getElementById("creditosAviso").textContent = "";
@@ -574,17 +595,27 @@ async function actualizarBarraCreditos() {
       const materiasEnVerano = inscripciones.filter((i) => {
         const pDesc = (i.periodo || "").toLowerCase();
         const pAnio = i.anio || 0;
-        const periodoAnio = periodoSel?.anio ||
+        const periodoAnio =
+          periodoSel?.anio ||
           new Date(periodoSel?.fecha_inicio || "").getFullYear() ||
           new Date().getFullYear();
-        return pDesc.includes("verano") && i.estatus === "Cursando" && pAnio === periodoAnio;
+        return (
+          pDesc.includes("verano") &&
+          i.estatus === "Cursando" &&
+          pAnio === periodoAnio
+        );
       }).length;
 
       const total = materiasEnVerano + 1; // +1 por la que se quiere inscribir
       const pct = Math.min(100, (total / 2) * 100);
 
       let color = total > 2 ? "#ef4444" : total === 2 ? "#f59e0b" : "#3b82f6";
-      let aviso = total > 2 ? "⚠️ Excede el máximo" : total === 2 ? "Límite alcanzado" : "";
+      let aviso =
+        total > 2
+          ? "⚠️ Excede el máximo"
+          : total === 2
+            ? "Límite alcanzado"
+            : "";
 
       document.getElementById("creditosTexto").textContent =
         `${materiasEnVerano} / 2 materias en este verano (+1 nueva = ${total})`;
@@ -592,26 +623,35 @@ async function actualizarBarraCreditos() {
       document.getElementById("creditosBarra").style.background = color;
       document.getElementById("creditosAviso").textContent = aviso;
       document.getElementById("creditosAviso").style.color = color;
-
     } else {
       // ── Modo semestral: sumar créditos ──
       let creditosActuales = 0;
       inscripciones
         .filter((i) => {
           const pDesc = (i.periodo || "").toLowerCase();
-          return (pDesc.includes("enero") || pDesc.includes("agosto")) && i.estatus === "Cursando";
+          return (
+            (pDesc.includes("enero") || pDesc.includes("agosto")) &&
+            i.estatus === "Cursando"
+          );
         })
         .forEach((i) => {
           creditosActuales += parseFloat(i.creditos_totales || 0);
         });
 
-      const matNueva = todasMaterias.find((m) => m.clave_materia === materiaSel?.clave_materia);
+      const matNueva = todasMaterias.find(
+        (m) => m.clave_materia === materiaSel?.clave_materia,
+      );
       const creditosNuevos = parseFloat(matNueva?.creditos_totales || 0);
       const total = creditosActuales + creditosNuevos;
       const pct = Math.min(100, (total / 36) * 100);
 
       let color = total > 36 ? "#ef4444" : total >= 30 ? "#f59e0b" : "#3b82f6";
-      let aviso = total > 36 ? "⚠️ Excede el máximo" : total >= 30 ? "Cerca del límite" : "";
+      let aviso =
+        total > 36
+          ? "⚠️ Excede el máximo"
+          : total >= 30
+            ? "Cerca del límite"
+            : "";
 
       document.getElementById("creditosTexto").textContent =
         `${total} / 36 créditos (actuales: ${creditosActuales} + nueva: ${creditosNuevos})`;
@@ -834,14 +874,16 @@ function renderTablaInsc(insc) {
       <td><span class="badge-tipo">${i.tipo_curso || "—"}</span></td>
       <td><span class="badge ${colores[i.estatus] || "badge-pendiente"}">${i.estatus}</span></td>
       <td>
-        <button class="btn-icon" title="Dar de baja"
-          onclick="abrirModalBaja('${i.no_control}','${i.id_grupo}')">
-          <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
-        </button>
-        <button class="btn-icon btn-del" title="Eliminar" style="margin-left:4px"
-          onclick="eliminarInscripcion('${i.no_control}','${i.id_grupo}')">
-          <iconify-icon icon="lucide:trash-2"></iconify-icon>
-        </button>
+        <div class="table-actions">
+          <button class="btn-icon" title="Dar de baja"
+            onclick="abrirModalBaja('${i.no_control}','${i.id_grupo}')">
+            <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
+          </button>
+          <button class="btn-icon btn-del" title="Eliminar"
+            onclick="eliminarInscripcion('${i.no_control}','${i.id_grupo}')">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon>
+          </button>
+        </div>
       </td>`;
     tbody.appendChild(tr);
   });

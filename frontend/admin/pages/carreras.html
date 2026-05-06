@@ -374,24 +374,24 @@
             // Botones de aprobar/rechazar solo si está pendiente y no la creé yo
             const btnAprobar =
               st === "Pendiente" && !esMiCarrera
-                ? `<button class="btn btn-sm btn-primary" onclick="aprobarCarrera('${esc(c.id_carrera)}')" title="Aprobar">
-                   <iconify-icon icon="mdi:check"></iconify-icon>
+                ? `<button class="btn-icon" onclick="aprobarCarrera('${esc(c.id_carrera)}')" title="Aprobar" style="color:#16a34a;border-color:#16a34a">
+                   <iconify-icon icon="lucide:check"></iconify-icon>
                  </button>
-                 <button class="btn btn-sm btn-danger-outline" onclick="rechazarCarrera('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Rechazar">
-                   <iconify-icon icon="mdi:close"></iconify-icon>
+                 <button class="btn-icon btn-del" onclick="rechazarCarrera('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Rechazar">
+                   <iconify-icon icon="lucide:x"></iconify-icon>
                  </button>`
                 : "";
             // Editar solo si Aceptada
             const btnEditar =
               st === "Aceptada"
-                ? `<button class="btn btn-sm btn-outline" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
-                   <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
+                ? `<button class="btn-icon" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
+                   <iconify-icon icon="lucide:pencil"></iconify-icon>
                  </button>`
                 : "";
             const btnEliminar =
               st !== "Pendiente"
-                ? `<button class="btn btn-sm btn-danger-outline" onclick="pedirEliminar('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Eliminar">
-                   <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+                ? `<button class="btn-icon btn-del" onclick="pedirEliminar('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Eliminar">
+                   <iconify-icon icon="lucide:trash-2"></iconify-icon>
                  </button>`
                 : "";
             return `<tr>
@@ -403,7 +403,7 @@
               <td style="text-align:center">${c.total_creditos ?? "—"}</td>
               <td style="text-align:center"><span class="badge-estatus ${colBadge}">${st}</span></td>
               <td style="text-align:center">
-                <div style="display:flex;gap:6px;justify-content:center">
+                <div class="table-actions" style="justify-content:center">
                   ${btnAprobar}${btnEditar}${btnEliminar}
                 </div>
               </td>
