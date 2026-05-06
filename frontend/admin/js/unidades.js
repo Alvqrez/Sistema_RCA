@@ -246,6 +246,15 @@ function renderizarFormulario(n, nombreMateria, existentes) {
   card.style.display = "block";
   card.scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("estadoGuardado").textContent = "";
+
+  // FIX #1: restaurar la visibilidad del botón guardar
+  // (renderizarBloqueado lo oculta; al cambiar a una materia sin configurar debe volver a verse)
+  const btnGuardar = document.getElementById("btnGuardar");
+  if (btnGuardar) {
+    const btnRow = btnGuardar.closest("div");
+    if (btnRow) btnRow.style.display = "flex";
+    btnGuardar.disabled = false;
+  }
 }
 
 // ─── Formulario editable con agregar/eliminar unidades ────────────────────────
@@ -348,16 +357,57 @@ async function guardarUnidadesEditables() {
     .map((n) => n.trim())
     .filter((n) => n.length > 0);
   if (nombres.length === 0) {
-    showToast("Debes tener al menos una unidad", "error");
-    return;
-  }
-  if (nombres.some((n) => n.length === 0)) {
-    showToast("Todas las unidades deben tener nombre", "error");
+    toast("Debes tener al menos una unidad", "error");
     return;
   }
 
-  const { clave_materia } = materiaActual;
+  const { clave_materia, nombre_materia } = materiaActual;
+
   try {
+    // FIX #4: si cambió el número de unidades, actualizar no_unidades en la materia
+    // ANTES de llamar a /configurar (ese endpoint valida que el conteo coincida con DB)
+    if (nombres.length !== materiaActual.no_unidades) {
+      // Obtener datos actuales para no perder créditos y horas al hacer PUT
+      const rGet = await fetch(
+        `${API_URL}/api/materias/${encodeURIComponent(clave_materia)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const matData = rGet.ok ? await rGet.json() : {};
+
+      const rMat = await fetch(
+        `${API_URL}/api/materias/${encodeURIComponent(clave_materia)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            nombre_materia: matData.nombre_materia || nombre_materia,
+            creditos_totales: matData.creditos_totales ?? 0,
+            horas_teoricas: matData.horas_teoricas ?? 0,
+            horas_practicas: matData.horas_practicas ?? 0,
+            no_unidades: nombres.length,
+          }),
+        },
+      );
+      if (!rMat.ok) {
+        const d = await rMat.json();
+        toast(d.error || "Error al actualizar el número de unidades", "error"); // FIX #3
+        return;
+      }
+      materiaActual.no_unidades = nombres.length;
+
+      // Actualizar el dataset del <option> en el select para que cargarConfiguracion
+      // use el valor correcto sin necesitar recargar la página
+      const sel = document.getElementById("selMateria");
+      if (sel) {
+        const opt = sel.options[sel.selectedIndex];
+        if (opt) opt.dataset.noUnidades = nombres.length;
+      }
+    }
+
+    // Guardar los nombres de las unidades
     const r = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
       {
@@ -366,32 +416,24 @@ async function guardarUnidadesEditables() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          clave_materia,
-          unidades: nombres.map((n, i) => ({
-            nombre_unidad: n,
-            numero: i + 1,
-          })),
-          tipos_permitidos: tiposSeleccionados,
-        }),
+        body: JSON.stringify(nombres.map((n) => ({ nombre_unidad: n }))),
       },
     );
-    if (r.ok) {
-      showToast("Unidades guardadas correctamente");
-      // Actualizar la materia con el nuevo número
-      await q(`UPDATE materia SET no_unidades=? WHERE clave_materia=?`, [
-        nombres.length,
-        clave_materia,
-      ]);
-      materiaActual.no_unidades = nombres.length;
-      await cargarUnidades(clave_materia);
-      document.getElementById("cardConfigUnidades").style.display = "none";
-    } else {
-      const d = await r.json();
-      showToast(d.error || "Error al guardar", "error");
+    const data = await r.json();
+    if (!r.ok || !data.success) {
+      toast(data.error || "Error al guardar unidades", "error"); // FIX #3
+      return;
     }
+
+    toast(
+      `✓ Unidades de "${nombre_materia}" actualizadas correctamente.`,
+      "success",
+    );
+
+    // FIX #5: recargar la configuración correctamente
+    await cargarConfiguracion();
   } catch {
-    showToast("Error de conexión", "error");
+    toast("Error de conexión con el servidor", "error"); // FIX #3
   }
 }
 
