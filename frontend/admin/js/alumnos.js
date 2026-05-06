@@ -142,6 +142,8 @@ async function cargarCarrerasSelect() {
   }
 }
 
+
+
 // Modal: cursos inscritos del alumno
 async function abrirModalCursos(no_control) {
   const alumno = alumnosGlobal.find((a) => a.no_control === no_control);
@@ -201,15 +203,18 @@ async function abrirModalCursos(no_control) {
   }
 }
 
-function abrirModalNuevo() {
+async function abrirModalNuevo() {
   modoEdicion = false;
   no_controlEditando = null;
+
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
   document.getElementById("f_no_control").disabled = true; // siempre generado automáticamente
   document.getElementById("f_carrera").disabled = false;
   document.getElementById("grupoUsername").style.display = "";
   document.getElementById("grupoPassword").style.display = "";
+
   limpiarForm();
+
   abrirModal("modalAlumno");
 }
 
