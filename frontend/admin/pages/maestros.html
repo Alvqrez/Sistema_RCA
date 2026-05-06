@@ -121,9 +121,14 @@
       /* ── Panel más ancho para acomodar tabs ─────────────────────────── */
       #modalMaestro {
         padding: 20px;
+        display: none;
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
+      }
+
+      #modalMaestro.visible {
+        display: flex !important;
       }
 
       #modalMaestro .modal-panel {
