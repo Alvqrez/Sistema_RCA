@@ -1,276 +1,633 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Alumnos — RCA</title>
-  <script>
-    if (localStorage.getItem("tema") === "oscuro")
-      document.documentElement.classList.add("dark-mode");
-  </script>
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-  <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../../css/styles.css" />
-</head>
-<body>
-  <div class="layout">
-    <aside class="sidebar"></aside>
-    <main class="content">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Alumnos — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <style>
+      /* ── Secciones del modal ─────────────────────────────────────── */
+      .modal-section {
+        padding: 16px 22px;
+        border-top: 1px solid var(--border);
+      }
+      .modal-section:first-child {
+        border-top: none;
+      }
+      .modal-section-label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin: 0 0 13px;
+      }
+      .modal-section-label iconify-icon {
+        font-size: 0.95rem;
+        color: var(--primary);
+      }
 
-      <div class="page-header-v2">
-        <div>
-          <h1>Alumnos</h1>
-          <p class="page-subtitle">Gestión del padrón estudiantil</p>
-        </div>
-        <div class="header-actions" id="headerActions" style="display: none">
-          <button class="btn btn-outline" onclick="exportarCSV()">
-            <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
-          </button>
-          <button class="btn btn-outline" onclick="abrirModalImport()">
-            <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
-          </button>
-          <button class="btn btn-primary" onclick="abrirModalNuevo()">
-            <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo alumno
-          </button>
-        </div>
-      </div>
+      /* ── Badge "automático" ──────────────────────────────────────── */
+      .auto-badge {
+        background: var(--success-light);
+        color: var(--success);
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 99px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-left: 2px;
+      }
+      .auto-badge-label {
+        background: var(--success-light);
+        color: var(--success);
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 99px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-left: 5px;
+        vertical-align: middle;
+      }
 
-      <div class="stats-row">
-        <div class="stat-card">
-          <iconify-icon icon="lucide:users"></iconify-icon>
-          <div><p id="statTotal">—</p><span>Total alumnos</span></div>
-        </div>
-        <div class="stat-card stat-success">
-          <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-          <div><p id="statCarreras">—</p><span>Carreras distintas</span></div>
-        </div>
-        <div class="stat-card stat-purple">
-          <iconify-icon icon="lucide:filter"></iconify-icon>
-          <div><p id="statFiltrados">—</p><span>Mostrando</span></div>
-        </div>
-      </div>
+      /* ── Campo de solo lectura ───────────────────────────────────── */
+      .readonly-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--bg-app);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius, 10px);
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-family: "Inter", sans-serif;
+        min-height: 38px;
+      }
+      .readonly-display iconify-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+        color: var(--text-muted);
+      }
+      .readonly-display .rd-value {
+        font-family: "Courier New", monospace;
+        font-size: 0.82rem;
+        color: var(--text-main);
+        word-break: break-all;
+      }
 
-      <div class="card">
-        <div class="card-filter-bar">
-          <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o No. control…" oninput="filtrar()" />
-          <select id="filtroCarrera" onchange="filtrar()">
-            <option value="">Todas las carreras</option>
-          </select>
-        </div>
-        <div style="overflow-x: auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Alumno</th>
-                <th>No. Control</th>
-                <th>Carrera</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th style="text-align: right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaAlumnos">
-              <tr>
-                <td colspan="6">
-                  <div class="empty-state">
-                    <iconify-icon icon="lucide:loader-2"></iconify-icon>
-                    <p>Cargando…</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      /* ── Banner informativo ──────────────────────────────────────── */
+      .info-hint {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        background: var(--primary-light);
+        border: 1px solid var(--primary);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.78rem;
+        color: var(--primary);
+        margin-top: 8px;
+        line-height: 1.5;
+      }
+      .info-hint iconify-icon {
+        font-size: 1rem;
+        margin-top: 1px;
+        flex-shrink: 0;
+      }
+      .dark-mode .info-hint {
+        background: rgba(96, 165, 250, 0.1);
+        border-color: rgba(96, 165, 250, 0.4);
+        color: var(--primary);
+      }
 
-    </main>
-  </div>
+      /* ── Grilla de 3 columnas ────────────────────────────────────── */
+      .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 640px) {
+        .form-grid-3 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
 
-  <!-- MODAL ALUMNO -->
-  <div id="modalAlumno" class="modal-overlay">
-    <div class="modal-panel">
-      <div class="modal-header">
-        <h2 id="modalTitulo">Nuevo alumno</h2>
-        <button class="modal-close" onclick="cerrarModal('modalAlumno')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="form-section-title">Datos de acceso</p>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label>No. de Control *</label>
-            <input type="text" id="f_no_control"
-              placeholder="Se genera automáticamente (ej. 26000001)"
-              disabled maxlength="8" />
+      /* ── Texto de ayuda bajo un campo ────────────────────────────── */
+      .field-hint {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+
+      /* ── Contraseña placeholder ──────────────────────────────────── */
+      .pass-placeholder {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--bg-app);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius, 10px);
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        letter-spacing: 0.18em;
+        min-height: 38px;
+      }
+      .pass-placeholder iconify-icon {
+        font-size: 1rem;
+        letter-spacing: 0;
+      }
+
+      /* ── Modal body scrollable ───────────────────────────────────── */
+      #modalAlumno .modal-body {
+        padding: 0;
+        overflow-y: auto;
+        max-height: 68vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <div class="page-header-v2">
+          <div>
+            <h1>Alumnos</h1>
+            <p class="page-subtitle">Gestión del padrón estudiantil</p>
           </div>
-          <div class="form-group">
-            <label>Carrera *</label>
-            <select id="f_carrera">
-              <option value="">— Selecciona —</option>
+          <div class="header-actions" id="headerActions" style="display: none">
+            <button class="btn btn-outline" onclick="exportarCSV()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-outline" onclick="abrirModalImport()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">
+              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo alumno
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+            <div>
+              <p id="statTotal">—</p>
+              <span>Total alumnos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
+            <div>
+              <p id="statCarreras">—</p>
+              <span>Carreras distintas</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:filter"></iconify-icon>
+            <div>
+              <p id="statFiltrados">—</p>
+              <span>Mostrando</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-filter-bar">
+            <input
+              type="text"
+              id="filtroBusqueda"
+              placeholder="🔍 Buscar por nombre o No. control…"
+              oninput="filtrar()"
+            />
+            <select id="filtroCarrera" onchange="filtrar()">
+              <option value="">Todas las carreras</option>
             </select>
           </div>
-          <div class="form-group" id="grupoUsername">
-            <label>Usuario (login)</label>
-            <input type="text" id="f_username" readonly
-              placeholder="Se asigna automáticamente"
-              style="background: var(--bg-app); cursor: default; color: var(--text-muted);" />
-            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
-              El usuario será el número de control del alumno
-            </small>
-          </div>
-          <div class="form-group" id="grupoPassword">
-            <label>Contraseña inicial *</label>
-            <input type="password" id="f_password" placeholder="Mín. 6 caracteres" />
-          </div>
-          <div class="form-group span-2">
-            <label>Correo institucional *</label>
-            <input type="email" id="f_correo" placeholder="alumno@itver.edu.mx" />
-          </div>
-        </div>
-        <p class="form-section-title">Datos personales</p>
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label>Nombre(s)</label>
-            <input type="text" id="f_nombre" />
-          </div>
-          <div class="form-group">
-            <label>Apellido paterno</label>
-            <input type="text" id="f_ap_pat" />
-          </div>
-          <div class="form-group">
-            <label>Apellido materno</label>
-            <input type="text" id="f_ap_mat" />
-          </div>
-          <div class="form-group">
-            <label>CURP</label>
-            <input type="text" id="f_curp" maxlength="18" />
-          </div>
-          <div class="form-group">
-            <label>Fecha de nacimiento</label>
-            <input type="date" id="f_fnac" />
-          </div>
-          <div class="form-group">
-            <label>Género</label>
-            <select id="f_genero">
-              <option value="">— Selecciona —</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-          <div class="form-group span-2">
-            <label>Dirección</label>
-            <input type="text" id="f_direccion" />
-          </div>
-          <div class="form-group">
-            <label>Tel. celular</label>
-            <input type="tel" id="f_celular" inputmode="numeric" pattern="[0-9]*" maxlength="10" />
-          </div>
-          <div class="form-group">
-            <label>Tel. casa</label>
-            <input type="tel" id="f_tel_casa" inputmode="numeric" pattern="[0-9]*" maxlength="10" />
-          </div>
-          <div class="form-group span-2">
-            <label>Correo personal</label>
-            <input type="email" id="f_correo_personal" />
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Alumno</th>
+                  <th>No. Control</th>
+                  <th>Carrera</th>
+                  <th>Correo institucional</th>
+                  <th>Teléfono</th>
+                  <th style="text-align: right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAlumnos">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <iconify-icon icon="lucide:loader-2"></iconify-icon>
+                      <p>Cargando…</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        <p id="modalError" style="color: var(--danger); font-size: 0.85rem; margin: 10px 0 0; display: none;"></p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalAlumno')">Cancelar</button>
-        <button class="btn btn-primary" id="btnGuardar" onclick="guardarAlumno()">
-          <iconify-icon icon="lucide:save"></iconify-icon> Guardar
-        </button>
+      </main>
+    </div>
+
+    <!-- ══ MODAL ALUMNO ══════════════════════════════════════════════════════ -->
+    <div id="modalAlumno" class="modal-overlay">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="modalTitulo">Nuevo alumno</h2>
+          <button class="modal-close" onclick="cerrarModal('modalAlumno')">
+            ✕
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- ── Sección 1: Identificación ─────────────────────────────── -->
+          <div class="modal-section">
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:id-card"></iconify-icon>
+              Identificación
+              <span class="auto-badge">automático</span>
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>No. de Control</label>
+                <div class="readonly-display">
+                  <iconify-icon icon="lucide:hash"></iconify-icon>
+                  <span class="rd-value" id="display_no_control">—</span>
+                  <input type="hidden" id="f_no_control" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label
+                  >Carrera <span style="color: var(--danger)">*</span></label
+                >
+                <select id="f_carrera">
+                  <option value="">— Selecciona —</option>
+                </select>
+              </div>
+              <div class="form-group span-2">
+                <label>
+                  Correo institucional
+                  <span class="auto-badge-label">automático</span>
+                </label>
+                <div class="readonly-display">
+                  <iconify-icon icon="lucide:mail"></iconify-icon>
+                  <span class="rd-value" id="display_correo"
+                    >Se generará al registrar</span
+                  >
+                  <input type="hidden" id="f_correo" />
+                </div>
+                <div class="info-hint">
+                  <iconify-icon icon="lucide:info"></iconify-icon>
+                  <span
+                    >Prefijo <strong>L</strong> + número de control +
+                    <strong>@veracruz.tecnm.mx</strong></span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Sección 2: Datos personales ───────────────────────────── -->
+          <div class="modal-section">
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:user"></iconify-icon>
+              Datos personales
+            </p>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label
+                  >Nombre(s) <span style="color: var(--danger)">*</span></label
+                >
+                <input type="text" id="f_nombre" placeholder="Ej. María" />
+              </div>
+              <div class="form-group">
+                <label
+                  >Apellido paterno
+                  <span style="color: var(--danger)">*</span></label
+                >
+                <input type="text" id="f_ap_pat" placeholder="Ej. González" />
+              </div>
+              <div class="form-group">
+                <label>Apellido materno</label>
+                <input type="text" id="f_ap_mat" placeholder="Ej. Reyes" />
+              </div>
+              <div class="form-group">
+                <label
+                  >Fecha de nacimiento
+                  <span style="color: var(--danger)">*</span></label
+                >
+                <input type="date" id="f_fnac" />
+              </div>
+              <div class="form-group">
+                <label>Género</label>
+                <select id="f_genero">
+                  <option value="">— Selecciona —</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>CURP</label>
+                <input
+                  type="text"
+                  id="f_curp"
+                  maxlength="18"
+                  placeholder="18 caracteres"
+                  style="text-transform: uppercase"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Sección 3: Acceso al sistema (solo en modo nuevo) ──────── -->
+          <div class="modal-section" id="seccionAcceso">
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:lock"></iconify-icon>
+              Acceso al sistema
+              <span class="auto-badge">automático</span>
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Usuario (login)</label>
+                <div class="readonly-display">
+                  <iconify-icon icon="lucide:at-sign"></iconify-icon>
+                  <span class="rd-value" id="display_username">—</span>
+                  <input type="hidden" id="f_username" />
+                </div>
+                <span class="field-hint"
+                  >El usuario es el mismo número de control</span
+                >
+              </div>
+              <div class="form-group">
+                <label>Contraseña inicial</label>
+                <div class="pass-placeholder">
+                  <iconify-icon icon="lucide:key"></iconify-icon>
+                  ••••••
+                </div>
+                <span class="field-hint"
+                  >El alumno verá su contraseña al iniciar sesión por primera
+                  vez</span
+                >
+              </div>
+            </div>
+            <div class="info-hint">
+              <iconify-icon icon="lucide:key"></iconify-icon>
+              <span
+                >La contraseña se genera con la fecha de nacimiento:
+                <strong>año + mes + día</strong> sin ceros. Ej: 9 ago 2006 →
+                <strong>200689</strong> &nbsp;|&nbsp; 1 ene 2005 →
+                <strong>200511</strong></span
+              >
+            </div>
+          </div>
+
+          <!-- ── Sección 4: Contacto ────────────────────────────────────── -->
+          <div class="modal-section">
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:phone"></iconify-icon>
+              Contacto
+              <span
+                style="
+                  font-weight: 400;
+                  font-size: 0.68rem;
+                  text-transform: none;
+                  letter-spacing: 0;
+                  color: var(--text-muted);
+                  margin-left: 2px;
+                "
+                >(opcional)</span
+              >
+            </p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Tel. celular</label>
+                <input
+                  type="tel"
+                  id="f_celular"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="10"
+                  placeholder="10 dígitos"
+                />
+              </div>
+              <div class="form-group">
+                <label>Tel. casa</label>
+                <input
+                  type="tel"
+                  id="f_tel_casa"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="10"
+                  placeholder="10 dígitos"
+                />
+              </div>
+              <div class="form-group span-2">
+                <label>Dirección</label>
+                <input
+                  type="text"
+                  id="f_direccion"
+                  placeholder="Calle, número, colonia…"
+                />
+              </div>
+              <div class="form-group span-2">
+                <label>Correo personal</label>
+                <input
+                  type="email"
+                  id="f_correo_personal"
+                  placeholder="correo@gmail.com"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /modal-body -->
+
+        <p
+          id="modalError"
+          style="
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin: 6px 22px 0;
+            display: none;
+          "
+        ></p>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalAlumno')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnGuardar"
+            onclick="guardarAlumno()"
+          >
+            <iconify-icon icon="lucide:user-plus"></iconify-icon> Registrar
+            alumno
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL CSV IMPORT -->
-  <div id="modalImport" class="modal-overlay">
-    <div class="modal-panel modal-sm">
-      <div class="modal-header">
-        <h2>Importar alumnos desde CSV</h2>
-        <button class="modal-close" onclick="cerrarModal('modalImport')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="csv-drop-zone" id="dropZone"
-          onclick="document.getElementById('inputCSV').click()"
-          ondragover="event.preventDefault(); this.classList.add('drag-over');"
-          ondragleave="this.classList.remove('drag-over')"
-          ondrop="soltar(event)">
-          <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
-          <p>Haz clic o arrastra tu archivo CSV</p>
-          <small>El archivo debe tener encabezados en la primera fila</small>
-          <input type="file" id="inputCSV" accept=".csv" style="display: none" onchange="leerCSV(event)" />
+    <!-- ══ MODAL CSV IMPORT ══════════════════════════════════════════════════ -->
+    <div id="modalImport" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Importar alumnos desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModal('modalImport')">
+            ✕
+          </button>
         </div>
-        <div class="csv-format-hint">
-          Columnas requeridas: no_control, nombre, apellido_paterno, apellido_materno,
-          id_carrera, correo_institucional, username, password
+        <div class="modal-body">
+          <div
+            class="csv-drop-zone"
+            id="dropZone"
+            onclick="document.getElementById('inputCSV').click()"
+            ondragover="
+              event.preventDefault();
+              this.classList.add('drag-over');
+            "
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="soltar(event)"
+          >
+            <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
+            <p>Haz clic o arrastra tu archivo CSV</p>
+            <small>El archivo debe tener encabezados en la primera fila</small>
+            <input
+              type="file"
+              id="inputCSV"
+              accept=".csv"
+              style="display: none"
+              onchange="leerCSV(event)"
+            />
+          </div>
+          <div class="csv-format-hint">
+            <strong>Columnas requeridas:</strong> no_control, nombre,
+            apellido_paterno, id_carrera<br />
+            <strong>Opcionales:</strong> apellido_materno, fecha_nacimiento
+            (YYYY-MM-DD), genero, curp, correo_institucional, password<br />
+            <span style="color: var(--success); font-size: 0.78rem">
+              ✓ Si no incluyes correo o password, se generan automáticamente
+              desde no_control y fecha de nacimiento.
+            </span>
+          </div>
+          <div id="csvPreview"></div>
         </div>
-        <div id="csvPreview"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalImport')">Cancelar</button>
-        <button class="btn btn-primary" id="btnImportar" onclick="importarCSV()" disabled>
-          <iconify-icon icon="lucide:upload"></iconify-icon> Importar
-        </button>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalImport')">
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            id="btnImportar"
+            onclick="importarCSV()"
+            disabled
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL CURSOS -->
-  <div id="modalCursos" class="modal-overlay">
-    <div class="modal-panel" style="max-width: 720px">
-      <div class="modal-header">
-        <div>
-          <h2>Cursos inscritos</h2>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0;" id="cursosNombreAlumno"></p>
+    <!-- ══ MODAL CURSOS ══════════════════════════════════════════════════════ -->
+    <div id="modalCursos" class="modal-overlay">
+      <div class="modal-panel" style="max-width: 720px">
+        <div class="modal-header">
+          <div>
+            <h2>Cursos inscritos</h2>
+            <p
+              style="
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                margin: 2px 0 0;
+              "
+              id="cursosNombreAlumno"
+            ></p>
+          </div>
+          <button class="modal-close" onclick="cerrarModal('modalCursos')">
+            ✕
+          </button>
         </div>
-        <button class="modal-close" onclick="cerrarModal('modalCursos')">✕</button>
-      </div>
-      <div class="modal-body" style="padding: 0">
-        <div style="overflow-x: auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Materia</th>
-                <th>Maestro</th>
-                <th>Periodo</th>
-                <th>Estatus</th>
-                <th style="text-align: center">Calificación</th>
-              </tr>
-            </thead>
-            <tbody id="cursosBody"></tbody>
-          </table>
+        <div class="modal-body" style="padding: 0">
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Materia</th>
+                  <th>Maestro</th>
+                  <th>Periodo</th>
+                  <th>Estatus</th>
+                  <th style="text-align: center">Calificación</th>
+                </tr>
+              </thead>
+              <tbody id="cursosBody"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalCursos')">Cerrar</button>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalCursos')">
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL ELIMINAR -->
-  <div id="modalEliminar" class="modal-overlay">
-    <div class="modal-panel modal-sm">
-      <div class="modal-header">
-        <h2>Eliminar alumno</h2>
-        <button class="modal-close" onclick="cerrarModal('modalEliminar')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p>¿Estás seguro de eliminar al alumno <strong id="eliminarNombre"></strong>? Esta acción no se puede deshacer.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="cerrarModal('modalEliminar')">Cancelar</button>
-        <button class="btn btn-danger" id="btnConfirmarEliminar">
-          <iconify-icon icon="lucide:trash-2"></iconify-icon> Eliminar
-        </button>
+    <!-- ══ MODAL ELIMINAR ════════════════════════════════════════════════════ -->
+    <div id="modalEliminar" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Eliminar alumno</h2>
+          <button class="modal-close" onclick="cerrarModal('modalEliminar')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            ¿Estás seguro de eliminar al alumno
+            <strong id="eliminarNombre"></strong>? Esta acción no se puede
+            deshacer.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="cerrarModal('modalEliminar')"
+          >
+            Cancelar
+          </button>
+          <button class="btn btn-danger" id="btnConfirmarEliminar">
+            <iconify-icon icon="lucide:trash-2"></iconify-icon> Eliminar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast-container"></div>
-  <script src="../../shared/js/sidebar.js"></script>
-  <script src="../../admin/js/alumnos.js"></script>
-</body>
+    <div id="toast-container"></div>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="../../admin/js/alumnos.js"></script>
+  </body>
 </html>
