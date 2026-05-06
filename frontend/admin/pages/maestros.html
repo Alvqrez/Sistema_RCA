@@ -118,14 +118,38 @@
         border-bottom: 1px solid var(--border);
       }
 
-      /* ── Panel más ancho para acomodar tabs ─────────────────────────── */
-      #modalMaestro .modal-panel {
-        max-width: 680px;
-      }
-
+      /* ── Modal maestros ──────────────────────────────────────────────── */
       #modalMaestro .modal-body {
         overflow-y: auto;
-        max-height: 68vh;
+        max-height: 70vh;
+      }
+
+      .modal-section {
+        padding: 16px 22px;
+        border-top: 1px solid var(--border);
+      }
+      .modal-section:first-child {
+        border-top: none;
+      }
+      .modal-section-label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin: 0 0 13px;
+      }
+      .modal-section-label iconify-icon {
+        font-size: 0.95rem;
+        color: var(--primary);
+      }
+      .required-hint {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin: 0 0 12px;
       }
 
       /* ── Badge de estatus inline ───────────────────────────────────── */
@@ -232,107 +256,39 @@
          MODAL MAESTRO — diseño con tabs
     ════════════════════════════════════════════════════════════════════ -->
     <div id="modalMaestro" class="modal-overlay">
-      <div class="modal-panel">
+      <div class="modal-panel" style="max-width:700px">
         <div class="modal-header">
           <h2 id="modalTitulo">Nuevo maestro</h2>
-          <button class="modal-close" onclick="cerrarModal('modalMaestro')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalMaestro')">✕</button>
         </div>
+
         <div class="modal-body">
-          <!-- Avatar dinámico (visible en modo edición) -->
-          <div
-            id="modalAvatarHeader"
-            class="modal-avatar-header"
-            style="display: none"
-          >
-            <div class="modal-avatar-big" id="modalAvatarBig">??</div>
-            <div class="modal-avatar-info">
-              <p>Editando perfil</p>
-              <strong id="modalAvatarNombre">—</strong>
-            </div>
-          </div>
 
-          <!-- Tabs de navegación -->
-          <div class="modal-tabs" role="tablist">
-            <button
-              class="modal-tab active"
-              onclick="cambiarTab('esencial')"
-              id="tab-btn-esencial"
-              role="tab"
-            >
-              <iconify-icon icon="lucide:user"></iconify-icon>
-              Esencial
-            </button>
-            <button
-              class="modal-tab"
-              onclick="cambiarTab('personal')"
-              id="tab-btn-personal"
-              role="tab"
-            >
-              <iconify-icon icon="lucide:id-card"></iconify-icon>
-              Personal
-            </button>
-            <button
-              class="modal-tab"
-              onclick="cambiarTab('laboral')"
-              id="tab-btn-laboral"
-              role="tab"
-            >
-              <iconify-icon icon="lucide:briefcase"></iconify-icon>
-              Laboral
-            </button>
-          </div>
-
-          <!-- ── Tab 1: Esencial ────────────────────────────────────── -->
-          <div class="tab-panel active" id="tab-esencial">
-            <p class="required-hint">
-              Los campos marcados con <strong>*</strong> son obligatorios.
-            </p>
-
-            <p class="form-section-label">Identificación</p>
+          <!-- IDENTIFICACIÓN -->
+          <div class="modal-section">
+            <p class="modal-section-label"><iconify-icon icon="lucide:id-card"></iconify-icon> Identificación</p>
+            <p class="required-hint">Los campos marcados con <strong>*</strong> son obligatorios.</p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>RFC *</label>
-                <input
-                  type="text"
-                  id="f_rfc"
-                  placeholder="Ej: PERJ850101HDF"
-                  maxlength="13"
-                  oninput="this.value = this.value.toUpperCase()"
-                />
-                <small style="color: var(--text-muted); font-size: 0.72rem">
-                  El RFC será el identificador y nombre de usuario del maestro
-                </small>
+                <input type="text" id="f_rfc" placeholder="Ej: PERJ850101HDF" maxlength="13" oninput="this.value=this.value.toUpperCase()" />
+                <small style="color:var(--text-muted);font-size:0.72rem">El RFC será el identificador y nombre de usuario del maestro</small>
               </div>
               <div class="form-group">
                 <label>Correo institucional</label>
-                <input
-                  type="email"
-                  id="f_correo"
-                  placeholder="Se genera automáticamente"
-                  readonly
-                  style="background:var(--input-bg,rgba(255,255,255,0.05));opacity:0.75;cursor:not-allowed"
-                />
-                <small style="color:var(--text-muted);font-size:0.72rem">
-                  Se genera automáticamente: nombre.InicialPatInicialMat@veracruz.tecnm.mx
-                </small>
-              </div>
+                <input type="email" id="f_correo" placeholder="Se genera automáticamente" readonly style="opacity:0.7;cursor:not-allowed" />
+                <small style="color:var(--text-muted);font-size:0.72rem">nombre.InicialPatInicialMat@veracruz.tecnm.mx</small>
               </div>
             </div>
+          </div>
 
-            <p class="form-section-label" style="margin-top: 16px">
-              Nombre completo
-            </p>
+          <!-- NOMBRE COMPLETO -->
+          <div class="modal-section">
+            <p class="modal-section-label"><iconify-icon icon="lucide:user"></iconify-icon> Nombre completo</p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>Nombre(s) *</label>
-                <input
-                  type="text"
-                  id="f_nombre"
-                  placeholder="Ej: Juan Carlos"
-                  oninput="generarCorreoMaestro()"
-                />
+                <input type="text" id="f_nombre" placeholder="Ej: Juan Carlos" oninput="generarCorreoMaestro()" />
               </div>
               <div class="form-group">
                 <label>Apellido paterno *</label>
@@ -351,37 +307,16 @@
                 </select>
               </div>
             </div>
-
-            <p class="form-section-label" style="margin-top: 16px">
-              Acceso al sistema
-            </p>
-            <div class="form-grid-2">
-              <div class="form-group" id="grupoPassword">
-                <label>Contraseña inicial *</label>
-                <input
-                  type="password"
-                  id="f_password"
-                  placeholder="Mínimo 6 caracteres"
-                  autocomplete="new-password"
-                />
-              </div>
-            </div>
           </div>
 
-          <!-- ── Tab 2: Personal ───────────────────────────────────── -->
-          <div class="tab-panel" id="tab-personal">
+          <!-- PERSONAL -->
+          <div class="modal-section">
+            <p class="modal-section-label"><iconify-icon icon="lucide:user-circle"></iconify-icon> Datos personales <span style="font-weight:400;font-size:0.68rem;text-transform:none;color:var(--text-muted)">(opcional)</span></p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>CURP</label>
-                <input
-                  type="text"
-                  id="f_curp"
-                  maxlength="18"
-                  placeholder="18 caracteres"
-                  style="text-transform: uppercase"
-                />
+                <input type="text" id="f_curp" maxlength="18" placeholder="18 caracteres" style="text-transform:uppercase" />
               </div>
-
               <div class="form-group">
                 <label>Fecha de nacimiento</label>
                 <input type="date" id="f_fnac" />
@@ -397,50 +332,30 @@
               </div>
               <div class="form-group">
                 <label>Tel. celular</label>
-                <input
-                  type="text"
-                  id="f_celular"
-                  placeholder="10 dígitos"
-                  maxlength="15"
-                />
+                <input type="text" id="f_celular" placeholder="10 dígitos" maxlength="15" />
               </div>
               <div class="form-group">
                 <label>Correo personal</label>
-                <input
-                  type="email"
-                  id="f_correo_personal"
-                  placeholder="correo@gmail.com"
-                />
+                <input type="email" id="f_correo_personal" placeholder="correo@gmail.com" />
               </div>
-              <div class="form-group span-2">
+              <div class="form-group">
                 <label>Dirección</label>
-                <input
-                  type="text"
-                  id="f_direccion"
-                  placeholder="Calle, número, colonia…"
-                />
+                <input type="text" id="f_direccion" placeholder="Calle, número, colonia…" />
               </div>
             </div>
           </div>
 
-          <!-- ── Tab 3: Laboral ────────────────────────────────────── -->
-          <div class="tab-panel" id="tab-laboral">
+          <!-- LABORAL -->
+          <div class="modal-section">
+            <p class="modal-section-label"><iconify-icon icon="lucide:briefcase"></iconify-icon> Datos laborales <span style="font-weight:400;font-size:0.68rem;text-transform:none;color:var(--text-muted)">(opcional)</span></p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>Departamento</label>
-                <input
-                  type="text"
-                  id="f_departamento"
-                  placeholder="Ej: Sistemas y Computación"
-                />
+                <input type="text" id="f_departamento" placeholder="Ej: Sistemas y Computación" />
               </div>
               <div class="form-group">
                 <label>Especialidad</label>
-                <input
-                  type="text"
-                  id="f_especialidad"
-                  placeholder="Ej: Bases de Datos"
-                />
+                <input type="text" id="f_especialidad" placeholder="Ej: Bases de Datos" />
               </div>
               <div class="form-group">
                 <label>Grado académico</label>
@@ -472,37 +387,30 @@
             </div>
           </div>
 
-          <!-- Error message -->
-          <p
-            id="modalError"
-            style="
-              color: var(--danger);
-              font-size: 0.85rem;
-              margin: 12px 0 0;
-              display: none;
-              background: var(--danger-bg, #fff0f0);
-              padding: 8px 12px;
-              border-radius: 8px;
-              border-left: 3px solid var(--danger);
-            "
-          ></p>
+          <!-- ACCESO -->
+          <div class="modal-section" id="grupoPassword">
+            <p class="modal-section-label"><iconify-icon icon="lucide:lock"></iconify-icon> Acceso al sistema</p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Contraseña inicial *</label>
+                <input type="password" id="f_password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+              </div>
+            </div>
+          </div>
+
+          <p id="modalError" style="color:var(--danger);font-size:0.85rem;margin:8px 0 0;display:none;background:rgba(239,68,68,0.08);padding:8px 12px;border-radius:8px;border-left:3px solid var(--danger)"></p>
+
         </div>
         <!-- /modal-body -->
+
         <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModal('modalMaestro')">
-            Cancelar
-          </button>
-          <button
-            class="btn btn-primary"
-            id="btnGuardar"
-            onclick="guardarMaestro()"
-          >
+          <button class="btn btn-outline" onclick="cerrarModal('modalMaestro')">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardar" onclick="guardarMaestro()">
             <iconify-icon icon="lucide:save"></iconify-icon> Guardar
           </button>
         </div>
       </div>
     </div>
-
     <div id="toast-container"></div>
 
     <!-- Modal Importar CSV Maestros -->

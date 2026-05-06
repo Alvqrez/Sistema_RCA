@@ -46,14 +46,7 @@ function toast(msg, tipo = "success") {
 }
 
 function cambiarTab(nombre) {
-  document
-    .querySelectorAll(".tab-panel")
-    .forEach((p) => p.classList.remove("active"));
-  document
-    .querySelectorAll(".modal-tab")
-    .forEach((b) => b.classList.remove("active"));
-  document.getElementById(`tab-${nombre}`)?.classList.add("active");
-  document.getElementById(`tab-btn-${nombre}`)?.classList.add("active");
+  // Función mantenida por compatibilidad — el modal ya no usa tabs
 }
 
 function abrirModal(id) {
@@ -180,11 +173,9 @@ function abrirModalNuevo() {
   empleadoEditando = null;
   document.getElementById("modalTitulo").textContent = "Nuevo maestro";
   document.getElementById("grupoPassword").style.display = "";
-  document.getElementById("modalAvatarHeader").style.display = "none";
   limpiarForm();
   const rfcEl = document.getElementById("f_rfc");
   if (rfcEl) rfcEl.disabled = false;
-  cambiarTab("esencial");
   ocultarError();
   abrirModal("modalMaestro");
 }
@@ -198,44 +189,29 @@ function editarMaestro(ne) {
   document.getElementById("modalTitulo").textContent = "Editar maestro";
   document.getElementById("grupoPassword").style.display = "none";
 
-  // Avatar dinámico
-  const ini =
-    `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-  document.getElementById("modalAvatarBig").textContent = ini;
-  document.getElementById("modalAvatarNombre").textContent =
-    `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.trim();
-  document.getElementById("modalAvatarHeader").style.display = "flex";
-
-  // Rellenar campos — Tab Esencial
+  // Rellenar campos
   document.getElementById("f_rfc").value = m.rfc ?? "";
-  document.getElementById("f_rfc").disabled = true; // RFC no se puede cambiar al editar
+  document.getElementById("f_rfc").disabled = true;
   document.getElementById("f_nombre").value = m.nombre ?? "";
   document.getElementById("f_ap_pat").value = m.apellido_paterno ?? "";
   document.getElementById("f_ap_mat").value = m.apellido_materno ?? "";
   document.getElementById("f_estatus").value = m.estatus ?? "Activo";
-  // Generar correo automáticamente al editar
   generarCorreoMaestro();
 
-  // Tab Personal
   document.getElementById("f_curp").value = m.curp ?? "";
-  document.getElementById("f_rfc").value = m.rfc ?? "";
-  document.getElementById("f_fnac").value =
-    m.fecha_nacimiento?.slice(0, 10) ?? "";
+  document.getElementById("f_fnac").value = m.fecha_nacimiento?.slice(0, 10) ?? "";
   document.getElementById("f_genero").value = m.genero ?? "";
   document.getElementById("f_celular").value = m.tel_celular ?? "";
   document.getElementById("f_correo_personal").value = m.correo_personal ?? "";
   document.getElementById("f_direccion").value = m.direccion ?? "";
 
-  // Tab Laboral
   document.getElementById("f_departamento").value = m.departamento ?? "";
   document.getElementById("f_especialidad").value = m.especialidad ?? "";
   document.getElementById("f_grado").value = m.grado_academico ?? "";
   document.getElementById("f_contrato").value = m.tipo_contrato ?? "";
-  document.getElementById("f_ingreso").value =
-    m.fecha_ingreso?.slice(0, 10) ?? "";
+  document.getElementById("f_ingreso").value = m.fecha_ingreso?.slice(0, 10) ?? "";
   document.getElementById("f_tel_oficina").value = m.tel_oficina ?? "";
 
-  cambiarTab("esencial");
   ocultarError();
   abrirModal("modalMaestro");
 }
@@ -352,7 +328,6 @@ function mostrarError(msg, tabDonde = null) {
   const errEl = document.getElementById("modalError");
   errEl.textContent = msg;
   errEl.style.display = "block";
-  if (tabDonde) cambiarTab(tabDonde);
 }
 function ocultarError() {
   const errEl = document.getElementById("modalError");
