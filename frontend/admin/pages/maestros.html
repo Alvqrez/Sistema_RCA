@@ -119,45 +119,13 @@
       }
 
       /* ── Panel más ancho para acomodar tabs ─────────────────────────── */
-      #modalMaestro {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        padding: 20px !important;
-        display: none;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
-        z-index: 9999 !important;
-      }
-
-      #modalMaestro.visible {
-        display: flex !important;
-      }
-
       #modalMaestro .modal-panel {
         max-width: 680px;
-        width: 95vw;
-        max-height: calc(90vh - 40px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
       }
 
       #modalMaestro .modal-body {
-        overflow-y: auto !important;
-        flex: 1 !important;
-        min-height: 0 !important;
-      }
-
-      #modalMaestro .modal-footer {
-        flex-shrink: 0 !important;
-        border-top: 1px solid var(--border);
-        padding: 16px 24px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
+        overflow-y: auto;
+        max-height: 68vh;
       }
 
       /* ── Badge de estatus inline ───────────────────────────────────── */
