@@ -387,20 +387,25 @@ async function guardarActividad() {
 
 // ─── Eliminar ─────────────────────────────────────────────────────────────────
 async function eliminarActividad(id, nombre) {
-  if (!confirm(`¿Eliminar la actividad "${nombre}"?`)) return;
-  try {
-    const res = await fetch(`${API_URL}/api/materia-actividades/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${tk()}` },
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showToast(data.error || "No se pudo eliminar", "error");
-      return;
-    }
-    showToast("Actividad eliminada", "success");
-    await cargarActividades();
-  } catch (_) {
-    showToast("Error de conexión", "error");
-  }
+  showConfirm(
+    `¿Eliminar la actividad "${nombre}"?`,
+    async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/materia-actividades/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${tk()}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || "No se pudo eliminar", "error");
+          return;
+        }
+        showToast("Actividad eliminada", "success");
+        await cargarActividades();
+      } catch (_) {
+        showToast("Error de conexión", "error");
+      }
+    },
+    "Eliminar actividad"
+  );
 }

@@ -421,24 +421,24 @@ async function guardarAlumno() {
 
 // ─── Eliminar alumno ──────────────────────────────────────────────────────────
 async function eliminarAlumno(no_control) {
-  if (
-    !confirm(
-      `¿Eliminar al alumno ${no_control}? Esta acción no se puede deshacer.`,
-    )
-  )
-    return;
-  const token = localStorage.getItem("token");
-  try {
-    const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!r.ok) throw new Error("No se pudo eliminar");
-    toast("Alumno eliminado");
-    await cargarAlumnos();
-  } catch (e) {
-    toast(e.message, "error");
-  }
+  showConfirm(
+    `¿Eliminar al alumno ${no_control}? Esta acción no se puede deshacer.`,
+    async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) throw new Error("No se pudo eliminar");
+        toast("Alumno eliminado");
+        await cargarAlumnos();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    },
+    "Eliminar alumno"
+  );
 }
 
 // ─── Limpiar formulario ───────────────────────────────────────────────────────

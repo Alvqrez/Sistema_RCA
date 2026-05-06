@@ -333,24 +333,24 @@ function cancelarEdicion() {
 }
 
 async function eliminarMateria(clave) {
-  if (
-    !confirm(
-      `¿Eliminar la materia "${clave}"? Esta acción no se puede deshacer.`,
-    )
-  )
-    return;
-  const token = localStorage.getItem("token");
-  try {
-    const res = await fetch(`${API_URL}/api/materias/${clave}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (data.success) cargarMaterias();
-    else alert(data.error || "Error al eliminar.");
-  } catch {
-    alert("Error de conexión con el servidor.");
-  }
+  showConfirm(
+    `¿Eliminar la materia "${clave}"? Esta acción no se puede deshacer.`,
+    async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(`${API_URL}/api/materias/${clave}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) cargarMaterias();
+        else mostrarMensaje(data.error || "Error al eliminar.", "error");
+      } catch {
+        mostrarMensaje("Error de conexión con el servidor.", "error");
+      }
+    },
+    "Eliminar materia"
+  );
 }
 
 function mostrarMensaje(texto, tipo) {

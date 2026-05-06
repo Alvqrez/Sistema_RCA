@@ -328,20 +328,24 @@ async function guardarMaestro() {
 }
 
 async function eliminarMaestro(ne) {
-  if (!confirm(`¿Eliminar al maestro ${ne}? Esta acción no se puede deshacer.`))
-    return;
-  const token = localStorage.getItem("token");
-  try {
-    const r = await fetch(`${API_URL}/api/maestros/${ne}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!r.ok) throw new Error("No se pudo eliminar");
-    toast("Maestro eliminado");
-    await cargarMaestros();
-  } catch (e) {
-    toast(e.message, "error");
-  }
+  showConfirm(
+    `¿Eliminar al maestro ${ne}? Esta acción no se puede deshacer.`,
+    async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const r = await fetch(`${API_URL}/api/maestros/${ne}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) throw new Error("No se pudo eliminar");
+        toast("Maestro eliminado");
+        await cargarMaestros();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    },
+    "Eliminar maestro"
+  );
 }
 
 function mostrarError(msg, tabDonde = null) {
