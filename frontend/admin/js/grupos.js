@@ -613,7 +613,11 @@ async function guardarEdicionGrupo() {
   const body = {
     limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
     aula: document.getElementById("editAula").value.trim() || null,
+<<<<<<< HEAD
     horario: obtenerHorarioEdit() || null,
+=======
+    horario: document.getElementById("editHorario").value.trim() || null,
+>>>>>>> 1f109cf981fab449056398d9e00250e504eca2e2
     estatus: document.getElementById("editEstatus").value,
   };
 

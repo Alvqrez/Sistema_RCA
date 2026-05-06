@@ -1,7 +1,7 @@
 const tk = () => localStorage.getItem("token");
 
 let todosGrupos = [];
-let reporteActual = null; // { grupo, unidades, alumnos, stats }
+let reporteActual = null;
 let alumnosRenderizados = [];
 
 function toast(msg, tipo = "info") {
@@ -16,7 +16,6 @@ function toast(msg, tipo = "info") {
 
 document.addEventListener("DOMContentLoaded", async () => {
   soloPermitido("administrador", "maestro");
-  // Carga periodos y grupos en paralelo
   await Promise.all([poblarFiltroPeriodo(), cargarGrupos()]);
 });
 
@@ -27,10 +26,12 @@ async function cargarGrupos() {
     });
     if (!r.ok) throw new Error();
     todosGrupos = await r.json();
-    filtrarGrupos(); // renderiza la grid
+    filtrarGrupos();
   } catch {
     document.getElementById("gruposGrid").innerHTML =
-      `<div class="empty-state"><iconify-icon icon="lucide:wifi-off"></iconify-icon><p>No se pudieron cargar los grupos</p></div>`;
+      `<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--danger)">
+        <iconify-icon icon="lucide:wifi-off"></iconify-icon> No se pudieron cargar los grupos
+      </td></tr>`;
   }
 }
 
@@ -41,21 +42,14 @@ async function poblarFiltroPeriodo() {
     });
     if (!r.ok) throw new Error();
     const periodos = await r.json();
-
     const sel = document.getElementById("filtroPeriodo");
-    // Mantener la opción vacía inicial
     sel.innerHTML = `<option value="">Todos los periodos</option>`;
     periodos.forEach((p) => {
       const etiqueta =
-        p.estatus === "Vigente"
-          ? " ✓"
-          : p.estatus === "Proximo"
-            ? " (próximo)"
-            : "";
+        p.estatus === "Vigente" ? " ✓" : p.estatus === "Proximo" ? " (próximo)" : "";
       sel.innerHTML += `<option value="${p.id_periodo}">${p.descripcion} (${p.anio})${etiqueta}</option>`;
     });
   } catch {
-    // Si falla la API de periodos, construye desde los grupos como fallback
     const sel = document.getElementById("filtroPeriodo");
     const periodos = [
       ...new Map(todosGrupos.map((g) => [g.id_periodo, g.periodo])).entries(),
@@ -69,51 +63,67 @@ async function poblarFiltroPeriodo() {
 function filtrarGrupos() {
   const q = document.getElementById("filtroGrupo").value.toLowerCase();
   const per = document.getElementById("filtroPeriodo").value;
+  const est = document.getElementById("filtroEstatus").value;
   const datos = todosGrupos.filter((g) => {
     const matchQ =
       !q ||
       g.nombre_materia.toLowerCase().includes(q) ||
       (g.nombre_maestro ?? "").toLowerCase().includes(q);
     const matchP = !per || String(g.id_periodo) === per;
-    return matchQ && matchP;
+    const matchE = !est || g.estatus === est;
+    return matchQ && matchP && matchE;
   });
   renderGruposGrid(datos);
 }
 
 function renderGruposGrid(grupos) {
-  const grid = document.getElementById("gruposGrid");
+  const tbody = document.getElementById("gruposGrid");
+  const contador = document.getElementById("contadorGrupos");
+  if (contador) contador.textContent = `${grupos.length} grupo${grupos.length !== 1 ? "s" : ""}`;
+
   if (!grupos.length) {
-    grid.innerHTML = `<div class="empty-state"><iconify-icon icon="lucide:search-x"></iconify-icon><p>Sin grupos que coincidan</p></div>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text-muted)">
+      <iconify-icon icon="lucide:search-x"></iconify-icon><br/>Sin grupos que coincidan
+    </td></tr>`;
     return;
   }
+
   const estatusColor = {
     Activo: "badge-success",
     Cerrado: "badge-warning",
     Cancelado: "badge-danger",
   };
-  grid.innerHTML = grupos
+
+  tbody.innerHTML = grupos
     .map(
       (g) => `
-    <div class="group-card" onclick="cargarReporte(${g.id_grupo})">
-      <h3>${g.nombre_materia}</h3>
-      <p><iconify-icon icon="lucide:user"></iconify-icon> ${g.nombre_maestro ?? "—"}</p>
-      <p style="margin-top:4px"><iconify-icon icon="lucide:calendar"></iconify-icon> ${g.periodo ?? "—"} ${g.anio ?? ""}</p>
-      <span class="group-badge badge ${estatusColor[g.estatus] ?? "badge-info"}">${g.estatus ?? "—"}</span>
-    </div>`,
+    <tr class="grupo-list-row" onclick="cargarReporte(${g.id_grupo})" id="grow-${g.id_grupo}">
+      <td>
+        <div class="grl-materia">${g.nombre_materia}</div>
+        <div class="grl-clave">${g.clave_materia ?? ""} · Grupo #${g.id_grupo}</div>
+      </td>
+      <td>
+        <div class="grl-maestro"><iconify-icon icon="lucide:user" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${g.nombre_maestro ?? "—"}</div>
+      </td>
+      <td>
+        <div class="grl-periodo"><iconify-icon icon="lucide:calendar" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${g.periodo ?? "—"} ${g.anio ?? ""}</div>
+      </td>
+      <td style="text-align:center">
+        <span class="badge ${estatusColor[g.estatus] ?? "badge-info"}">${g.estatus ?? "—"}</span>
+      </td>
+      <td style="text-align:right">
+        <iconify-icon icon="lucide:chevron-right" class="grl-arrow"></iconify-icon>
+      </td>
+    </tr>`,
     )
     .join("");
 }
 
 async function cargarReporte(id_grupo) {
-  const grid = document.getElementById("gruposGrid");
-  // marcar seleccionado
-  grid
-    .querySelectorAll(".group-card")
-    .forEach((c) => c.classList.remove("selected"));
-  const card = [...grid.querySelectorAll(".group-card")].find((c) =>
-    c.getAttribute("onclick").includes(id_grupo),
-  );
-  if (card) card.classList.add("selected");
+  // Marcar fila seleccionada
+  document.querySelectorAll(".grupo-list-row").forEach((r) => r.classList.remove("selected"));
+  const row = document.getElementById(`grow-${id_grupo}`);
+  if (row) row.classList.add("selected");
 
   try {
     const r = await fetch(`${API_URL}/api/reportes/grupo/${id_grupo}`, {
@@ -128,28 +138,21 @@ async function cargarReporte(id_grupo) {
 }
 
 function mostrarReporte({ grupo, unidades, alumnos, stats }) {
-  // Mostrar contenedor
   document.getElementById("reporteContainer").style.display = "block";
   document.getElementById("exportActions").style.display = "flex";
   document.getElementById("selectorCard").style.marginBottom = "20px";
 
-  // Info del grupo
   document.getElementById("infoMateria").textContent =
     `${grupo.nombre_materia} (${grupo.clave_materia})`;
-  document.getElementById("infoMaestro").textContent =
-    grupo.nombre_maestro ?? "—";
+  document.getElementById("infoMaestro").textContent = grupo.nombre_maestro ?? "—";
   document.getElementById("infoPeriodo").textContent =
     `${grupo.periodo ?? "—"} ${grupo.anio ?? ""}`;
+
   const estatusBadge = document.getElementById("infoEstatus");
-  const colores = {
-    Activo: "badge-success",
-    Cerrado: "badge-warning",
-    Cancelado: "badge-danger",
-  };
+  const colores = { Activo: "badge-success", Cerrado: "badge-warning", Cancelado: "badge-danger" };
   estatusBadge.className = `badge ${colores[grupo.estatus] ?? "badge-info"}`;
   estatusBadge.textContent = grupo.estatus ?? "—";
 
-  // Stats
   document.getElementById("sTotal").textContent = stats.total;
   document.getElementById("sAprobados").textContent = stats.aprobados;
   document.getElementById("sReprobados").textContent = stats.reprobados;
@@ -159,25 +162,27 @@ function mostrarReporte({ grupo, unidades, alumnos, stats }) {
   alumnosRenderizados = alumnos;
   renderTablaReporte(alumnos, unidades);
   document.getElementById("filtroAlumnoReporte").value = "";
+
+  // Scroll al reporte
+  document.getElementById("reporteContainer").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderTablaReporte(alumnos, unidades) {
   const thead = document.getElementById("headReporte");
   const tbody = document.getElementById("bodyReporte");
-  // Agrega numero_unidad en cliente si no viene del servidor
   const uns = (unidades ?? reporteActual?.unidades ?? []).map((u, i) => ({
     ...u,
     numero_unidad: u.numero_unidad ?? i + 1,
   }));
 
   thead.innerHTML = `<tr>
-        <th>Alumno</th>
-        <th>No. Control</th>
-        ${uns.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad}<br><small style="font-weight:400;color:var(--text-muted)">${u.nombre_unidad}</small></th>`).join("")}
-        <th style="text-align:center">Promedio</th>
-        <th style="text-align:center">Cal. oficial</th>
-        <th style="text-align:center">Estado</th>
-    </tr>`;
+    <th>Alumno</th>
+    <th>No. Control</th>
+    ${uns.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad}<br><small style="font-weight:400;color:var(--text-muted)">${u.nombre_unidad}</small></th>`).join("")}
+    <th style="text-align:center">Promedio</th>
+    <th style="text-align:center">Cal. oficial</th>
+    <th style="text-align:center">Estado</th>
+  </tr>`;
 
   if (!alumnos.length) {
     tbody.innerHTML = `<tr><td colspan="${6 + uns.length}"><div class="empty-state">
@@ -193,8 +198,7 @@ function renderTablaReporte(alumnos, unidades) {
       const calUnidades = uns
         .map((u) => {
           const uc = a.unidades?.[u.id_unidad];
-          if (!uc)
-            return `<td style="text-align:center;color:var(--text-muted)">—</td>`;
+          if (!uc) return `<td style="text-align:center;color:var(--text-muted)">—</td>`;
           const cls =
             uc.estatus === "Aprobada"
               ? "cal-aprobado"
@@ -220,16 +224,16 @@ function renderTablaReporte(alumnos, unidades) {
         : `<span class="badge badge-warning">Pendiente</span>`;
 
       return `<tr>
-      <td><div class="avatar-cell">
-        <div class="avatar">${iniciales}</div>
-        <span style="font-size:0.875rem">${a.nombre_completo}</span>
-      </div></td>
-      <td><code>${a.no_control}</code></td>
-      ${calUnidades}
-      ${promUnidades}
-      ${calFinal}
-      <td style="text-align:center">${badge}</td>
-    </tr>`;
+        <td><div class="avatar-cell">
+          <div class="avatar">${iniciales}</div>
+          <span style="font-size:0.875rem">${a.nombre_completo}</span>
+        </div></td>
+        <td><code>${a.no_control}</code></td>
+        ${calUnidades}
+        ${promUnidades}
+        ${calFinal}
+        <td style="text-align:center">${badge}</td>
+      </tr>`;
     })
     .join("");
 }
@@ -256,13 +260,7 @@ function exportarReporteCSV() {
   const { grupo, unidades, alumnos } = reporteActual;
   const colBase = ["no_control", "nombre_completo", "estatus_inscripcion"];
   const colUnidades = unidades.map((u) => u.nombre_unidad);
-  const cols = [
-    ...colBase,
-    ...colUnidades,
-    "promedio_unidades",
-    "calificacion_oficial",
-    "estatus_final",
-  ];
+  const cols = [...colBase, ...colUnidades, "promedio_unidades", "calificacion_oficial", "estatus_final"];
 
   const rows = [cols.join(",")];
   alumnos.forEach((a) => {
