@@ -98,9 +98,10 @@ router.post("/", soloAdmin, async (req, res) => {
       ],
       (err) => {
         if (err) {
+          console.error("ERROR INSERT maestro:", err.message, err.code);
           if (err.code === "ER_DUP_ENTRY")
             return res.status(409).json({ error: "El RFC ya está registrado" });
-          return res.status(500).json({ error: "Error interno del servidor" });
+          return res.status(500).json({ error: err.message });
         }
 
         db.query(

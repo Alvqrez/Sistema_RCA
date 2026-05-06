@@ -1182,6 +1182,177 @@ async function seed() {
     console.log("✓ Califs     → U1,U2 validadas; U3,U38 pendientes de guardar");
 
     // ══════════════════════════════════════════════════════════════════════
+    // 13. ACTIVIDADES Y CALIFICACIONES — G17/G18 (ADM001) y G19/G20 (FIN001)
+    //     IGE alumnos: 26000015-26000020
+    // ══════════════════════════════════════════════════════════════════════
+
+    // G17 ADM001 (M4) — Unidad 25 y 26 cerradas, Unidad 27 abierta
+    // G18 ADM001 (M4) — mismas unidades
+    await q(`INSERT IGNORE INTO actividad
+               (id_actividad,id_grupo,id_unidad,nombre_actividad,ponderacion,tipo_evaluacion,bloqueado)
+             VALUES
+               (13,17,25,'Examen Teoría Adm',    60,'Sumativa', 1),
+               (14,17,25,'Tarea Estructuras Org', 40,'Formativa',1),
+               (15,17,26,'Examen Planeación',     70,'Sumativa', 1),
+               (16,17,26,'Caso Práctico',         30,'Formativa',1),
+               (17,17,27,'Proyecto Final Adm',    60,'Sumativa', 0),
+               (18,17,27,'Reporte Escrito',       40,'Formativa',0),
+               (19,18,25,'Examen Teoría Adm',    60,'Sumativa', 1),
+               (20,18,25,'Tarea Estructuras Org', 40,'Formativa',1),
+               (21,18,26,'Examen Planeación',     70,'Sumativa', 1),
+               (22,18,26,'Caso Práctico',         30,'Formativa',1),
+               (23,18,27,'Proyecto Final Adm',    60,'Sumativa', 0),
+               (24,18,27,'Reporte Escrito',       40,'Formativa',0)`);
+
+    // G19 FIN001 (M4) — Unidad 28 y 29 cerradas, Unidad 30 abierta
+    // G20 FIN001 (M5) — mismas unidades
+    await q(`INSERT IGNORE INTO actividad
+               (id_actividad,id_grupo,id_unidad,nombre_actividad,ponderacion,tipo_evaluacion,bloqueado)
+             VALUES
+               (25,19,28,'Examen Fund Financieros',60,'Sumativa', 1),
+               (26,19,28,'Tarea Análisis',          40,'Formativa',1),
+               (27,19,29,'Examen Estados Fin',      70,'Sumativa', 1),
+               (28,19,29,'Práctica Contable',        30,'Formativa',1),
+               (29,19,30,'Examen Presupuestos',      60,'Sumativa', 0),
+               (30,19,30,'Proyecto Presupuestal',    40,'Formativa',0),
+               (31,20,28,'Examen Fund Financieros',60,'Sumativa', 1),
+               (32,20,28,'Tarea Análisis',          40,'Formativa',1),
+               (33,20,29,'Examen Estados Fin',      70,'Sumativa', 1),
+               (34,20,29,'Práctica Contable',        30,'Formativa',1),
+               (35,20,30,'Examen Presupuestos',      60,'Sumativa', 0),
+               (36,20,30,'Proyecto Presupuestal',    40,'Formativa',0)`);
+
+    // ── Calificaciones G17 ADM001 U25 y U26 (alumnos: 15,16,17,18,19,20) ─
+    const calsG17 = [
+      // U25: act13(60%) + act14(40%)
+      ["26000015",13,82], ["26000015",14,88],
+      ["26000016",13,75], ["26000016",14,70],
+      ["26000017",13,90], ["26000017",14,85],
+      ["26000018",13,65], ["26000018",14,72],
+      ["26000019",13,88], ["26000019",14,92],
+      ["26000020",13,78], ["26000020",14,80],
+      // U26: act15(70%) + act16(30%)
+      ["26000015",15,80], ["26000015",16,85],
+      ["26000016",15,68], ["26000016",16,75],
+      ["26000017",15,92], ["26000017",16,88],
+      ["26000018",15,60], ["26000018",16,65],
+      ["26000019",15,85], ["26000019",16,90],
+      ["26000020",15,77], ["26000020",16,82],
+    ];
+    for (const [nc,ia,cal] of calsG17)
+      await q(`INSERT IGNORE INTO resultado_actividad
+               (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
+               VALUES (?,?,?,'Validada',?)`, [nc,ia,cal,M4]);
+
+    // ── Calificaciones G18 ADM001 U25 y U26 (alumnos: 15,17,19 en G18) ──
+    // G18: 26000015,26000017,26000019 también + otros según inscripciones
+    // Revisando: 15→18, 17→18, 19→18 del array de inscripciones
+    const calsG18 = [
+      ["26000015",19,79], ["26000015",20,84],
+      ["26000017",19,88], ["26000017",20,82],
+      ["26000019",19,85], ["26000019",20,90],
+      ["26000015",21,77], ["26000015",22,80],
+      ["26000017",21,90], ["26000017",22,86],
+      ["26000019",21,83], ["26000019",22,88],
+    ];
+    for (const [nc,ia,cal] of calsG18)
+      await q(`INSERT IGNORE INTO resultado_actividad
+               (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
+               VALUES (?,?,?,'Validada',?)`, [nc,ia,cal,M4]);
+
+    // ── Calificaciones G19 FIN001 U28 y U29 ───────────────────────────────
+    // G19: 26000015,26000016,26000017,26000018,26000019,26000020
+    const calsG19 = [
+      ["26000015",25,84], ["26000015",26,80],
+      ["26000016",25,72], ["26000016",26,68],
+      ["26000017",25,91], ["26000017",26,88],
+      ["26000018",25,63], ["26000018",26,70],
+      ["26000019",25,87], ["26000019",26,92],
+      ["26000020",25,76], ["26000020",26,79],
+      ["26000015",27,82], ["26000015",28,86],
+      ["26000016",27,65], ["26000016",28,70],
+      ["26000017",27,93], ["26000017",28,89],
+      ["26000018",27,58], ["26000018",28,65],
+      ["26000019",27,88], ["26000019",28,90],
+      ["26000020",27,75], ["26000020",28,80],
+    ];
+    for (const [nc,ia,cal] of calsG19)
+      await q(`INSERT IGNORE INTO resultado_actividad
+               (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
+               VALUES (?,?,?,'Validada',?)`, [nc,ia,cal,M4]);
+
+    // ── Calificaciones G20 FIN001 U28 y U29 ───────────────────────────────
+    // G20: 26000016,26000018,26000020
+    const calsG20 = [
+      ["26000016",31,70], ["26000016",32,74],
+      ["26000018",31,62], ["26000018",32,68],
+      ["26000020",31,78], ["26000020",32,82],
+      ["26000016",33,67], ["26000016",34,72],
+      ["26000018",33,60], ["26000018",34,65],
+      ["26000020",33,80], ["26000020",34,78],
+    ];
+    for (const [nc,ia,cal] of calsG20)
+      await q(`INSERT IGNORE INTO resultado_actividad
+               (no_control,id_actividad,calificacion_obtenida,estatus,rfc)
+               VALUES (?,?,?,'Validada',?)`, [nc,ia,cal,M5]);
+
+    // ── Calificaciones de unidad para G17, G18, G19, G20 ─────────────────
+    const cuIGE = [
+      // G17 ADM U25: 60%ex + 40%tarea
+      ["26000015",25,17, 82*0.6+88*0.4,"Aprobada"],
+      ["26000016",25,17, 75*0.6+70*0.4,"Aprobada"],
+      ["26000017",25,17, 90*0.6+85*0.4,"Aprobada"],
+      ["26000018",25,17, 65*0.6+72*0.4,"Reprobada"],
+      ["26000019",25,17, 88*0.6+92*0.4,"Aprobada"],
+      ["26000020",25,17, 78*0.6+80*0.4,"Aprobada"],
+      // G17 ADM U26: 70%ex + 30%caso
+      ["26000015",26,17, 80*0.7+85*0.3,"Aprobada"],
+      ["26000016",26,17, 68*0.7+75*0.3,"Aprobada"],
+      ["26000017",26,17, 92*0.7+88*0.3,"Aprobada"],
+      ["26000018",26,17, 60*0.7+65*0.3,"Reprobada"],
+      ["26000019",26,17, 85*0.7+90*0.3,"Aprobada"],
+      ["26000020",26,17, 77*0.7+82*0.3,"Aprobada"],
+      // G18 ADM U25
+      ["26000015",25,18, 79*0.6+84*0.4,"Aprobada"],
+      ["26000017",25,18, 88*0.6+82*0.4,"Aprobada"],
+      ["26000019",25,18, 85*0.6+90*0.4,"Aprobada"],
+      // G18 ADM U26
+      ["26000015",26,18, 77*0.7+80*0.3,"Aprobada"],
+      ["26000017",26,18, 90*0.7+86*0.3,"Aprobada"],
+      ["26000019",26,18, 83*0.7+88*0.3,"Aprobada"],
+      // G19 FIN U28: 60%ex+40%tarea
+      ["26000015",28,19, 84*0.6+80*0.4,"Aprobada"],
+      ["26000016",28,19, 72*0.6+68*0.4,"Aprobada"],
+      ["26000017",28,19, 91*0.6+88*0.4,"Aprobada"],
+      ["26000018",28,19, 63*0.6+70*0.4,"Reprobada"],
+      ["26000019",28,19, 87*0.6+92*0.4,"Aprobada"],
+      ["26000020",28,19, 76*0.6+79*0.4,"Aprobada"],
+      // G19 FIN U29: 70%ex+30%prac
+      ["26000015",29,19, 82*0.7+86*0.3,"Aprobada"],
+      ["26000016",29,19, 65*0.7+70*0.3,"Reprobada"],
+      ["26000017",29,19, 93*0.7+89*0.3,"Aprobada"],
+      ["26000018",29,19, 58*0.7+65*0.3,"Reprobada"],
+      ["26000019",29,19, 88*0.7+90*0.3,"Aprobada"],
+      ["26000020",29,19, 75*0.7+80*0.3,"Aprobada"],
+      // G20 FIN U28
+      ["26000016",28,20, 70*0.6+74*0.4,"Aprobada"],
+      ["26000018",28,20, 62*0.6+68*0.4,"Reprobada"],
+      ["26000020",28,20, 78*0.6+82*0.4,"Aprobada"],
+      // G20 FIN U29
+      ["26000016",29,20, 67*0.7+72*0.3,"Reprobada"],
+      ["26000018",29,20, 60*0.7+65*0.3,"Reprobada"],
+      ["26000020",29,20, 80*0.7+78*0.3,"Aprobada"],
+    ];
+    for (const [nc,idu,idg,prom,est] of cuIGE)
+      await q(`INSERT IGNORE INTO calificacion_unidad
+               (no_control,id_unidad,id_grupo,promedio_ponderado,calificacion_unidad_final,estatus_unidad)
+               VALUES (?,?,?,?,?,?)`,
+        [nc,idu,idg, Math.round(prom*10)/10, Math.round(prom), est]);
+
+    console.log("✓ Califs IGE → G17,G18 ADM001 + G19,G20 FIN001 (U1,U2 validadas; U3 pendiente)");
+
+
+    // ══════════════════════════════════════════════════════════════════════
     // RESUMEN
     // ══════════════════════════════════════════════════════════════════════
     console.log("\n✅ Seed v3 completado.");
