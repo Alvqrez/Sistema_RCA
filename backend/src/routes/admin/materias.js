@@ -137,19 +137,30 @@ router.put("/:clave", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar materia
+// DELETE — eliminar materia (borra retícula primero para evitar error de FK)
 router.delete("/:clave", soloAdmin, (req, res) => {
-  db.query(
-    "DELETE FROM materia WHERE clave_materia=?",
-    [req.params.clave],
-    (err, result) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!result.affectedRows)
-        return res.status(404).json({ error: "Materia no encontrada" });
-      res.json({ success: true, mensaje: "Materia eliminada" });
-    },
-  );
+  const clave = req.params.clave;
+  // 1. Borrar registros dependientes en retícula
+  db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err) => {
+    if (err) {
+      console.error("Error borrando retícula:", err);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+    // 2. Borrar la materia
+    db.query(
+      "DELETE FROM materia WHERE clave_materia=?",
+      [clave],
+      (err2, result) => {
+        if (err2) {
+          console.error("Error borrando materia:", err2);
+          return res.status(500).json({ error: "Error interno del servidor" });
+        }
+        if (!result.affectedRows)
+          return res.status(404).json({ error: "Materia no encontrada" });
+        res.json({ success: true, mensaje: "Materia eliminada" });
+      },
+    );
+  });
 });
 
 // ── RETÍCULA (asociar materia ↔ carrera) ──────────────────────────────────────
