@@ -210,15 +210,86 @@ async function irPaso3() {
   actualizarContadorAlumnos();
   filtrarAlumnos();
 
-  // Mostrar widget de créditos solo en periodos semestrales
+  // Mostrar widget según tipo de periodo
   const desc = (periodoSel?.descripcion || "").toLowerCase();
   const esSemestral = desc.includes("enero") || desc.includes("agosto");
-  document.getElementById("creditosWidget").style.display = esSemestral ? "block" : "none";
-  if (esSemestral) actualizarBarraCreditos();
+  const esVerano = desc.includes("verano");
+  const mostrarWidget = esSemestral || esVerano;
+  document.getElementById("creditosWidget").style.display = mostrarWidget ? "block" : "none";
+
+  // Actualizar etiquetas del widget según tipo
+  if (esVerano) {
+    document.getElementById("creditosMin").textContent = "Mínimo: 1";
+    document.getElementById("creditosMax").textContent = "Máximo: 2";
+    document.getElementById("creditosTexto").textContent = "— / 2 materias";
+  } else {
+    document.getElementById("creditosMin").textContent = "Mínimo: 20";
+    document.getElementById("creditosMax").textContent = "Máximo: 36";
+    document.getElementById("creditosTexto").textContent = "— / 36 créditos";
+  }
+  if (mostrarWidget) actualizarBarraCreditos();
 }
 
-function irPaso4() {
+async function irPaso4() {
   if (!alumnosSel.size) return;
+
+  const btn = document.getElementById("btnIrPaso4");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Validando…`;
+
+  try {
+    const r = await fetch(`${API_URL}/api/inscripciones/validar-carga`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({
+        no_controls: [...alumnosSel],
+        id_grupo: grupoSel.id_grupo,
+      }),
+    });
+
+    if (r.ok) {
+      const resultados = await r.json();
+      const rechazados = resultados.filter((x) => !x.ok);
+      const aprobados = resultados.filter((x) => x.ok);
+
+      if (rechazados.length > 0) {
+        // Deseleccionar automáticamente a los que no pasan
+        rechazados.forEach((x) => alumnosSel.delete(x.no_control));
+        actualizarContadorAlumnos();
+        filtrarAlumnos(); // refrescar tabla para quitar checks
+
+        const esVerano = rechazados[0]?.es_verano;
+        const nombres = rechazados.map((x) => {
+          const a = todosAlumnos.find((al) => al.no_control === x.no_control);
+          const nombre = a ? `${a.nombre} ${a.apellido_paterno}` : x.no_control;
+          const detalle = esVerano
+            ? `${x.carga_actual}/2 materias`
+            : `${x.carga_actual}+${x.agrega}=${x.total} cred.`;
+          return `${nombre} (${detalle})`;
+        }).join(", ");
+
+        const tipoLimite = esVerano ? "límite de verano (máx. 2)" : "límite de créditos (máx. 36)";
+        showToast(
+          `⚠️ Se removieron ${rechazados.length} alumno(s) por ${tipoLimite}: ${nombres}`,
+          "error"
+        );
+
+        if (!alumnosSel.size) {
+          btn.disabled = false;
+          btn.innerHTML = `Revisar <iconify-icon icon="lucide:arrow-right"></iconify-icon>`;
+          return;
+        }
+      }
+    }
+  } catch {
+    // Si falla la validación previa, se avanza igual (el backend vuelve a validar al confirmar)
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `Revisar <iconify-icon icon="lucide:arrow-right"></iconify-icon>`;
   setStep(4);
   poblarResumen();
 }
@@ -414,11 +485,45 @@ function renderTablaAlumnos(alumnos, duplicados = new Set()) {
             <iconify-icon icon="lucide:ban" style="font-size:0.7rem;vertical-align:-1px"></iconify-icon> Ya inscrito
           </span>`
         : "";
+      // Calcular carga actual del alumno desde todasInsc (sin fetch)
+      const descPer = (periodoSel?.descripcion || "").toLowerCase();
+      const esVeranoLocal = descPer.includes("verano");
+      const esSemestralLocal = descPer.includes("enero") || descPer.includes("agosto");
+      let badgeCarga = "";
+      if (esSemestralLocal || esVeranoLocal) {
+        const inscAlumno = todasInsc.filter(
+          (i) => i.no_control === a.no_control && i.estatus === "Cursando"
+        );
+        if (esVeranoLocal) {
+          const matVerano = inscAlumno.filter((i) => (i.periodo || "").toLowerCase().includes("verano")).length;
+          const color = matVerano >= 2 ? "#ef4444" : matVerano === 1 ? "#f59e0b" : "#6b7280";
+          badgeCarga = `<span style="font-size:0.68rem;color:${color};background:${color}18;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap">
+            ${matVerano}/2 verano
+          </span>`;
+        } else {
+          const credActuales = inscAlumno
+            .filter((i) => {
+              const pd = (i.periodo || "").toLowerCase();
+              return pd.includes("enero") || pd.includes("agosto");
+            })
+            .reduce((acc, i) => {
+              const mat = todasMaterias.find((m) => m.clave_materia === i.clave_materia);
+              return acc + (mat ? parseFloat(mat.creditos_totales || 0) : 0);
+            }, 0);
+          const color = credActuales >= 30 ? "#f59e0b" : "#6b7280";
+          badgeCarga = credActuales > 0
+            ? `<span style="font-size:0.68rem;color:${color};background:${color}18;padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap">
+                ${credActuales} cred.
+              </span>`
+            : "";
+        }
+      }
+
       return `<tr ${rowStyle}>
         <td><input type="checkbox" ${checked} ${disabledAttr}
           onchange="toggleAlumno('${a.no_control}', this)" /></td>
         <td><code>${a.no_control}</code></td>
-        <td>${a.nombre} ${a.apellido_paterno} ${a.apellido_materno || ""}${badge}</td>
+        <td>${a.nombre} ${a.apellido_paterno} ${a.apellido_materno || ""}${badge}${badgeCarga}</td>
         <td style="font-size:0.8rem;color:var(--text-muted)">${a.correo_institucional || "—"}</td>
         <td style="font-size:0.75rem;color:var(--text-muted)">${esDuplicado ? "Otro grupo" : ""}</td>
       </tr>`;
@@ -437,16 +542,19 @@ function toggleAlumno(no_control, chk) {
   }
 }
 
-// ── Barra de créditos ──────────────────────────────────────────────────────
+// ── Barra de créditos / materias verano ────────────────────────────────────
 async function actualizarBarraCreditos() {
   const widget = document.getElementById("creditosWidget");
   if (!widget || widget.style.display === "none") return;
 
-  // Si hay exactamente 1 alumno seleccionado, mostrar sus créditos
-  // Si hay 0 o más de 1, mostrar estado neutro
+  const desc = (periodoSel?.descripcion || "").toLowerCase();
+  const esVerano = desc.includes("verano");
+
+  const textoNeutro = esVerano ? "— / 2 materias" : "— / 36 créditos";
+
   if (alumnosSel.size !== 1) {
     document.getElementById("creditosTexto").textContent =
-      alumnosSel.size === 0 ? "— / 36 créditos" : `${alumnosSel.size} alumnos seleccionados`;
+      alumnosSel.size === 0 ? textoNeutro : `${alumnosSel.size} alumnos seleccionados`;
     document.getElementById("creditosBarra").style.width = "0%";
     document.getElementById("creditosBarra").style.background = "#3b82f6";
     document.getElementById("creditosAviso").textContent = "";
@@ -455,48 +563,63 @@ async function actualizarBarraCreditos() {
 
   const no_control = [...alumnosSel][0];
   try {
-    // Obtener inscripciones actuales del alumno
     const r = await fetch(`${API_URL}/api/inscripciones/alumno/${no_control}`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
     if (!r.ok) return;
     const inscripciones = await r.json();
 
-    // Sumar créditos de materias activas en periodos semestrales del mismo año
-    let creditosActuales = 0;
-    inscripciones
-      .filter((i) => {
+    if (esVerano) {
+      // ── Modo verano: contar materias en este periodo específico ──
+      const materiasEnVerano = inscripciones.filter((i) => {
         const pDesc = (i.periodo || "").toLowerCase();
-        return (pDesc.includes("enero") || pDesc.includes("agosto")) && i.estatus === "Cursando";
-      })
-      .forEach((i) => {
-        creditosActuales += parseFloat(i.creditos_totales || 0);
-      });
+        const pAnio = i.anio || 0;
+        const periodoAnio = periodoSel?.anio ||
+          new Date(periodoSel?.fecha_inicio || "").getFullYear() ||
+          new Date().getFullYear();
+        return pDesc.includes("verano") && i.estatus === "Cursando" && pAnio === periodoAnio;
+      }).length;
 
-    // Créditos de la materia nueva (desde todasMaterias)
-    const matNueva = todasMaterias.find((m) => m.clave_materia === materiaSel?.clave_materia);
-    const creditosNuevos = parseFloat(matNueva?.creditos_totales || 0);
-    const total = creditosActuales + creditosNuevos;
-    const pct = Math.min(100, (total / 36) * 100);
+      const total = materiasEnVerano + 1; // +1 por la que se quiere inscribir
+      const pct = Math.min(100, (total / 2) * 100);
 
-    let color = "#3b82f6"; // azul normal
-    let aviso = "";
-    if (total > 36) {
-      color = "#ef4444"; // rojo — excede
-      aviso = "⚠️ Excede el máximo";
-    } else if (total >= 30) {
-      color = "#f59e0b"; // amarillo — cerca del límite
-      aviso = "Cerca del límite";
-    } else if (creditosActuales === 0 && creditosNuevos === 0) {
-      aviso = "";
+      let color = total > 2 ? "#ef4444" : total === 2 ? "#f59e0b" : "#3b82f6";
+      let aviso = total > 2 ? "⚠️ Excede el máximo" : total === 2 ? "Límite alcanzado" : "";
+
+      document.getElementById("creditosTexto").textContent =
+        `${materiasEnVerano} / 2 materias en este verano (+1 nueva = ${total})`;
+      document.getElementById("creditosBarra").style.width = `${pct}%`;
+      document.getElementById("creditosBarra").style.background = color;
+      document.getElementById("creditosAviso").textContent = aviso;
+      document.getElementById("creditosAviso").style.color = color;
+
+    } else {
+      // ── Modo semestral: sumar créditos ──
+      let creditosActuales = 0;
+      inscripciones
+        .filter((i) => {
+          const pDesc = (i.periodo || "").toLowerCase();
+          return (pDesc.includes("enero") || pDesc.includes("agosto")) && i.estatus === "Cursando";
+        })
+        .forEach((i) => {
+          creditosActuales += parseFloat(i.creditos_totales || 0);
+        });
+
+      const matNueva = todasMaterias.find((m) => m.clave_materia === materiaSel?.clave_materia);
+      const creditosNuevos = parseFloat(matNueva?.creditos_totales || 0);
+      const total = creditosActuales + creditosNuevos;
+      const pct = Math.min(100, (total / 36) * 100);
+
+      let color = total > 36 ? "#ef4444" : total >= 30 ? "#f59e0b" : "#3b82f6";
+      let aviso = total > 36 ? "⚠️ Excede el máximo" : total >= 30 ? "Cerca del límite" : "";
+
+      document.getElementById("creditosTexto").textContent =
+        `${total} / 36 créditos (actuales: ${creditosActuales} + nueva: ${creditosNuevos})`;
+      document.getElementById("creditosBarra").style.width = `${pct}%`;
+      document.getElementById("creditosBarra").style.background = color;
+      document.getElementById("creditosAviso").textContent = aviso;
+      document.getElementById("creditosAviso").style.color = color;
     }
-
-    document.getElementById("creditosTexto").textContent =
-      `${total} / 36 créditos (actuales: ${creditosActuales} + nueva: ${creditosNuevos})`;
-    document.getElementById("creditosBarra").style.width = `${pct}%`;
-    document.getElementById("creditosBarra").style.background = color;
-    document.getElementById("creditosAviso").textContent = aviso;
-    document.getElementById("creditosAviso").style.color = color;
   } catch {
     // silencioso si falla
   }

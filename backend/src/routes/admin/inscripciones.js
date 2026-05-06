@@ -143,8 +143,34 @@ router.post("/", soloAdmin, (req, res) => {
         const esSemestral =
           desc.includes("enero") || desc.includes("agosto");
 
+        const esVerano = desc.includes("verano");
+
+        if (esVerano) {
+          // Verano — máximo 2 materias por periodo específico
+          const sqlVerano = `
+            SELECT COUNT(*) AS total
+            FROM inscripcion i
+            JOIN grupo g ON g.id_grupo = i.id_grupo
+            WHERE i.no_control = ?
+              AND g.id_periodo = (SELECT id_periodo FROM grupo WHERE id_grupo = ?)
+              AND i.estatus = 'Cursando'
+          `;
+          return db.query(sqlVerano, [no_control, id_grupo], (errV, veraRows) => {
+            if (errV)
+              return res.status(500).json({ error: "Error interno del servidor" });
+            const materiasVerano = parseInt(veraRows[0]?.total || 0);
+            if (materiasVerano >= 2) {
+              return res.status(400).json({
+                error: `El alumno ya tiene ${materiasVerano} materia(s) en este verano. El máximo permitido es 2.`,
+                materias_verano: materiasVerano,
+              });
+            }
+            insertarInscripcion();
+          });
+        }
+
         if (!esSemestral) {
-          // Periodo de verano — sin límite de créditos, insertar directo
+          // Otro tipo de periodo sin validación especial
           return insertarInscripcion();
         }
 
@@ -300,6 +326,32 @@ router.post("/bulk", soloAdmin, (req, res) => {
             const esSemestral =
               desc.includes("enero") || desc.includes("agosto");
 
+            const esVerano = desc.includes("verano");
+
+            if (esVerano) {
+              // Verano — máximo 2 materias por periodo específico
+              const sqlVer = `
+                SELECT COUNT(*) AS total
+                FROM inscripcion i
+                JOIN grupo g ON g.id_grupo = i.id_grupo
+                WHERE i.no_control = ?
+                  AND g.id_periodo = ?
+                  AND i.estatus = 'Cursando'
+              `;
+              return db.query(sqlVer, [reg.no_control, info.id_periodo], (ev, vrows) => {
+                if (ev) return resolve({ reg, ok: true });
+                const materiasVerano = parseInt(vrows[0]?.total || 0);
+                if (materiasVerano >= 2) {
+                  return resolve({
+                    reg,
+                    ok: false,
+                    razon: `Excede el límite de 2 materias en verano (tiene ${materiasVerano})`,
+                  });
+                }
+                resolve({ reg, ok: true });
+              });
+            }
+
             if (!esSemestral) return resolve({ reg, ok: true });
 
             const sqlCred = `
@@ -339,10 +391,12 @@ router.post("/bulk", soloAdmin, (req, res) => {
           .map((r) => ({ no_control: r.reg.no_control, razon: r.razon }));
 
         if (!aprobados.length) {
-          return res.status(400).json({
-            error: "Ningún alumno pudo inscribirse por límite de créditos.",
-            rechazados,
-          });
+          // Determinar si todos fueron rechazados por verano o por créditos
+          const todosVerano = rechazados.every((r) => r.razon?.includes("verano"));
+          const errorMsg = todosVerano
+            ? "Ningún alumno pudo inscribirse por límite de materias en periodo de verano (máximo 2 por verano)."
+            : "Ningún alumno pudo inscribirse por límite de créditos.";
+          return res.status(400).json({ error: errorMsg, rechazados });
         }
 
         const fecha = new Date().toISOString().split("T")[0];
@@ -407,6 +461,74 @@ router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
       res.json({ success: true });
     },
   );
+});
+
+
+// POST — validar carga de alumnos sin insertar
+// Recibe { no_controls: [...], id_grupo } y devuelve por cada alumno
+// si puede inscribirse o no, con el detalle de su carga actual.
+router.post("/validar-carga", verificarToken, (req, res) => {
+  const { no_controls, id_grupo } = req.body;
+  if (!Array.isArray(no_controls) || !no_controls.length || !id_grupo)
+    return res.status(400).json({ error: "Parametros requeridos" });
+
+  const sqlGrupo = `
+    SELECT p.descripcion, g.id_periodo, m.creditos_totales
+    FROM grupo g
+    JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
+    JOIN materia m ON m.clave_materia = g.clave_materia
+    WHERE g.id_grupo = ?
+  `;
+  db.query(sqlGrupo, [id_grupo], (errG, grupoRows) => {
+    if (errG || !grupoRows.length)
+      return res.status(500).json({ error: "Error al obtener datos del grupo" });
+
+    const { descripcion, id_periodo, creditos_totales } = grupoRows[0];
+    const desc = (descripcion || "").toLowerCase();
+    const esVerano = desc.includes("verano");
+    const esSemestral = desc.includes("enero") || desc.includes("agosto");
+
+    if (!esVerano && !esSemestral) {
+      return res.json(
+        no_controls.map((nc) => ({ no_control: nc, ok: true, carga_actual: 0, limite: null }))
+      );
+    }
+
+    const placeholders = no_controls.map(() => "?").join(",");
+    const sqlCarga = esVerano
+      ? `SELECT i.no_control, COUNT(*) AS carga
+         FROM inscripcion i
+         JOIN grupo g ON g.id_grupo = i.id_grupo
+         WHERE i.no_control IN (${placeholders})
+           AND g.id_periodo = ? AND i.estatus = 'Cursando'
+         GROUP BY i.no_control`
+      : `SELECT i.no_control, COALESCE(SUM(m.creditos_totales), 0) AS carga
+         FROM inscripcion i
+         JOIN grupo g ON g.id_grupo = i.id_grupo
+         JOIN materia m ON m.clave_materia = g.clave_materia
+         WHERE i.no_control IN (${placeholders})
+           AND g.id_periodo = ? AND i.estatus = 'Cursando'
+         GROUP BY i.no_control`;
+
+    db.query(sqlCarga, [...no_controls, id_periodo], (errC, cargaRows) => {
+      if (errC)
+        return res.status(500).json({ error: "Error al calcular carga" });
+
+      const cargaMap = {};
+      cargaRows.forEach((r) => (cargaMap[r.no_control] = parseFloat(r.carga)));
+
+      const limite = esVerano ? 2 : 36;
+      const agregar = esVerano ? 1 : parseFloat(creditos_totales || 0);
+
+      const resultado = no_controls.map((nc) => {
+        const carga_actual = cargaMap[nc] || 0;
+        const total = carga_actual + agregar;
+        return { no_control: nc, ok: total <= limite, carga_actual, agrega: agregar, total, limite, es_verano: esVerano };
+      });
+
+      res.json(resultado);
+    });
+  });
 });
 
 module.exports = router;

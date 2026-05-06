@@ -205,7 +205,7 @@ function abrirModalNuevo() {
   modoEdicion = false;
   no_controlEditando = null;
   document.getElementById("modalTitulo").textContent = "Nuevo alumno";
-  document.getElementById("f_no_control").disabled = false;
+  document.getElementById("f_no_control").disabled = true; // siempre generado automáticamente
   document.getElementById("f_carrera").disabled = false;
   document.getElementById("grupoUsername").style.display = "";
   document.getElementById("grupoPassword").style.display = "";
@@ -261,7 +261,7 @@ async function guardarAlumno() {
   const errEl = document.getElementById("modalError");
   errEl.style.display = "none";
 
-  if (!modoEdicion && (!no_control || !id_carrera || !password)) {
+  if (!modoEdicion && (!id_carrera || !password)) {
     errEl.textContent = "Los campos marcados con * son obligatorios.";
     errEl.style.display = "block";
     return;

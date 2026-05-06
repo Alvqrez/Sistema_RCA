@@ -54,17 +54,12 @@ router.get("/:no_control", verificarToken, (req, res) => {
 
 //________________________
 async function generarNumeroControl() {
-  const year = new Date().getFullYear().toString().slice(-2); // "24"
-  const fijo = "02";
-  const prefijo = `${year}${fijo}`; // "2402"
+  const year = new Date().getFullYear().toString().slice(-2); // "26"
+  const prefijo = year; // solo el año, ej. "26"
 
   return new Promise((resolve, reject) => {
     db.query(
-      `SELECT no_control 
-       FROM alumno 
-       WHERE no_control LIKE ? 
-       ORDER BY no_control DESC 
-       LIMIT 1`,
+      `SELECT no_control FROM alumno WHERE no_control LIKE ? ORDER BY no_control DESC LIMIT 1`,
       [`${prefijo}%`],
       (err, results) => {
         if (err) return reject(err);
@@ -73,12 +68,11 @@ async function generarNumeroControl() {
 
         if (results.length > 0) {
           const ultimo = results[0].no_control;
-          const numero = parseInt(ultimo.slice(4)); // últimos 4 dígitos
-          consecutivo = numero + 1;
+          const numero = parseInt(ultimo.slice(2)); // todo después del año
+          if (!isNaN(numero)) consecutivo = numero + 1;
         }
 
-        const consecutivoStr = String(consecutivo).padStart(4, "0");
-
+        const consecutivoStr = String(consecutivo).padStart(6, "0");
         resolve(`${prefijo}${consecutivoStr}`);
       },
     );
