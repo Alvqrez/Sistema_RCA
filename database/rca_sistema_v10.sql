@@ -681,6 +681,10 @@ SELECT username, id_referencia, rol
 FROM usuario
 WHERE rol = 'alumno';
 
+-- Mas campos innesesarios
+ALTER TABLE materia 
+  DROP COLUMN horas_teoricas,
+  DROP COLUMN horas_practicas;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  RESTAURAR MODOS

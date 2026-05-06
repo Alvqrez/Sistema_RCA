@@ -207,10 +207,6 @@ form.addEventListener("submit", async function (e) {
     clave_materia: document.getElementById("claveMateria").value.trim(),
     nombre_materia: document.getElementById("nombreMateria").value.trim(),
     creditos_totales: parseInt(document.getElementById("creditos").value) || 0,
-    horas_teoricas:
-      parseInt(document.getElementById("horasTeoricas").value) || 0,
-    horas_practicas:
-      parseInt(document.getElementById("horasPracticas").value) || 0,
     no_unidades: parseInt(document.getElementById("noUnidades").value) || 0,
   };
 
@@ -298,8 +294,6 @@ async function editarMateria(clave) {
     document.getElementById("claveMateria").disabled = true;
     document.getElementById("nombreMateria").value = data.nombre_materia;
     document.getElementById("creditos").value = data.creditos_totales;
-    document.getElementById("horasTeoricas").value = data.horas_teoricas;
-    document.getElementById("horasPracticas").value = data.horas_practicas;
     document.getElementById("noUnidades").value = data.no_unidades;
     renderChips();
 
@@ -479,8 +473,6 @@ async function exportarCSVMaterias() {
       "clave_materia",
       "nombre_materia",
       "creditos_totales",
-      "horas_teoricas",
-      "horas_practicas",
       "no_unidades",
     ];
     const rows = [cols.join(",")];

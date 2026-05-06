@@ -81,11 +81,12 @@ router.post("/usuarios", soloAdmin, async (req, res) => {
   }
 });
 
-// PUT — activar/desactivar usuario
+// PUT — activar/desactivar usuario (y sincroniza administrador.activo si aplica)
 router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
   const { activo } = req.body;
   if (activo === undefined)
     return res.status(400).json({ error: "El campo activo es requerido" });
+
   db.query(
     "UPDATE usuario SET activo = ? WHERE id_usuario = ?",
     [activo ? 1 : 0, req.params.id],
@@ -94,10 +95,25 @@ router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
         return res.status(500).json({ error: "Error interno del servidor" });
       if (!result.affectedRows)
         return res.status(404).json({ error: "Usuario no encontrado" });
-      res.json({
-        success: true,
-        mensaje: `Usuario ${activo ? "activado" : "desactivado"}`,
-      });
+
+      // Si es administrador, sincronizar administrador.activo
+      db.query(
+        "SELECT rol, id_referencia FROM usuario WHERE id_usuario = ?",
+        [req.params.id],
+        (err2, rows) => {
+          if (!err2 && rows.length && rows[0].rol === "administrador") {
+            db.query(
+              "UPDATE administrador SET activo = ? WHERE rfc = ?",
+              [activo ? 1 : 0, rows[0].id_referencia],
+              () => {},
+            );
+          }
+          res.json({
+            success: true,
+            mensaje: `Usuario ${activo ? "activado" : "desactivado"}`,
+          });
+        },
+      );
     },
   );
 });
@@ -127,12 +143,12 @@ router.put("/usuarios/:id/password", soloAdmin, async (req, res) => {
 
 // ── ADMINISTRADORES ────────────────────────────────────────────────────────────
 
-// GET — todos los administradores activos
+// GET — todos los administradores (activos e inactivos)
 router.get("/administradores", soloAdmin, (req, res) => {
   db.query(
     `SELECT rfc, nombre, apellido_paterno, apellido_materno,
             correo_institucional, correo_personal, tel_celular, activo
-     FROM administrador WHERE activo = 1`,
+     FROM administrador ORDER BY activo DESC, nombre`,
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

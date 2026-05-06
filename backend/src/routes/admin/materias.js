@@ -73,22 +73,18 @@ router.post("/", soloAdmin, (req, res) => {
     clave_materia,
     nombre_materia,
     creditos_totales,
-    horas_teoricas,
-    horas_practicas,
     no_unidades,
   } = req.body;
   if (!clave_materia || !nombre_materia)
     return res.status(400).json({ error: "Clave y nombre son requeridos" });
 
   db.query(
-    `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, no_unidades)
+     VALUES (?, ?, ?, ?)`,
     [
       clave_materia,
       nombre_materia,
       creditos_totales ?? 0,
-      horas_teoricas ?? 0,
-      horas_practicas ?? 0,
       no_unidades ?? 0,
     ],
     (err) => {
@@ -109,21 +105,17 @@ router.put("/:clave", soloAdmin, (req, res) => {
   const {
     nombre_materia,
     creditos_totales,
-    horas_teoricas,
-    horas_practicas,
     no_unidades,
   } = req.body;
   if (!nombre_materia)
     return res.status(400).json({ error: "El nombre es requerido" });
 
   db.query(
-    `UPDATE materia SET nombre_materia=?, creditos_totales=?, horas_teoricas=?, horas_practicas=?, no_unidades=?
+    `UPDATE materia SET nombre_materia=?, creditos_totales=?, no_unidades=?
      WHERE clave_materia=?`,
     [
       nombre_materia,
       creditos_totales ?? 0,
-      horas_teoricas ?? 0,
-      horas_practicas ?? 0,
       no_unidades ?? 0,
       req.params.clave,
     ],
@@ -230,15 +222,13 @@ router.post("/csv", soloAdmin, (req, res) => {
       continue;
     }
     db.query(
-      `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, horas_teoricas, horas_practicas, no_unidades)
-       VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO materia (clave_materia, nombre_materia, creditos_totales, no_unidades)
+       VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE nombre_materia=VALUES(nombre_materia), creditos_totales=VALUES(creditos_totales), no_unidades=VALUES(no_unidades)`,
       [
         clave_materia.trim(),
         nombre_materia.trim(),
         parseInt(mat.creditos_totales) || 0,
-        parseInt(mat.horas_teoricas) || 0,
-        parseInt(mat.horas_practicas) || 0,
         parseInt(mat.no_unidades) || 3,
       ],
       (err) => {

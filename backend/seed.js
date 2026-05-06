@@ -206,23 +206,23 @@ async function seed() {
     // 5. MATERIAS — 5 por carrera
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO materia
-               (clave_materia,nombre_materia,creditos_totales,horas_teoricas,horas_practicas,no_unidades)
+               (clave_materia,nombre_materia,creditos_totales,no_unidades)
              VALUES
-               ('FBD001','Fundamentos de Bases de Datos',      5,3,2,3),
-               ('POO001','Programación Orientada a Objetos',   5,2,3,3),
-               ('ADS001','Análisis y Diseño de Sistemas',      4,3,1,2),
-               ('RED001','Redes de Computadoras',              5,2,3,4),
-               ('APM001','Aprendizaje Automático',             5,2,3,3),
-               ('VIS001','Visión por Computadora',             5,1,4,2),
-               ('NLP001','Procesamiento de Lenguaje Natural',  4,2,2,3),
-               ('EST001','Estadística para IA',                4,3,1,4),
-               ('ADM001','Administración de Empresas',         5,4,1,3),
-               ('FIN001','Finanzas Empresariales',             5,3,2,4),
-               ('MKT001','Mercadotecnia',                      4,3,1,2),
-               ('LOG001','Logística y Cadena de Suministro',   4,2,2,3),
-               ('MAT001','Matemáticas Aplicadas',              5,4,1,5),
-               ('ETI001','Ética Profesional',                  3,2,1,2),
-               ('ING001','Inglés Técnico',                     3,2,1,2)`);
+               ('FBD001','Fundamentos de Bases de Datos',      5,3),
+               ('POO001','Programación Orientada a Objetos',   5,3),
+               ('ADS001','Análisis y Diseño de Sistemas',      4,2),
+               ('RED001','Redes de Computadoras',              5,4),
+               ('APM001','Aprendizaje Automático',             5,3),
+               ('VIS001','Visión por Computadora',             5,2),
+               ('NLP001','Procesamiento de Lenguaje Natural',  4,3),
+               ('EST001','Estadística para IA',                4,4),
+               ('ADM001','Administración de Empresas',         5,3),
+               ('FIN001','Finanzas Empresariales',             5,4),
+               ('MKT001','Mercadotecnia',                      4,2),
+               ('LOG001','Logística y Cadena de Suministro',   4,3),
+               ('MAT001','Matemáticas Aplicadas',              5,5),
+               ('ETI001','Ética Profesional',                  3,2),
+               ('ING001','Inglés Técnico',                     3,2)`);
     console.log("✓ Materias   → 15 materias");
 
     // ══════════════════════════════════════════════════════════════════════

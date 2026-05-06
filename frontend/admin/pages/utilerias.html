@@ -612,6 +612,7 @@
                     <th>Nombre</th>
                     <th>Correo institucional</th>
                     <th>Tel. celular</th>
+                    <th style="text-align: center">Estatus</th>
                     <th style="text-align: center">Acciones</th>
                   </tr>
                 </thead>
@@ -1321,15 +1322,24 @@
               <td style="font-size:.85rem">${esc(a.correo_institucional)}</td>
               <td style="font-size:.85rem">${esc(a.tel_celular || "—")}</td>
               <td style="text-align:center">
+                <span style="font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;${a.activo ? 'background:#d1fae5;color:#065f46' : 'background:#fee2e2;color:#991b1b'}">
+                  ${a.activo ? "Activo" : "Inactivo"}
+                </span>
+              </td>
+              <td style="text-align:center">
                 <div style="display:flex;gap:6px;justify-content:center">
                   <button class="btn btn-sm btn-outline" onclick="editarAdmin('${esc(a.rfc)}')" title="Editar">
                     <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
                   </button>
                   ${
                     String(a.rfc) !== String(miId)
-                      ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarAdmin('${esc(a.rfc)}','${esc(a.nombre)} ${esc(a.apellido_paterno)}')" title="Desactivar">
-                         <iconify-icon icon="mdi:delete-outline"></iconify-icon>
-                       </button>`
+                      ? a.activo
+                        ? `<button class="btn btn-sm btn-danger-outline" onclick="eliminarAdmin('${esc(a.rfc)}','${esc(a.nombre)} ${esc(a.apellido_paterno)}')" title="Desactivar">
+                           <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+                         </button>`
+                        : `<button class="btn btn-sm btn-outline" onclick="reactivarAdmin('${esc(a.rfc)}','${esc(a.nombre)} ${esc(a.apellido_paterno)}')" title="Activar" style="color:#065f46;border-color:#065f46">
+                           <iconify-icon icon="mdi:account-check-outline"></iconify-icon>
+                         </button>`
                       : `<span style="font-size:.72rem;color:var(--text-muted);padding:4px 8px">(tú)</span>`
                   }
                 </div>
@@ -1516,6 +1526,32 @@
         _elimAdminCtx = { id, nombre };
         document.getElementById("elimAdminNombre").textContent = nombre;
         document.getElementById("modalElimAdmin").classList.add("visible");
+      }
+
+      async function reactivarAdmin(id, nombre) {
+        try {
+          // Buscar el id_usuario del admin por id_referencia
+          const r = await fetch(`${API_URL}/api/admin/usuarios`, {
+            headers: { Authorization: `Bearer ${tk()}` },
+          });
+          const usuarios = await r.json();
+          const u = usuarios.find(
+            (x) => x.rol === "administrador" && String(x.id_referencia) === String(id),
+          );
+          if (!u) { toast("No se encontró el usuario asociado", "error"); return; }
+
+          const r2 = await fetch(`${API_URL}/api/admin/usuarios/${u.id_usuario}/estatus`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk()}` },
+            body: JSON.stringify({ activo: 1 }),
+          });
+          const data = await r2.json();
+          if (!r2.ok) { toast(data.error || "Error al activar", "error"); return; }
+          toast(`${nombre} activado correctamente`, "success");
+          await cargarAdmins();
+        } catch {
+          toast("Error de conexión", "error");
+        }
       }
 
       // Cerrar modal al hacer click fuera
