@@ -260,11 +260,14 @@ router.post("/final", maestroOAdmin, (req, res) => {
               .status(500)
               .json({ error: "Error interno del servidor" });
 
-          // Actualizar calificacion_oficial en calificacion_final
-          const nuevaCal = Math.min(
+          // Actualizar calificacion_oficial en calificacion_final con redondeo institucional
+          const sinRedondear = Math.min(
             MAX_CALIFICACION,
             calBase + puntosEfectivos,
           );
+          // Redondeo TecNM: fracción ≥ 0.5 sube al entero inmediato superior
+          const nuevaCal =
+            Math.floor(sinRedondear) + (sinRedondear % 1 >= 0.5 ? 1 : 0);
           db.query(
             "UPDATE calificacion_final SET calificacion_oficial = ?, estatus_final = ? WHERE no_control = ? AND id_grupo = ?",
             [
@@ -292,19 +295,37 @@ router.post("/final", maestroOAdmin, (req, res) => {
 });
 
 // DELETE — revertir bonus final de materia
-router.delete("/final/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
-  const { no_control, id_grupo } = req.params;
-  db.query(
-    "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
-    [no_control, id_grupo],
-    (err, result) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ error: "Bonus no encontrado" });
-      res.json({ success: true, mensaje: "Bonus final eliminado" });
-    },
-  );
-});
+// FIX BUG 3: al eliminar el bonus, recalcular calificacion_final sin él
+router.delete(
+  "/final/:no_control/:id_grupo",
+  maestroOAdmin,
+  async (req, res) => {
+    const { no_control, id_grupo } = req.params;
+    const calculo = require("../../services/calculo");
+
+    db.query(
+      "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
+      [no_control, id_grupo],
+      async (err, result) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        if (result.affectedRows === 0)
+          return res.status(404).json({ error: "Bonus no encontrado" });
+
+        // Recalcular calificacion_final sin el bonus eliminado
+        try {
+          await calculo.calcularCalificacionFinal(no_control, id_grupo);
+        } catch (_) {
+          /* no bloquear si falla el recálculo */
+        }
+
+        res.json({
+          success: true,
+          mensaje: "Bonus final eliminado y calificación recalculada",
+        });
+      },
+    );
+  },
+);
 
 module.exports = router;

@@ -88,7 +88,7 @@ async function cargarCalificacionesFallback() {
       <tr>
         <td>${c.nombre_unidad}</td>
         <td>—</td><td>—</td><td>—</td>
-        <td><div class="cal-final ${(c.calificacion_unidad_final ?? 0) >= 60 ? "aprobado" : "reprobado"}">${c.calificacion_unidad_final ?? "Pendiente"}</div></td>
+        <td><div class="cal-final ${(c.calificacion_unidad_final ?? 0) >= 70 ? "aprobado" : "reprobado"}">${c.calificacion_unidad_final ?? "Pendiente"}</div></td>
         <td><span class="badge-estatus ${c.estatus_unidad === "Aprobada" ? "badge-aprobado" : c.estatus_unidad === "Reprobada" ? "badge-reprobado" : "badge-pendiente"}">${c.estatus_unidad}</span></td>
       </tr>
     `,

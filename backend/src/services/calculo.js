@@ -143,8 +143,11 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
         promedio = suma / results.length;
       }
 
-      // Redondeo institucional TecNM: ≥ 0.5 → sube
-      const promedioBase = Math.floor(promedio) + (promedio % 1 >= 0.5 ? 1 : 0);
+      // FIX BUG 1+2: Orden correcto según reglas TecNM:
+      //   1) promedio aritmético de unidades
+      //   2) sumar bonus_final
+      //   3) aplicar redondeo institucional (≥ 0.5 sube)
+      // El redondeo va AL FINAL — nunca antes del bonus.
 
       // Sumar bonus_final si existe
       db.query(
@@ -156,7 +159,6 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
         (errB, bonusRows) => {
           if (errB) return reject(errB);
           const bonusPts = parseFloat(bonusRows[0]?.bonus ?? 0);
-          const conBonus = Math.min(100, promedioBase + bonusPts);
 
           // Verificar si existe modificacion_final (sobreescribe todo)
           db.query(
@@ -167,17 +169,23 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
             (errM, modRows) => {
               if (errM) return reject(errM);
 
-              const calOficial = modRows.length
+              // Paso 1+2: promedio + bonus (con tope 100), antes de redondear
+              const conBonus = Math.min(100, promedio + bonusPts);
+
+              // Si hay modificación manual del docente, sobreescribe el cálculo
+              const calBase = modRows.length
                 ? parseFloat(modRows[0].calif_modificada)
                 : conBonus;
 
+              // Paso 3: redondeo institucional TecNM (fracción ≥ 0.5 sube)
               const redondeado =
-                Math.floor(calOficial) + (calOficial % 1 >= 0.5 ? 1 : 0);
+                Math.floor(calBase) + (calBase % 1 >= 0.5 ? 1 : 0);
               const estatus =
                 redondeado >= CALIFICACION_APROBATORIA
                   ? "Aprobado"
                   : "Reprobado";
 
+              // promedio_unidades guarda el promedio SIN bonus NI redondeo (para auditoría)
               db.query(
                 `INSERT INTO calificacion_final (no_control, id_grupo, promedio_unidades, calificacion_oficial, estatus_final)
                  VALUES (?, ?, ?, ?, ?)
@@ -185,7 +193,13 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
                   promedio_unidades    = VALUES(promedio_unidades),
                   calificacion_oficial = VALUES(calificacion_oficial),
                   estatus_final        = VALUES(estatus_final)`,
-                [no_control, id_grupo, promedioBase, redondeado, estatus],
+                [
+                  no_control,
+                  id_grupo,
+                  Math.round(promedio * 100) / 100,
+                  redondeado,
+                  estatus,
+                ],
                 (err2) => {
                   if (err2) return reject(err2);
                   resolve({ promedio: redondeado, estatus });

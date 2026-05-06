@@ -244,16 +244,35 @@ router.put("/:id", maestroOAdmin, (req, res) => {
 });
 
 // DELETE — eliminar actividad
+// FIX BUG 7: no permitir eliminar actividades con calificaciones ya registradas
 router.delete("/:id", maestroOAdmin, (req, res) => {
+  // Verificar si hay resultados registrados para esta actividad
   db.query(
-    "DELETE FROM actividad WHERE id_actividad = ?",
+    "SELECT COUNT(*) AS total FROM resultado_actividad WHERE id_actividad = ?",
     [req.params.id],
-    (err, r) => {
-      if (err)
+    (errC, rowsC) => {
+      if (errC)
         return res.status(500).json({ error: "Error interno del servidor" });
-      if (r.affectedRows === 0)
-        return res.status(404).json({ error: "No encontrada" });
-      res.json({ success: true });
+
+      if (rowsC[0].total > 0) {
+        return res.status(409).json({
+          error: `No se puede eliminar esta actividad porque ya tiene ${rowsC[0].total} calificación(es) registrada(s). Anúlala o cancela los resultados primero.`,
+        });
+      }
+
+      db.query(
+        "DELETE FROM actividad WHERE id_actividad = ?",
+        [req.params.id],
+        (err, r) => {
+          if (err)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          if (r.affectedRows === 0)
+            return res.status(404).json({ error: "No encontrada" });
+          res.json({ success: true });
+        },
+      );
     },
   );
 });

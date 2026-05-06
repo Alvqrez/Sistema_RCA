@@ -120,17 +120,31 @@ router.post("/", maestroOAdmin, (req, res) => {
 });
 
 // DELETE — revertir modificación final
-router.delete("/:no_control/:id_grupo", maestroOAdmin, (req, res) => {
+// FIX BUG 5: recalcular la calificacion_final sin la modificación manual
+router.delete("/:no_control/:id_grupo", maestroOAdmin, async (req, res) => {
   const { no_control, id_grupo } = req.params;
+  const calculo = require("../../services/calculo");
+
   db.query(
     "DELETE FROM modificacionfinal WHERE no_control = ? AND id_grupo = ?",
     [no_control, id_grupo],
-    (err, result) => {
+    async (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       if (result.affectedRows === 0)
         return res.status(404).json({ error: "Modificación no encontrada" });
-      res.json({ success: true, mensaje: "Modificación revertida" });
+
+      // Recalcular calificacion_final (ya sin la modificación, usará promedio + bonus)
+      try {
+        await calculo.calcularCalificacionFinal(no_control, id_grupo);
+      } catch (_) {
+        /* no bloquear si falla el recálculo */
+      }
+
+      res.json({
+        success: true,
+        mensaje: "Modificación revertida y calificación restaurada",
+      });
     },
   );
 });
