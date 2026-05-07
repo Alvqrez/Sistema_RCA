@@ -143,4 +143,19 @@ app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),
 );
 
+// ─── INFO PÚBLICA (no requiere token) ─────────────────────────────────────────
+app.get("/api/info-publica", (req, res) => {
+  db.query(
+    `SELECT
+       (SELECT COUNT(*) FROM alumno WHERE estatus = 'Activo') AS alumnos,
+       (SELECT COUNT(*) FROM maestro WHERE estatus = 'Activo') AS maestros,
+       (SELECT COUNT(*) FROM grupo  WHERE estatus = 'Activo') AS grupos,
+       (SELECT descripcion FROM periodo_escolar WHERE estatus IN ('Vigente','Activo','activo') ORDER BY fecha_inicio DESC LIMIT 1) AS periodo`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "Error" });
+      res.json(rows[0] || {});
+    },
+  );
+});
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

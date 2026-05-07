@@ -117,8 +117,7 @@ function renderTablaMaterias(materias) {
         <td>
           ${
             rol === "administrador"
-              ? `<button class="btn-icon" title="Editar" onclick="editarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
-               <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>`
+              ? `<div class="table-actions"><button class="btn-icon" title="Editar" onclick="editarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button><button class="btn-icon btn-del" title="Eliminar" onclick="eliminarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button></div>`
               : "—"
           }
         </td>

@@ -106,7 +106,7 @@ function toggleRowExpand(noControl) {
     if (prev) prev.style.display = "none";
     if (prevChev) prevChev.style.transform = "rotate(0deg)";
   }
-  expandRow.style.display = isOpen ? "none" : "table-row";
+  expandRow.style.display = isOpen ? "none" : "";
   if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
   expandedRow = isOpen ? null : noControl;
 }
