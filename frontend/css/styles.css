@@ -5238,44 +5238,45 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SIDEBAR — Match exacto al Estilo A Deep Ocean
+   SIDEBAR — Paleta Institucional TecNM / ITV
+   Azul: #1a386a · Oscuro: #00043e · Dark mode: #0d2050
    ══════════════════════════════════════════════════════════════ */
 
-/* Sidebar siempre oscuro en ambos modos */
+/* Fondo institucional en ambos modos */
 .sidebar,
 .dark-mode .sidebar {
-  background: #0a1628 !important;
-  border-right: 1px solid #1a2e52 !important;
+  background: #1a386a !important;
+  border-right: 1px solid #0f2248 !important;
 }
 
-/* Accent bar siempre visible */
+.dark-mode .sidebar {
+  background: #0d2050 !important;
+  border-right: 1px solid #091538 !important;
+}
+
+/* Accent bar: blanca institucional */
 .sidebar-accent-bar,
 .dark-mode .sidebar-accent-bar {
   height: 3px !important;
-  background: linear-gradient(
-    90deg,
-    #3b82f6 0%,
-    #60a5fa 55%,
-    #818cf8 100%
-  ) !important;
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.5) !important;
+  background: linear-gradient(90deg, #ffffff 0%, #a8c4e8 55%, #ffffff 100%) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
   flex-shrink: 0;
 }
 
 /* Logo / perfil */
 .sidebar-logo,
 .dark-mode .sidebar-logo {
-  border-bottom-color: #1a2e52 !important;
+  border-bottom-color: #0f2248 !important;
   padding: 22px 18px 18px !important;
 }
 
-/* Avatar: cuadrado redondeado con gradiente */
+/* Avatar */
 .sidebar-avatar,
 .dark-mode .sidebar-avatar {
-  background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, #00043e 0%, #1b396a 100%) !important;
   border-radius: 14px !important;
   color: white !important;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.28) !important;
+  box-shadow: 0 0 20px rgba(0, 4, 62, 0.5) !important;
   width: 50px !important;
   height: 50px !important;
   font-size: 1.35rem !important;
@@ -5283,19 +5284,19 @@ body {
 
 /* Textos perfil */
 .sidebar-bienvenida {
-  color: #334d6e !important;
+  color: #7aaad8 !important;
   font-size: 0.64rem !important;
 }
 .sidebar-nombre {
-  color: #dce9ff !important;
+  color: #e8f0ff !important;
   font-size: 0.9rem !important;
 }
 
 /* Badge rol */
 .sidebar-rol-badge.rol-administrador {
-  background: rgba(139, 92, 246, 0.2) !important;
-  color: #c4b5fd !important;
-  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #c8deff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 .sidebar-rol-badge.rol-maestro {
   background: rgba(52, 211, 153, 0.15) !important;
@@ -5303,9 +5304,9 @@ body {
   border: 1px solid rgba(52, 211, 153, 0.25) !important;
 }
 .sidebar-rol-badge.rol-alumno {
-  background: rgba(59, 130, 246, 0.15) !important;
-  color: #93c5fd !important;
-  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #a8c4e8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
 /* Nav padding */
@@ -5313,10 +5314,10 @@ body {
   padding: 10px 10px !important;
 }
 
-/* Nav links — siempre sobre fondo oscuro */
+/* Nav links */
 .sidebar nav a,
 .dark-mode .sidebar nav a {
-  color: #4a6280 !important;
+  color: #7aaad8 !important;
   font-size: 0.83rem !important;
   padding: 9px 12px !important;
   border-radius: 8px !important;
@@ -5325,14 +5326,14 @@ body {
 }
 .sidebar nav a:hover,
 .dark-mode .sidebar nav a:hover {
-  background: rgba(59, 130, 246, 0.08) !important;
-  color: #dce9ff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 .sidebar nav a.active,
 .dark-mode .sidebar nav a.active {
-  background: rgba(59, 130, 246, 0.15) !important;
-  color: #60a5fa !important;
-  border-left-color: #3b82f6 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-left-color: #ffffff !important;
   font-weight: 600 !important;
 }
 .sidebar nav a iconify-icon,
@@ -5343,20 +5344,20 @@ body {
 /* Nav group btn */
 .nav-group-btn,
 .dark-mode .nav-group-btn {
-  color: #4a6280 !important;
+  color: #7aaad8 !important;
   font-size: 0.83rem !important;
   padding: 9px 12px !important;
   border-radius: 8px !important;
 }
 .nav-group-btn:hover,
 .dark-mode .nav-group-btn:hover {
-  background: rgba(59, 130, 246, 0.08) !important;
-  color: #dce9ff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 .nav-group.open .nav-group-btn,
 .dark-mode .nav-group.open .nav-group-btn {
-  color: #dce9ff !important;
-  background: rgba(59, 130, 246, 0.06) !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 .nav-group-btn iconify-icon:first-child {
   font-size: 1.05rem !important;
@@ -5368,33 +5369,33 @@ body {
 /* Submenu */
 .submenu,
 .dark-mode .submenu {
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: rgba(0, 4, 62, 0.25) !important;
   border-radius: 0 0 8px 8px !important;
 }
 .submenu-item,
 .dark-mode .submenu-item {
-  color: #2d4a78 !important;
+  color: #6a8ec0 !important;
   font-size: 0.8rem !important;
   padding: 8px 12px 8px 36px !important;
   border-radius: 6px !important;
 }
 .submenu-item:hover,
 .dark-mode .submenu-item:hover {
-  color: #dce9ff !important;
-  background: rgba(59, 130, 246, 0.07) !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.07) !important;
 }
 .submenu-item.active,
 .dark-mode .submenu-item.active {
-  color: #60a5fa !important;
-  border-left-color: #3b82f6 !important;
-  background: rgba(59, 130, 246, 0.12) !important;
+  color: #ffffff !important;
+  border-left-color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Theme btn */
 .theme-icon-btn,
 .dark-mode .theme-icon-btn {
-  color: #4a6280 !important;
-  border-top-color: #1a2e52 !important;
+  color: #7aaad8 !important;
+  border-top-color: #0f2248 !important;
   font-size: 0.82rem !important;
   padding: 9px 12px !important;
   justify-content: flex-start !important;
@@ -5402,36 +5403,32 @@ body {
 }
 .theme-icon-btn:hover,
 .dark-mode .theme-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #dce9ff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
 }
 .theme-icon-btn iconify-icon {
   font-size: 1.05rem !important;
 }
 
-/* nav-group-label (separadores — sólo para rol maestro/alumno) */
+/* nav-group-label */
 .nav-group-label {
   font-size: 0.6rem !important;
   font-weight: 700 !important;
-  color: #1e3a60 !important;
+  color: #4a78b0 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.12em !important;
   padding: 14px 12px 4px !important;
 }
 
 /* Scrollbar del nav */
-.sidebar nav::-webkit-scrollbar {
-  width: 3px;
-}
+.sidebar nav::-webkit-scrollbar { width: 3px; }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: #1a2e52;
+  background: #0f2248;
   border-radius: 99px;
 }
-.sidebar nav::-webkit-scrollbar-thumb:hover {
-  background: #1e4080;
-}
+.sidebar nav::-webkit-scrollbar-thumb:hover { background: #1a386a; }
 
-/* Logout siempre rojo translúcido */
+/* Logout */
 .logout-btn,
 .dark-mode .logout-btn {
   background: rgba(244, 63, 94, 0.12) !important;
@@ -5449,48 +5446,46 @@ body {
   color: #fca5a5 !important;
 }
 
-/* Toggle btn: estilos de color para modo oscuro */
+/* Toggle btn */
 .sidebar-toggle-btn,
 .dark-mode .sidebar-toggle-btn {
-  background: #0a1628 !important;
-  border-color: #1a2e52 !important;
-  color: #4d6484 !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
+  background: #1a386a !important;
+  border-color: #0f2248 !important;
+  color: #7aaad8 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+}
+.dark-mode .sidebar-toggle-btn {
+  background: #0d2050 !important;
 }
 .sidebar-toggle-btn:hover,
 .dark-mode .sidebar-toggle-btn:hover {
-  background: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  color: white !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4) !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #1a386a !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Dark mode page bg */
-.dark-mode body {
-  background: #060e1f !important;
-}
-.dark-mode .content {
-  background: #060e1f !important;
-}
+.dark-mode body  { background: #07111f !important; }
+.dark-mode .content { background: #07111f !important; }
 .dark-mode .card {
-  background: #0f1f3d !important;
-  border-color: #1a2e52 !important;
+  background: #0f2040 !important;
+  border-color: #1a2e4a !important;
 }
-.dark-mode .card:hover {
-  border-color: #1e4080 !important;
-}
+.dark-mode .card:hover { border-color: #1e4080 !important; }
 
 /* card-filter-bar en dark */
 .dark-mode .card-filter-bar {
-  background: #0a1628;
-  border-color: #1a2e52;
+  background: #0c1b2e;
+  border-color: #1a2e4a;
 }
 .dark-mode .card-filter-bar input,
 .dark-mode .card-filter-bar select {
-  background: #060e1f;
-  border-color: #1a2e52;
-  color: #dce9ff;
+  background: #07111f;
+  border-color: #1a2e4a;
+  color: #d8e8ff;
 }
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MEJORAS DE NAVEGACIÓN Y DISEÑO — RCA v7

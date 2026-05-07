@@ -66,21 +66,49 @@ function actualizarStats() {
   document.getElementById("statCarreras").textContent = carreras.size;
 }
 
+let expandedRow = null;
+
 function filtrar() {
   const q = document.getElementById("filtroBusqueda").value.toLowerCase();
   const carrera = document.getElementById("filtroCarrera").value;
+  const estatus = document.getElementById("filtroEstatus")?.value || "";
   const rol = localStorage.getItem("rol");
   let datos = alumnosGlobal.filter((a) => {
-    const nombre =
-      `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.toLowerCase();
+    const nombre = `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.toLowerCase();
     return (
-      (!q || nombre.includes(q) || a.no_control.toLowerCase().includes(q)) &&
-      (!carrera || a.id_carrera === carrera)
+      (!q || nombre.includes(q) || a.no_control.toLowerCase().includes(q) || (a.correo_institucional || "").toLowerCase().includes(q)) &&
+      (!carrera || a.id_carrera === carrera) &&
+      (!estatus || a.estatus === estatus)
     );
   });
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
   document.getElementById("statFiltrados").textContent = datos.length;
+
+  // Chips de filtros activos
+  const chips = [];
+  if (carrera) chips.push({ label: carrera, clear: () => { document.getElementById("filtroCarrera").value = ""; filtrar(); } });
+  if (estatus) chips.push({ label: estatus, clear: () => { document.getElementById("filtroEstatus").value = ""; filtrar(); } });
+  const chipsEl = document.getElementById("chipsActivos");
+  if (chipsEl) chipsEl.innerHTML = chips.map((c, i) => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`).join("");
+
   renderTabla(datos, rol);
+}
+
+function toggleRowExpand(noControl) {
+  const expandRow = document.getElementById(`expand_${noControl}`);
+  const chevron = document.getElementById(`chev_${noControl}`);
+  if (!expandRow) return;
+  const isOpen = expandRow.style.display !== "none";
+  // Close previously open row
+  if (expandedRow && expandedRow !== noControl) {
+    const prev = document.getElementById(`expand_${expandedRow}`);
+    const prevChev = document.getElementById(`chev_${expandedRow}`);
+    if (prev) prev.style.display = "none";
+    if (prevChev) prevChev.style.transform = "rotate(0deg)";
+  }
+  expandRow.style.display = isOpen ? "none" : "table-row";
+  if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+  expandedRow = isOpen ? null : noControl;
 }
 
 function renderTabla(datos, rol) {
@@ -91,25 +119,26 @@ function renderTabla(datos, rol) {
       <p>Sin resultados con los filtros actuales</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = datos
-    .map((a) => {
-      const iniciales =
-        `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-      const acciones =
-        rol === "administrador"
-          ? `<div class="table-actions">
+  tbody.innerHTML = datos.map((a) => {
+    const iniciales = `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
+    const estatusBadge = a.estatus === "Activo"
+      ? `<span class="badge badge-success">${a.estatus}</span>`
+      : a.estatus === "Egresado"
+        ? `<span class="badge badge-info">${a.estatus}</span>`
+        : `<span class="badge badge-danger">${a.estatus || "—"}</span>`;
+    const acciones = rol === "administrador"
+      ? `<div class="table-actions">
           <button class="btn-icon" title="Ver cursos inscritos" onclick="abrirModalCursos('${a.no_control}')">
             <iconify-icon icon="lucide:book-open"></iconify-icon>
           </button>
-          <button class="btn-icon" title="Editar datos de contacto" onclick="editarAlumno('${a.no_control}')">
+          <button class="btn-icon" title="Editar" onclick="editarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:pencil"></iconify-icon>
           </button>
           <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
-        </div>`
-          : "—";
-      return `<tr>
+        </div>` : "—";
+    return `<tr style="cursor:pointer" onclick="toggleRowExpand('${a.no_control}')">
       <td><div class="avatar-cell">
         <div class="avatar">${iniciales}</div>
         <span>${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}</span>
@@ -117,11 +146,25 @@ function renderTabla(datos, rol) {
       <td><code>${a.no_control}</code></td>
       <td><span class="badge badge-info">${a.id_carrera}</span></td>
       <td>${a.correo_institucional ?? "—"}</td>
-      <td>${a.tel_celular ?? "—"}</td>
-      <td>${acciones}</td>
+      <td style="text-align:center">${estatusBadge}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+          ${acciones}
+          <iconify-icon id="chev_${a.no_control}" icon="lucide:chevron-down" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0"></iconify-icon>
+        </div>
+      </td>
+    </tr>
+    <tr id="expand_${a.no_control}" style="display:none">
+      <td colspan="6" style="padding:0">
+        <div style="background:var(--bg-alt);padding:14px 24px 14px 60px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">CURP</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.curp || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Correo personal</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.correo_personal || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Teléfono</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.tel_celular || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Fecha ingreso</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${fmtFecha ? fmtFecha(a.fecha_ingreso) : (a.fecha_ingreso || "—")}</p></div>
+        </div>
+      </td>
     </tr>`;
-    })
-    .join("");
+  }).join("");
 }
 
 async function cargarCarrerasSelect() {

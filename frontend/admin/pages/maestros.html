@@ -213,26 +213,34 @@
 
         <!-- Tabla -->
         <div class="card">
-          <div class="card-filter-bar">
+          <div class="card-filter-bar" style="flex-wrap:wrap;gap:8px">
             <input
               type="text"
               id="filtroBusqueda"
-              placeholder="🔍 Buscar por nombre o No. empleado…"
+              placeholder="Buscar por nombre, RFC, correo…"
               oninput="filtrarMaestros()"
+              style="flex:1;min-width:200px"
             />
             <select id="filtroDepartamento" onchange="filtrarMaestros()">
               <option value="">Todos los departamentos</option>
             </select>
+            <select id="filtroEstatus" onchange="filtrarMaestros()">
+              <option value="">Todos los estatus</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Jubilado">Jubilado</option>
+            </select>
           </div>
+          <div id="chipsMaestros" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px;min-height:0"></div>
           <div style="overflow-x: auto">
             <table>
               <thead>
                 <tr>
                   <th>Maestro</th>
-                  <th>No. Empleado</th>
+                  <th>RFC</th>
                   <th>Departamento</th>
                   <th>Correo</th>
-                  <th>Estatus</th>
+                  <th style="text-align:center">Estatus</th>
                   <th style="text-align: right">Acciones</th>
                 </tr>
               </thead>

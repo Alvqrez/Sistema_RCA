@@ -28,6 +28,16 @@
             <h1>Mis Grupos</h1>
             <p class="page-subtitle">Grupos asignados en el periodo actual</p>
           </div>
+          <div style="display:flex;gap:6px;background:var(--bg-app);border:1px solid var(--border);border-radius:8px;padding:4px">
+            <button id="btnVistaCards" onclick="setVista('cards')"
+              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:none;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.15s;background:var(--primary);color:white">
+              <iconify-icon icon="lucide:layout-grid"></iconify-icon> Cards
+            </button>
+            <button id="btnVistaLista" onclick="setVista('lista')"
+              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:none;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--text-muted)">
+              <iconify-icon icon="lucide:list"></iconify-icon> Lista
+            </button>
+          </div>
         </div>
 
         <!-- Stats -->
@@ -158,15 +168,25 @@
           ></iconify-icon>
           <p>Cargando grupos…</p>
         </div>
+        <!-- Vista Cards -->
         <div
           id="gruposGrid"
-          style="
-            display: none;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-          "
+          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"
         ></div>
+
+        <!-- Vista Lista -->
+        <div id="gruposLista" style="display:none">
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:2fr 90px 110px 110px 1fr;padding:9px 18px;background:var(--bg-app);border-bottom:1px solid var(--border)">
+              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0">Grupo / Materia</p>
+              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Alumnos</p>
+              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Evaluación</p>
+              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Estatus</p>
+              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:right">Acciones</p>
+            </div>
+            <div id="gruposListaBody"></div>
+          </div>
+        </div>
         <div
           id="emptyGrupos"
           style="
@@ -195,19 +215,26 @@
       const tkn = () => localStorage.getItem("token");
 
       function parsearToken(t) {
-        try {
-          return JSON.parse(atob(t.split(".")[1]));
-        } catch {
-          return null;
-        }
+        try { return JSON.parse(atob(t.split(".")[1])); } catch { return null; }
+      }
+
+      function setVista(v) {
+        localStorage.setItem("vista_grupos", v);
+        const isCards = v === "cards";
+        document.getElementById("gruposGrid").style.display = isCards ? "grid" : "none";
+        document.getElementById("gruposLista").style.display = isCards ? "none" : "block";
+        const btnC = document.getElementById("btnVistaCards");
+        const btnL = document.getElementById("btnVistaLista");
+        btnC.style.background = isCards ? "var(--primary)" : "transparent";
+        btnC.style.color = isCards ? "white" : "var(--text-muted)";
+        btnL.style.background = !isCards ? "var(--primary)" : "transparent";
+        btnL.style.color = !isCards ? "white" : "var(--text-muted)";
       }
 
       async function cargarMisGrupos() {
         const payload = parsearToken(tkn());
         const id_ref = payload?.id_referencia;
-
         try {
-          // Try /mis-grupos, fallback to filtered /grupos
           let grupos = [];
           try {
             const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
@@ -221,9 +248,7 @@
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             const todos = await r2.json();
-            grupos = id_ref
-              ? todos.filter((g) => String(g.rfc) === String(id_ref))
-              : todos;
+            grupos = id_ref ? todos.filter((g) => String(g.rfc) === String(id_ref)) : todos;
           }
 
           document.getElementById("loadingGrupos").style.display = "none";
@@ -237,22 +262,26 @@
           }
 
           const activos = grupos.filter((g) => g.estatus === "Activo").length;
-          const cfgs = grupos.filter((g) => {
-            return (
-              !!localStorage.getItem(`pcts_${g.id_grupo}_`) ||
-              Object.keys(localStorage).some((k) =>
-                k.startsWith(`pcts_${g.id_grupo}_`),
-              )
-            );
-          }).length;
+          const cfgs = grupos.filter((g) =>
+            Object.keys(localStorage).some((k) => k.startsWith(`pcts_${g.id_grupo}_`))
+          ).length;
 
           document.getElementById("statTotal").textContent = grupos.length;
           document.getElementById("statActivos").textContent = activos;
           document.getElementById("statConfigurados").textContent = cfgs;
 
+          // Poblar cards
           const grid = document.getElementById("gruposGrid");
-          grid.style.display = "grid";
           grid.innerHTML = grupos.map((g) => buildGrupoCard(g)).join("");
+
+          // Poblar lista
+          const listaBody = document.getElementById("gruposListaBody");
+          listaBody.innerHTML = grupos.map((g, i) => buildGrupoRow(g, i, grupos.length)).join("");
+
+          // Aplicar vista guardada
+          const vistaGuardada = localStorage.getItem("vista_grupos") || "cards";
+          setVista(vistaGuardada);
+
         } catch (e) {
           document.getElementById("loadingGrupos").innerHTML = `
             <iconify-icon icon="lucide:wifi-off" style="font-size:2rem;color:var(--danger);display:block;margin:0 auto 8px"></iconify-icon>
@@ -261,6 +290,34 @@
               <iconify-icon icon="lucide:refresh-cw"></iconify-icon> Reintentar
             </button>`;
         }
+      }
+
+      function buildGrupoRow(g, i, total) {
+        const hasConfig = Object.keys(localStorage).some((k) => k.startsWith(`pcts_${g.id_grupo}_`));
+        const cfgBadge = hasConfig
+          ? `<span class="badge badge-success" style="font-size:0.7rem">Configurado</span>`
+          : `<span class="badge badge-warning" style="font-size:0.7rem">Sin config</span>`;
+        const statusBadge = g.estatus === "Activo"
+          ? `<span class="badge badge-success">${g.estatus}</span>`
+          : `<span class="badge badge-danger">${g.estatus || "—"}</span>`;
+        const isLast = i === total - 1;
+        return `<div style="display:grid;grid-template-columns:2fr 90px 110px 110px 1fr;padding:12px 18px;align-items:center;${!isLast ? "border-bottom:1px solid var(--border)" : ""}">
+          <div>
+            <p style="font-size:0.9rem;font-weight:600;color:var(--text-main);margin:0">${g.nombre_materia || "—"}</p>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin:2px 0 0">Grupo #${g.id_grupo} · ${g.descripcion_periodo || "Periodo " + g.id_periodo}${g.horario ? " · " + g.horario : ""}</p>
+          </div>
+          <p style="font-size:0.9rem;color:var(--text-main);margin:0;text-align:center">${g.limite_alumnos ?? "—"}</p>
+          <div style="text-align:center">${cfgBadge}</div>
+          <div style="text-align:center">${statusBadge}</div>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <a href="captura_calificaciones.html?grupo=${g.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none">
+              <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
+            </a>
+            <a href="configurar_actividades.html?grupo=${g.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none">
+              <iconify-icon icon="lucide:settings"></iconify-icon>
+            </a>
+          </div>
+        </div>`;
       }
 
       function buildGrupoCard(g) {

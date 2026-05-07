@@ -90,20 +90,47 @@ function poblarFiltroDpto() {
   });
 }
 
+let expandedMaestro = null;
+
 function filtrarMaestros() {
   const q = document.getElementById("filtroBusqueda").value.toLowerCase();
   const dpto = document.getElementById("filtroDepartamento").value;
+  const estatus = document.getElementById("filtroEstatus")?.value || "";
   let datos = maestrosGlobal.filter((m) => {
-    const nombre =
-      `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
+    const nombre = `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
     return (
-      (!q || nombre.includes(q) || m.rfc?.toLowerCase().includes(q)) &&
-      (!dpto || m.departamento === dpto)
+      (!q || nombre.includes(q) || m.rfc?.toLowerCase().includes(q) || (m.correo_institucional || "").toLowerCase().includes(q)) &&
+      (!dpto || m.departamento === dpto) &&
+      (!estatus || m.estatus === estatus)
     );
   });
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
   document.getElementById("statFiltrados").textContent = datos.length;
+
+  // Chips de filtros activos
+  const chips = [];
+  if (dpto) chips.push({ label: dpto, clear: () => { document.getElementById("filtroDepartamento").value = ""; filtrarMaestros(); } });
+  if (estatus) chips.push({ label: estatus, clear: () => { document.getElementById("filtroEstatus").value = ""; filtrarMaestros(); } });
+  const chipsEl = document.getElementById("chipsMaestros");
+  if (chipsEl) chipsEl.innerHTML = chips.map((c) => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`).join("");
+
   renderTabla(datos);
+}
+
+function toggleMaestroExpand(rfc) {
+  const expandRow = document.getElementById(`expand_m_${rfc}`);
+  const chevron = document.getElementById(`chev_m_${rfc}`);
+  if (!expandRow) return;
+  const isOpen = expandRow.style.display !== "none";
+  if (expandedMaestro && expandedMaestro !== rfc) {
+    const prev = document.getElementById(`expand_m_${expandedMaestro}`);
+    const prevChev = document.getElementById(`chev_m_${expandedMaestro}`);
+    if (prev) prev.style.display = "none";
+    if (prevChev) prevChev.style.transform = "rotate(0deg)";
+  }
+  expandRow.style.display = isOpen ? "none" : "table-row";
+  if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+  expandedMaestro = isOpen ? null : rfc;
 }
 
 function renderTabla(datos) {
@@ -112,17 +139,15 @@ function renderTabla(datos) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><iconify-icon icon="lucide:search-x"></iconify-icon><p>Sin resultados</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = datos
-    .map((m) => {
-      const ini =
-        `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-      const badge =
-        m.estatus === "Activo"
-          ? `<span class="badge badge-success">Activo</span>`
-          : m.estatus === "Licencia"
-            ? `<span class="badge badge-warning">Licencia</span>`
-            : `<span class="badge badge-danger">Inactivo</span>`;
-      return `<tr>
+  tbody.innerHTML = datos.map((m) => {
+    const ini = `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
+    const badge = m.estatus === "Activo"
+      ? `<span class="badge badge-success">Activo</span>`
+      : m.estatus === "Licencia"
+        ? `<span class="badge badge-warning">Licencia</span>`
+        : `<span class="badge badge-danger">${m.estatus || "Inactivo"}</span>`;
+    const rfcSafe = m.rfc?.replace(/'/g, "\\'") ?? "";
+    return `<tr style="cursor:pointer" onclick="toggleMaestroExpand('${rfcSafe}')">
       <td><div class="avatar-cell">
         <div class="avatar" style="background:var(--success-light);color:var(--success)">${ini}</div>
         <span>${m.apellido_paterno} ${m.apellido_materno ?? ""}, ${m.nombre}</span>
@@ -130,14 +155,28 @@ function renderTabla(datos) {
       <td><code>${m.rfc ?? "—"}</code></td>
       <td>${m.departamento ?? "—"}</td>
       <td>${m.correo_institucional ?? "—"}</td>
-      <td>${badge}</td>
-      <td><div class="table-actions">
-        <button class="btn-icon" onclick="editarMaestro('${m.rfc}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
-        <button class="btn-icon btn-del" onclick="eliminarMaestro('${m.rfc}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>
-      </div></td>
+      <td style="text-align:center">${badge}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+          <div class="table-actions">
+            <button class="btn-icon" onclick="editarMaestro('${rfcSafe}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
+            <button class="btn-icon btn-del" onclick="eliminarMaestro('${rfcSafe}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>
+          </div>
+          <iconify-icon id="chev_m_${rfcSafe}" icon="lucide:chevron-down" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0"></iconify-icon>
+        </div>
+      </td>
+    </tr>
+    <tr id="expand_m_${rfcSafe}" style="display:none">
+      <td colspan="6" style="padding:0">
+        <div style="background:var(--bg-alt);padding:14px 24px 14px 60px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">CURP</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${m.curp || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Correo personal</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${m.correo_personal || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Teléfono</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${m.tel_celular || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Grado académico</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${m.grado_academico || "—"}</p></div>
+        </div>
+      </td>
     </tr>`;
-    })
-    .join("");
+  }).join("");
 }
 
 function abrirModalNuevo() {

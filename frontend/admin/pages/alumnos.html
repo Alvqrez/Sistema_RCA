@@ -214,17 +214,27 @@
         </div>
 
         <div class="card">
-          <div class="card-filter-bar">
+          <!-- Barra de filtros mejorada (Opción B) -->
+          <div class="card-filter-bar" style="flex-wrap:wrap;gap:8px">
             <input
               type="text"
               id="filtroBusqueda"
-              placeholder="🔍 Buscar por nombre o No. control…"
+              placeholder="Buscar por nombre, No. control, correo…"
               oninput="filtrar()"
+              style="flex:1;min-width:200px"
             />
             <select id="filtroCarrera" onchange="filtrar()">
               <option value="">Todas las carreras</option>
             </select>
+            <select id="filtroEstatus" onchange="filtrar()">
+              <option value="">Todos los estatus</option>
+              <option value="Activo">Activo</option>
+              <option value="Baja temporal">Baja temporal</option>
+              <option value="Baja definitiva">Baja definitiva</option>
+              <option value="Egresado">Egresado</option>
+            </select>
           </div>
+          <div id="chipsActivos" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px;min-height:0"></div>
           <div style="overflow-x: auto">
             <table>
               <thead>
@@ -233,7 +243,7 @@
                   <th>No. Control</th>
                   <th>Carrera</th>
                   <th>Correo institucional</th>
-                  <th>Teléfono</th>
+                  <th style="text-align:center">Estatus</th>
                   <th style="text-align: right">Acciones</th>
                 </tr>
               </thead>
