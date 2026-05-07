@@ -160,7 +160,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  background: #1e293b;
+  background: #1a386a;
   color: white;
   display: flex;
   flex-direction: column;
@@ -3772,98 +3772,98 @@ body.sidebar-collapsed .content {
 
 /* Variables de sidebar para modo claro (sidebar siempre oscuro) */
 .sidebar {
-  --sb-bg: #0f1f3d;
-  --sb-border: #1a2e52;
-  --sb-text: #e2e8f0;
-  --sb-muted: #475569;
-  --sb-muted2: #64748b;
+  --sb-bg: #1a386a;
+  --sb-border: #0f2248;
+  --sb-text: #e8f0ff;
+  --sb-muted: #3d5f9a;
+  --sb-muted2: #6a8ec0;
 }
 
-/* Sidebar siempre con fondo oscuro */
+/* Sidebar siempre con fondo institucional TecNM */
 .sidebar,
 .dark-mode .sidebar {
-  background: #0a1628 !important;
-  border-right-color: #1a2e52 !important;
+  background: #1a386a !important;
+  border-right-color: #0f2248 !important;
 }
 
 .sidebar-logo,
 .dark-mode .sidebar-logo {
-  border-bottom-color: #1a2e52 !important;
+  border-bottom-color: #0f2248 !important;
 }
 
-/* Sidebar accent bar siempre visible */
+/* Sidebar accent bar — franja dorada/blanca institucional */
 .sidebar-accent-bar {
   height: 3px !important;
   background: linear-gradient(
     90deg,
-    #3b82f6 0%,
-    #60a5fa 55%,
-    #818cf8 100%
+    #ffffff 0%,
+    #a8c4e8 55%,
+    #ffffff 100%
   ) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25) !important;
 }
 
-/* Avatar siempre con gradiente */
+/* Avatar siempre con gradiente institucional */
 .sidebar-avatar,
 .dark-mode .sidebar-avatar {
-  background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, #00043e 0%, #1b396a 100%) !important;
   border-radius: 14px !important;
   color: white !important;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.28) !important;
+  box-shadow: 0 0 20px rgba(0, 4, 62, 0.5) !important;
 }
 
 /* Textos de perfil */
 .sidebar-bienvenida {
-  color: #334d6e !important;
+  color: #7aaad8 !important;
 }
 .sidebar-nombre {
-  color: #e2e8f0 !important;
+  color: #e8f0ff !important;
 }
 
-/* Nav links siempre sobre fondo oscuro */
+/* Nav links siempre sobre fondo TecNM */
 .sidebar nav a,
 .nav-group-btn {
-  color: #4a6280 !important;
+  color: #7aaad8 !important;
 }
 .sidebar nav a:hover,
 .nav-group-btn:hover {
-  background: rgba(59, 130, 246, 0.08) !important;
-  color: #dce9ff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 .sidebar nav a.active {
-  background: rgba(59, 130, 246, 0.15) !important;
-  color: #60a5fa !important;
-  border-left-color: #3b82f6 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-left-color: #ffffff !important;
 }
 .nav-group.open .nav-group-btn {
-  color: #dce9ff !important;
+  color: #e8f0ff !important;
 }
 
 /* Submenu */
 .submenu {
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: rgba(0, 4, 62, 0.25) !important;
 }
 .submenu-item {
-  color: #2d4a78 !important;
+  color: #6a8ec0 !important;
 }
 .submenu-item:hover {
-  color: #dce9ff !important;
-  background: rgba(59, 130, 246, 0.07) !important;
+  color: #e8f0ff !important;
+  background: rgba(255, 255, 255, 0.07) !important;
 }
 .submenu-item.active {
-  color: #60a5fa !important;
-  border-left-color: #3b82f6 !important;
-  background: rgba(59, 130, 246, 0.12) !important;
+  color: #ffffff !important;
+  border-left-color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Theme btn */
 .theme-icon-btn {
-  color: #4a6280 !important;
-  border-top-color: #1a2e52 !important;
+  color: #6a8ec0 !important;
+  border-top-color: #0f2248 !important;
 }
 .theme-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #dce9ff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #e8f0ff !important;
 }
 
 /* sidebar-toggle-btn: definición única arriba */
@@ -3905,10 +3905,10 @@ body.sidebar-collapsed .content {
   color: var(--text-main);
 }
 
-/* ── SIDEBAR DEEP OCEAN ───────────────────────────────────────────── */
+/* ── SIDEBAR TECnm DARK ───────────────────────────────────────────── */
 .dark-mode .sidebar {
-  background: var(--card-bg2);
-  border-right: 1px solid var(--border);
+  background: #0d2050 !important;
+  border-right: 1px solid #0a1638 !important;
 }
 
 /* Línea de acento: ver .sidebar-accent-bar */

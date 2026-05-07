@@ -65,7 +65,7 @@ function abrirModalNuevoGrupo() {
   document.getElementById("numeroEmpleado").value = "";
   document.getElementById("idPeriodo").value = "";
   document.getElementById("limiteAlumnos").value = "30";
-  
+
   document.getElementById("horaInicio").value = "";
   document.getElementById("horaFin").value = "";
   // Deseleccionar todos los dias
@@ -107,7 +107,9 @@ function toggleDiaEdit(chip) {
 
 function getEditDiasSeleccionados() {
   return [
-    ...document.querySelectorAll("#editDiasGrid input[type='checkbox']:checked"),
+    ...document.querySelectorAll(
+      "#editDiasGrid input[type='checkbox']:checked",
+    ),
   ].map((cb) => cb.value);
 }
 
@@ -164,7 +166,6 @@ async function guardarNuevoGrupo() {
     id_periodo: document.getElementById("idPeriodo").value,
     limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
     horario: obtenerHorario() || null,
-    
   };
 
   if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
@@ -204,7 +205,7 @@ async function guardarNuevoGrupo() {
   const data = await res.json();
 
   if (res.status === 409 && data.conflict) {
-    // Conflicto de aula/horario — mostrar banner dentro del modal
+    // Conflicto de horario — mostrar banner dentro del modal
     document.getElementById("conflictMsg").textContent = data.error;
     document.getElementById("conflictBanner").classList.add("visible");
     document
@@ -568,7 +569,7 @@ async function editarGrupo(id_grupo) {
 
     document.getElementById("editGrupoId").textContent = `Grupo #${id_grupo}`;
     document.getElementById("editLimite").value = g.limite_alumnos ?? 30;
-    
+
     document.getElementById("editEstatus").value = g.estatus ?? "Activo";
     document.getElementById("editGrupoError").style.display = "none";
 
@@ -609,7 +610,7 @@ async function guardarEdicionGrupo() {
 
   const body = {
     limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
-    
+
     horario: obtenerHorarioEdit() || null,
     estatus: document.getElementById("editEstatus").value,
   };

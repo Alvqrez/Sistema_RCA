@@ -92,10 +92,9 @@ function seleccionarPeriodo(id, el) {
     anio: el.querySelector(".pc-anio")?.textContent || "",
   };
   document.getElementById("btnIrPaso2").disabled = false;
-  document.getElementById("tc1val").textContent =
-    periodoSel.anio
-      ? `${periodoSel.descripcion} ${periodoSel.anio}`
-      : periodoSel.descripcion;
+  document.getElementById("tc1val").textContent = periodoSel.anio
+    ? `${periodoSel.descripcion} ${periodoSel.anio}`
+    : periodoSel.descripcion;
 }
 
 async function cargarGruposGlobal() {
@@ -206,7 +205,9 @@ async function irPaso3() {
   } catch {}
 
   document.getElementById("lblYaInscritos").textContent =
-    yaInscritos.size > 0 ? `${yaInscritos.size} ya inscrito(s) en este grupo` : "";
+    yaInscritos.size > 0
+      ? `${yaInscritos.size} ya inscrito(s) en este grupo`
+      : "";
   document.getElementById("paso3Sub").textContent =
     `Alumnos de ${carreraSel} — ${grupoSel.nombre_materia} / Grupo #${grupoSel.id_grupo}`;
 
@@ -440,9 +441,7 @@ function filtrarAlumnos() {
   const duplicados = calcularDuplicadosMismosPeriodo();
 
   // Alumnos de la carrera elegida — incluir los ya inscritos en este grupo (se muestran deshabilitados)
-  let lista = todosAlumnos.filter(
-    (a) => a.id_carrera === carreraSel,
-  );
+  let lista = todosAlumnos.filter((a) => a.id_carrera === carreraSel);
 
   if (q) {
     lista = lista.filter(
@@ -468,19 +467,20 @@ function renderTablaAlumnos(alumnos, duplicados = new Set()) {
       const esDuplicado = duplicados.has(a.no_control);
       const esEnEsteGrupo = yaInscritos.has(a.no_control);
       const checked = alumnosSel.has(a.no_control) ? "checked" : "";
-      const rowStyle = esDuplicado || esEnEsteGrupo
-        ? 'style="opacity:0.55;background:rgba(239,68,68,0.04)"'
-        : "";
+      const rowStyle =
+        esDuplicado || esEnEsteGrupo
+          ? 'style="opacity:0.55;background:rgba(239,68,68,0.04)"'
+          : "";
       const disabledAttr = esDuplicado || esEnEsteGrupo ? "disabled" : "";
       const badge = esEnEsteGrupo
         ? `<span style="font-size:0.68rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap" title="Ya está inscrito en este grupo">
             <iconify-icon icon="lucide:check-circle" style="font-size:0.7rem;vertical-align:-1px"></iconify-icon> Ya inscrito aquí
           </span>`
         : esDuplicado
-        ? `<span style="font-size:0.68rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap" title="Ya inscrito en otro grupo de esta materia en el mismo periodo">
+          ? `<span style="font-size:0.68rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 7px;border-radius:999px;margin-left:6px;white-space:nowrap" title="Ya inscrito en otro grupo de esta materia en el mismo periodo">
             <iconify-icon icon="lucide:ban" style="font-size:0.7rem;vertical-align:-1px"></iconify-icon> Ya inscrito
           </span>`
-        : "";
+          : "";
       // Calcular carga actual del alumno desde todasInsc (sin fetch)
       const descPer = (periodoSel?.descripcion || "").toLowerCase();
       const esVeranoLocal = descPer.includes("verano");
@@ -545,102 +545,6 @@ function toggleAlumno(no_control, chk) {
 }
 
 function actualizarContadorAlumnos() {
-
-  if (alumnosSel.size !== 1) {
-    document.getElementById("creditosTexto").textContent =
-      alumnosSel.size === 0
-        ? textoNeutro
-        : `${alumnosSel.size} alumnos seleccionados`;
-    document.getElementById("creditosBarra").style.width = "0%";
-    document.getElementById("creditosBarra").style.background = "#3b82f6";
-    document.getElementById("creditosAviso").textContent = "";
-    return;
-  }
-
-  const no_control = [...alumnosSel][0];
-  try {
-    const r = await fetch(`${API_URL}/api/inscripciones/alumno/${no_control}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    });
-    if (!r.ok) return;
-    const inscripciones = await r.json();
-
-    if (esVerano) {
-      // ── Modo verano: contar materias en este periodo específico ──
-      const materiasEnVerano = inscripciones.filter((i) => {
-        const pDesc = (i.periodo || "").toLowerCase();
-        const pAnio = i.anio || 0;
-        const periodoAnio =
-          periodoSel?.anio ||
-          new Date(periodoSel?.fecha_inicio || "").getFullYear() ||
-          new Date().getFullYear();
-        return (
-          pDesc.includes("verano") &&
-          i.estatus === "Cursando" &&
-          pAnio === periodoAnio
-        );
-      }).length;
-
-      const total = materiasEnVerano + 1; // +1 por la que se quiere inscribir
-      const pct = Math.min(100, (total / 2) * 100);
-
-      let color = total > 2 ? "#ef4444" : total === 2 ? "#f59e0b" : "#3b82f6";
-      let aviso =
-        total > 2
-          ? "⚠️ Excede el máximo"
-          : total === 2
-            ? "Límite alcanzado"
-            : "";
-
-      document.getElementById("creditosTexto").textContent =
-        `${materiasEnVerano} / 2 materias en este verano (+1 nueva = ${total})`;
-      document.getElementById("creditosBarra").style.width = `${pct}%`;
-      document.getElementById("creditosBarra").style.background = color;
-      document.getElementById("creditosAviso").textContent = aviso;
-      document.getElementById("creditosAviso").style.color = color;
-    } else {
-      // ── Modo semestral: sumar créditos ──
-      let creditosActuales = 0;
-      inscripciones
-        .filter((i) => {
-          const pDesc = (i.periodo || "").toLowerCase();
-          return (
-            (pDesc.includes("enero") || pDesc.includes("agosto")) &&
-            i.estatus === "Cursando"
-          );
-        })
-        .forEach((i) => {
-          creditosActuales += parseFloat(i.creditos_totales || 0);
-        });
-
-      const matNueva = todasMaterias.find(
-        (m) => m.clave_materia === materiaSel?.clave_materia,
-      );
-      const creditosNuevos = parseFloat(matNueva?.creditos_totales || 0);
-      const total = creditosActuales + creditosNuevos;
-      const pct = Math.min(100, (total / 36) * 100);
-
-      let color = total > 36 ? "#ef4444" : total >= 30 ? "#f59e0b" : "#3b82f6";
-      let aviso =
-        total > 36
-          ? "⚠️ Excede el máximo"
-          : total >= 30
-            ? "Cerca del límite"
-            : "";
-
-      document.getElementById("creditosTexto").textContent =
-        `${total} / 36 créditos (actuales: ${creditosActuales} + nueva: ${creditosNuevos})`;
-      document.getElementById("creditosBarra").style.width = `${pct}%`;
-      document.getElementById("creditosBarra").style.background = color;
-      document.getElementById("creditosAviso").textContent = aviso;
-      document.getElementById("creditosAviso").style.color = color;
-    }
-  } catch {
-    // silencioso si falla
-  }
-}
-
-function actualizarContadorAlumnos() {
   const n = alumnosSel.size;
   document.getElementById("lblSel").textContent =
     `${n} alumno${n !== 1 ? "s" : ""} seleccionado${n !== 1 ? "s" : ""}`;
@@ -685,10 +589,9 @@ function toggleTodos(master) {
 
 // ── Paso 4: Confirmación ───────────────────────────────────────────────────
 function poblarResumen() {
-  document.getElementById("rs-periodo").textContent =
-    periodoSel?.anio
-      ? `${periodoSel.descripcion} ${periodoSel.anio}`
-      : periodoSel?.descripcion || "—";
+  document.getElementById("rs-periodo").textContent = periodoSel?.anio
+    ? `${periodoSel.descripcion} ${periodoSel.anio}`
+    : periodoSel?.descripcion || "—";
   document.getElementById("rs-materia").textContent =
     materiaSel?.nombre_materia || "—";
   document.getElementById("rs-grupo").textContent =
