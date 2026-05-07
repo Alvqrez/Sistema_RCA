@@ -74,9 +74,13 @@ function filtrar() {
   const estatus = document.getElementById("filtroEstatus")?.value || "";
   const rol = localStorage.getItem("rol");
   let datos = alumnosGlobal.filter((a) => {
-    const nombre = `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.toLowerCase();
+    const nombre =
+      `${a.nombre} ${a.apellido_paterno} ${a.apellido_materno ?? ""}`.toLowerCase();
     return (
-      (!q || nombre.includes(q) || a.no_control.toLowerCase().includes(q) || (a.correo_institucional || "").toLowerCase().includes(q)) &&
+      (!q ||
+        nombre.includes(q) ||
+        a.no_control.toLowerCase().includes(q) ||
+        (a.correo_institucional || "").toLowerCase().includes(q)) &&
       (!carrera || a.id_carrera === carrera) &&
       (!estatus || a.estatus === estatus)
     );
@@ -86,10 +90,30 @@ function filtrar() {
 
   // Chips de filtros activos
   const chips = [];
-  if (carrera) chips.push({ label: carrera, clear: () => { document.getElementById("filtroCarrera").value = ""; filtrar(); } });
-  if (estatus) chips.push({ label: estatus, clear: () => { document.getElementById("filtroEstatus").value = ""; filtrar(); } });
+  if (carrera)
+    chips.push({
+      label: carrera,
+      clear: () => {
+        document.getElementById("filtroCarrera").value = "";
+        filtrar();
+      },
+    });
+  if (estatus)
+    chips.push({
+      label: estatus,
+      clear: () => {
+        document.getElementById("filtroEstatus").value = "";
+        filtrar();
+      },
+    });
   const chipsEl = document.getElementById("chipsActivos");
-  if (chipsEl) chipsEl.innerHTML = chips.map((c, i) => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`).join("");
+  if (chipsEl)
+    chipsEl.innerHTML = chips
+      .map(
+        (c, i) =>
+          `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`,
+      )
+      .join("");
 
   renderTabla(datos, rol);
 }
@@ -106,8 +130,9 @@ function toggleRowExpand(noControl) {
     if (prev) prev.style.display = "none";
     if (prevChev) prevChev.style.transform = "rotate(0deg)";
   }
-  expandRow.style.display = isOpen ? "none" : "";
-  if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+  expandRow.style.display = isOpen ? "none" : "table-row";
+  if (chevron)
+    chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
   expandedRow = isOpen ? null : noControl;
 }
 
@@ -119,15 +144,19 @@ function renderTabla(datos, rol) {
       <p>Sin resultados con los filtros actuales</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = datos.map((a) => {
-    const iniciales = `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-    const estatusBadge = a.estatus === "Activo"
-      ? `<span class="badge badge-success">${a.estatus}</span>`
-      : a.estatus === "Egresado"
-        ? `<span class="badge badge-info">${a.estatus}</span>`
-        : `<span class="badge badge-danger">${a.estatus || "—"}</span>`;
-    const acciones = rol === "administrador"
-      ? `<div class="table-actions">
+  tbody.innerHTML = datos
+    .map((a) => {
+      const iniciales =
+        `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
+      const estatusBadge =
+        a.estatus === "Activo"
+          ? `<span class="badge badge-success">${a.estatus}</span>`
+          : a.estatus === "Egresado"
+            ? `<span class="badge badge-info">${a.estatus}</span>`
+            : `<span class="badge badge-danger">${a.estatus || "—"}</span>`;
+      const acciones =
+        rol === "administrador"
+          ? `<div class="table-actions">
           <button class="btn-icon" title="Ver cursos inscritos" onclick="abrirModalCursos('${a.no_control}')">
             <iconify-icon icon="lucide:book-open"></iconify-icon>
           </button>
@@ -137,8 +166,9 @@ function renderTabla(datos, rol) {
           <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
-        </div>` : "—";
-    return `<tr style="cursor:pointer" onclick="toggleRowExpand('${a.no_control}')">
+        </div>`
+          : "—";
+      return `<tr style="cursor:pointer" onclick="toggleRowExpand('${a.no_control}')">
       <td><div class="avatar-cell">
         <div class="avatar">${iniciales}</div>
         <span>${a.apellido_paterno} ${a.apellido_materno ?? ""}, ${a.nombre}</span>
@@ -160,11 +190,12 @@ function renderTabla(datos, rol) {
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">CURP</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.curp || "—"}</p></div>
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Correo personal</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.correo_personal || "—"}</p></div>
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Teléfono</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.tel_celular || "—"}</p></div>
-          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Fecha ingreso</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${fmtFecha ? fmtFecha(a.fecha_ingreso) : (a.fecha_ingreso || "—")}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Fecha ingreso</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${fmtFecha ? fmtFecha(a.fecha_ingreso) : a.fecha_ingreso || "—"}</p></div>
         </div>
       </td>
     </tr>`;
-  }).join("");
+    })
+    .join("");
 }
 
 async function cargarCarrerasSelect() {
@@ -480,7 +511,7 @@ async function eliminarAlumno(no_control) {
         toast(e.message, "error");
       }
     },
-    "Eliminar alumno"
+    "Eliminar alumno",
   );
 }
 

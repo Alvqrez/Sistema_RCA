@@ -147,7 +147,7 @@ app.get("/", (req, res) =>
 app.get("/api/info-publica", (req, res) => {
   db.query(
     `SELECT
-       (SELECT COUNT(*) FROM alumno WHERE estatus = 'Activo') AS alumnos,
+       (SELECT COUNT(*) FROM alumno) AS alumnos,
        (SELECT COUNT(*) FROM maestro WHERE estatus = 'Activo') AS maestros,
        (SELECT COUNT(*) FROM grupo  WHERE estatus = 'Activo') AS grupos,
        (SELECT descripcion FROM periodo_escolar WHERE estatus IN ('Vigente','Activo','activo') ORDER BY fecha_inicio DESC LIMIT 1) AS periodo`,

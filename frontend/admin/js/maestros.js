@@ -97,9 +97,13 @@ function filtrarMaestros() {
   const dpto = document.getElementById("filtroDepartamento").value;
   const estatus = document.getElementById("filtroEstatus")?.value || "";
   let datos = maestrosGlobal.filter((m) => {
-    const nombre = `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
+    const nombre =
+      `${m.nombre} ${m.apellido_paterno} ${m.apellido_materno ?? ""}`.toLowerCase();
     return (
-      (!q || nombre.includes(q) || m.rfc?.toLowerCase().includes(q) || (m.correo_institucional || "").toLowerCase().includes(q)) &&
+      (!q ||
+        nombre.includes(q) ||
+        m.rfc?.toLowerCase().includes(q) ||
+        (m.correo_institucional || "").toLowerCase().includes(q)) &&
       (!dpto || m.departamento === dpto) &&
       (!estatus || m.estatus === estatus)
     );
@@ -109,10 +113,30 @@ function filtrarMaestros() {
 
   // Chips de filtros activos
   const chips = [];
-  if (dpto) chips.push({ label: dpto, clear: () => { document.getElementById("filtroDepartamento").value = ""; filtrarMaestros(); } });
-  if (estatus) chips.push({ label: estatus, clear: () => { document.getElementById("filtroEstatus").value = ""; filtrarMaestros(); } });
+  if (dpto)
+    chips.push({
+      label: dpto,
+      clear: () => {
+        document.getElementById("filtroDepartamento").value = "";
+        filtrarMaestros();
+      },
+    });
+  if (estatus)
+    chips.push({
+      label: estatus,
+      clear: () => {
+        document.getElementById("filtroEstatus").value = "";
+        filtrarMaestros();
+      },
+    });
   const chipsEl = document.getElementById("chipsMaestros");
-  if (chipsEl) chipsEl.innerHTML = chips.map((c) => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`).join("");
+  if (chipsEl)
+    chipsEl.innerHTML = chips
+      .map(
+        (c) =>
+          `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${c.label}<button onclick="(${c.clear.toString()})()" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.9rem;padding:0;line-height:1">×</button></span>`,
+      )
+      .join("");
 
   renderTabla(datos);
 }
@@ -128,8 +152,9 @@ function toggleMaestroExpand(rfc) {
     if (prev) prev.style.display = "none";
     if (prevChev) prevChev.style.transform = "rotate(0deg)";
   }
-  expandRow.style.display = isOpen ? "none" : "";
-  if (chevron) chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+  expandRow.style.display = isOpen ? "none" : "table-row";
+  if (chevron)
+    chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
   expandedMaestro = isOpen ? null : rfc;
 }
 
@@ -139,15 +164,18 @@ function renderTabla(datos) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><iconify-icon icon="lucide:search-x"></iconify-icon><p>Sin resultados</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = datos.map((m) => {
-    const ini = `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-    const badge = m.estatus === "Activo"
-      ? `<span class="badge badge-success">Activo</span>`
-      : m.estatus === "Licencia"
-        ? `<span class="badge badge-warning">Licencia</span>`
-        : `<span class="badge badge-danger">${m.estatus || "Inactivo"}</span>`;
-    const rfcSafe = m.rfc?.replace(/'/g, "\\'") ?? "";
-    return `<tr style="cursor:pointer" onclick="toggleMaestroExpand('${rfcSafe}')">
+  tbody.innerHTML = datos
+    .map((m) => {
+      const ini =
+        `${m.nombre?.[0] ?? ""}${m.apellido_paterno?.[0] ?? ""}`.toUpperCase();
+      const badge =
+        m.estatus === "Activo"
+          ? `<span class="badge badge-success">Activo</span>`
+          : m.estatus === "Licencia"
+            ? `<span class="badge badge-warning">Licencia</span>`
+            : `<span class="badge badge-danger">${m.estatus || "Inactivo"}</span>`;
+      const rfcSafe = m.rfc?.replace(/'/g, "\\'") ?? "";
+      return `<tr style="cursor:pointer" onclick="toggleMaestroExpand('${rfcSafe}')">
       <td><div class="avatar-cell">
         <div class="avatar" style="background:var(--success-light);color:var(--success)">${ini}</div>
         <span>${m.apellido_paterno} ${m.apellido_materno ?? ""}, ${m.nombre}</span>
@@ -176,7 +204,8 @@ function renderTabla(datos) {
         </div>
       </td>
     </tr>`;
-  }).join("");
+    })
+    .join("");
 }
 
 function abrirModalNuevo() {
@@ -210,7 +239,8 @@ function editarMaestro(ne) {
   document.getElementById("f_correo").value = m.correo_institucional ?? "";
 
   document.getElementById("f_curp").value = m.curp ?? "";
-  document.getElementById("f_fnac").value = m.fecha_nacimiento?.slice(0, 10) ?? "";
+  document.getElementById("f_fnac").value =
+    m.fecha_nacimiento?.slice(0, 10) ?? "";
   document.getElementById("f_genero").value = m.genero ?? "";
   document.getElementById("f_celular").value = m.tel_celular ?? "";
   document.getElementById("f_correo_personal").value = m.correo_personal ?? "";
@@ -220,7 +250,8 @@ function editarMaestro(ne) {
   document.getElementById("f_especialidad").value = m.especialidad ?? "";
   document.getElementById("f_grado").value = m.grado_academico ?? "";
   document.getElementById("f_contrato").value = m.tipo_contrato ?? "";
-  document.getElementById("f_ingreso").value = m.fecha_ingreso?.slice(0, 10) ?? "";
+  document.getElementById("f_ingreso").value =
+    m.fecha_ingreso?.slice(0, 10) ?? "";
   document.getElementById("f_tel_oficina").value = m.tel_oficina ?? "";
 
   ocultarError();
@@ -331,7 +362,7 @@ async function eliminarMaestro(ne) {
         toast(e.message, "error");
       }
     },
-    "Eliminar maestro"
+    "Eliminar maestro",
   );
 }
 
