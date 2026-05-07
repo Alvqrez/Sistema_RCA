@@ -743,8 +743,17 @@
                 maxlength="13"
                 oninput="this.value = this.value.toUpperCase()"
               />
+            </div>
+            <div class="form-group">
+              <label>Usuario <span style="color: var(--danger)">*</span></label>
+              <input
+                id="aUsername"
+                type="text"
+                placeholder="Ej: admin01"
+                maxlength="60"
+              />
               <small style="color: var(--text-muted); font-size: 0.72rem">
-                El RFC será el nombre de usuario del administrador
+                El usuario elegido será el nombre de acceso al sistema
               </small>
             </div>
             <div class="form-group">
@@ -1454,9 +1463,10 @@
             };
           } else {
             const rfc = document.getElementById("aRfc").value.trim();
+            const username = document.getElementById("aUsername").value.trim();
             const password = document.getElementById("aPassword").value;
-            if (!rfc || !password) {
-              errEl.textContent = "RFC y contraseña son requeridos";
+            if (!rfc || !username || !password) {
+              errEl.textContent = "RFC, usuario y contraseña son requeridos";
               errEl.style.display = "block";
               btn.disabled = false;
               return;
@@ -1478,6 +1488,7 @@
             method = "POST";
             body = {
               rfc,
+              username,
               nombre,
               apellido_paterno,
               apellido_materno,

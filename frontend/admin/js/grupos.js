@@ -65,7 +65,7 @@ function abrirModalNuevoGrupo() {
   document.getElementById("numeroEmpleado").value = "";
   document.getElementById("idPeriodo").value = "";
   document.getElementById("limiteAlumnos").value = "30";
-  document.getElementById("aula").value = "";
+  
   document.getElementById("horaInicio").value = "";
   document.getElementById("horaFin").value = "";
   // Deseleccionar todos los dias
@@ -164,7 +164,7 @@ async function guardarNuevoGrupo() {
     id_periodo: document.getElementById("idPeriodo").value,
     limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
     horario: obtenerHorario() || null,
-    aula: document.getElementById("aula").value.trim() || null,
+    
   };
 
   if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
@@ -261,7 +261,6 @@ function filtrarGrupos() {
       !texto ||
       (g.nombre_materia || "").toLowerCase().includes(texto) ||
       (g.nombre_maestro || "").toLowerCase().includes(texto) ||
-      (g.aula || "").toLowerCase().includes(texto) ||
       (g.clave_materia || "").toLowerCase().includes(texto);
     const matchEst = !estatus || g.estatus === estatus;
     return matchText && matchEst;
@@ -300,7 +299,6 @@ function filtrarGrupos() {
       <td style="font-size:.85rem">${g.nombre_maestro}</td>
       <td style="font-size:.8rem;color:var(--text-muted)">${periodoLabel}</td>
       <td style="text-align:center;font-size:.85rem">${g.limite_alumnos ?? "—"}</td>
-      <td style="font-size:.82rem">${g.aula ?? "—"}</td>
       <td style="font-size:.78rem;color:var(--text-muted)">${g.horario ?? "—"}</td>
       <td><span class="badge ${badgeEst}">${g.estatus ?? "—"}</span></td>
       <td style="text-align:right">
@@ -479,7 +477,6 @@ async function exportarCSVGrupos() {
       "id_periodo",
       "limite_alumnos",
       "horario",
-      "aula",
       "estatus",
     ];
     const rows = [cols.join(",")];
@@ -571,7 +568,7 @@ async function editarGrupo(id_grupo) {
 
     document.getElementById("editGrupoId").textContent = `Grupo #${id_grupo}`;
     document.getElementById("editLimite").value = g.limite_alumnos ?? 30;
-    document.getElementById("editAula").value = g.aula ?? "";
+    
     document.getElementById("editEstatus").value = g.estatus ?? "Activo";
     document.getElementById("editGrupoError").style.display = "none";
 
@@ -612,7 +609,7 @@ async function guardarEdicionGrupo() {
 
   const body = {
     limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
-    aula: document.getElementById("editAula").value.trim() || null,
+    
     horario: obtenerHorarioEdit() || null,
     estatus: document.getElementById("editEstatus").value,
   };

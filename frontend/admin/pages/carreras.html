@@ -67,7 +67,7 @@
             <p class="page-subtitle">Catálogo de programas académicos</p>
           </div>
           <div class="header-actions">
-            <button class="btn btn-primary" onclick="abrirAdvertenciaCarrera()">
+            <button class="btn btn-primary" onclick="abrirModal(null)">
               <iconify-icon icon="mdi:plus"></iconify-icon> Nueva carrera
             </button>
           </div>
@@ -412,19 +412,6 @@
           .join("");
       }
 
-      function abrirAdvertenciaCarrera() {
-        document
-          .getElementById("modalAdvertenciaCarrera")
-          .classList.add("visible");
-      }
-
-      function confirmarNuevaCarrera() {
-        document
-          .getElementById("modalAdvertenciaCarrera")
-          .classList.remove("visible");
-        abrirModal(null);
-      }
-
       function abrirModal(id = null) {
         document.getElementById("editId").value = id ?? "";
         document.getElementById("formError").style.display = "none";
@@ -609,51 +596,6 @@
         t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
       }
     </script>
-    <!-- Modal: Advertencia nueva carrera -->
-    <div class="modal-overlay" id="modalAdvertenciaCarrera">
-      <div class="modal-panel modal-sm">
-        <div class="modal-header">
-          <h2 style="display: flex; align-items: center; gap: 8px">
-            <iconify-icon
-              icon="lucide:alert-triangle"
-              style="color: var(--warning)"
-            ></iconify-icon>
-            Antes de crear una carrera
-          </h2>
-        </div>
-        <div class="modal-body">
-          <p style="margin: 0">
-            Los datos que ingreses deben ser
-            <strong>exactamente iguales</strong> a los que aparecen en los
-            <strong>documentos oficiales</strong> de la institución y al
-            contexto actual de la universidad (TecNM / ITV).<br /><br />
-            <span style="font-size: 0.84rem; color: var(--text-muted)">
-              La carrera quedará en estatus <strong>Pendiente</strong> hasta que
-              otro administrador diferente al que la creó la apruebe. Si la
-              información es incorrecta, podrá ser
-              <strong>rechazada y eliminada</strong>.
-            </span>
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="
-              document
-                .getElementById('modalAdvertenciaCarrera')
-                .classList.remove('visible')
-            "
-          >
-            Cancelar
-          </button>
-          <button class="btn btn-primary" onclick="confirmarNuevaCarrera()">
-            <iconify-icon icon="lucide:check"></iconify-icon>
-            Entendido, continuar
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Modal: Confirmar rechazar carrera -->
     <div class="modal-overlay" id="modalRechazar">
       <div class="modal-panel modal-sm">

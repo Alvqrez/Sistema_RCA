@@ -127,26 +127,7 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:layout-dashboard",
       },
       {
-        // antes mezclado con "Catálogos" — ahora es una sección propia
-        texto: "Personas",
-        icono: "lucide:users",
-        hijos: [
-          {
-            href: "../../admin/pages/alumnos.html",
-            texto: "Alumnos",
-            icono: "lucide:user",
-          },
-          {
-            href: "../../admin/pages/maestros.html",
-            texto: "Maestros",
-            icono: "lucide:graduation-cap",
-          },
-        ],
-      },
-      {
-        // antes todo mezclado en "Catálogos" con Grupos y Periodos
-        // Ahora solo contiene los catálogos académicos puros
-        texto: "Plan Académico",
+        texto: "Catálogo",
         icono: "lucide:folder-open",
         hijos: [
           {
@@ -165,22 +146,14 @@ window.API_URL = "http://localhost:3000";
             icono: "lucide:layers",
           },
           {
-            href: "../../admin/pages/actividadesAdmin.html",
-            texto: "Actividades predefinidas", // antes simplemente "Actividades"
-            icono: "mdi:clipboard-list-outline",
+            href: "../../admin/pages/maestros.html",
+            texto: "Maestros",
+            icono: "lucide:graduation-cap",
           },
-        ],
-      },
-      {
-        // antes "Grupos" y "Periodos" vivían en "Catálogos" junto con
-        // Carreras y Materias — pero son elementos operativos por semestre
-        texto: "Operación",
-        icono: "lucide:settings",
-        hijos: [
           {
-            href: "../../admin/pages/periodos.html",
-            texto: "Periodos escolares", // antes solo "Periodos"
-            icono: "mdi:calendar-range-outline",
+            href: "../../admin/pages/alumnos.html",
+            texto: "Alumnos",
+            icono: "lucide:user",
           },
           {
             href: "../../admin/pages/grupos.html",
@@ -188,26 +161,42 @@ window.API_URL = "http://localhost:3000";
             icono: "lucide:library",
           },
           {
-            href: "../../admin/pages/inscripcion.html", // antes en "Alumnos"
+            href: "../../admin/pages/inscripcion.html",
             texto: "Inscripciones",
             icono: "mdi:account-plus-outline",
+          },
+          {
+            href: "../../admin/pages/actividadesAdmin.html",
+            texto: "Actividades predefinidas",
+            icono: "mdi:clipboard-list-outline",
           },
         ],
       },
       {
-        href: "../../shared/pages/reportes.html",
-        texto: "Reportes",
-        icono: "lucide:bar-chart-2",
-      },
-      {
-        href: "../../shared/pages/estadisticas.html",
-        texto: "Estadísticas",
-        icono: "lucide:chart-bar",
-      },
-      {
-        href: "../../admin/pages/utilerias.html",
         texto: "Utilerías",
         icono: "lucide:settings-2",
+        hijos: [
+          {
+            href: "../../admin/pages/periodos.html",
+            texto: "Periodos escolares",
+            icono: "mdi:calendar-range-outline",
+          },
+          {
+            href: "../../shared/pages/reportes.html",
+            texto: "Reportes",
+            icono: "lucide:bar-chart-2",
+          },
+          {
+            href: "../../shared/pages/estadisticas.html",
+            texto: "Estadísticas",
+            icono: "lucide:chart-bar",
+          },
+          {
+            href: "../../admin/pages/utilerias.html",
+            texto: "Utilerías del sistema",
+            icono: "lucide:settings",
+          },
+        ],
       },
     ],
   };

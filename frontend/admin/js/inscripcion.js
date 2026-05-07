@@ -213,27 +213,6 @@ async function irPaso3() {
   alumnosSel.clear();
   actualizarContadorAlumnos();
   filtrarAlumnos();
-
-  // Mostrar widget según tipo de periodo
-  const desc = (periodoSel?.descripcion || "").toLowerCase();
-  const esSemestral = desc.includes("enero") || desc.includes("agosto");
-  const esVerano = desc.includes("verano");
-  const mostrarWidget = esSemestral || esVerano;
-  document.getElementById("creditosWidget").style.display = mostrarWidget
-    ? "block"
-    : "none";
-
-  // Actualizar etiquetas del widget según tipo
-  if (esVerano) {
-    document.getElementById("creditosMin").textContent = "Mínimo: 1";
-    document.getElementById("creditosMax").textContent = "Máximo: 2";
-    document.getElementById("creditosTexto").textContent = "— / 2 materias";
-  } else {
-    document.getElementById("creditosMin").textContent = "Mínimo: 20";
-    document.getElementById("creditosMax").textContent = "Máximo: 36";
-    document.getElementById("creditosTexto").textContent = "— / 36 créditos";
-  }
-  if (mostrarWidget) actualizarBarraCreditos();
 }
 
 async function irPaso4() {
@@ -563,22 +542,9 @@ function toggleAlumno(no_control, chk) {
   if (chk.checked) alumnosSel.add(no_control);
   else alumnosSel.delete(no_control);
   actualizarContadorAlumnos();
-
-  // Actualizar barra de créditos si el widget está visible y hay exactamente 1 alumno seleccionado
-  if (document.getElementById("creditosWidget").style.display !== "none") {
-    actualizarBarraCreditos();
-  }
 }
 
-// ── Barra de créditos / materias verano ────────────────────────────────────
-async function actualizarBarraCreditos() {
-  const widget = document.getElementById("creditosWidget");
-  if (!widget || widget.style.display === "none") return;
-
-  const desc = (periodoSel?.descripcion || "").toLowerCase();
-  const esVerano = desc.includes("verano");
-
-  const textoNeutro = esVerano ? "— / 2 materias" : "— / 36 créditos";
+function actualizarContadorAlumnos() {
 
   if (alumnosSel.size !== 1) {
     document.getElementById("creditosTexto").textContent =

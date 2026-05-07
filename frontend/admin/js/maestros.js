@@ -2,34 +2,6 @@ let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
 
-// Genera correo institucional automáticamente: nombre.InicialPatInicialMat@veracruz.tecnm.mx
-function generarCorreoMaestro() {
-  const nombre = document.getElementById("f_nombre")?.value.trim() || "";
-  const apPat = document.getElementById("f_ap_pat")?.value.trim() || "";
-  const apMat = document.getElementById("f_ap_mat")?.value.trim() || "";
-
-  if (!nombre || !apPat) {
-    document.getElementById("f_correo").value = "";
-    return;
-  }
-
-  // Primera palabra del nombre, sin acentos, en minúsculas
-  const primerNombre = nombre.split(" ")[0]
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  const inicialPat = apPat[0]
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  const inicialMat = apMat
-    ? apMat[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
-    : "";
-
-  const correo = `${primerNombre}.${inicialPat}${inicialMat}@veracruz.tecnm.mx`;
-  document.getElementById("f_correo").value = correo;
-}
-
 function toast(msg, tipo = "success") {
   const c = document.getElementById("toast-container");
   if (!c) return;
@@ -196,7 +168,7 @@ function editarMaestro(ne) {
   document.getElementById("f_ap_pat").value = m.apellido_paterno ?? "";
   document.getElementById("f_ap_mat").value = m.apellido_materno ?? "";
   document.getElementById("f_estatus").value = m.estatus ?? "Activo";
-  generarCorreoMaestro();
+  document.getElementById("f_correo").value = m.correo_institucional ?? "";
 
   document.getElementById("f_curp").value = m.curp ?? "";
   document.getElementById("f_fnac").value = m.fecha_nacimiento?.slice(0, 10) ?? "";
@@ -239,7 +211,7 @@ async function guardarMaestro() {
       return;
     }
     if (!correo) {
-      mostrarError("No se pudo generar el correo institucional. Verifica nombre y apellidos.", "esencial");
+      mostrarError("El correo institucional es obligatorio.", "esencial");
       return;
     }
     if (!pwd) {

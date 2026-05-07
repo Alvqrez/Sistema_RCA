@@ -1,9 +1,9 @@
 /* Denifiremos la paleta de colores aquí, para que nos sea mas sencillo estilizar:*/
 :root {
-  /* COLORES PRINCIPALES */
-  --primary: #1e40af;
-  --primary-hover: #1e3a8a;
-  --primary-light: #dbeafe;
+  /* COLORES PRINCIPALES — Paleta TecNM */
+  --primary: #1a386a;
+  --primary-hover: #00043e;
+  --primary-light: #dde5f4;
 
   --success: #059669;
   --success-light: #d1fae5;
@@ -18,34 +18,35 @@
   --bonus-light: #ede9fe;
 
   /* INTERFAZ */
-  --bg-app: #f1f5f9;
-  --bg-alt: #f8fafc;
+  --bg-app: #efefef;
+  --bg-alt: #f7f8fc;
   --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
+  --text-main: #0d1b35;
+  --text-muted: #5a6a85;
+  --border: #d0d8e8;
 
   --radius: 10px;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --shadow: 0 2px 8px rgba(26, 56, 106, 0.1);
+  --shadow-lg: 0 8px 32px rgba(26, 56, 106, 0.16);
 }
 
 .dark-mode {
-  /* ══ DEEP OCEAN — paleta completa ══════════════════════════════
-     Fondo azul noche profundo. Cards ligeramente más claras.
-     Azul brillante legible. Glow en elementos de acento.
-     ═══════════════════════════════════════════════════════════════ */
-  --bg-app: #060e1f;
-  --bg-alt: #0a1628;
-  --bg-deep: #040a14;
+  /* ══ TecNM Dark — azul marino profundo ══
+     Fondo muy oscuro con tinte azul marino.
+     Cards ligeramente más claras para contraste.
+     Azul medio para accents, legible en fondo oscuro.
+     ══════════════════════════════════════════════ */
+  --bg-app: #07111f;
+  --bg-alt: #0c1b2e;
+  --bg-deep: #050e1a;
 
-  --card-bg: #0f1f3d;
-  --card-bg2: #0a1628;
+  --card-bg: #0f2040;
+  --card-bg2: #0c1b2e;
 
-  --primary: #60a5fa;
-  --primary-hover: #93c5fd;
-  --primary-light: rgba(59, 130, 246, 0.14);
-  --primary-glow: rgba(59, 130, 246, 0.22);
+  --primary: #5b8fd4;
+  --primary-hover: #7aaee0;
+  --primary-light: rgba(91, 143, 212, 0.15);
+  --primary-glow: rgba(91, 143, 212, 0.22);
 
   --success: #34d399;
   --success-light: rgba(52, 211, 153, 0.14);
@@ -56,34 +57,34 @@
   --bonus: #c084fc;
   --bonus-light: rgba(192, 132, 252, 0.13);
 
-  --text-main: #dce9ff;
+  --text-main: #d8e8ff;
   --text-muted: #4d6484;
   --text-soft: #7a95b8;
 
-  --border: #1a2e52;
+  --border: #1a2e4a;
   --border-h: #1e4080;
 
   /* Text aliases */
   --text-soft: #4d6484;
 
-  /* Sidebar Deep Ocean variables */
-  --sb-bg: #0a1628;
-  --sb-border: #1a2e52;
-  --sb-text: #dce9ff;
+  /* Sidebar Dark variables */
+  --sb-bg: #0c1b2e;
+  --sb-border: #1a2e4a;
+  --sb-text: #d8e8ff;
   --sb-muted: #2d4a78;
   --sb-muted2: #4d6484;
 
   /* Input y fondos secundarios */
-  --input-bg: #0a1628;
-  --th-bg: #0a1628;
-  --filter-bg: #0a1628;
-  --modal-bg: #0f1f3d;
-  --chip-bg: #0f1f3d;
+  --input-bg: #0c1b2e;
+  --th-bg: #0c1b2e;
+  --filter-bg: #0c1b2e;
+  --modal-bg: #0f2040;
+  --chip-bg: #0f2040;
 
   /* Filas de tabla */
-  --row-even: rgba(59, 130, 246, 0.04);
-  --row-hover: rgba(59, 130, 246, 0.09);
-  --row-even-hover: rgba(59, 130, 246, 0.13);
+  --row-even: rgba(91, 143, 212, 0.04);
+  --row-hover: rgba(91, 143, 212, 0.09);
+  --row-even-hover: rgba(91, 143, 212, 0.13);
   --td-border: rgba(26, 46, 82, 0.8);
 }
 

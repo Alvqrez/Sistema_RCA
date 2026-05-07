@@ -67,13 +67,11 @@ router.post("/usuarios", soloAdmin, async (req, res) => {
             return res.status(409).json({ error: "El username ya existe" });
           return res.status(500).json({ error: "Error interno del servidor" });
         }
-        res
-          .status(201)
-          .json({
-            success: true,
-            mensaje: "Usuario creado",
-            id_usuario: result.insertId,
-          });
+        res.status(201).json({
+          success: true,
+          mensaje: "Usuario creado",
+          id_usuario: result.insertId,
+        });
       },
     );
   } catch {
@@ -162,6 +160,7 @@ router.get("/administradores", soloAdmin, (req, res) => {
 router.post("/administradores", soloAdmin, async (req, res) => {
   const {
     rfc,
+    username,
     nombre,
     apellido_paterno,
     apellido_materno,
@@ -173,17 +172,16 @@ router.post("/administradores", soloAdmin, async (req, res) => {
 
   if (
     !rfc ||
+    !username ||
     !nombre ||
     !apellido_paterno ||
     !correo_institucional ||
     !password
   )
-    return res
-      .status(400)
-      .json({
-        error:
-          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, password)",
-      });
+    return res.status(400).json({
+      error:
+        "Faltan campos requeridos (rfc, username, nombre, apellido_paterno, correo_institucional, password)",
+    });
 
   if (rfc.length < 12 || rfc.length > 13)
     return res
@@ -193,6 +191,7 @@ router.post("/administradores", soloAdmin, async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
     const rfcUpper = rfc.toUpperCase();
+    const usernameTrimmed = username.trim();
 
     db.query(
       `INSERT INTO administrador
@@ -218,24 +217,22 @@ router.post("/administradores", soloAdmin, async (req, res) => {
         }
         db.query(
           "INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'administrador', ?)",
-          [rfcUpper, hash, rfcUpper],
+          [usernameTrimmed, hash, rfcUpper],
           (err2) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY")
                 return res
                   .status(409)
-                  .json({ error: "Ya existe un usuario con ese RFC" });
+                  .json({ error: "El nombre de usuario ya está en uso" });
               return res
                 .status(500)
                 .json({ error: "Error interno del servidor" });
             }
-            res
-              .status(201)
-              .json({
-                success: true,
-                mensaje: "Administrador creado",
-                rfc: rfcUpper,
-              });
+            res.status(201).json({
+              success: true,
+              mensaje: "Administrador creado",
+              rfc: rfcUpper,
+            });
           },
         );
       },
