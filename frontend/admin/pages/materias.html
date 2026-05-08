@@ -107,7 +107,7 @@
                   <th>Nombre</th>
                   <th>Carreras</th>
                   <th>Unidades</th>
-                  <th>Acciones</th>
+                  <th style="text-align:center">Acciones</th>
                 </tr>
               </thead>
               <tbody id="tablaMaterias"></tbody>
@@ -328,30 +328,35 @@
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../admin/js/materias.js"></script>
 
-    <!-- Modal confirmación genérico -->
-    <div id="modalConfirm" class="modal-overlay" onclick="if(event.target===this)_confirmCancel()">
-      <div class="modal-box" style="max-width:400px">
+    <!-- Modal eliminar materia -->
+    <div id="modalEliminarMateria" class="modal-overlay">
+      <div class="modal-panel modal-sm">
         <div class="modal-header">
-          <h3 id="modalConfirmTitle">Confirmar acción</h3>
+          <h2>Eliminar materia</h2>
+          <button class="modal-close" onclick="cerrarModalEliminarMateria()">✕</button>
         </div>
         <div class="modal-body">
-          <p id="modalConfirmMsg" style="margin:0"></p>
+          <p style="margin: 0 0 8px">
+            ¿Estás seguro de eliminar la materia
+            <strong id="nombreEliminarMateria"></strong>?
+          </p>
+          <p style="font-size:0.82rem;color:var(--danger);display:flex;align-items:center;gap:6px;margin:0">
+            <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
+            Esta acción no se puede deshacer. No podrás eliminarla si tiene grupos vinculados.
+          </p>
+          <div id="eliminarMateriaError" class="error-msg" style="display:none;margin-top:10px"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" onclick="_confirmCancel()">Cancelar</button>
-          <button class="btn btn-danger" id="modalConfirmOk">Confirmar</button>
+          <button class="btn btn-outline" onclick="cerrarModalEliminarMateria()">Cancelar</button>
+          <button class="btn btn-danger" id="btnConfirmarEliminarMateria">
+            <iconify-icon icon="mdi:delete-outline"></iconify-icon> Eliminar
+          </button>
         </div>
       </div>
     </div>
     <script>
-      function showConfirm(msg, onOk, title) {
-        document.getElementById("modalConfirmMsg").textContent = msg;
-        document.getElementById("modalConfirmTitle").textContent = title || "Confirmar acción";
-        document.getElementById("modalConfirmOk").onclick = () => { _confirmCancel(); onOk(); };
-        document.getElementById("modalConfirm").classList.add("visible");
-      }
-      function _confirmCancel() {
-        document.getElementById("modalConfirm").classList.remove("visible");
+      function cerrarModalEliminarMateria() {
+        document.getElementById("modalEliminarMateria").classList.remove("visible");
       }
     </script>
   </body>

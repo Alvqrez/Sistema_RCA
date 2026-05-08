@@ -4,14 +4,11 @@ const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
-// GET — todas las carreras (admin ve todas)
+// GET — todas las carreras
 router.get("/", verificarToken, (req, res) => {
-  const filtro =
-    req.query.soloAceptadas === "1" ? "WHERE estatus = 'Aceptada'" : "";
   db.query(
-    `SELECT id_carrera, nombre_carrera, siglas,
-            estatus, creado_por, aprobado_por, fecha_creacion
-     FROM carrera ${filtro} ORDER BY nombre_carrera`,
+    `SELECT id_carrera, nombre_carrera, siglas
+     FROM carrera ORDER BY nombre_carrera`,
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
@@ -23,7 +20,7 @@ router.get("/", verificarToken, (req, res) => {
 // GET por id
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
-    "SELECT * FROM carrera WHERE id_carrera = ?",
+    "SELECT id_carrera, nombre_carrera, siglas FROM carrera WHERE id_carrera = ?",
     [req.params.id],
     (err, rows) => {
       if (err)
@@ -37,16 +34,14 @@ router.get("/:id", verificarToken, (req, res) => {
 // POST — crear carrera directamente como Aceptada
 router.post("/", soloAdmin, (req, res) => {
   const { id_carrera, nombre_carrera, siglas } = req.body;
-  const creado_por =
-    req.usuario?.id_referencia || req.usuario?.username || null;
 
   if (!id_carrera || !nombre_carrera)
     return res.status(400).json({ error: "ID y nombre son requeridos" });
 
   db.query(
-    `INSERT INTO carrera (id_carrera, nombre_carrera, siglas, estatus, creado_por)
-     VALUES (?, ?, ?, 'Aceptada', ?)`,
-    [id_carrera, nombre_carrera, siglas ?? null, creado_por],
+    `INSERT INTO carrera (id_carrera, nombre_carrera, siglas)
+     VALUES (?, ?, ?)`,
+    [id_carrera, nombre_carrera, siglas ?? null],
     (err) => {
       if (err) {
         if (err.code === "ER_DUP_ENTRY")

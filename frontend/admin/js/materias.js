@@ -113,10 +113,10 @@ function renderTablaMaterias(materias) {
         <td>${m.nombre_materia}</td>
         <td>${carrerasBadges}</td>
         <td>${m.no_unidades}</td>
-        <td>
+        <td style="text-align:center">
           ${
             rol === "administrador"
-              ? `<div class="table-actions"><button class="btn-icon" title="Editar" onclick="editarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button><button class="btn-icon btn-del" title="Eliminar" onclick="eliminarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button></div>`
+              ? `<div class="table-actions" style="justify-content:center"><button class="btn-icon" title="Editar" onclick="editarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button><button class="btn-icon btn-del" title="Eliminar" onclick="eliminarMateria('${m.clave_materia}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button></div>`
               : "—"
           }
         </td>
@@ -319,24 +319,31 @@ function cancelarEdicion() {
 }
 
 async function eliminarMateria(clave) {
-  showConfirm(
-    `¿Eliminar la materia "${clave}"? Esta acción no se puede deshacer.`,
-    async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await fetch(`${API_URL}/api/materias/${clave}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success) cargarMaterias();
-        else mostrarMensaje(data.error || "Error al eliminar.", "error");
-      } catch {
-        mostrarMensaje("Error de conexión con el servidor.", "error");
+  const errEl = document.getElementById("eliminarMateriaError");
+  errEl.style.display = "none";
+  document.getElementById("nombreEliminarMateria").textContent = clave;
+  document.getElementById("modalEliminarMateria").classList.add("visible");
+  document.getElementById("btnConfirmarEliminarMateria").onclick = async () => {
+    errEl.style.display = "none";
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_URL}/api/materias/${clave}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        cerrarModalEliminarMateria();
+        cargarMaterias();
+      } else {
+        errEl.textContent = data.error || "Error al eliminar.";
+        errEl.style.display = "block";
       }
-    },
-    "Eliminar materia"
-  );
+    } catch {
+      errEl.textContent = "Error de conexión con el servidor.";
+      errEl.style.display = "block";
+    }
+  };
 }
 
 function mostrarMensaje(texto, tipo) {

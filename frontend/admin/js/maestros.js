@@ -190,7 +190,7 @@ function renderTabla(datos) {
             <button class="btn-icon" onclick="editarMaestro('${rfcSafe}')"><iconify-icon icon="lucide:pencil"></iconify-icon></button>
             <button class="btn-icon btn-del" onclick="eliminarMaestro('${rfcSafe}')"><iconify-icon icon="lucide:trash-2"></iconify-icon></button>
           </div>
-          <iconify-icon id="chev_m_${rfcSafe}" icon="lucide:chevron-down" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0"></iconify-icon>
+          <iconify-icon id="chev_m_${rfcSafe}" icon="lucide:chevron-down" onclick="event.stopPropagation();toggleMaestroExpand('${rfcSafe}')" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0;cursor:pointer"></iconify-icon>
         </div>
       </td>
     </tr>
@@ -346,24 +346,32 @@ async function guardarMaestro() {
 }
 
 async function eliminarMaestro(ne) {
-  showConfirm(
-    `¿Eliminar al maestro ${ne}? Esta acción no se puede deshacer.`,
-    async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const r = await fetch(`${API_URL}/api/maestros/${ne}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) throw new Error("No se pudo eliminar");
-        toast("Maestro eliminado");
-        await cargarMaestros();
-      } catch (e) {
-        toast(e.message, "error");
+  const errEl = document.getElementById("eliminarMaestroError");
+  errEl.style.display = "none";
+  document.getElementById("nombreEliminarMaestro").textContent = ne;
+  document.getElementById("modalEliminarMaestro").classList.add("visible");
+  document.getElementById("btnConfirmarEliminarMaestro").onclick = async () => {
+    errEl.style.display = "none";
+    const token = localStorage.getItem("token");
+    try {
+      const r = await fetch(`${API_URL}/api/maestros/${ne}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        errEl.textContent = data.error || "No se pudo eliminar.";
+        errEl.style.display = "block";
+        return;
       }
-    },
-    "Eliminar maestro",
-  );
+      cerrarModalEliminarMaestro();
+      toast("Maestro eliminado");
+      await cargarMaestros();
+    } catch {
+      errEl.textContent = "Error de conexión con el servidor.";
+      errEl.style.display = "block";
+    }
+  };
 }
 
 function mostrarError(msg, tabDonde = null) {

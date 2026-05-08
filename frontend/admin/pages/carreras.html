@@ -104,14 +104,13 @@
                     <th>Clave</th>
                     <th>Nombre</th>
                     <th>Siglas</th>
-                    <th style="text-align: center">Estatus</th>
                     <th style="text-align: center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tablaBody">
                   <tr>
                     <td
-                      colspan="5"
+                      colspan="4"
                       style="
                         text-align: center;
                         padding: 32px;
@@ -358,7 +357,7 @@
       function renderTabla(lista) {
         const tbody = document.getElementById("tablaBody");
         if (!lista.length) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">
             <iconify-icon icon="mdi:school-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
             Sin carreras registradas
           </td></tr>`;
@@ -366,13 +365,6 @@
         }
         tbody.innerHTML = lista
           .map((c) => {
-            const st = c.estatus || "Aceptada";
-            const colBadge =
-              st === "Aceptada"
-                ? "badge-aprobado"
-                : st === "Rechazada"
-                  ? "badge-reprobado"
-                  : "badge-pendiente";
             const btnEditar =
               `<button class="btn-icon" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
                  <iconify-icon icon="lucide:pencil"></iconify-icon>
@@ -385,7 +377,6 @@
               <td><span class="badge-unidad">${esc(c.id_carrera)}</span></td>
               <td><strong>${esc(c.nombre_carrera)}</strong></td>
               <td style="color:var(--text-muted);font-size:.85rem">${esc(c.siglas ?? "—")}</td>
-              <td style="text-align:center"><span class="badge-estatus ${colBadge}">${st}</span></td>
               <td style="text-align:center">
                 <div class="table-actions" style="justify-content:center">
                   ${btnEditar}${btnEliminar}
