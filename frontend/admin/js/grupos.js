@@ -65,15 +65,6 @@ function abrirModalNuevoGrupo() {
   document.getElementById("numeroEmpleado").value = "";
   document.getElementById("idPeriodo").value = "";
   document.getElementById("limiteAlumnos").value = "30";
-
-  document.getElementById("horaInicio").value = "";
-  document.getElementById("horaFin").value = "";
-  // Deseleccionar todos los dias
-  document.querySelectorAll("#diasGrid .dia-chip").forEach((chip) => {
-    chip.classList.remove("checked");
-    chip.querySelector("input[type='checkbox']").checked = false;
-  });
-  actualizarHorarioPreview();
   document.getElementById("conflictBanner").classList.remove("visible");
   document.getElementById("modalNuevoGrupo").classList.add("active");
 }
@@ -133,28 +124,14 @@ function actualizarEditHorarioPreview() {
 }
 
 function getDiasSeleccionados() {
-  return [
-    ...document.querySelectorAll("#diasGrid input[type='checkbox']:checked"),
-  ].map((cb) => cb.value);
+  return [];
 }
 
 function obtenerHorario() {
-  const dias = getDiasSeleccionados();
-  const inicio = document.getElementById("horaInicio").value;
-  const fin = document.getElementById("horaFin").value;
-  if (!dias.length || !inicio || !fin) return null;
-  return `${dias.join("-")} ${inicio}-${fin}`;
+  return null;
 }
 
-function actualizarHorarioPreview() {
-  const h = obtenerHorario();
-  const el = document.getElementById("horarioPreview");
-  if (h) {
-    el.innerHTML = `<iconify-icon icon="lucide:clock" style="vertical-align:middle;margin-right:4px"></iconify-icon><strong>${h}</strong>`;
-  } else {
-    el.innerHTML = `<span style="color:var(--text-muted)">Selecciona dias y horas para ver el horario</span>`;
-  }
-}
+function actualizarHorarioPreview() {}
 
 // ─── Guardar grupo con validación de conflicto ────────────────────────────────
 async function guardarNuevoGrupo() {
