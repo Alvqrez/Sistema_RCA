@@ -1,3 +1,21 @@
+// ── Helpers de fecha DD/MM/YYYY ──────────────────────────────────────────────
+function fechaADisplay(isoStr) {
+  // "2006-04-20" → "20/04/2006"  |  null/"" → ""
+  if (!isoStr) return "";
+  const d = isoStr.slice(0, 10).split("-");
+  if (d.length !== 3) return isoStr;
+  return `${d[2]}/${d[1]}/${d[0]}`;
+}
+function fechaAISO(ddmmyyyy) {
+  // "20/04/2006" → "2006-04-20"  |  ya en ISO → devuelve igual
+  if (!ddmmyyyy) return null;
+  const partes = ddmmyyyy.trim().split("/");
+  if (partes.length === 3 && partes[0].length <= 2) {
+    return `${partes[2]}-${partes[1].padStart(2,"0")}-${partes[0].padStart(2,"0")}`;
+  }
+  return ddmmyyyy; // ya estaba en YYYY-MM-DD
+}
+// ─────────────────────────────────────────────────────────────────────────────
 let maestrosGlobal = [];
 let modoEdicion = false;
 let empleadoEditando = null;
@@ -432,11 +450,15 @@ function exportarCSVMaestros() {
     "estatus",
     "grado_academico",
   ];
+  const fechasCols = ["fecha_nacimiento", "fecha_ingreso"];
   const rows = [
     cols.join(","),
     ...maestrosGlobal.map((m) =>
       cols
-        .map((c) => `"${(m[c] ?? "").toString().replace(/"/g, '""')}"`)
+        .map((c) => {
+          const val = fechasCols.includes(c) ? fechaADisplay(m[c]) : (m[c] ?? "");
+          return `"${val.toString().replace(/"/g, '""')}"`;
+        })
         .join(","),
     ),
   ];
@@ -544,7 +566,13 @@ async function importarCSVMaestros() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ maestros: csvMaestrosData }),
+      body: JSON.stringify({
+        maestros: csvMaestrosData.map((m) => ({
+          ...m,
+          fecha_nacimiento: fechaAISO(m.fecha_nacimiento) || null,
+          fecha_ingreso: fechaAISO(m.fecha_ingreso) || null,
+        })),
+      }),
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");

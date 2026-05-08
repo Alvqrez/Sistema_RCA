@@ -1,3 +1,19 @@
+// ── Helpers de fecha DD/MM/YYYY ──────────────────────────────────────────────
+function fechaADisplay(isoStr) {
+  if (!isoStr) return "";
+  const d = isoStr.slice(0, 10).split("-");
+  if (d.length !== 3) return isoStr;
+  return `${d[2]}/${d[1]}/${d[0]}`;
+}
+function fechaAISO(ddmmyyyy) {
+  if (!ddmmyyyy) return null;
+  const partes = ddmmyyyy.trim().split("/");
+  if (partes.length === 3 && partes[0].length <= 2) {
+    return `${partes[2]}-${partes[1].padStart(2,"0")}-${partes[0].padStart(2,"0")}`;
+  }
+  return ddmmyyyy;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 let alumnosGlobal = [];
 let modoEdicion = false;
 let no_controlEditando = null;
@@ -562,15 +578,25 @@ function exportarCSV() {
     "nombre",
     "apellido_paterno",
     "apellido_materno",
+    "curp",
+    "fecha_nacimiento",
+    "genero",
     "id_carrera",
     "correo_institucional",
+    "correo_personal",
     "tel_celular",
+    "tel_casa",
+    "direccion",
   ];
+  const fechasCols = ["fecha_nacimiento"];
   const rows = [cols.join(",")];
   alumnosGlobal.forEach((a) => {
     rows.push(
       cols
-        .map((c) => `"${(a[c] ?? "").toString().replace(/"/g, '""')}"`)
+        .map((c) => {
+          const val = fechasCols.includes(c) ? fechaADisplay(a[c]) : (a[c] ?? "");
+          return `"${val.toString().replace(/"/g, '""')}"`;
+        })
         .join(","),
     );
   });
@@ -657,7 +683,12 @@ async function importarCSV() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ alumnos: csvData }),
+      body: JSON.stringify({
+        alumnos: csvData.map((a) => ({
+          ...a,
+          fecha_nacimiento: fechaAISO(a.fecha_nacimiento) || a.fecha_nacimiento || null,
+        })),
+      }),
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
