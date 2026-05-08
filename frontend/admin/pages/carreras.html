@@ -6,44 +6,6 @@
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
-      async function aprobarCarrera(id) {
-        const tk = localStorage.getItem("token");
-        const r = await fetch(`${API_URL}/api/carreras/${id}/aprobar`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${tk}` },
-        });
-        const d = await r.json();
-        if (d.success) {
-          showToast("Carrera aceptada");
-          await cargar();
-        } else showToast(d.error || "Error al aprobar", "error");
-      }
-
-      let _rechazarCtx = null;
-      function rechazarCarrera(id, nombre) {
-        _rechazarCtx = { id, nombre };
-        document.getElementById("rechazarNombre").textContent = nombre;
-        document.getElementById("modalRechazar").classList.add("visible");
-      }
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("btnConfirmarRechazar").onclick = async () => {
-          if (!_rechazarCtx) return;
-          document.getElementById("modalRechazar").classList.remove("visible");
-          const tk = localStorage.getItem("token");
-          const r = await fetch(
-            `${API_URL}/api/carreras/${_rechazarCtx.id}/rechazar`,
-            {
-              method: "PUT",
-              headers: { Authorization: `Bearer ${tk}` },
-            },
-          );
-          const d = await r.json();
-          if (d.success) {
-            showToast("Carrera rechazada y eliminada");
-            await cargar();
-          } else showToast(d.error || "Error al rechazar", "error");
-        };
-      });
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
@@ -67,6 +29,12 @@
             <p class="page-subtitle">Catálogo de programas académicos</p>
           </div>
           <div class="header-actions">
+            <button class="btn btn-outline" onclick="abrirModalImport()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
+            <button class="btn btn-outline" onclick="exportarCSV()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
             <button class="btn btn-primary" onclick="abrirModal(null)">
               <iconify-icon icon="mdi:plus"></iconify-icon> Nueva carrera
             </button>
@@ -136,9 +104,6 @@
                     <th>Clave</th>
                     <th>Nombre</th>
                     <th>Siglas</th>
-                    <th>Plan</th>
-                    <th style="text-align: center">Semestres</th>
-                    <th style="text-align: center">Créditos</th>
                     <th style="text-align: center">Estatus</th>
                     <th style="text-align: center">Acciones</th>
                   </tr>
@@ -146,7 +111,7 @@
                 <tbody id="tablaBody">
                   <tr>
                     <td
-                      colspan="7"
+                      colspan="5"
                       style="
                         text-align: center;
                         padding: 32px;
@@ -223,27 +188,6 @@
                 required
               />
             </div>
-
-            <div class="form-group span-2">
-              <label>Codigo del plan de estudios</label>
-              <input id="fPlan" type="text" placeholder="Ej. 2010-254" />
-            </div>
-
-            <div class="form-group">
-              <label>Semestres</label>
-              <input
-                id="fSemestres"
-                type="number"
-                min="1"
-                max="16"
-                placeholder="9"
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Créditos totales</label>
-              <input id="fCreditos" type="number" min="1" placeholder="358" />
-            </div>
           </div>
 
           <div
@@ -312,10 +256,70 @@
       </div>
     </div>
 
+    <!-- Modal Importar CSV -->
+    <div id="modalImport" class="modal-overlay">
+      <div class="modal-panel modal-sm">
+        <div class="modal-header">
+          <h2>Importar Carreras desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModalImport()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div
+            style="
+              background: var(--bg-app);
+              border-radius: 8px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
+              font-size: 0.82rem;
+              color: var(--text-muted);
+            "
+          >
+            <strong>Columnas requeridas:</strong>
+            <code style="display: block; margin-top: 4px">id_carrera, nombre_carrera</code>
+            <strong style="margin-top: 8px; display: block">Columnas opcionales:</strong>
+            <code style="display: block; margin-top: 4px">siglas</code>
+            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
+            <code style="display: block; margin-top: 4px">ISC,Ingeniería en Sistemas Computacionales,ISC</code>
+          </div>
+          <div
+            id="dropZoneCarreras"
+            class="csv-drop-zone"
+            ondragover="event.preventDefault()"
+            ondrop="soltarCSV(event)"
+            onclick="document.getElementById('inputCSVCarreras').click()"
+          >
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>id_carrera, nombre_carrera</small>
+          </div>
+          <input
+            type="file"
+            id="inputCSVCarreras"
+            accept=".csv"
+            style="display: none"
+            onchange="leerCSV(event)"
+          />
+          <div id="csvPreview" style="overflow-x: auto; margin-top: 6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalImport()">Cancelar</button>
+          <button
+            id="btnImportar"
+            class="btn btn-primary"
+            disabled
+            onclick="importarCSV()"
+          >
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="../../shared/js/sidebar.js"></script>
     <script>
       const token = localStorage.getItem("token");
       let todasCarreras = [];
+      let csvCarrerasData = [];
 
       (async () => {
         await cargar();
@@ -354,13 +358,12 @@
       function renderTabla(lista) {
         const tbody = document.getElementById("tablaBody");
         if (!lista.length) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">
             <iconify-icon icon="mdi:school-outline" style="font-size:2rem;display:block;margin:0 auto 8px"></iconify-icon>
             Sin carreras registradas
           </td></tr>`;
           return;
         }
-        const miRfc = localStorage.getItem("username") || "";
         tbody.innerHTML = lista
           .map((c) => {
             const st = c.estatus || "Aceptada";
@@ -370,41 +373,22 @@
                 : st === "Rechazada"
                   ? "badge-reprobado"
                   : "badge-pendiente";
-            const esMiCarrera = c.creado_por === miRfc;
-            // Botones de aprobar/rechazar solo si está pendiente y no la creé yo
-            const btnAprobar =
-              st === "Pendiente" && !esMiCarrera
-                ? `<button class="btn-icon" onclick="aprobarCarrera('${esc(c.id_carrera)}')" title="Aprobar" style="color:#16a34a;border-color:#16a34a">
-                   <iconify-icon icon="lucide:check"></iconify-icon>
-                 </button>
-                 <button class="btn-icon btn-del" onclick="rechazarCarrera('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Rechazar">
-                   <iconify-icon icon="lucide:x"></iconify-icon>
-                 </button>`
-                : "";
-            // Editar solo si Aceptada
             const btnEditar =
-              st === "Aceptada"
-                ? `<button class="btn-icon" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
-                   <iconify-icon icon="lucide:pencil"></iconify-icon>
-                 </button>`
-                : "";
+              `<button class="btn-icon" onclick="editar('${esc(c.id_carrera)}')" title="Editar">
+                 <iconify-icon icon="lucide:pencil"></iconify-icon>
+               </button>`;
             const btnEliminar =
-              st !== "Pendiente"
-                ? `<button class="btn-icon btn-del" onclick="pedirEliminar('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Eliminar">
-                   <iconify-icon icon="lucide:trash-2"></iconify-icon>
-                 </button>`
-                : "";
+              `<button class="btn-icon btn-del" onclick="pedirEliminar('${esc(c.id_carrera)}','${esc(c.nombre_carrera)}')" title="Eliminar">
+                 <iconify-icon icon="lucide:trash-2"></iconify-icon>
+               </button>`;
             return `<tr>
               <td><span class="badge-unidad">${esc(c.id_carrera)}</span></td>
-              <td><strong>${esc(c.nombre_carrera)}</strong>${esMiCarrera && st === "Pendiente" ? ' <small style="color:var(--text-muted);font-size:.72rem">(creada por ti)</small>' : ""}</td>
+              <td><strong>${esc(c.nombre_carrera)}</strong></td>
               <td style="color:var(--text-muted);font-size:.85rem">${esc(c.siglas ?? "—")}</td>
-              <td style="font-size:.82rem;color:var(--text-muted)">${esc(c.plan_estudios ?? "—")}</td>
-              <td style="text-align:center">${c.total_semestres ?? "—"}</td>
-              <td style="text-align:center">${c.total_creditos ?? "—"}</td>
               <td style="text-align:center"><span class="badge-estatus ${colBadge}">${st}</span></td>
               <td style="text-align:center">
                 <div class="table-actions" style="justify-content:center">
-                  ${btnAprobar}${btnEditar}${btnEliminar}
+                  ${btnEditar}${btnEliminar}
                 </div>
               </td>
             </tr>`;
@@ -430,19 +414,9 @@
           document.getElementById("fId").value = c.id_carrera;
           document.getElementById("fNombre").value = c.nombre_carrera;
           document.getElementById("fSiglas").value = c.siglas ?? "";
-          document.getElementById("fPlan").value = c.plan_estudios ?? "";
-          document.getElementById("fSemestres").value = c.total_semestres ?? "";
-          document.getElementById("fCreditos").value = c.total_creditos ?? "";
         } else {
-          [
-            "fId",
-            "fNombre",
-            "fSiglas",
-            "fPlan",
-            "fSemestres",
-            "fCreditos",
-          ].forEach((id) => {
-            document.getElementById(id).value = "";
+          ["fId", "fNombre", "fSiglas"].forEach((fid) => {
+            document.getElementById(fid).value = "";
           });
         }
         document.getElementById("modalCarrera").classList.add("visible");
@@ -462,9 +436,6 @@
           id_carrera: document.getElementById("fId").value.trim().toUpperCase(),
           nombre_carrera: document.getElementById("fNombre").value.trim(),
           siglas: document.getElementById("fSiglas").value.trim() || null,
-          plan_estudios: document.getElementById("fPlan").value.trim() || null,
-          total_semestres: document.getElementById("fSemestres").value || null,
-          total_creditos: document.getElementById("fCreditos").value || null,
         };
 
         const btn = document.getElementById("btnGuardar");
@@ -543,6 +514,116 @@
         }
       }
 
+      // ── Import CSV ────────────────────────────────────────────────────────
+      function abrirModalImport() {
+        csvCarrerasData = [];
+        document.getElementById("csvPreview").innerHTML = "";
+        document.getElementById("btnImportar").disabled = true;
+        document.getElementById("inputCSVCarreras").value = "";
+        document.getElementById("modalImport").classList.add("visible");
+      }
+
+      function cerrarModalImport() {
+        document.getElementById("modalImport").classList.remove("visible");
+      }
+
+      function soltarCSV(e) {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file) procesarCSV(file);
+      }
+
+      function leerCSV(e) {
+        const file = e.target.files[0];
+        if (file) procesarCSV(file);
+      }
+
+      function procesarCSV(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const lines = e.target.result.trim().split("\n").filter(Boolean);
+          if (lines.length < 2) {
+            document.getElementById("csvPreview").innerHTML =
+              "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+            return;
+          }
+          const headers = lines[0]
+            .split(",")
+            .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+          csvCarrerasData = lines.slice(1).map((line) => {
+            const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+            const obj = {};
+            headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
+            return obj;
+          });
+          const muestra = csvCarrerasData.slice(0, 5);
+          document.getElementById("csvPreview").innerHTML =
+            `<p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">${csvCarrerasData.length} registros detectados — vista previa (primeros 5):</p>
+            <div class="csv-preview"><table>
+              <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+              <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table></div>`;
+          document.getElementById("btnImportar").disabled = !csvCarrerasData.length;
+        };
+        reader.readAsText(file);
+      }
+
+      async function importarCSV() {
+        if (!csvCarrerasData.length) return;
+        const btn = document.getElementById("btnImportar");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Importando…`;
+        let ok = 0, errores = [];
+        for (const row of csvCarrerasData) {
+          if (!row.id_carrera || !row.nombre_carrera) {
+            errores.push(row.id_carrera || "—");
+            continue;
+          }
+          try {
+            const r = await fetch(`${API_URL}/api/carreras`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                id_carrera: row.id_carrera.toUpperCase(),
+                nombre_carrera: row.nombre_carrera,
+                siglas: row.siglas || null,
+              }),
+            });
+            if (r.ok) ok++;
+            else errores.push(row.id_carrera);
+          } catch { errores.push(row.id_carrera); }
+        }
+        mostrarToast(`${ok} carrera(s) importada(s)${errores.length ? `, ${errores.length} con error` : ""}`, ok > 0 ? "success" : "error");
+        cerrarModalImport();
+        await cargar();
+        btn.disabled = false;
+        btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+      }
+
+      // ── Export CSV ────────────────────────────────────────────────────────
+      function exportarCSV() {
+        if (!todasCarreras.length) {
+          mostrarToast("No hay carreras para exportar.", "error");
+          return;
+        }
+        const cols = ["id_carrera", "nombre_carrera", "siglas"];
+        const rows = [cols.join(",")];
+        todasCarreras.forEach((c) =>
+          rows.push(cols.map((col) => `"${(c[col] ?? "").toString().replace(/"/g, '""')}"`).join(","))
+        );
+        const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "carreras_RCA.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        mostrarToast("CSV exportado correctamente");
+      }
+
       // Cerrar modales al click fuera
       document.querySelectorAll(".modal-overlay").forEach((o) => {
         o.addEventListener("click", (e) => {
@@ -596,55 +677,5 @@
         t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
       }
     </script>
-    <!-- Modal: Confirmar rechazar carrera -->
-    <div class="modal-overlay" id="modalRechazar">
-      <div class="modal-panel modal-sm">
-        <div class="modal-header">
-          <h2 style="display: flex; align-items: center; gap: 8px">
-            <iconify-icon
-              icon="mdi:close-circle-outline"
-              style="color: var(--danger)"
-            ></iconify-icon>
-            Rechazar carrera
-          </h2>
-          <button
-            class="modal-close"
-            onclick="
-              document
-                .getElementById('modalRechazar')
-                .classList.remove('visible')
-            "
-          >
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <p style="margin: 0">
-            ¿Rechazar y eliminar la carrera
-            <strong id="rechazarNombre"></strong>?<br />
-            <span style="font-size: 0.84rem; color: var(--text-muted)">
-              Esta acción eliminará la carrera de la base de datos
-              permanentemente.
-            </span>
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-outline"
-            onclick="
-              document
-                .getElementById('modalRechazar')
-                .classList.remove('visible')
-            "
-          >
-            Cancelar
-          </button>
-          <button class="btn btn-danger" id="btnConfirmarRechazar">
-            <iconify-icon icon="mdi:delete-outline"></iconify-icon>
-            Rechazar y eliminar
-          </button>
-        </div>
-      </div>
-    </div>
   </body>
 </html>

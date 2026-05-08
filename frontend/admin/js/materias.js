@@ -112,7 +112,6 @@ function renderTablaMaterias(materias) {
         <td>${m.clave_materia}</td>
         <td>${m.nombre_materia}</td>
         <td>${carrerasBadges}</td>
-        <td>${m.creditos_totales}</td>
         <td>${m.no_unidades}</td>
         <td>
           ${
@@ -172,16 +171,6 @@ function agregarCarreraLocal() {
   const carrera = carrerasDisponibles.find((c) => c.id_carrera === id);
   const semestre = parseInt(semInput.value) || 1;
 
-  // Validar que el semestre no supere el total de la carrera
-  const maxSem = carrera?.total_semestres || 99;
-  if (semestre < 1 || semestre > maxSem) {
-    mostrarMensaje(
-      `El semestre debe estar entre 1 y ${maxSem} para la carrera ${carrera?.siglas || id}`,
-      "error",
-    );
-    return;
-  }
-
   // Si estaba en la lista de eliminar, la quitamos de ahí
   carrerasEliminar = carrerasEliminar.filter((x) => x !== id);
   carrerasPendientes.push({
@@ -215,7 +204,6 @@ form.addEventListener("submit", async function (e) {
   const materia = {
     clave_materia: document.getElementById("claveMateria").value.trim(),
     nombre_materia: document.getElementById("nombreMateria").value.trim(),
-    creditos_totales: parseInt(document.getElementById("creditos").value) || 0,
     no_unidades: parseInt(document.getElementById("noUnidades").value) || 0,
   };
 
@@ -302,7 +290,6 @@ async function editarMateria(clave) {
     document.getElementById("claveMateria").value = data.clave_materia;
     document.getElementById("claveMateria").disabled = true;
     document.getElementById("nombreMateria").value = data.nombre_materia;
-    document.getElementById("creditos").value = data.creditos_totales;
     document.getElementById("noUnidades").value = data.no_unidades;
     renderChips();
 
@@ -481,7 +468,6 @@ async function exportarCSVMaterias() {
     const cols = [
       "clave_materia",
       "nombre_materia",
-      "creditos_totales",
       "no_unidades",
     ];
     const rows = [cols.join(",")];

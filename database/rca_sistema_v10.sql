@@ -107,10 +107,7 @@ CREATE TABLE `carrera` (
   `id_carrera`      VARCHAR(10)   NOT NULL,
   `nombre_carrera`  VARCHAR(100)  NOT NULL,
   `siglas`          VARCHAR(10)   NULL DEFAULT NULL,
-  `plan_estudios`   VARCHAR(20)   NULL DEFAULT NULL,
   `modalidad`       ENUM('Presencial','A distancia','Mixta') NULL DEFAULT 'Presencial',
-  `total_semestres` TINYINT UNSIGNED  NULL DEFAULT NULL,
-  `total_creditos`  SMALLINT UNSIGNED NULL DEFAULT NULL,
   `estatus`         ENUM('Pendiente','Aceptada','Rechazada') NOT NULL DEFAULT 'Pendiente',
   `creado_por`      VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la creó',
   `aprobado_por`    VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la aprobó',
@@ -180,7 +177,6 @@ CREATE TABLE `periodo_escolar` (
 CREATE TABLE `materia` (
   `clave_materia`    VARCHAR(15)      NOT NULL,
   `nombre_materia`   VARCHAR(100)     NOT NULL,
-  `creditos_totales` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `horas_teoricas`   TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `horas_practicas`  TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `no_unidades`      TINYINT UNSIGNED NOT NULL DEFAULT 0,

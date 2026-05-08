@@ -384,7 +384,6 @@ async function guardarUnidadesEditables() {
           },
           body: JSON.stringify({
             nombre_materia: matData.nombre_materia || nombre_materia,
-            creditos_totales: matData.creditos_totales ?? 0,
             horas_teoricas: matData.horas_teoricas ?? 0,
             horas_practicas: matData.horas_practicas ?? 0,
             no_unidades: nombres.length,
@@ -556,7 +555,7 @@ function renderizarResumen(unidades, clave, nombreMateria) {
 
   if (!unidades.length) {
     cuerpo.innerHTML = `
-      <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">
+      <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted)">
         Aún no hay unidades guardadas para <strong>${escHtml(nombreMateria)}</strong>.
       </td></tr>`;
     card.style.display = "block";
@@ -585,7 +584,6 @@ function renderizarResumen(unidades, clave, nombreMateria) {
       <td><span style="font-size:.8rem;background:var(--bg-secondary);padding:2px 8px;
                  border-radius:6px;color:var(--text-secondary)">${escHtml(clave)}</span></td>
       <td><strong>${escHtml(u.nombre_unidad)}</strong></td>
-      <td style="font-size:.8rem">${tiposCell}</td>
     </tr>`,
     )
     .join("");
