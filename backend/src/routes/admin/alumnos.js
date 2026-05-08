@@ -43,7 +43,11 @@ function generarPasswordDesdeFecha(fechaStr) {
 // ─── GET todos los alumnos ───────────────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   db.query(
-    "SELECT no_control, nombre, apellido_paterno, apellido_materno, correo_institucional, id_carrera, tel_celular FROM alumno",
+    `SELECT no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
+            curp, fecha_nacimiento, genero,
+            correo_institucional, correo_personal,
+            tel_celular, tel_casa, direccion
+     FROM alumno`,
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

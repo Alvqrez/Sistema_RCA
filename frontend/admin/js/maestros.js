@@ -441,14 +441,24 @@ function exportarCSVMaestros() {
     return;
   }
   const cols = [
+    "rfc",
     "nombre",
     "apellido_paterno",
     "apellido_materno",
+    "curp",
+    "fecha_nacimiento",
+    "genero",
     "correo_institucional",
+    "correo_personal",
+    "tel_celular",
+    "tel_oficina",
+    "direccion",
     "departamento",
     "tipo_contrato",
     "estatus",
+    "fecha_ingreso",
     "grado_academico",
+    "especialidad",
   ];
   const fechasCols = ["fecha_nacimiento", "fecha_ingreso"];
   const rows = [

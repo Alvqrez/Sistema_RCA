@@ -455,6 +455,7 @@ async function exportarCSVGrupos() {
       "id_periodo",
       "limite_alumnos",
       "horario",
+      "aula",
       "estatus",
     ];
     const rows = [cols.join(",")];
