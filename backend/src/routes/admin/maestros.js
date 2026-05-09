@@ -57,8 +57,10 @@ router.post("/csv", soloAdmin, async (req, res) => {
       apellido_paterno,
       correo_institucional,
       username,
-      password,
     } = m;
+
+    // Acepta tanto "password" (texto plano) como "pwd" (hash exportado)
+    const passwordRaw = m.password || m.pwd || "";
 
     if (
       !rfc ||
@@ -66,18 +68,21 @@ router.post("/csv", soloAdmin, async (req, res) => {
       !apellido_paterno ||
       !correo_institucional ||
       !username ||
-      !password
+      !passwordRaw
     ) {
       errores.push({
         rfc: rfc || "?",
         motivo:
-          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)",
+          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password/pwd)",
       });
       continue;
     }
 
     try {
-      const hash = await bcrypt.hash(password.trim(), 10);
+      // Si ya es un hash bcrypt lo usa directo; si es texto plano lo hashea
+      const hash = passwordRaw.startsWith("$2b$") || passwordRaw.startsWith("$2a$")
+        ? passwordRaw
+        : await bcrypt.hash(passwordRaw.trim(), 10);
 
       await new Promise((ok, fail) =>
         db.query(
@@ -102,12 +107,15 @@ router.post("/csv", soloAdmin, async (req, res) => {
         ),
       );
 
-      // Crear usuario solo si no existe
+      // Crear usuario solo si no existe un usuario para este RFC
       await new Promise((ok, fail) =>
         db.query(
-          `INSERT IGNORE INTO usuario (username, pwd, rol, id_referencia, activo)
-           VALUES (?, ?, 'maestro', ?, 1)`,
-          [username.trim(), hash, rfc.trim().toUpperCase()],
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo)
+           SELECT ?, ?, 'maestro', ?, 1
+           WHERE NOT EXISTS (
+             SELECT 1 FROM usuario WHERE id_referencia = ? AND rol = 'maestro'
+           )`,
+          [username.trim(), hash, rfc.trim().toUpperCase(), rfc.trim().toUpperCase()],
           (err) => (err ? fail(err) : ok()),
         ),
       );
