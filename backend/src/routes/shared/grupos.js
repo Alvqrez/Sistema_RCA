@@ -165,6 +165,65 @@ function horariosSolapan(ini1, fin1, ini2, fin2) {
 }
 
 // POST — crear grupo con validación de unicidad y conflicto de aula/maestro
+router.post("/csv", soloAdmin, async (req, res) => {
+  const { grupos } = req.body;
+
+  if (!Array.isArray(grupos) || grupos.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const errores = [];
+  let insertados = 0;
+
+  for (const g of grupos) {
+    const { clave_materia, rfc, id_periodo } = g;
+
+    // Validar campos obligatorios
+    if (!clave_materia || !rfc || !id_periodo) {
+      errores.push({
+        fila: `${clave_materia || "?"}/${rfc || "?"}`,
+        motivo: "Faltan campos requeridos (clave_materia, rfc, id_periodo)",
+      });
+      continue;
+    }
+
+    try {
+      await new Promise((ok, fail) => {
+        db.query(
+          `INSERT INTO grupo
+             (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             limite_alumnos = VALUES(limite_alumnos),
+             horario        = VALUES(horario),
+             aula           = VALUES(aula)`,
+          [
+            clave_materia.trim(),
+            rfc.trim(),
+            parseInt(id_periodo),
+            parseInt(g.limite_alumnos) || 30,
+            g.horario?.trim() || null,
+            g.aula?.trim() || null,
+          ],
+          (err) => (err ? fail(err) : ok()),
+        );
+      });
+      insertados++;
+    } catch (e) {
+      errores.push({
+        fila: `${clave_materia}/${rfc}`,
+        motivo: e.message,
+      });
+    }
+  }
+
+  res.json({
+    success: true,
+    insertados,
+    errores,
+    mensaje: `${insertados} grupo(s) importados. ${errores.length} con errores.`,
+  });
+});
+
 router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, rfc, id_periodo, limite_alumnos, horario, aula } =
     req.body;
@@ -448,65 +507,6 @@ router.put("/:id/unidades/agrupacion", maestroOAdmin, (req, res) => {
   Promise.all(updates)
     .then(() => res.json({ success: true }))
     .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
-});
-
-router.post("/csv", soloAdmin, async (req, res) => {
-  const { grupos } = req.body;
-
-  if (!Array.isArray(grupos) || grupos.length === 0)
-    return res.status(400).json({ error: "No se recibieron datos" });
-
-  const errores = [];
-  let insertados = 0;
-
-  for (const g of grupos) {
-    const { clave_materia, rfc, id_periodo } = g;
-
-    // Validar campos obligatorios
-    if (!clave_materia || !rfc || !id_periodo) {
-      errores.push({
-        fila: `${clave_materia || "?"}/${rfc || "?"}`,
-        motivo: "Faltan campos requeridos (clave_materia, rfc, id_periodo)",
-      });
-      continue;
-    }
-
-    try {
-      await new Promise((ok, fail) => {
-        db.query(
-          `INSERT INTO grupo
-             (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
-           VALUES (?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE
-             limite_alumnos = VALUES(limite_alumnos),
-             horario        = VALUES(horario),
-             aula           = VALUES(aula)`,
-          [
-            clave_materia.trim(),
-            rfc.trim(),
-            parseInt(id_periodo),
-            parseInt(g.limite_alumnos) || 30,
-            g.horario?.trim() || null,
-            g.aula?.trim() || null,
-          ],
-          (err) => (err ? fail(err) : ok()),
-        );
-      });
-      insertados++;
-    } catch (e) {
-      errores.push({
-        fila: `${clave_materia}/${rfc}`,
-        motivo: e.message,
-      });
-    }
-  }
-
-  res.json({
-    success: true,
-    insertados,
-    errores,
-    mensaje: `${insertados} grupo(s) importados. ${errores.length} con errores.`,
-  });
 });
 
 module.exports = router;

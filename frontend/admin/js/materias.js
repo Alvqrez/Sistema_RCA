@@ -388,28 +388,17 @@ function leerCSVMaterias(e) {
 function procesarCSVMaterias(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    const lines = e.target.result.trim().split("\n").filter(Boolean);
-    if (lines.length < 2) {
+    const { headers, rows } = parseCSVRobusto(e.target.result);
+    if (!rows.length) {
       document.getElementById("csvMateriasPreview").innerHTML =
         "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
       return;
     }
-    const headers = lines[0]
-      .split(",")
-      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
-    csvMateriasData = lines.slice(1).map((line) => {
-      const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-      const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = vals[i] ?? "";
-      });
-      return obj;
-    });
+    csvMateriasData = rows;
     mostrarPreviewCSVMaterias(headers, csvMateriasData);
-    document.getElementById("btnImportarMaterias").disabled =
-      !csvMateriasData.length;
+    document.getElementById("btnImportarMaterias").disabled = !csvMateriasData.length;
   };
-  reader.readAsText(file);
+  reader.readAsText(file, "UTF-8");
 }
 
 function mostrarPreviewCSVMaterias(headers, data) {

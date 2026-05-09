@@ -367,28 +367,17 @@ function dragOverGrupos(e) {
 function procesarCSVGrupos(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    const lines = e.target.result.trim().split("\n").filter(Boolean);
-    if (lines.length < 2) {
+    const { headers, rows } = parseCSVRobusto(e.target.result);
+    if (!rows.length) {
       document.getElementById("csvGruposPreview").innerHTML =
-        "<p style='color:var(--danger)'>El archivo esta vacio o solo tiene encabezado.</p>";
+        "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
       return;
     }
-    const headers = lines[0]
-      .split(",")
-      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
-    csvGruposData = lines.slice(1).map((line) => {
-      const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-      const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = vals[i] ?? "";
-      });
-      return obj;
-    });
+    csvGruposData = rows;
     mostrarPreviewCSVGrupos(headers, csvGruposData);
-    document.getElementById("btnImportarGrupos").disabled =
-      csvGruposData.length === 0;
+    document.getElementById("btnImportarGrupos").disabled = !csvGruposData.length;
   };
-  reader.readAsText(file);
+  reader.readAsText(file, "UTF-8");
 }
 
 function mostrarPreviewCSVGrupos(headers, data) {

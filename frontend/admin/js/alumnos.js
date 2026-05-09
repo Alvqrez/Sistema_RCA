@@ -614,22 +614,17 @@ function leerCSV(e) {
 function procesarCSVFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    const lines = e.target.result.trim().split("\n").filter(Boolean);
-    const headers = lines[0]
-      .split(",")
-      .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
-    csvData = lines.slice(1).map((line) => {
-      const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-      const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = vals[i] ?? "";
-      });
-      return obj;
-    });
+    const { headers, rows } = parseCSVRobusto(e.target.result);
+    if (!rows.length) {
+      mostrarPreviewCSV(headers, []);
+      document.getElementById("btnImportar").disabled = true;
+      return;
+    }
+    csvData = rows;
     mostrarPreviewCSV(headers, csvData);
     document.getElementById("btnImportar").disabled = csvData.length === 0;
   };
-  reader.readAsText(file);
+  reader.readAsText(file, "UTF-8");
 }
 
 function mostrarPreviewCSV(headers, data) {

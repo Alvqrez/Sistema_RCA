@@ -39,6 +39,97 @@ router.get("/:id", verificarToken, (req, res) => {
 });
 
 // POST — registrar maestro + su usuario
+router.post("/csv", soloAdmin, async (req, res) => {
+  const { maestros } = req.body;
+
+  if (!Array.isArray(maestros) || maestros.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const errores = [];
+  let insertados = 0;
+
+  for (const m of maestros) {
+    const {
+      rfc,
+      nombre,
+      apellido_paterno,
+      correo_institucional,
+      username,
+      password,
+    } = m;
+
+    if (
+      !rfc ||
+      !nombre ||
+      !apellido_paterno ||
+      !correo_institucional ||
+      !username ||
+      !password
+    ) {
+      errores.push({
+        rfc: rfc || "?",
+        motivo:
+          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)",
+      });
+      continue;
+    }
+
+    try {
+      const hash = await bcrypt.hash(password.trim(), 10);
+
+      await new Promise((ok, fail) =>
+        db.query(
+          `INSERT INTO maestro
+             (rfc, nombre, apellido_paterno, apellido_materno,
+              correo_institucional, departamento, especialidad,
+              grado_academico, tipo_contrato, tel_celular, estatus)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')
+           ON DUPLICATE KEY UPDATE
+             nombre               = VALUES(nombre),
+             apellido_paterno     = VALUES(apellido_paterno),
+             correo_institucional = VALUES(correo_institucional),
+             departamento         = VALUES(departamento)`,
+          [
+            rfc.trim().toUpperCase(),
+            nombre.trim(),
+            apellido_paterno.trim(),
+            m.apellido_materno?.trim() || null,
+            correo_institucional.trim(),
+            m.departamento?.trim() || null,
+            m.especialidad?.trim() || null,
+            m.grado_academico?.trim() || null,
+            m.tipo_contrato?.trim() || null,
+            m.tel_celular?.trim() || null,
+          ],
+          (err) => (err ? fail(err) : ok()),
+        ),
+      );
+
+      // Crear usuario solo si no existe
+      await new Promise((ok, fail) =>
+        db.query(
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo)
+           VALUES (?, ?, 'maestro', ?, 1)
+           ON DUPLICATE KEY UPDATE pwd = VALUES(pwd)`,
+          [username.trim(), hash, rfc.trim().toUpperCase()],
+          (err) => (err ? fail(err) : ok()),
+        ),
+      );
+
+      insertados++;
+    } catch (e) {
+      errores.push({ rfc, motivo: e.message });
+    }
+  }
+
+  res.json({
+    success: true,
+    insertados,
+    errores,
+    mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.`,
+  });
+});
+
 router.post("/", soloAdmin, async (req, res) => {
   const {
     rfc,
@@ -210,97 +301,6 @@ router.delete("/:id", soloAdmin, (req, res) => {
       res.json({ success: true, mensaje: "Maestro eliminado" });
     },
   );
-});
-
-router.post("/csv", soloAdmin, async (req, res) => {
-  const { maestros } = req.body;
-
-  if (!Array.isArray(maestros) || maestros.length === 0)
-    return res.status(400).json({ error: "No se recibieron datos" });
-
-  const errores = [];
-  let insertados = 0;
-
-  for (const m of maestros) {
-    const {
-      rfc,
-      nombre,
-      apellido_paterno,
-      correo_institucional,
-      username,
-      password,
-    } = m;
-
-    if (
-      !rfc ||
-      !nombre ||
-      !apellido_paterno ||
-      !correo_institucional ||
-      !username ||
-      !password
-    ) {
-      errores.push({
-        rfc: rfc || "?",
-        motivo:
-          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)",
-      });
-      continue;
-    }
-
-    try {
-      const hash = await bcrypt.hash(password.trim(), 10);
-
-      await new Promise((ok, fail) =>
-        db.query(
-          `INSERT INTO maestro
-             (rfc, nombre, apellido_paterno, apellido_materno,
-              correo_institucional, departamento, especialidad,
-              grado_academico, tipo_contrato, tel_celular, estatus)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')
-           ON DUPLICATE KEY UPDATE
-             nombre               = VALUES(nombre),
-             apellido_paterno     = VALUES(apellido_paterno),
-             correo_institucional = VALUES(correo_institucional),
-             departamento         = VALUES(departamento)`,
-          [
-            rfc.trim().toUpperCase(),
-            nombre.trim(),
-            apellido_paterno.trim(),
-            m.apellido_materno?.trim() || null,
-            correo_institucional.trim(),
-            m.departamento?.trim() || null,
-            m.especialidad?.trim() || null,
-            m.grado_academico?.trim() || null,
-            m.tipo_contrato?.trim() || null,
-            m.tel_celular?.trim() || null,
-          ],
-          (err) => (err ? fail(err) : ok()),
-        ),
-      );
-
-      // Crear usuario solo si no existe
-      await new Promise((ok, fail) =>
-        db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo)
-           VALUES (?, ?, 'maestro', ?, 1)
-           ON DUPLICATE KEY UPDATE pwd = VALUES(pwd)`,
-          [username.trim(), hash, rfc.trim().toUpperCase()],
-          (err) => (err ? fail(err) : ok()),
-        ),
-      );
-
-      insertados++;
-    } catch (e) {
-      errores.push({ rfc, motivo: e.message });
-    }
-  }
-
-  res.json({
-    success: true,
-    insertados,
-    errores,
-    mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.`,
-  });
 });
 
 module.exports = router;

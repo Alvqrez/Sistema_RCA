@@ -56,3 +56,61 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
   // 4. Descargar
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
+
+// ─── parseCSVRobusto ──────────────────────────────────────────────────────────
+// Parser CSV correcto que maneja:
+//   - BOM (Byte Order Mark) al inicio del archivo
+//   - Campos entre comillas con comas dentro: "Ingeniería, Sistemas"
+//   - Saltos de línea \r\n (Windows) y \n (Unix)
+//   - Comillas dobles escapadas dentro de un campo: ""valor""
+//
+// @param {string} texto  - Contenido crudo del archivo CSV
+// @returns {{ headers: string[], rows: object[] }}
+// ─────────────────────────────────────────────────────────────────────────────
+function parseCSVRobusto(texto) {
+  // 1. Quitar BOM si existe
+  const sinBOM = texto.charCodeAt(0) === 0xFEFF ? texto.slice(1) : texto;
+
+  // 2. Dividir en líneas respetando \r\n y \n
+  const lineas = sinBOM.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lineas.length < 2) return { headers: [], rows: [] };
+
+  // 3. Función interna para parsear una sola línea respetando comillas
+  function parsearLinea(linea) {
+    const campos = [];
+    let actual = '';
+    let dentroComillas = false;
+    for (let i = 0; i < linea.length; i++) {
+      const c = linea[i];
+      if (c === '"') {
+        if (dentroComillas && linea[i + 1] === '"') {
+          // comilla escapada: "" → "
+          actual += '"';
+          i++;
+        } else {
+          dentroComillas = !dentroComillas;
+        }
+      } else if (c === ',' && !dentroComillas) {
+        campos.push(actual.trim());
+        actual = '';
+      } else {
+        actual += c;
+      }
+    }
+    campos.push(actual.trim());
+    return campos;
+  }
+
+  // 4. Primera línea = encabezados (en minúsculas para normalizar)
+  const headers = parsearLinea(lineas[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
+
+  // 5. Resto = datos
+  const rows = lineas.slice(1).map(linea => {
+    const vals = parsearLinea(linea);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    return obj;
+  });
+
+  return { headers, rows };
+}
