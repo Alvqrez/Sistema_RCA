@@ -12,7 +12,7 @@ function q(sql, params = []) {
 
 async function seed() {
   try {
-    console.log("Iniciando seed completo v3...\n");
+    console.log("Iniciando seed completo v3...\\n");
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. PERIODOS 2025-2026
@@ -296,62 +296,60 @@ async function seed() {
 
     // ══════════════════════════════════════════════════════════════════════
     // 8. GRUPOS (período 4 = EJ2026 Vigente)
-    //    Reglas: sin conflicto de salón+hora, sin conflicto de maestro+hora
+    //    Nota: Las columnas aula y horario fueron removidas de la tabla grupo
+    //    según la estructura actual de la base de datos
     // ══════════════════════════════════════════════════════════════════════
-    // Bloques horarios:
-    //   A = LMV 07:00-08:00   B = LMV 08:00-09:00   C = MJ 09:00-11:00
-    //   D = MJ 11:00-13:00    E = LMV 13:00-14:00   F = MJ 14:00-16:00
     const grupos = [
-      // FBD001 — 3 grupos (M1 bloqueA y E: misma materia horas distintas, regla 10)
-      [1, "FBD001", M1, 4, 35, "A101", "Lun-Mié-Vie 07:00-08:00"], // M1 bloque A
-      [2, "FBD001", M2, 4, 35, "A102", "Mar-Jue 09:00-11:00"], // M2 bloque C
-      [3, "FBD001", M1, 4, 30, "A103", "Lun-Mié-Vie 13:00-14:00"], // M1 bloque E ← distinta hora ✓
+      // FBD001 — 3 grupos
+      [1, "FBD001", M1, 4, 35],
+      [2, "FBD001", M2, 4, 35],
+      [3, "FBD001", M1, 4, 30],
       // POO001 — 2 grupos
-      [4, "POO001", M2, 4, 30, "Lab201", "Lun-Mié-Vie 08:00-09:00"], // M2 bloque B (distinto a bloque C) ✓
-      [5, "POO001", M3, 4, 30, "Lab202", "Mar-Jue 11:00-13:00"], // M3 bloque D
+      [4, "POO001", M2, 4, 30],
+      [5, "POO001", M3, 4, 30],
       // ADS001 — 2 grupos
-      [6, "ADS001", M1, 4, 35, "Sal301", "Mar-Jue 09:00-11:00"], // M1 bloque C (A101 bloque A) ✓
-      [7, "ADS001", M3, 4, 35, "Sal302", "Lun-Mié-Vie 07:00-08:00"], // M3 bloque A (Lab202 bloque D) ✓
+      [6, "ADS001", M1, 4, 35],
+      [7, "ADS001", M3, 4, 35],
       // RED001 — 2 grupos
-      [8, "RED001", M3, 4, 30, "Lab201", "Mar-Jue 14:00-16:00"], // M3 bloque F (Lab201 libre en F) ✓
-      [9, "RED001", M1, 4, 30, "Lab202", "Lun-Mié-Vie 08:00-09:00"], // M1 bloque B (libre en B) ✓
-      // MAT001 — 3 grupos (M5 dos grupos horas distintas, regla 10)
-      [10, "MAT001", M5, 4, 40, "A101", "Mar-Jue 11:00-13:00"], // M5 bloque D, A101 libre en D ✓
-      [11, "MAT001", M5, 4, 40, "A102", "Mar-Jue 14:00-16:00"], // M5 bloque F (distinto a D) ✓
-      [12, "MAT001", M4, 4, 35, "Sal301", "Lun-Mié-Vie 13:00-14:00"], // M4 bloque E
+      [8, "RED001", M3, 4, 30],
+      [9, "RED001", M1, 4, 30],
+      // MAT001 — 3 grupos
+      [10, "MAT001", M5, 4, 40],
+      [11, "MAT001", M5, 4, 40],
+      [12, "MAT001", M4, 4, 35],
       // APM001 — 2 grupos
-      [13, "APM001", M2, 4, 30, "Lab202", "Mar-Jue 09:00-11:00"], // M2 bloque C (Lab202 libre en C) ✓
-      [14, "APM001", M3, 4, 30, "A103", "Lun-Mié-Vie 08:00-09:00"], // M3 bloque B (libre en B) ✓
+      [13, "APM001", M2, 4, 30],
+      [14, "APM001", M3, 4, 30],
       // EST001 — 2 grupos
-      [15, "EST001", M5, 4, 35, "A103", "Mar-Jue 09:00-11:00"], // M5 bloque C (A103 libre) ✓
-      [16, "EST001", M4, 4, 35, "Sal302", "Mar-Jue 11:00-13:00"], // M4 bloque D (libre en D) ✓
+      [15, "EST001", M5, 4, 35],
+      [16, "EST001", M4, 4, 35],
       // ADM001 — 2 grupos
-      [17, "ADM001", M4, 4, 40, "A101", "Lun-Mié-Vie 08:00-09:00"], // M4 bloque B (libre en B) ✓
-      [18, "ADM001", M4, 4, 40, "A102", "Lun-Mié-Vie 07:00-08:00"], // M4 bloque A (libre en A) ✓
+      [17, "ADM001", M4, 4, 40],
+      [18, "ADM001", M4, 4, 40],
       // FIN001 — 2 grupos
-      [19, "FIN001", M4, 4, 35, "Sal301", "Mar-Jue 09:00-11:00"], // M4 bloque C (libre en C) ✓
-      [20, "FIN001", M5, 4, 35, "Sal302", "Lun-Mié-Vie 07:00-08:00"], // M5 bloque A (libre en A) ✓
+      [19, "FIN001", M4, 4, 35],
+      [20, "FIN001", M5, 4, 35],
     ];
-    for (const [id, mat, rfc, per, lim, aula, hor] of grupos)
+    for (const [id, mat, rfc, per, lim] of grupos)
       await q(
         `INSERT IGNORE INTO grupo
-                 (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,aula,horario,estatus)
-               VALUES (?,?,?,?,?,?,?,'Activo')`,
-        [id, mat, rfc, per, lim, aula, hor],
+                 (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,estatus)
+               VALUES (?,?,?,?,?,'Activo')`,
+        [id, mat, rfc, per, lim],
       );
 
     // Grupos históricos para recursado (periodo 1 = EJ2025 concluido)
     await q(
       `INSERT IGNORE INTO grupo
-               (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,aula,horario,estatus)
-             VALUES (21,'FBD001',?,1,35,'A101','Lun-Mié-Vie 07:00-08:00','Cerrado')`,
-      [M1],
+               (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,estatus)
+             VALUES (?,?,?,1,35,'Cerrado')`,
+      [21, "FBD001", M1],
     );
     await q(
       `INSERT IGNORE INTO grupo
-               (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,aula,horario,estatus)
-             VALUES (22,'MAT001',?,1,40,'A102','Mar-Jue 11:00-13:00','Cerrado')`,
-      [M5],
+               (id_grupo,clave_materia,rfc,id_periodo,limite_alumnos,estatus)
+             VALUES (?,?,?,1,40,'Cerrado')`,
+      [22, "MAT001", M5],
     );
     console.log("✓ Grupos     → 22 grupos (20 vigentes + 2 históricos)");
 
@@ -714,47 +712,8 @@ async function seed() {
     console.log("✓ Alumnos    → 20 alumnos (8 ISC, 6 IIA, 6 IGE)");
 
     // ══════════════════════════════════════════════════════════════════════
-    // 10. INSCRIPCIONES — mínimo 5 por grupo, sin conflicto de horario
-    //
-    // Horarios de grupos vigentes:
-    //  G1  FBD001  LMV07   G2  FBD001  MJ09    G3  FBD001  LMV13
-    //  G4  POO001  LMV08   G5  POO001  MJ11     G6  ADS001  MJ09
-    //  G7  ADS001  LMV07   G8  RED001  MJ14     G9  RED001  LMV08
-    //  G10 MAT001  MJ11    G11 MAT001  MJ14     G12 MAT001  LMV13
-    //  G13 APM001  MJ09    G14 APM001  LMV08    G15 EST001  MJ09
-    //  G16 EST001  MJ11    G17 ADM001  LMV08    G18 ADM001  LMV07
-    //  G19 FIN001  MJ09    G20 FIN001  LMV07
-    //
-    // Reglas por alumno (sin dos grupos a la misma hora, 1 grupo por materia):
-    //
-    // ISC (G1-G9, G12): deben inscribirse en FBD, POO o ADS, RED, MAT
-    //   2026001: G1(LMV07) G4(LMV08) G5(MJ11) G8(MJ14) G12(LMV13)
-    //   2026002: G2(MJ09) G4(LMV08) G5(MJ11) G8(MJ14) G12(LMV13)
-    //   2026003: G1(LMV07) G4(LMV08) G10(MJ11) G8(MJ14) G3(LMV13)  ← G10=MAT
-    //   2026004: G2(MJ09) G9(LMV08) G5(MJ11) G11(MJ14) G3(LMV13)
-    //   2026005: G1(LMV07) G9(LMV08) G10(MJ11) G11(MJ14) G12(LMV13)
-    //   2026006: G3(LMV13) G4(LMV08) G5(MJ11) G8(MJ14) G6(MJ09)
-    //   2026007: G2(MJ09) G9(LMV08) G10(MJ11) G8(MJ14) G12(LMV13)
-    //   2026008: G1(LMV07) G4(LMV08) G5(MJ11) G11(MJ14) G3(LMV13)
-    //
-    // IIA (G10-G16 + MAT): APM, EST, MAT
-    //   2026009: G13(MJ09) G14(LMV08) G16(MJ11) G11(MJ14)
-    //   2026010: G15(MJ09) G14(LMV08) G10(MJ11) G11(MJ14)  ← G15,G14 solo 2 activos
-    //   2026011: G13(MJ09) G14(LMV08) G16(MJ11) G10(MJ11)  ← CONFLICTO G16 y G10 ambos MJ11
-    //            → G13(MJ09) G14(LMV08) G16(MJ11)            ← sin MAT en este alumno
-    //   2026012: G15(MJ09) G14(LMV08) G10(MJ11) G8(MJ14)   ← G8=RED, IIA puede cursarla
-    //   2026013: G13(MJ09) G14(LMV08) G16(MJ11) G11(MJ14)
-    //   2026014: G15(MJ09) G14(LMV08) G16(MJ11) G11(MJ14)
-    //
-    // IGE (G17-G20): ADM, FIN + pueden cursar MAT
-    //   2026015: G18(LMV07) G17(LMV08) G19(MJ09) G11(MJ14)
-    //   2026016: G20(LMV07) G17(LMV08) G19(MJ09) G10(MJ11)
-    //   2026017: G18(LMV07) G17(LMV08) G19(MJ09) G16(MJ11)
-    //   2026018: G20(LMV07) G17(LMV08) G19(MJ09) G11(MJ14)
-    //   2026019: G18(LMV07) G17(LMV08) G19(MJ09) G10(MJ11)
-    //   2026020: G20(LMV07) G17(LMV08) G19(MJ09) G16(MJ11)
+    // 10. INSCRIPCIONES
     // ══════════════════════════════════════════════════════════════════════
-
     const inscripciones = [
       // ISC alumnos
       ["26000001", 1],
@@ -855,12 +814,12 @@ async function seed() {
         [nc, ig],
       );
 
-    // Historial recursado: 2026001 reprobó FBD en EJ2025 (G21)
+    // Historial recursado: 26000001 reprobó FBD en EJ2025 (G21)
     await q(`INSERT IGNORE INTO inscripcion (no_control,id_grupo,fecha_inscripcion,estatus,tipo_curso)
-             VALUES ('2026001',21,'2025-01-15','Reprobado','Ordinario')`);
+             VALUES ('26000001',21,'2025-01-15','Reprobado','Ordinario')`);
     // Ahora cursa FBD G1 en EJ2026 como Recursado
     await q(
-      `UPDATE inscripcion SET tipo_curso='Recursado' WHERE no_control='2026001' AND id_grupo=1`,
+      `UPDATE inscripcion SET tipo_curso='Recursado' WHERE no_control='26000001' AND id_grupo=1`,
     );
 
     console.log("✓ Inscrip.   → min 5 por grupo, sin conflictos de horario");
@@ -872,8 +831,7 @@ async function seed() {
                (1,'Examen'),(2,'Tarea'),(3,'Práctica'),(4,'Proyecto'),(5,'Participación')`);
 
     // ══════════════════════════════════════════════════════════════════════
-    // 11b. ACTIVIDADES PREDEFINIDAS (materia_actividad) — catálogo admin
-    //      Estas aparecen en actividadesAdmin.html
+    // 11b. ACTIVIDADES PREDEFINIDAS (materia_actividad)
     // ══════════════════════════════════════════════════════════════════════
     const actPred = [
       ["FBD001", 1, "Examen U1: Modelo ER", 1],
@@ -976,12 +934,9 @@ async function seed() {
 
     // ══════════════════════════════════════════════════════════════════════
     // 12. ACTIVIDADES — solo para G1 (FBD001) y G10 (MAT001)
-    //     Creadas por el maestro, con ponderaciones sumando 100% por unidad
-    //     Punto 5: calificaciones capturadas pero en estatus Pendiente
-    //              para que se puedan modificar
     // ══════════════════════════════════════════════════════════════════════
 
-    // G1 FBD001 — Unidad 1 (acts 1-3), Unidad 2 (acts 4-5), Unidad 3 abierta (acts 6-7)
+    // G1 FBD001 — Unidad 1 (acts 1-3), Unidad 2 (acts 4-5), Unidad 3 (acts 6-7)
     await q(`INSERT IGNORE INTO actividad
                (id_actividad,id_grupo,id_unidad,nombre_actividad,ponderacion,tipo_evaluacion,bloqueado)
              VALUES
@@ -993,7 +948,7 @@ async function seed() {
                (6, 1,3,'Lab SQL Básico',           40,'Sumativa', 0),
                (7, 1,3,'Proyecto Consultas',        60,'Sumativa', 0)`);
 
-    // G10 MAT001 — Unidad 37 Álgebra (acts 8-10), Unidad 38 Cálculo Dif abierta (acts 11-12)
+    // G10 MAT001 — Unidad 37 Álgebra (acts 8-10), Unidad 38 Cálculo Dif (acts 11-12)
     await q(`INSERT IGNORE INTO actividad
                (id_actividad,id_grupo,id_unidad,nombre_actividad,ponderacion,tipo_evaluacion,bloqueado)
              VALUES
@@ -1004,9 +959,7 @@ async function seed() {
                (12,10,38,'Examen Cálculo Diferencial',70,'Sumativa',0)`);
 
     // ── Calificaciones U1 y U2 de G1 (cerradas, bloqueadas) ───────────────
-    // Formato: [no_control, id_actividad, calificacion]
     const calsG1U1U2 = [
-      // act 1 (pond 20), act 2 (pond 60), act 3 (pond 20) — U1 cerrada
       ["26000001", 1, 85],
       ["26000001", 2, 72],
       ["26000001", 3, 90],
@@ -1031,7 +984,6 @@ async function seed() {
       ["26000008", 1, 88],
       ["26000008", 2, 70],
       ["26000008", 3, 95],
-      // act 4 (pond 30), act 5 (pond 70) — U2 cerrada
       ["26000001", 4, 78],
       ["26000001", 5, 81],
       ["26000002", 4, 65],
@@ -1078,7 +1030,6 @@ async function seed() {
 
     // ── Calificaciones U37 de G10 (MAT) — cerrada ─────────────────────────
     const calsG10U37 = [
-      // alumnos inscritos en G10: 2026003,2026005,2026007,2026010,2026012,2026016,2026019
       ["26000003", 8, 80],
       ["26000003", 9, 75],
       ["26000003", 10, 85],
@@ -1130,25 +1081,25 @@ async function seed() {
     // ── Calificaciones de unidad (U1 y U2 de G1 calculadas) ───────────────
     // U1: 20% tarea + 60% examen + 20% participación
     const cu1 = [
-      ["26000001", 1, 1, 85 * 0.2 + 72 * 0.6 + 90 * 0.2, "Aprobada"], // 77.2
-      ["26000002", 1, 1, 60 * 0.2 + 58 * 0.6 + 70 * 0.2, "Reprobada"], // 61.8
-      ["26000003", 1, 1, 95 * 0.2 + 88 * 0.6 + 80 * 0.2, "Aprobada"], // 87.8
-      ["26000004", 1, 1, 75 * 0.2 + 80 * 0.6 + 85 * 0.2, "Aprobada"], // 80.0
-      ["26000005", 1, 1, 90 * 0.2 + 92 * 0.6 + 88 * 0.2, "Aprobada"], // 91.2
-      ["26000006", 1, 1, 50 * 0.2 + 55 * 0.6 + 60 * 0.2, "Reprobada"], // 55.0
-      ["26000007", 1, 1, 78 * 0.2 + 82 * 0.6 + 75 * 0.2, "Aprobada"], // 80.4
-      ["26000008", 1, 1, 88 * 0.2 + 70 * 0.6 + 95 * 0.2, "Aprobada"], // 78.6
+      ["26000001", 1, 1, 85 * 0.2 + 72 * 0.6 + 90 * 0.2, "Aprobada"],
+      ["26000002", 1, 1, 60 * 0.2 + 58 * 0.6 + 70 * 0.2, "Reprobada"],
+      ["26000003", 1, 1, 95 * 0.2 + 88 * 0.6 + 80 * 0.2, "Aprobada"],
+      ["26000004", 1, 1, 75 * 0.2 + 80 * 0.6 + 85 * 0.2, "Aprobada"],
+      ["26000005", 1, 1, 90 * 0.2 + 92 * 0.6 + 88 * 0.2, "Aprobada"],
+      ["26000006", 1, 1, 50 * 0.2 + 55 * 0.6 + 60 * 0.2, "Reprobada"],
+      ["26000007", 1, 1, 78 * 0.2 + 82 * 0.6 + 75 * 0.2, "Aprobada"],
+      ["26000008", 1, 1, 88 * 0.2 + 70 * 0.6 + 95 * 0.2, "Aprobada"],
     ];
     // U2: 30% tarea + 70% examen
     const cu2 = [
-      ["26000001", 2, 1, 78 * 0.3 + 81 * 0.7, "Aprobada"], // 79.8
-      ["26000002", 2, 1, 65 * 0.3 + 68 * 0.7, "Reprobada"], // 67.1
-      ["26000003", 2, 1, 92 * 0.3 + 95 * 0.7, "Aprobada"], // 94.1
-      ["26000004", 2, 1, 80 * 0.3 + 77 * 0.7, "Aprobada"], // 77.9
-      ["26000005", 2, 1, 88 * 0.3 + 90 * 0.7, "Aprobada"], // 89.4
-      ["26000006", 2, 1, 52 * 0.3 + 58 * 0.7, "Reprobada"], // 56.2
-      ["26000007", 2, 1, 75 * 0.3 + 79 * 0.7, "Aprobada"], // 77.8
-      ["26000008", 2, 1, 85 * 0.3 + 88 * 0.7, "Aprobada"], // 87.1
+      ["26000001", 2, 1, 78 * 0.3 + 81 * 0.7, "Aprobada"],
+      ["26000002", 2, 1, 65 * 0.3 + 68 * 0.7, "Reprobada"],
+      ["26000003", 2, 1, 92 * 0.3 + 95 * 0.7, "Aprobada"],
+      ["26000004", 2, 1, 80 * 0.3 + 77 * 0.7, "Aprobada"],
+      ["26000005", 2, 1, 88 * 0.3 + 90 * 0.7, "Aprobada"],
+      ["26000006", 2, 1, 52 * 0.3 + 58 * 0.7, "Reprobada"],
+      ["26000007", 2, 1, 75 * 0.3 + 79 * 0.7, "Aprobada"],
+      ["26000008", 2, 1, 85 * 0.3 + 88 * 0.7, "Aprobada"],
     ];
     for (const [nc, idu, idg, prom, est] of [...cu1, ...cu2])
       await q(
@@ -1183,7 +1134,6 @@ async function seed() {
 
     // ══════════════════════════════════════════════════════════════════════
     // 13. ACTIVIDADES Y CALIFICACIONES — G17/G18 (ADM001) y G19/G20 (FIN001)
-    //     IGE alumnos: 26000015-26000020
     // ══════════════════════════════════════════════════════════════════════
 
     // G17 ADM001 (M4) — Unidad 25 y 26 cerradas, Unidad 27 abierta
@@ -1222,9 +1172,8 @@ async function seed() {
                (35,20,30,'Examen Presupuestos',      60,'Sumativa', 0),
                (36,20,30,'Proyecto Presupuestal',    40,'Formativa',0)`);
 
-    // ── Calificaciones G17 ADM001 U25 y U26 (alumnos: 15,16,17,18,19,20) ─
+    // ── Calificaciones G17 ADM001 U25 y U26 ───────────────────────────────
     const calsG17 = [
-      // U25: act13(60%) + act14(40%)
       ["26000015", 13, 82],
       ["26000015", 14, 88],
       ["26000016", 13, 75],
@@ -1237,7 +1186,6 @@ async function seed() {
       ["26000019", 14, 92],
       ["26000020", 13, 78],
       ["26000020", 14, 80],
-      // U26: act15(70%) + act16(30%)
       ["26000015", 15, 80],
       ["26000015", 16, 85],
       ["26000016", 15, 68],
@@ -1259,9 +1207,7 @@ async function seed() {
         [nc, ia, cal, M4],
       );
 
-    // ── Calificaciones G18 ADM001 U25 y U26 (alumnos: 15,17,19 en G18) ──
-    // G18: 26000015,26000017,26000019 también + otros según inscripciones
-    // Revisando: 15→18, 17→18, 19→18 del array de inscripciones
+    // ── Calificaciones G18 ADM001 U25 y U26 ───────────────────────────────
     const calsG18 = [
       ["26000015", 19, 79],
       ["26000015", 20, 84],
@@ -1285,7 +1231,6 @@ async function seed() {
       );
 
     // ── Calificaciones G19 FIN001 U28 y U29 ───────────────────────────────
-    // G19: 26000015,26000016,26000017,26000018,26000019,26000020
     const calsG19 = [
       ["26000015", 25, 84],
       ["26000015", 26, 80],
@@ -1321,7 +1266,6 @@ async function seed() {
       );
 
     // ── Calificaciones G20 FIN001 U28 y U29 ───────────────────────────────
-    // G20: 26000016,26000018,26000020
     const calsG20 = [
       ["26000016", 31, 70],
       ["26000016", 32, 74],
@@ -1406,7 +1350,7 @@ async function seed() {
     // ══════════════════════════════════════════════════════════════════════
     // RESUMEN
     // ══════════════════════════════════════════════════════════════════════
-    console.log("\n✅ Seed v3 completado.");
+    console.log("\\n✅ Seed v3 completado.");
     console.log(
       "─────────────────────────────────────────────────────────────",
     );
