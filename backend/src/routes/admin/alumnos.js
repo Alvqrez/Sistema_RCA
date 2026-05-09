@@ -296,22 +296,30 @@ router.post("/csv", soloAdmin, async (req, res) => {
     try {
       const hash = await bcrypt.hash(passwordPlana, 10);
 
+      // Helper: string recortado o null (evita TypeError en campos numéricos)
+      const s = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : null);
+
       await new Promise((ok, fail) => {
         db.query(
           `INSERT IGNORE INTO alumno
              (no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
-              correo_institucional, curp, fecha_nacimiento, genero)
-           VALUES (?,?,?,?,?,?,?,?,?)`,
+              correo_institucional, curp, fecha_nacimiento, genero,
+              correo_personal, tel_celular, tel_casa, direccion)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           [
             no_control,
             id_carrera,
             nombre,
-            alumno.apellido_paterno || "",
-            alumno.apellido_materno || "",
+            s(alumno.apellido_paterno) || "",
+            s(alumno.apellido_materno) || "",
             correo,
-            alumno.curp?.trim().toUpperCase() || null,
-            alumno.fecha_nacimiento?.trim() || null,
-            alumno.genero || null,
+            s(alumno.curp)?.toUpperCase() || null,
+            s(alumno.fecha_nacimiento),
+            s(alumno.genero),
+            s(alumno.correo_personal),
+            s(alumno.tel_celular),
+            s(alumno.tel_casa),
+            s(alumno.direccion),
           ],
           (err) => (err ? fail(err) : ok()),
         );

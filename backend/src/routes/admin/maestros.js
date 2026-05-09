@@ -84,24 +84,38 @@ router.post("/csv", soloAdmin, async (req, res) => {
         ? passwordRaw
         : await bcrypt.hash(passwordRaw.trim(), 10);
 
+      // Helper: convierte cualquier valor a string recortado o null
+      const s = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : null);
+
       await new Promise((ok, fail) =>
         db.query(
           `INSERT IGNORE INTO maestro
              (rfc, nombre, apellido_paterno, apellido_materno,
-              correo_institucional, departamento, especialidad,
-              grado_academico, tipo_contrato, tel_celular, estatus)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
+              correo_institucional, correo_personal,
+              curp, fecha_nacimiento, genero,
+              tel_celular, tel_oficina, direccion,
+              departamento, especialidad, grado_academico,
+              tipo_contrato, fecha_ingreso, estatus)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             rfc.trim().toUpperCase(),
             nombre.trim(),
             apellido_paterno.trim(),
-            m.apellido_materno?.trim() || null,
+            s(m.apellido_materno),
             correo_institucional.trim(),
-            m.departamento?.trim() || null,
-            m.especialidad?.trim() || null,
-            m.grado_academico?.trim() || null,
-            m.tipo_contrato?.trim() || null,
-            m.tel_celular?.trim() || null,
+            s(m.correo_personal),
+            s(m.curp)?.toUpperCase() || null,
+            s(m.fecha_nacimiento),
+            s(m.genero),
+            s(m.tel_celular),
+            s(m.tel_oficina),
+            s(m.direccion),
+            s(m.departamento),
+            s(m.especialidad),
+            s(m.grado_academico),
+            s(m.tipo_contrato),
+            s(m.fecha_ingreso),
+            s(m.estatus) || "Activo",
           ],
           (err) => (err ? fail(err) : ok()),
         ),

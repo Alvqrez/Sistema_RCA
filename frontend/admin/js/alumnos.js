@@ -179,7 +179,7 @@ function renderTabla(datos, rol) {
           <button class="btn-icon" title="Editar" onclick="editarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:pencil"></iconify-icon>
           </button>
-          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}')">
+          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}', '${a.nombre} ${a.apellido_paterno}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
         </div>`
@@ -510,9 +510,9 @@ async function guardarAlumno() {
 }
 
 // ─── Eliminar alumno ──────────────────────────────────────────────────────────
-async function eliminarAlumno(no_control) {
+async function eliminarAlumno(no_control, nombre) {
   showConfirm(
-    `¿Eliminar al alumno ${no_control}? Esta acción no se puede deshacer.`,
+    `¿Eliminar al alumno ${nombre} (${no_control})? Esta acción no se puede deshacer.`,
     async () => {
       const token = localStorage.getItem("token");
       try {
