@@ -179,7 +179,7 @@ function renderTabla(datos, rol) {
           <button class="btn-icon" title="Editar" onclick="editarAlumno('${a.no_control}')">
             <iconify-icon icon="lucide:pencil"></iconify-icon>
           </button>
-          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}', '${a.nombre} ${a.apellido_paterno}')">
+          <button class="btn-icon btn-del" title="Eliminar" onclick="eliminarAlumno('${a.no_control}', '${a.nombre} ${a.apellido_paterno} ${a.apellido_materno}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
           </button>
         </div>`
@@ -196,7 +196,7 @@ function renderTabla(datos, rol) {
       <td onclick="event.stopPropagation()">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
           ${acciones}
-          <iconify-icon id="chev_${a.no_control}" icon="lucide:chevron-down" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0"></iconify-icon>
+          <iconify-icon id="chev_${a.no_control}" icon="lucide:chevron-down" onclick="event.stopPropagation();toggleRowExpand('${a.no_control}')" style="color:var(--text-muted);font-size:1rem;transition:transform 0.2s;flex-shrink:0;cursor:pointer"></iconify-icon>
         </div>
       </td>
     </tr>
@@ -511,24 +511,32 @@ async function guardarAlumno() {
 
 // ─── Eliminar alumno ──────────────────────────────────────────────────────────
 async function eliminarAlumno(no_control, nombre) {
-  showConfirm(
-    `¿Eliminar al alumno ${nombre} (${no_control})? Esta acción no se puede deshacer.`,
-    async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) throw new Error("No se pudo eliminar");
-        toast("Alumno eliminado");
-        await cargarAlumnos();
-      } catch (e) {
-        toast(e.message, "error");
+  const errEl = document.getElementById("eliminarAlumnoError");
+  errEl.style.display = "none";
+  document.getElementById("nombreEliminarAlumno").textContent = nombre.trim();
+  document.getElementById("modalEliminarAlumno").classList.add("visible");
+  document.getElementById("btnConfirmarEliminarAlumno").onclick = async () => {
+    errEl.style.display = "none";
+    const token = localStorage.getItem("token");
+    try {
+      const r = await fetch(`${API_URL}/api/alumnos/${no_control}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        errEl.textContent = data.error || "No se pudo eliminar.";
+        errEl.style.display = "block";
+        return;
       }
-    },
-    "Eliminar alumno",
-  );
+      cerrarModalEliminarAlumno();
+      toast("Alumno eliminado");
+      await cargarAlumnos();
+    } catch {
+      errEl.textContent = "Error de conexión con el servidor.";
+      errEl.style.display = "block";
+    }
+  };
 }
 
 // ─── Limpiar formulario ───────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 -- ============================================================
 --  Sistema de Registro y Cálculo de Resultados Académicos
---  Esquema — versión 10
+--  Esquema — versión 11
 --  Instituto Tecnológico de Veracruz
 --
 --  CAMBIOS RESPECTO A v6 — CORRECCIONES 1NF / 2NF / 3NF
@@ -32,6 +32,12 @@
 --           • Event Scheduler diario que recalcula estatus por fecha
 --           • Procedimiento cambiar_estatus_periodo() para cambio manual
 --           • Procedimiento quitar_override_periodo() para volver al automático
+--
+--  CAMBIOS v11
+--  ─────────────────────────────────────────────────────────
+--  DISEÑO • grupo.horario y grupo.aula eliminados: el formulario
+--           de creación de grupos ya no captura estos campos.
+--           Se simplifican el POST, PUT y el importador CSV.
 -- ============================================================
 
 -- Quitar modo seguro
@@ -243,15 +249,13 @@ CREATE TABLE `reticula` (
   COMMENT='Asocia Materia con Carrera en el plan de estudios';
 
 
--- Grupo (sin cambios)
+-- Grupo (v11: sin columnas horario ni aula)
 CREATE TABLE `grupo` (
   `id_grupo`        INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `clave_materia`   VARCHAR(15)   NOT NULL,
   `rfc`             VARCHAR(13)   NOT NULL,
   `id_periodo`      INT UNSIGNED  NOT NULL,
   `limite_alumnos`  TINYINT UNSIGNED NOT NULL DEFAULT 30,
-  `horario`         VARCHAR(100)  NULL DEFAULT NULL,
-  `aula`            VARCHAR(40)   NULL DEFAULT NULL,
   `estatus`         ENUM('Activo','Cerrado','Cancelado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`id_grupo`),
   INDEX `fk_Grupo_Mat`      (`clave_materia`),

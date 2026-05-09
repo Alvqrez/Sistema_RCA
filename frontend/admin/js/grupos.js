@@ -112,26 +112,10 @@ function obtenerHorarioEdit() {
   return `${dias.join("-")} ${inicio}-${fin}`;
 }
 
-function actualizarEditHorarioPreview() {
-  const h = obtenerHorarioEdit();
-  const el = document.getElementById("editHorarioPreview");
-  if (!el) return;
-  if (h) {
-    el.innerHTML = `<iconify-icon icon="lucide:clock" style="vertical-align:middle;margin-right:4px"></iconify-icon><strong>${h}</strong>`;
-  } else {
-    el.innerHTML = `<span style="color:var(--text-muted)">Selecciona días y horas para ver el horario</span>`;
-  }
-}
 
-function getDiasSeleccionados() {
-  return [];
-}
 
-function obtenerHorario() {
-  return null;
-}
 
-function actualizarHorarioPreview() {}
+
 
 // ─── Guardar grupo con validación de conflicto ────────────────────────────────
 async function guardarNuevoGrupo() {
@@ -142,7 +126,6 @@ async function guardarNuevoGrupo() {
     rfc: document.getElementById("numeroEmpleado").value,
     id_periodo: document.getElementById("idPeriodo").value,
     limite_alumnos: document.getElementById("limiteAlumnos").value || 30,
-    horario: obtenerHorario() || null,
   };
 
   if (!grupo.clave_materia || !grupo.rfc || !grupo.id_periodo) {
@@ -277,7 +260,6 @@ function filtrarGrupos() {
       <td style="font-size:.85rem">${g.nombre_maestro}</td>
       <td style="font-size:.8rem;color:var(--text-muted)">${periodoLabel}</td>
       <td style="text-align:center;font-size:.85rem">${g.limite_alumnos ?? "—"}</td>
-      <td style="font-size:.78rem;color:var(--text-muted)">${g.horario ?? "—"}</td>
       <td><span class="badge ${badgeEst}">${g.estatus ?? "—"}</span></td>
       <td style="text-align:right">
         <div class="table-actions">
@@ -435,7 +417,7 @@ async function exportarCSVGrupos() {
     }
     const cols = [
       "id_grupo", "clave_materia", "nombre_materia", "rfc", "nombre_maestro",
-      "id_periodo", "limite_alumnos", "horario", "aula", "estatus",
+      "id_periodo", "limite_alumnos", "estatus",
     ];
     const headers = [
       "ID Grupo", "Clave Materia", "Nombre Materia", "RFC Maestro", "Nombre Maestro",
@@ -518,11 +500,7 @@ async function editarGrupo(id_grupo) {
     document.getElementById("editEstatus").value = g.estatus ?? "Activo";
     document.getElementById("editGrupoError").style.display = "none";
 
-    // Parsear horario existente y poblar los controles
-    const horarioStr = g.horario ?? "";
-    const partes = horarioStr.trim().split(" ");
-    const dias = partes[0] ? partes[0].split("-") : [];
-    const horas = partes[1] ? partes[1].split("-") : [];
+
 
     // Resetear checkboxes de días
     document.querySelectorAll("#editDiasGrid .dia-chip").forEach((chip) => {
@@ -556,7 +534,6 @@ async function guardarEdicionGrupo() {
   const body = {
     limite_alumnos: parseInt(document.getElementById("editLimite").value) || 30,
 
-    horario: obtenerHorarioEdit() || null,
     estatus: document.getElementById("editEstatus").value,
   };
 

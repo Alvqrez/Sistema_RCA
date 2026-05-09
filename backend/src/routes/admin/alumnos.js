@@ -301,11 +301,20 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
       await new Promise((ok, fail) => {
         db.query(
-          `INSERT IGNORE INTO alumno
+          `INSERT INTO alumno
              (no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
               correo_institucional, curp, fecha_nacimiento, genero,
               correo_personal, tel_celular, tel_casa, direccion)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+           ON DUPLICATE KEY UPDATE
+             apellido_materno   = COALESCE(VALUES(apellido_materno),   apellido_materno),
+             curp               = COALESCE(VALUES(curp),               curp),
+             fecha_nacimiento   = COALESCE(VALUES(fecha_nacimiento),   fecha_nacimiento),
+             genero             = COALESCE(VALUES(genero),             genero),
+             correo_personal    = COALESCE(VALUES(correo_personal),    correo_personal),
+             tel_celular        = COALESCE(VALUES(tel_celular),        tel_celular),
+             tel_casa           = COALESCE(VALUES(tel_casa),           tel_casa),
+             direccion          = COALESCE(VALUES(direccion),          direccion)`,
           [
             no_control,
             id_carrera,

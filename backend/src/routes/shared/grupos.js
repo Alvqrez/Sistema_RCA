@@ -17,7 +17,7 @@ router.get("/", verificarToken, (req, res) => {
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo, YEAR(pe.fecha_inicio) AS anio,
-      g.limite_alumnos, g.horario, g.aula, g.estatus
+      g.limite_alumnos, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.rfc  = mae.rfc
@@ -47,7 +47,7 @@ router.get("/mis-grupos", verificarToken, (req, res) => {
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo, YEAR(pe.fecha_inicio) AS anio,
-      g.limite_alumnos, g.horario, g.aula, g.estatus
+      g.limite_alumnos, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.rfc  = mae.rfc
@@ -73,7 +73,7 @@ router.get("/:id", verificarToken, (req, res) => {
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo,
-      g.limite_alumnos, g.horario, g.aula, g.estatus
+      g.limite_alumnos, g.estatus
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.rfc  = mae.rfc
@@ -132,39 +132,7 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
   });
 });
 
-// ─── Utilidades de horario ────────────────────────────────────────────────────
-// Parsea "Lun-Mie-Vie 07:00-08:00" → { dias:["Lun","Mie","Vie"], inicio:"07:00", fin:"08:00" }
-function parsearHorario(horarioStr) {
-  if (!horarioStr) return null;
-  const partes = horarioStr.trim().split(" ");
-  if (partes.length < 2) return null;
-  const dias = partes[0].split("-").map((d) => d.trim().toLowerCase());
-  const horas = partes[1].split("-");
-  if (horas.length < 2) return null;
-  return { dias, inicio: horas[0], fin: horas[1] };
-}
-
-// Convierte "07:00" → minutos desde medianoche
-function toMinutos(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + (m || 0);
-}
-
-// Verifica si dos listas de días comparten al menos uno
-function diasSolapan(dias1, dias2) {
-  return dias1.some((d) => dias2.includes(d));
-}
-
-// Verifica si dos rangos horarios se solapan (exclusivo en extremos)
-function horariosSolapan(ini1, fin1, ini2, fin2) {
-  const s1 = toMinutos(ini1),
-    e1 = toMinutos(fin1);
-  const s2 = toMinutos(ini2),
-    e2 = toMinutos(fin2);
-  return s1 < e2 && s2 < e1;
-}
-
-// POST — crear grupo con validación de unicidad y conflicto de aula/maestro
+// POST — crear grupo
 router.post("/csv", soloAdmin, async (req, res) => {
   const { grupos } = req.body;
 
@@ -190,19 +158,15 @@ router.post("/csv", soloAdmin, async (req, res) => {
       await new Promise((ok, fail) => {
         db.query(
           `INSERT INTO grupo
-             (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
-           VALUES (?, ?, ?, ?, ?, ?)
+             (clave_materia, rfc, id_periodo, limite_alumnos)
+           VALUES (?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
-             limite_alumnos = VALUES(limite_alumnos),
-             horario        = VALUES(horario),
-             aula           = VALUES(aula)`,
+             limite_alumnos = VALUES(limite_alumnos)`,
           [
             clave_materia.trim(),
             rfc.trim(),
             parseInt(id_periodo),
             parseInt(g.limite_alumnos) || 30,
-            g.horario?.trim() || null,
-            g.aula?.trim() || null,
           ],
           (err) => (err ? fail(err) : ok()),
         );
@@ -225,8 +189,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
 });
 
 router.post("/", soloAdmin, (req, res) => {
-  const { clave_materia, rfc, id_periodo, limite_alumnos, horario, aula } =
-    req.body;
+  const { clave_materia, rfc, id_periodo, limite_alumnos } = req.body;
 
   if (!clave_materia || !rfc || !id_periodo) {
     return res.status(400).json({
@@ -234,80 +197,18 @@ router.post("/", soloAdmin, (req, res) => {
     });
   }
 
-  const nuevoH = horario ? parsearHorario(horario) : null;
-
-  // Obtener todos los grupos del mismo periodo para validar conflictos
-  db.query(
-    `SELECT id_grupo, rfc, aula, horario FROM grupo WHERE id_periodo = ? AND horario IS NOT NULL`,
-    [id_periodo],
-    (err, existentes) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-
-      if (nuevoH) {
-        // Conflicto de maestro: mismo maestro, días y horas solapadas
-        const conflictoMaestro = existentes.find((g) => {
-          if (g.rfc !== rfc) return false;
-          const exH = parsearHorario(g.horario);
-          if (!exH) return false;
-          return (
-            diasSolapan(nuevoH.dias, exH.dias) &&
-            horariosSolapan(nuevoH.inicio, nuevoH.fin, exH.inicio, exH.fin)
-          );
-        });
-
-        if (conflictoMaestro) {
-          return res.status(409).json({
-            conflict: true,
-            error: `El maestro ya tiene otro grupo en ese horario (Grupo #${conflictoMaestro.id_grupo}: ${conflictoMaestro.horario}). Los días y horas se solapan.`,
-          });
-        }
-
-        // Conflicto de aula: mismo salón, días y horas solapadas
-        if (aula) {
-          const conflictoAula = existentes.find((g) => {
-            if (g.aula !== aula) return false;
-            const exH = parsearHorario(g.horario);
-            if (!exH) return false;
-            return (
-              diasSolapan(nuevoH.dias, exH.dias) &&
-              horariosSolapan(nuevoH.inicio, nuevoH.fin, exH.inicio, exH.fin)
-            );
-          });
-
-          if (conflictoAula) {
-            return res.status(409).json({
-              conflict: true,
-              error: `El aula "${aula}" ya está ocupada ese horario (Grupo #${conflictoAula.id_grupo}: ${conflictoAula.horario}). Elige otro salón u otro horario.`,
-            });
-          }
-        }
-      }
-
-      insertarGrupo(res, clave_materia, rfc, id_periodo, limite_alumnos, horario, aula);
-    },
-  );
+  insertarGrupo(res, clave_materia, rfc, id_periodo, limite_alumnos);
 });
 
-function insertarGrupo(
-  res,
-  clave_materia,
-  rfc,
-  id_periodo,
-  limite_alumnos,
-  horario,
-  aula,
-) {
+function insertarGrupo(res, clave_materia, rfc, id_periodo, limite_alumnos) {
   db.query(
-    `INSERT INTO grupo (clave_materia, rfc, id_periodo, limite_alumnos, horario, aula)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO grupo (clave_materia, rfc, id_periodo, limite_alumnos)
+     VALUES (?, ?, ?, ?)`,
     [
       clave_materia,
       rfc,
       id_periodo,
       limite_alumnos ?? 30,
-      horario ?? null,
-      aula ?? null,
     ],
     (err, result) => {
       if (err) {
@@ -429,13 +330,11 @@ router.post("/:id/unidades", maestroOAdmin, (req, res) => {
 
 // PUT — editar grupo
 router.put("/:id", soloAdmin, (req, res) => {
-  const { limite_alumnos, horario, aula, estatus } = req.body;
+  const { limite_alumnos, estatus } = req.body;
   db.query(
-    `UPDATE grupo SET limite_alumnos = ?, horario = ?, aula = ?, estatus = ? WHERE id_grupo = ?`,
+    `UPDATE grupo SET limite_alumnos = ?, estatus = ? WHERE id_grupo = ?`,
     [
       limite_alumnos ?? 30,
-      horario ?? null,
-      aula ?? null,
       estatus ?? "Activo",
       req.params.id,
     ],
