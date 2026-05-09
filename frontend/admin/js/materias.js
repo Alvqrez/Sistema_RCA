@@ -1,5 +1,16 @@
 soloPermitido("administrador");
 
+function toast(msg, tipo = "success") {
+  const c = document.getElementById("toast-container");
+  if (!c) return;
+  const t = document.createElement("div");
+  t.className = `rca-toast rca-toast-${tipo === "error" ? "error" : tipo === "info" ? "warning" : "success"}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add("visible"));
+  setTimeout(() => { t.classList.remove("visible"); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
 let materiaEditando = null;
 let carrerasDisponibles = []; // catálogo completo de carreras
 let carrerasPendientes = []; // carreras a vincular al guardar (nuevas)
@@ -298,7 +309,7 @@ async function editarMateria(clave) {
     if (btnSubmit) btnSubmit.textContent = "Actualizar";
     abrirModalMateria();
   } catch {
-    alert("Error al cargar datos de la materia.");
+    toast("Error al cargar datos de la materia.", "error");
     materiaEditando = null;
   }
 }
@@ -431,17 +442,15 @@ async function importarCSVMaterias() {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
-    if (typeof toast === "function") {
-      toast(`${data.insertados} materia(s) importadas correctamente`);
-      if (data.errores?.length)
-        toast(`${data.errores.length} fila(s) con errores`, "info");
-    } else alert(`${data.insertados} materia(s) importadas correctamente.`);
-    if (data.errores?.length) console.table(data.errores);
+    toast(`${data.insertados} materia(s) importadas correctamente`);
+    if (data.errores?.length) {
+      toast(`${data.errores.length} fila(s) con errores`, "info");
+      console.table(data.errores);
+    }
     cerrarModalCSVMaterias();
     cargarMaterias();
   } catch (err) {
-    if (typeof toast === "function") toast(err.message, "error");
-    else alert(err.message);
+    toast(err.message, "error");
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
@@ -456,15 +465,15 @@ async function exportarCSVMaterias() {
     });
     const materias = await r.json();
     if (!materias.length) {
-      if (typeof toast === "function") toast("No hay materias para exportar.", "error");
+      toast("No hay materias para exportar.", "error");
       return;
     }
     const cols = ["clave_materia", "nombre_materia", "no_unidades"];
     const headers = ["Clave Materia", "Nombre Materia", "No. Unidades"];
     exportarXLSX(cols, headers, materias, "materias_RCA");
-    if (typeof toast === "function") toast("Exportado correctamente");
+    toast("Exportado correctamente");
   } catch {
-    if (typeof toast === "function") toast("Error al exportar materias.", "error");
+    toast("Error al exportar materias.", "error");
   }
 }
 

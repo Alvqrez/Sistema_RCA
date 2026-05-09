@@ -441,21 +441,26 @@ function exportarCSVMaestros() {
     return;
   }
   const cols = [
-    "rfc", "nombre", "apellido_paterno", "apellido_materno", "curp",
-    "fecha_nacimiento", "genero", "correo_institucional", "correo_personal",
-    "tel_celular", "tel_oficina", "direccion", "departamento",
-    "tipo_contrato", "estatus", "fecha_ingreso", "grado_academico", "especialidad",
+    "rfc", "nombre", "apellido_paterno", "correo_institucional",
+    "username", "pwd",
+    "apellido_materno", "departamento", "especialidad", "grado_academico",
+    "tipo_contrato", "tel_celular", "estatus",
+    "curp", "fecha_nacimiento", "genero", "correo_personal",
+    "tel_oficina", "direccion", "fecha_ingreso",
   ];
   const headers = [
-    "RFC", "Nombre", "Apellido Paterno", "Apellido Materno", "CURP",
-    "Fecha Nacimiento", "Género", "Correo Institucional", "Correo Personal",
-    "Tel. Celular", "Tel. Oficina", "Dirección", "Departamento",
-    "Tipo Contrato", "Estatus", "Fecha Ingreso", "Grado Académico", "Especialidad",
+    "rfc", "nombre", "apellido_paterno", "correo_institucional",
+    "username", "pwd",
+    "apellido_materno", "departamento", "especialidad", "grado_academico",
+    "tipo_contrato", "tel_celular", "estatus",
+    "curp", "fecha_nacimiento", "genero", "correo_personal",
+    "tel_oficina", "direccion", "fecha_ingreso",
   ];
   const fechasCols = ["fecha_nacimiento", "fecha_ingreso"];
-  exportarXLSX(cols, headers, maestrosGlobal, "maestros_RCA", (c, v) =>
-    fechasCols.includes(c) ? fechaADisplay(v) : (v ?? "")
-  );
+  exportarXLSX(cols, headers, maestrosGlobal, "maestros_RCA", (c, v) => {
+    if (fechasCols.includes(c)) return fechaADisplay(v);
+    return v ?? "";
+  });
   toast("Exportado correctamente");
 }
 

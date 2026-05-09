@@ -1,17 +1,18 @@
 // ─── exportUtils.js ──────────────────────────────────────────────────────────
-// Requiere SheetJS cargado ANTES en el HTML (local, no CDN):
-//   <script src="../../shared/js/xlsx.full.min.js"></script>
+// Requiere SheetJS cargado ANTES en el HTML (vía CDN o local):
+//   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── exportarXLSX ─────────────────────────────────────────────────────────────
-// Exporta datos a .xlsx con columnas autoajustadas.
+// Exporta datos a .xlsx (con SheetJS) con columnas autoajustadas al contenido.
+// Si SheetJS no está disponible, genera .csv como fallback.
 // cols      → claves internas   ["no_control", "nombre", ...]
 // headers   → nombres visibles  ["No. Control", "Nombre", ...]
 // datos     → array de objetos
 // filename  → sin extensión
 // formatFn  → opcional (col, val) => string
 function exportarXLSX(cols, headers, datos, filename, formatFn) {
-  // Construir filas
+  // Construir filas como array de arrays
   const filas = [headers];
   datos.forEach((row) => {
     filas.push(
@@ -22,12 +23,31 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
     );
   });
 
-  // Escapar campo para CSV: envolver en comillas si contiene coma, comilla o salto
+  // ── Ruta XLSX con SheetJS (columnas autoajustadas) ────────────────────────
+  if (window.XLSX) {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+
+    // Calcular ancho óptimo de cada columna según el contenido más largo
+    const anchos = cols.map((_, ci) => {
+      const maxLen = filas.reduce((max, fila) => {
+        const celda = fila[ci] != null ? String(fila[ci]) : "";
+        return Math.max(max, celda.length);
+      }, 10); // mínimo 10 caracteres de ancho
+      return { wch: Math.min(maxLen + 2, 80) }; // +2 margen, tope 80 chars
+    });
+    ws["!cols"] = anchos;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Datos");
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+    return;
+  }
+
+  // ── Fallback: CSV (cuando SheetJS no está cargado) ────────────────────────
   const escapar = (v) => {
     const s = String(v ?? "");
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"`  : s;
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-
   const bom = "\uFEFF";
   const csv = filas.map((fila) => fila.map(escapar).join(",")).join("\n");
   const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });

@@ -8,13 +8,15 @@ const { verificarToken, soloAdmin } = require("../../middleware/auth");
 // GET — todos los maestros
 router.get("/", verificarToken, (req, res) => {
   db.query(
-    `SELECT rfc, nombre, apellido_paterno, apellido_materno,
-            curp, fecha_nacimiento, genero,
-            correo_institucional, correo_personal,
-            tel_celular, tel_oficina, direccion,
-            tipo_contrato, estatus, fecha_ingreso,
-            grado_academico, especialidad, departamento
-     FROM maestro`,
+    `SELECT m.rfc, m.nombre, m.apellido_paterno, m.apellido_materno,
+            m.curp, m.fecha_nacimiento, m.genero,
+            m.correo_institucional, m.correo_personal,
+            m.tel_celular, m.tel_oficina, m.direccion,
+            m.tipo_contrato, m.estatus, m.fecha_ingreso,
+            m.grado_academico, m.especialidad, m.departamento,
+            u.username, u.pwd
+     FROM maestro m
+     LEFT JOIN usuario u ON u.id_referencia = m.rfc AND u.rol = 'maestro'`,
     (err, results) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

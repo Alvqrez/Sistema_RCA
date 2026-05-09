@@ -76,7 +76,7 @@ router.post("/csv", soloAdmin, (req, res) => {
         nombre_materia.trim(),
         parseInt(mat.no_unidades) || 3,
       ],
-      (err) => {
+      (err, result) => {
         if (err) errores.push({ clave: clave_materia, motivo: err.message });
         else if (result.affectedRows > 0) insertados++;
         // affectedRows=0 → duplicado, se omite silenciosamente
@@ -133,7 +133,7 @@ router.post("/", soloAdmin, (req, res) => {
       nombre_materia,
       no_unidades ?? 0,
     ],
-    (err) => {
+    (err, result) => {
       if (err) {
         if (err.code === "ER_DUP_ENTRY")
           return res
@@ -177,7 +177,7 @@ router.put("/:clave", soloAdmin, (req, res) => {
 router.delete("/:clave", soloAdmin, (req, res) => {
   const clave = req.params.clave;
   // 1. Borrar registros dependientes en retícula
-  db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err) => {
+  db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err, result) => {
     if (err) {
       console.error("Error borrando retícula:", err);
       return res.status(500).json({ error: "Error interno del servidor" });
@@ -212,7 +212,7 @@ router.post("/:clave/carreras", soloAdmin, (req, res) => {
      VALUES (?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE semestre=VALUES(semestre), creditos=VALUES(creditos)`,
     [req.params.clave, id_carrera, semestre ?? 1, creditos ?? 0],
-    (err) => {
+    (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       res.status(201).json({ success: true, mensaje: "Carrera vinculada" });
