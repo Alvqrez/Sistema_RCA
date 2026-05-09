@@ -923,26 +923,16 @@ async function exportarCSVInscripciones() {
     showToast("No hay inscripciones para exportar", "info");
     return;
   }
-  const headers = [
-    "no_control",
-    "nombre_alumno",
-    "id_grupo",
-    "nombre_materia",
-    "nombre_maestro",
-    "periodo",
-    "tipo_curso",
-    "estatus",
+  const cols = [
+    "no_control", "nombre_alumno", "id_grupo", "nombre_materia",
+    "nombre_maestro", "periodo", "tipo_curso", "estatus",
   ];
-  const rows = todasInsc.map((i) =>
-    headers
-      .map((h) => `"${(i[h] ?? "").toString().replace(/"/g, '""')}"`)
-      .join(","),
-  );
-  const csv = [headers.join(","), ...rows].join("\n");
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-  a.download = "inscripciones_rca.csv";
-  a.click();
+  const headers = [
+    "No. Control", "Nombre Alumno", "ID Grupo", "Materia",
+    "Maestro", "Periodo", "Tipo Curso", "Estatus",
+  ];
+  exportarXLSX(cols, headers, todasInsc, "inscripciones_rca");
+  showToast("Exportado correctamente");
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

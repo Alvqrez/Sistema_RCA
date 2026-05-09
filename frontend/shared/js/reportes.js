@@ -258,35 +258,32 @@ function volverSelector() {
 function exportarReporteCSV() {
   if (!reporteActual) return;
   const { grupo, unidades, alumnos } = reporteActual;
-  const colBase = ["no_control", "nombre_completo", "estatus_inscripcion"];
-  const colUnidades = unidades.map((u) => u.nombre_unidad);
-  const cols = [...colBase, ...colUnidades, "promedio_unidades", "calificacion_oficial", "estatus_final"];
 
-  const rows = [cols.join(",")];
-  alumnos.forEach((a) => {
-    const unidadesVals = unidades.map((u) => {
+  const cols = ["no_control", "nombre_completo", "estatus_inscripcion",
+    ...unidades.map((u) => u.id_unidad.toString()),
+    "promedio_unidades", "calificacion_oficial", "estatus_final",
+  ];
+  const headers = ["No. Control", "Nombre Completo", "Estatus",
+    ...unidades.map((u) => u.nombre_unidad),
+    "Promedio Unidades", "Calificación Oficial", "Estatus Final",
+  ];
+
+  const datos = alumnos.map((a) => {
+    const row = {
+      no_control: a.no_control,
+      nombre_completo: a.nombre_completo,
+      estatus_inscripcion: a.estatus_inscripcion ?? "",
+      promedio_unidades: a.promedio_unidades ?? "",
+      calificacion_oficial: a.calificacion_oficial ?? "",
+      estatus_final: a.estatus_final ?? "Pendiente",
+    };
+    unidades.forEach((u) => {
       const uc = a.unidades?.[u.id_unidad];
-      return uc?.calificacion ?? "";
+      row[u.id_unidad.toString()] = uc?.calificacion ?? "";
     });
-    rows.push(
-      [
-        a.no_control,
-        `"${a.nombre_completo}"`,
-        a.estatus_inscripcion ?? "",
-        ...unidadesVals,
-        a.promedio_unidades ?? "",
-        a.calificacion_oficial ?? "",
-        a.estatus_final ?? "Pendiente",
-      ].join(","),
-    );
+    return row;
   });
 
-  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `reporte_${grupo.clave_materia}_${grupo.id_grupo}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  exportarXLSX(cols, headers, datos, `reporte_${grupo.clave_materia}_${grupo.id_grupo}`);
   toast("Reporte exportado correctamente");
 }

@@ -1122,24 +1122,9 @@
             toast(`Sin datos en ${modulo}`, "info");
             return;
           }
-          // Encabezado legible + filas de datos
-          const rows = [cfg.headers.join(",")];
-          datos.forEach((d) =>
-            rows.push(
-              cfg.cols
-                .map((c) => `"${(d[c] ?? "").toString().replace(/"/g, '""')}"`)
-                .join(","),
-            ),
-          );
-          const bom = "\uFEFF"; // BOM para Excel en español
-          const blob = new Blob([bom + rows.join("\n")], {
-            type: "text/csv;charset=utf-8;",
-          });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `${modulo}_rca_${new Date().toISOString().slice(0, 10)}.csv`;
-          a.click();
-          toast(`${modulo}.csv exportado`);
+          const filename = `${modulo}_rca_${new Date().toISOString().slice(0, 10)}`;
+          exportarXLSX(cfg.cols, cfg.headers, datos, filename);
+          toast(`${modulo}.xlsx exportado`);
         } catch {
           toast(`Error al exportar ${modulo}`, "error");
         }
@@ -1571,5 +1556,7 @@
           cerrarModalAdmin();
       });
     </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="../../shared/js/exportUtils.js"></script>
   </body>
 </html>

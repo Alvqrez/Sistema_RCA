@@ -447,35 +447,15 @@ async function exportarCSVGrupos() {
       return;
     }
     const cols = [
-      "id_grupo",
-      "clave_materia",
-      "nombre_materia",
-      "rfc",
-      "nombre_maestro",
-      "id_periodo",
-      "limite_alumnos",
-      "horario",
-      "aula",
-      "estatus",
+      "id_grupo", "clave_materia", "nombre_materia", "rfc", "nombre_maestro",
+      "id_periodo", "limite_alumnos", "horario", "aula", "estatus",
     ];
-    const rows = [cols.join(",")];
-    grupos.forEach((g) =>
-      rows.push(
-        cols
-          .map((c) => `"${(g[c] ?? "").toString().replace(/"/g, '""')}"`)
-          .join(","),
-      ),
-    );
-    const blob = new Blob([rows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "grupos_RCA.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toastGrupo("CSV exportado correctamente");
+    const headers = [
+      "ID Grupo", "Clave Materia", "Nombre Materia", "RFC Maestro", "Nombre Maestro",
+      "ID Periodo", "Límite Alumnos", "Horario", "Aula", "Estatus",
+    ];
+    exportarXLSX(cols, headers, grupos, "grupos_RCA");
+    toastGrupo("Exportado correctamente");
   } catch {
     toastGrupo("Error al exportar", "error");
   }

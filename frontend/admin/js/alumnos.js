@@ -574,40 +574,20 @@ function exportarCSV() {
     return;
   }
   const cols = [
-    "no_control",
-    "nombre",
-    "apellido_paterno",
-    "apellido_materno",
-    "curp",
-    "fecha_nacimiento",
-    "genero",
-    "id_carrera",
-    "correo_institucional",
-    "correo_personal",
-    "tel_celular",
-    "tel_casa",
-    "direccion",
+    "no_control", "nombre", "apellido_paterno", "apellido_materno",
+    "curp", "fecha_nacimiento", "genero", "id_carrera",
+    "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
+  ];
+  const headers = [
+    "No. Control", "Nombre", "Apellido Paterno", "Apellido Materno",
+    "CURP", "Fecha Nacimiento", "Género", "Carrera",
+    "Correo Institucional", "Correo Personal", "Tel. Celular", "Tel. Casa", "Dirección",
   ];
   const fechasCols = ["fecha_nacimiento"];
-  const rows = [cols.join(",")];
-  alumnosGlobal.forEach((a) => {
-    rows.push(
-      cols
-        .map((c) => {
-          const val = fechasCols.includes(c) ? fechaADisplay(a[c]) : (a[c] ?? "");
-          return `"${val.toString().replace(/"/g, '""')}"`;
-        })
-        .join(","),
-    );
-  });
-  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "alumnos_RCA.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("CSV exportado correctamente");
+  exportarXLSX(cols, headers, alumnosGlobal, "alumnos_RCA", (c, v) =>
+    fechasCols.includes(c) ? fechaADisplay(v) : (v ?? "")
+  );
+  toast("Exportado correctamente");
 }
 
 // ─── Modal importar CSV ───────────────────────────────────────────────────────

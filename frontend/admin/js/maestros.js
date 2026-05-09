@@ -441,45 +441,22 @@ function exportarCSVMaestros() {
     return;
   }
   const cols = [
-    "rfc",
-    "nombre",
-    "apellido_paterno",
-    "apellido_materno",
-    "curp",
-    "fecha_nacimiento",
-    "genero",
-    "correo_institucional",
-    "correo_personal",
-    "tel_celular",
-    "tel_oficina",
-    "direccion",
-    "departamento",
-    "tipo_contrato",
-    "estatus",
-    "fecha_ingreso",
-    "grado_academico",
-    "especialidad",
+    "rfc", "nombre", "apellido_paterno", "apellido_materno", "curp",
+    "fecha_nacimiento", "genero", "correo_institucional", "correo_personal",
+    "tel_celular", "tel_oficina", "direccion", "departamento",
+    "tipo_contrato", "estatus", "fecha_ingreso", "grado_academico", "especialidad",
+  ];
+  const headers = [
+    "RFC", "Nombre", "Apellido Paterno", "Apellido Materno", "CURP",
+    "Fecha Nacimiento", "Género", "Correo Institucional", "Correo Personal",
+    "Tel. Celular", "Tel. Oficina", "Dirección", "Departamento",
+    "Tipo Contrato", "Estatus", "Fecha Ingreso", "Grado Académico", "Especialidad",
   ];
   const fechasCols = ["fecha_nacimiento", "fecha_ingreso"];
-  const rows = [
-    cols.join(","),
-    ...maestrosGlobal.map((m) =>
-      cols
-        .map((c) => {
-          const val = fechasCols.includes(c) ? fechaADisplay(m[c]) : (m[c] ?? "");
-          return `"${val.toString().replace(/"/g, '""')}"`;
-        })
-        .join(","),
-    ),
-  ];
-  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "maestros_RCA.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("CSV exportado correctamente");
+  exportarXLSX(cols, headers, maestrosGlobal, "maestros_RCA", (c, v) =>
+    fechasCols.includes(c) ? fechaADisplay(v) : (v ?? "")
+  );
+  toast("Exportado correctamente");
 }
 
 let csvMaestrosData = [];

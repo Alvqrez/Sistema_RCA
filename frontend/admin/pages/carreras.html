@@ -601,18 +601,9 @@
           return;
         }
         const cols = ["id_carrera", "nombre_carrera", "siglas"];
-        const rows = [cols.join(",")];
-        todasCarreras.forEach((c) =>
-          rows.push(cols.map((col) => `"${(c[col] ?? "").toString().replace(/"/g, '""')}"`).join(","))
-        );
-        const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "carreras_RCA.csv";
-        a.click();
-        URL.revokeObjectURL(url);
-        mostrarToast("CSV exportado correctamente");
+        const headers = ["ID Carrera", "Nombre Carrera", "Siglas"];
+        exportarXLSX(cols, headers, todasCarreras, "carreras_RCA");
+        mostrarToast("Exportado correctamente");
       }
 
       // Cerrar modales al click fuera
@@ -668,5 +659,7 @@
         t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
       }
     </script>
+      <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="../../shared/js/exportUtils.js"></script>
   </body>
 </html>

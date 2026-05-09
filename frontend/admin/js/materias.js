@@ -469,33 +469,17 @@ async function exportarCSVMaterias() {
     });
     const materias = await r.json();
     if (!materias.length) {
-      alert("No hay materias para exportar.");
+      if (typeof toast === "function") toast("No hay materias para exportar.", "info");
       return;
     }
-    const cols = [
-      "clave_materia",
-      "nombre_materia",
-      "no_unidades",
-    ];
-    const rows = [cols.join(",")];
-    materias.forEach((m) =>
-      rows.push(
-        cols
-          .map((c) => `"${(m[c] ?? "").toString().replace(/"/g, '""')}"`)
-          .join(","),
-      ),
-    );
-    const blob = new Blob([rows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "materias_RCA.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    if (typeof toast === "function") toast("CSV exportado correctamente");
+    const cols = ["clave_materia", "nombre_materia", "no_unidades"];
+    const headers = ["Clave Materia", "Nombre Materia", "No. Unidades"];
+    exportarXLSX(cols, headers, materias, "materias_RCA");
+    if (typeof toast === "function") toast("Exportado correctamente");
   } catch {
+    if (typeof toast === "function") toast("Error al exportar materias.", "error");
+  }
+} catch {
     alert("Error al exportar materias.");
   }
 }
