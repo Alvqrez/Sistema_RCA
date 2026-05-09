@@ -298,11 +298,10 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
       await new Promise((ok, fail) => {
         db.query(
-          `INSERT INTO alumno
+          `INSERT IGNORE INTO alumno
              (no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
               correo_institucional, curp, fecha_nacimiento, genero)
-           VALUES (?,?,?,?,?,?,?,?,?)
-           ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)`,
+           VALUES (?,?,?,?,?,?,?,?,?)`,
           [
             no_control,
             id_carrera,
@@ -320,7 +319,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
       await new Promise((ok, fail) => {
         db.query(
-          "INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?,?,'alumno',?,1) ON DUPLICATE KEY UPDATE pwd = VALUES(pwd)",
+          "INSERT IGNORE INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?,?,'alumno',?,1)",
           [no_control, hash, no_control],
           (err) => (err ? fail(err) : ok()),
         );

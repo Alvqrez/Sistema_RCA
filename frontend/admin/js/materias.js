@@ -386,19 +386,17 @@ function leerCSVMaterias(e) {
 }
 
 function procesarCSVMaterias(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const { headers, rows } = parseCSVRobusto(e.target.result);
+  leerArchivo(file, (headers, rows) => {
     if (!rows.length) {
-      document.getElementById("csvMateriasPreview").innerHTML =
-        "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+      const el = document.getElementById("csvMateriasPreview");
+      if (el) el.innerHTML = "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
       return;
     }
     csvMateriasData = rows;
     mostrarPreviewCSVMaterias(headers, csvMateriasData);
-    document.getElementById("btnImportarMaterias").disabled = !csvMateriasData.length;
-  };
-  reader.readAsText(file, "UTF-8");
+    const btn = document.getElementById("btnImportarMaterias");
+    if (btn) btn.disabled = !csvMateriasData.length;
+  });
 }
 
 function mostrarPreviewCSVMaterias(headers, data) {

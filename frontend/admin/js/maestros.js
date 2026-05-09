@@ -488,19 +488,17 @@ function leerCSVMaestros(e) {
 }
 
 function procesarCSVMaestros(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const { headers, rows } = parseCSVRobusto(e.target.result);
+  leerArchivo(file, (headers, rows) => {
     if (!rows.length) {
-      document.getElementById("csvMaestrosPreview").innerHTML =
-        "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>El archivo está vacío o solo tiene encabezado.</p>";
+      const el = document.getElementById("csvMaestrosPreview");
+      if (el) el.innerHTML = "<p style='color:var(--danger);font-size:0.85rem;margin-top:8px'>El archivo está vacío o solo tiene encabezado.</p>";
       return;
     }
     csvMaestrosData = rows;
     mostrarPreviewCSVMaestros(headers, csvMaestrosData);
-    document.getElementById("btnImportarMaestros").disabled = csvMaestrosData.length === 0;
-  };
-  reader.readAsText(file, "UTF-8");
+    const btn = document.getElementById("btnImportarMaestros");
+    if (btn) btn.disabled = csvMaestrosData.length === 0;
+  });
 }
 
 function mostrarPreviewCSVMaestros(headers, data) {

@@ -294,7 +294,7 @@
           <input
             type="file"
             id="inputCSVCarreras"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             style="display: none"
             onchange="leerCSV(event)"
           />
@@ -530,23 +530,13 @@
       }
 
       function procesarCSV(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const lines = e.target.result.trim().split("\n").filter(Boolean);
-          if (lines.length < 2) {
+        leerArchivo(file, (headers, rows) => {
+          if (!rows.length) {
             document.getElementById("csvPreview").innerHTML =
               "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
             return;
           }
-          const headers = lines[0]
-            .split(",")
-            .map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
-          csvCarrerasData = lines.slice(1).map((line) => {
-            const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-            const obj = {};
-            headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
-            return obj;
-          });
+          csvCarrerasData = rows;
           const muestra = csvCarrerasData.slice(0, 5);
           document.getElementById("csvPreview").innerHTML =
             `<p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">${csvCarrerasData.length} registros detectados — vista previa (primeros 5):</p>
@@ -555,8 +545,7 @@
               <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
             </table></div>`;
           document.getElementById("btnImportar").disabled = !csvCarrerasData.length;
-        };
-        reader.readAsText(file);
+        });
       }
 
       async function importarCSV() {
@@ -564,7 +553,7 @@
         const btn = document.getElementById("btnImportar");
         btn.disabled = true;
         btn.innerHTML = `<span class="spinner"></span> Importando…`;
-        let ok = 0, errores = [];
+        let ok = 0, omitidos = 0, errores = [];
         for (const row of csvCarrerasData) {
           if (!row.id_carrera || !row.nombre_carrera) {
             errores.push(row.id_carrera || "—");
@@ -584,10 +573,14 @@
               }),
             });
             if (r.ok) ok++;
+            else if (r.status === 409) omitidos++; // duplicado: ignorar y continuar
             else errores.push(row.id_carrera);
           } catch { errores.push(row.id_carrera); }
         }
-        mostrarToast(`${ok} carrera(s) importada(s)${errores.length ? `, ${errores.length} con error` : ""}`, ok > 0 ? "success" : "error");
+        let msg = `${ok} carrera(s) importada(s)`;
+        if (omitidos) msg += `, ${omitidos} omitida(s) por duplicado`;
+        if (errores.length) msg += `, ${errores.length} con error`;
+        mostrarToast(msg, ok > 0 || omitidos > 0 ? "success" : "error");
         cerrarModalImport();
         await cargar();
         btn.disabled = false;

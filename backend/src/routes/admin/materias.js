@@ -69,9 +69,8 @@ router.post("/csv", soloAdmin, (req, res) => {
       continue;
     }
     db.query(
-      `INSERT INTO materia (clave_materia, nombre_materia, no_unidades)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE nombre_materia=VALUES(nombre_materia), no_unidades=VALUES(no_unidades)`,
+      `INSERT IGNORE INTO materia (clave_materia, nombre_materia, no_unidades)
+       VALUES (?, ?, ?)`,
       [
         clave_materia.trim(),
         nombre_materia.trim(),
@@ -79,7 +78,8 @@ router.post("/csv", soloAdmin, (req, res) => {
       ],
       (err) => {
         if (err) errores.push({ clave: clave_materia, motivo: err.message });
-        else insertados++;
+        else if (result.affectedRows > 0) insertados++;
+        // affectedRows=0 → duplicado, se omite silenciosamente
         finalizar();
       },
     );

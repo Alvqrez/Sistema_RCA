@@ -1,28 +1,18 @@
 // ─── exportUtils.js ──────────────────────────────────────────────────────────
-// Utilidad compartida para exportar datos a XLSX con:
-//   1. Soporte completo de acentos y caracteres especiales (UTF-8)
-//   2. Autofit automático del ancho de cada columna
-//
-// Requiere SheetJS (xlsx) cargado antes en el HTML:
-//   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+// Requiere SheetJS cargado ANTES en el HTML (local, no CDN):
+//   <script src="../../shared/js/xlsx.full.min.js"></script>
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Exporta un array de objetos a un archivo .xlsx con columnas autoajustadas.
- *
- * @param {string[]} cols      - Claves de las columnas (orden de aparición)
- * @param {string[]} headers   - Nombres legibles para la fila de encabezado
- * @param {object[]} datos     - Array de objetos con los datos
- * @param {string}   filename  - Nombre del archivo sin extensión
- * @param {Function} [formatFn] - Función opcional (col, val) => string para formatear valores
- */
+// ── exportarXLSX ─────────────────────────────────────────────────────────────
+// Exporta datos a .xlsx con columnas autoajustadas.
+// cols      → claves internas   ["no_control", "nombre", ...]
+// headers   → nombres visibles  ["No. Control", "Nombre", ...]
+// datos     → array de objetos
+// filename  → sin extensión
+// formatFn  → opcional (col, val) => string
 function exportarXLSX(cols, headers, datos, filename, formatFn) {
-  if (!window.XLSX) {
-    console.error("SheetJS no está cargado. Agrega el script de xlsx en el HTML.");
-    return;
-  }
+  if (!window.XLSX) { console.error("SheetJS no cargado"); return; }
 
-  // 1. Construir array de arrays: [encabezados, ...filas]
   const aoa = [headers];
   datos.forEach((row) => {
     aoa.push(
@@ -33,66 +23,97 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
     );
   });
 
-  // 2. Calcular ancho óptimo por columna (máximo entre encabezado y datos)
-  const colWidths = cols.map((_, colIdx) => {
-    let max = 10; // ancho mínimo en caracteres
+  const colWidths = cols.map((_, i) => {
+    let max = 10;
     aoa.forEach((fila) => {
-      const cell = fila[colIdx];
-      if (cell != null) {
-        const len = String(cell).length;
-        if (len > max) max = len;
-      }
+      const len = String(fila[i] ?? "").length;
+      if (len > max) max = len;
     });
-    return { wch: Math.min(max + 2, 60) }; // +2 de padding, máx 60
+    return { wch: Math.min(max + 2, 60) };
   });
 
-  // 3. Crear hoja y workbook
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = colWidths;
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Datos");
-
-  // 4. Descargar
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
-// ─── parseCSVRobusto ──────────────────────────────────────────────────────────
-// Parser CSV correcto que maneja:
-//   - BOM (Byte Order Mark) al inicio del archivo
-//   - Campos entre comillas con comas dentro: "Ingeniería, Sistemas"
-//   - Saltos de línea \r\n (Windows) y \n (Unix)
-//   - Comillas dobles escapadas dentro de un campo: ""valor""
-//
-// @param {string} texto  - Contenido crudo del archivo CSV
-// @returns {{ headers: string[], rows: object[] }}
-// ─────────────────────────────────────────────────────────────────────────────
-function parseCSVRobusto(texto) {
-  // 1. Quitar BOM si existe
-  const sinBOM = texto.charCodeAt(0) === 0xFEFF ? texto.slice(1) : texto;
+// ── leerArchivo ──────────────────────────────────────────────────────────────
+// Acepta .csv O .xlsx/.xls y devuelve { headers, rows } de forma uniforme.
+// Llama al callback cb(headers, rows) cuando termina.
+// Si el archivo es Excel, lo convierte internamente a filas de objetos.
+function leerArchivo(file, cb) {
+  const nombre = file.name.toLowerCase();
+  const esExcel = nombre.endsWith(".xlsx") || nombre.endsWith(".xls");
 
-  // 2. Dividir en líneas respetando \r\n y \n
-  const lineas = sinBOM.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (esExcel) {
+    // ── Leer como binario con SheetJS ────────────────────────────────────────
+    if (!window.XLSX) {
+      alert("SheetJS no está cargado. No se puede leer archivos Excel.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const wb = XLSX.read(e.target.result, { type: "binary", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      // Convertir a array de arrays
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      if (aoa.length < 2) { cb([], []); return; }
+
+      const headers = aoa[0].map((h) =>
+        String(h).trim().toLowerCase().replace(/\s+/g, "_")
+      );
+      const rows = aoa.slice(1)
+        .filter((r) => r.some((v) => v !== "" && v !== null && v !== undefined))
+        .map((r) => {
+          const obj = {};
+          headers.forEach((h, i) => {
+            let v = r[i] ?? "";
+            // Fechas: SheetJS devuelve Date cuando cellDates:true
+            if (v instanceof Date) {
+              const yy = v.getFullYear();
+              const mm = String(v.getMonth() + 1).padStart(2, "0");
+              const dd = String(v.getDate()).padStart(2, "0");
+              v = `${dd}/${mm}/${yy}`;
+            }
+            obj[h] = String(v).trim();
+          });
+          return obj;
+        });
+      cb(headers, rows);
+    };
+    reader.readAsBinaryString(file);
+  } else {
+    // ── Leer como texto CSV ───────────────────────────────────────────────────
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const { headers, rows } = parseCSVRobusto(e.target.result);
+      cb(headers, rows);
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+}
+
+// ── parseCSVRobusto ───────────────────────────────────────────────────────────
+// Parser CSV que maneja BOM, campos entre comillas, \r\n y comas dentro de campos.
+function parseCSVRobusto(texto) {
+  const sinBOM = texto.charCodeAt(0) === 0xFEFF ? texto.slice(1) : texto;
+  const lineas = sinBOM.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   if (lineas.length < 2) return { headers: [], rows: [] };
 
-  // 3. Función interna para parsear una sola línea respetando comillas
   function parsearLinea(linea) {
     const campos = [];
-    let actual = '';
+    let actual = "";
     let dentroComillas = false;
     for (let i = 0; i < linea.length; i++) {
       const c = linea[i];
       if (c === '"') {
-        if (dentroComillas && linea[i + 1] === '"') {
-          // comilla escapada: "" → "
-          actual += '"';
-          i++;
-        } else {
-          dentroComillas = !dentroComillas;
-        }
-      } else if (c === ',' && !dentroComillas) {
+        if (dentroComillas && linea[i + 1] === '"') { actual += '"'; i++; }
+        else dentroComillas = !dentroComillas;
+      } else if (c === "," && !dentroComillas) {
         campos.push(actual.trim());
-        actual = '';
+        actual = "";
       } else {
         actual += c;
       }
@@ -101,16 +122,14 @@ function parseCSVRobusto(texto) {
     return campos;
   }
 
-  // 4. Primera línea = encabezados (en minúsculas para normalizar)
-  const headers = parsearLinea(lineas[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
-
-  // 5. Resto = datos
-  const rows = lineas.slice(1).map(linea => {
+  const headers = parsearLinea(lineas[0]).map((h) =>
+    h.toLowerCase().replace(/\s+/g, "_")
+  );
+  const rows = lineas.slice(1).map((linea) => {
     const vals = parsearLinea(linea);
     const obj = {};
-    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
     return obj;
   });
-
   return { headers, rows };
 }

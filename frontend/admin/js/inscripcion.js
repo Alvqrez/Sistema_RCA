@@ -844,45 +844,24 @@ function soltarInsc(e) {
 function leerCSVInsc(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ({ target }) => {
-    const lines = target.result
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-    const header = lines[0]
-      .toLowerCase()
-      .split(",")
-      .map((h) => h.trim());
-    const iNC = header.indexOf("no_control");
-    const iGrp = header.indexOf("id_grupo");
-    const iTipo = header.indexOf("tipo_curso");
-    if (iNC === -1 || iGrp === -1) {
-      showToast("CSV inválido: faltan columnas no_control o id_grupo", "error");
+  leerArchivo(file, (headers, rows) => {
+    if (!headers.includes("no_control") || !headers.includes("id_grupo")) {
+      showToast("Archivo inválido: faltan columnas no_control o id_grupo", "error");
       return;
     }
-    csvInscData = lines.slice(1).map((l) => {
-      const cols = l.split(",");
-      return {
-        no_control: cols[iNC]?.trim(),
-        id_grupo: parseInt(cols[iGrp]?.trim()),
-        tipo_curso: cols[iTipo]?.trim() || "Ordinario",
-      };
-    });
-
+    csvInscData = rows.map((r) => ({
+      no_control: r.no_control?.trim(),
+      id_grupo: parseInt(r.id_grupo?.trim()),
+      tipo_curso: r.tipo_curso?.trim() || "Ordinario",
+    }));
     const preview = document.getElementById("csvPreviewInsc");
     preview.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">${csvInscData.length} inscripciones detectadas (primeros 5):</p>`;
     const pre = document.createElement("pre");
-    pre.style.cssText =
-      "font-size:0.76rem;background:var(--bg-app);padding:8px 10px;border-radius:6px;overflow:auto;max-height:120px";
-    pre.textContent = csvInscData
-      .slice(0, 5)
-      .map((d) => `${d.no_control} → G#${d.id_grupo} (${d.tipo_curso})`)
-      .join("\n");
+    pre.style.cssText = "font-size:0.76rem;background:var(--bg-app);padding:8px 10px;border-radius:6px;overflow:auto;max-height:120px";
+    pre.textContent = csvInscData.slice(0, 5).map((d) => `${d.no_control} → G#${d.id_grupo} (${d.tipo_curso})`).join("\n");
     preview.appendChild(pre);
     document.getElementById("btnImportarInsc").disabled = false;
-  };
-  reader.readAsText(file);
+  });
 }
 
 async function importarCSVInsc() {

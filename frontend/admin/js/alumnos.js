@@ -612,19 +612,18 @@ function leerCSV(e) {
 }
 
 function procesarCSVFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const { headers, rows } = parseCSVRobusto(e.target.result);
+  leerArchivo(file, (headers, rows) => {
     if (!rows.length) {
       mostrarPreviewCSV(headers, []);
-      document.getElementById("btnImportar").disabled = true;
+      const btn = document.getElementById("btnImportar");
+      if (btn) btn.disabled = true;
       return;
     }
     csvData = rows;
     mostrarPreviewCSV(headers, csvData);
-    document.getElementById("btnImportar").disabled = csvData.length === 0;
-  };
-  reader.readAsText(file, "UTF-8");
+    const btn = document.getElementById("btnImportar");
+    if (btn) btn.disabled = csvData.length === 0;
+  });
 }
 
 function mostrarPreviewCSV(headers, data) {

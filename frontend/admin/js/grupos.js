@@ -365,19 +365,17 @@ function dragOverGrupos(e) {
 }
 
 function procesarCSVGrupos(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const { headers, rows } = parseCSVRobusto(e.target.result);
+  leerArchivo(file, (headers, rows) => {
     if (!rows.length) {
-      document.getElementById("csvGruposPreview").innerHTML =
-        "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+      const el = document.getElementById("csvGruposPreview");
+      if (el) el.innerHTML = "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
       return;
     }
     csvGruposData = rows;
     mostrarPreviewCSVGrupos(headers, csvGruposData);
-    document.getElementById("btnImportarGrupos").disabled = !csvGruposData.length;
-  };
-  reader.readAsText(file, "UTF-8");
+    const btn = document.getElementById("btnImportarGrupos");
+    if (btn) btn.disabled = !csvGruposData.length;
+  });
 }
 
 function mostrarPreviewCSVGrupos(headers, data) {
