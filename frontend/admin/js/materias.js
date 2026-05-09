@@ -458,7 +458,7 @@ async function exportarCSVMaterias() {
     });
     const materias = await r.json();
     if (!materias.length) {
-      if (typeof toast === "function") toast("No hay materias para exportar.", "info");
+      if (typeof toast === "function") toast("No hay materias para exportar.", "error");
       return;
     }
     const cols = ["clave_materia", "nombre_materia", "no_unidades"];
@@ -467,9 +467,6 @@ async function exportarCSVMaterias() {
     if (typeof toast === "function") toast("Exportado correctamente");
   } catch {
     if (typeof toast === "function") toast("Error al exportar materias.", "error");
-  }
-} catch {
-    alert("Error al exportar materias.");
   }
 }
 
