@@ -11,11 +11,10 @@
 // filename  → sin extensión
 // formatFn  → opcional (col, val) => string
 function exportarXLSX(cols, headers, datos, filename, formatFn) {
-  if (!window.XLSX) { console.error("SheetJS no cargado"); return; }
-
-  const aoa = [headers];
+  // Construir filas
+  const filas = [headers];
   datos.forEach((row) => {
-    aoa.push(
+    filas.push(
       cols.map((c) => {
         const val = formatFn ? formatFn(c, row[c]) : (row[c] ?? "");
         return val === null || val === undefined ? "" : String(val);
@@ -23,20 +22,21 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
     );
   });
 
-  const colWidths = cols.map((_, i) => {
-    let max = 10;
-    aoa.forEach((fila) => {
-      const len = String(fila[i] ?? "").length;
-      if (len > max) max = len;
-    });
-    return { wch: Math.min(max + 2, 60) };
-  });
+  // Escapar campo para CSV: envolver en comillas si contiene coma, comilla o salto
+  const escapar = (v) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"`  : s;
+  };
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = colWidths;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Datos");
-  XLSX.writeFile(wb, `${filename}.xlsx`);
+  const bom = "\uFEFF";
+  const csv = filas.map((fila) => fila.map(escapar).join(",")).join("\n");
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── leerArchivo ──────────────────────────────────────────────────────────────
