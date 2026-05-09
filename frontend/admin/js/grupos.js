@@ -87,30 +87,7 @@ function toggleDia(chip) {
   }, 0);
 }
 
-// ── Equivalentes para el modal de edición ────────────────────────────────────
-function toggleDiaEdit(chip) {
-  setTimeout(() => {
-    const cb = chip.querySelector("input[type='checkbox']");
-    chip.classList.toggle("selected", cb.checked);
-    actualizarEditHorarioPreview();
-  }, 0);
-}
 
-function getEditDiasSeleccionados() {
-  return [
-    ...document.querySelectorAll(
-      "#editDiasGrid input[type='checkbox']:checked",
-    ),
-  ].map((cb) => cb.value);
-}
-
-function obtenerHorarioEdit() {
-  const dias = getEditDiasSeleccionados();
-  const inicio = document.getElementById("editHoraInicio").value;
-  const fin = document.getElementById("editHoraFin").value;
-  if (!dias.length || !inicio || !fin) return null;
-  return `${dias.join("-")} ${inicio}-${fin}`;
-}
 
 
 
@@ -200,7 +177,7 @@ async function cargarGrupos() {
     grupos = await response.json();
   } catch (err) {
     if (tabla)
-      tabla.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">Error al cargar grupos.</td></tr>`;
+      tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--danger,#ef4444)">Error al cargar grupos.</td></tr>`;
     return;
   }
   todosGrupos = grupos;
@@ -237,7 +214,7 @@ function filtrarGrupos() {
   tabla.innerHTML = "";
 
   if (!filtrados.length) {
-    tabla.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">
+    tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted)">
       <iconify-icon icon="lucide:search-x" style="font-size:2rem;display:block;margin:0 auto 8px;opacity:.4"></iconify-icon>Sin resultados</td></tr>`;
     return;
   }
@@ -392,9 +369,14 @@ async function importarCSVGrupos() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
     toastGrupo(`${data.insertados} grupo(s) importados correctamente`);
-    if (data.errores?.length)
-      toastGrupo(`${data.errores.length} fila(s) con errores`, "info");
-    cerrarModalCSVGrupos();
+    if (data.errores?.length) {
+      console.table(data.errores);
+      // Mostrar primer error para diagnóstico
+      const primerError = data.errores[0];
+      toastGrupo(`${data.errores.length} fila(s) con error — ${primerError?.motivo || "ver consola"}`, "error");
+    } else {
+      cerrarModalCSVGrupos();
+    }
     cargarGrupos();
   } catch (err) {
     toastGrupo(err.message, "error");
@@ -420,8 +402,8 @@ async function exportarCSVGrupos() {
       "id_periodo", "limite_alumnos", "estatus",
     ];
     const headers = [
-      "ID Grupo", "Clave Materia", "Nombre Materia", "RFC Maestro", "Nombre Maestro",
-      "ID Periodo", "Límite Alumnos", "Horario", "Aula", "Estatus",
+      "id_grupo", "clave_materia", "nombre_materia", "rfc", "nombre_maestro",
+      "id_periodo", "limite_alumnos", "estatus",
     ];
     exportarXLSX(cols, headers, grupos, "grupos_RCA");
     toastGrupo("Exportado correctamente");
@@ -496,27 +478,11 @@ async function editarGrupo(id_grupo) {
 
     document.getElementById("editGrupoId").textContent = `Grupo #${id_grupo}`;
     document.getElementById("editLimite").value = g.limite_alumnos ?? 30;
-
     document.getElementById("editEstatus").value = g.estatus ?? "Activo";
     document.getElementById("editGrupoError").style.display = "none";
-
-
-
-    // Resetear checkboxes de días
-    document.querySelectorAll("#editDiasGrid .dia-chip").forEach((chip) => {
-      const cb = chip.querySelector("input");
-      const marcado = dias.includes(cb.value);
-      cb.checked = marcado;
-      chip.classList.toggle("selected", marcado);
-    });
-
-    document.getElementById("editHoraInicio").value = horas[0] ?? "";
-    document.getElementById("editHoraFin").value = horas[1] ?? "";
-    actualizarEditHorarioPreview();
-
     document.getElementById("modalEditGrupo").classList.add("visible");
-  } catch {
-    alert("No se pudo cargar la información del grupo.");
+  } catch (e) {
+    toastGrupo("No se pudo cargar la información del grupo.", "error");
   }
 }
 

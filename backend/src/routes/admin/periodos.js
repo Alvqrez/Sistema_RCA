@@ -143,4 +143,58 @@ router.delete("/:id", soloAdmin, (req, res) => {
   );
 });
 
+
+// POST — importar periodos desde CSV
+router.post("/csv", soloAdmin, async (req, res) => {
+  const { periodos } = req.body;
+  if (!Array.isArray(periodos) || periodos.length === 0)
+    return res.status(400).json({ error: "No se recibieron datos" });
+
+  const errores = [];
+  let insertados = 0;
+
+  for (const p of periodos) {
+    const s = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : null);
+    const descripcion  = s(p.descripcion);
+    const fecha_inicio = s(p.fecha_inicio);
+    const fecha_fin    = s(p.fecha_fin);
+    const estatus      = s(p.estatus) || "Proximo";
+
+    if (!descripcion || !fecha_inicio || !fecha_fin) {
+      errores.push({ fila: descripcion || "?", motivo: "Faltan campos requeridos (descripcion, fecha_inicio, fecha_fin)" });
+      continue;
+    }
+
+    if (new Date(fecha_inicio) >= new Date(fecha_fin)) {
+      errores.push({ fila: descripcion, motivo: "fecha_inicio debe ser anterior a fecha_fin" });
+      continue;
+    }
+
+    try {
+      await new Promise((ok, fail) =>
+        db.query(
+          `INSERT INTO periodo_escolar (descripcion, fecha_inicio, fecha_fin, estatus)
+           VALUES (?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             fecha_inicio = VALUES(fecha_inicio),
+             fecha_fin    = VALUES(fecha_fin),
+             estatus      = VALUES(estatus)`,
+          [descripcion, fecha_inicio, fecha_fin, estatus],
+          (err) => (err ? fail(err) : ok())
+        )
+      );
+      insertados++;
+    } catch (e) {
+      errores.push({ fila: descripcion, motivo: e.message });
+    }
+  }
+
+  res.json({
+    success: true,
+    insertados,
+    errores,
+    mensaje: `${insertados} periodo(s) importados. ${errores.length} con errores.`,
+  });
+});
+
 module.exports = router;

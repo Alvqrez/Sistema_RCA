@@ -112,6 +112,12 @@
             <p class="page-subtitle">Gestión de ciclos académicos del Instituto</p>
           </div>
           <div class="header-actions">
+            <button class="btn btn-outline" onclick="exportarCSVPeriodos()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+            <button class="btn btn-outline" onclick="abrirModalImportPeriodos()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
             <button class="btn btn-primary" onclick="abrirModalNuevo()">
               <iconify-icon icon="mdi:plus"></iconify-icon> Nuevo periodo
             </button>
@@ -259,7 +265,52 @@
       </div>
     </div>
 
+
+    <!-- ═══════════ MODAL IMPORTAR CSV ═══════════ -->
+    <div id="modalImportPeriodos" class="modal-overlay" onclick="modalClickFuera(event,'modalImportPeriodos')">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>
+            <iconify-icon icon="lucide:upload" style="vertical-align:middle;margin-right:6px"></iconify-icon>
+            Importar Periodos desde CSV
+          </h3>
+          <button class="modal-close-btn" onclick="cerrarModal('modalImportPeriodos')">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="background:var(--bg-secondary);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:var(--text-muted)">
+            <strong style="color:var(--text-main)">Columnas requeridas:</strong>
+            <code style="display:block;margin-top:4px">descripcion, fecha_inicio, fecha_fin</code>
+            <strong style="margin-top:6px;display:block;color:var(--text-main)">Columnas opcionales:</strong>
+            <code style="display:block;margin-top:4px">estatus (Proximo / Vigente / Concluido)</code>
+            <strong style="margin-top:6px;display:block;color:var(--text-main)">Ejemplo:</strong>
+            <code style="display:block;margin-top:4px">Enero-Junio,2026-01-12,2026-06-19,Vigente</code>
+          </div>
+          <div id="dropZonePeriodos" class="csv-drop-zone"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="soltarCSVPeriodos(event)"
+            onclick="document.getElementById('inputCSVPeriodos').click()">
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>Arrastra tu archivo CSV o <strong>haz clic para seleccionar</strong></p>
+          </div>
+          <input type="file" id="inputCSVPeriodos" accept=".csv,.xlsx,.xls"
+            style="display:none" onchange="leerCSVPeriodos(event)" />
+          <div id="csvPeriodosPreview" style="overflow-x:auto;margin-top:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModal('modalImportPeriodos')">Cancelar</button>
+          <button id="btnImportarPeriodos" class="btn btn-primary" disabled onclick="importarCSVPeriodos()">
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="toast-container"></div>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="../../shared/js/exportUtils.js"></script>
     <script src="../../shared/js/sidebar.js"></script>
     <script>
       const tk = () => localStorage.getItem("token");
@@ -403,11 +454,14 @@
       function cerrarModal(id) { document.getElementById(id).classList.remove("active"); }
       function modalClickFuera(e, id) { if (e.target.id === id) cerrarModal(id); }
 
+      let periodosCargados = [];
+
       async function cargarPeriodos() {
         const r = await fetch(API_URL + "/api/periodos", {
           headers: { Authorization: "Bearer " + tk() }
         });
         const datos = await r.json();
+        periodosCargados = datos;
         const tbody = document.getElementById("tablaPeriodos");
         tbody.innerHTML = "";
         if (!datos.length) {
@@ -449,6 +503,89 @@
           if (d.success) { showToast("Periodo eliminado"); cargarPeriodos(); }
           else showToast(d.error || "Error al eliminar", "error");
         };
+      }
+
+
+      // ── CSV periodos ─────────────────────────────────────────────────────
+      let csvPeriodosData = [];
+
+      function abrirModalImportPeriodos() {
+        csvPeriodosData = [];
+        document.getElementById("csvPeriodosPreview").innerHTML = "";
+        document.getElementById("inputCSVPeriodos").value = "";
+        document.getElementById("btnImportarPeriodos").disabled = true;
+        document.getElementById("modalImportPeriodos").classList.add("active");
+      }
+
+      function soltarCSVPeriodos(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove("drag-over");
+        const file = e.dataTransfer.files[0];
+        if (file) leerCSVPeriodos({ target: { files: [file] } });
+      }
+
+      function leerCSVPeriodos(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        leerArchivo(file, (headers, rows) => {
+          if (!rows.length) {
+            document.getElementById("csvPeriodosPreview").innerHTML =
+              "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+            return;
+          }
+          csvPeriodosData = rows;
+          const muestra = rows.slice(0, 5);
+          document.getElementById("csvPeriodosPreview").innerHTML =
+            `<p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">${rows.length} registros detectados — vista previa (primeros 5):</p>
+            <div class="csv-preview"><table>
+              <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+              <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table></div>`;
+          document.getElementById("btnImportarPeriodos").disabled = false;
+        });
+      }
+
+      async function importarCSVPeriodos() {
+        if (!csvPeriodosData.length) return;
+        const btn = document.getElementById("btnImportarPeriodos");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Importando…`;
+        try {
+          const r = await fetch(`${API_URL}/api/periodos/csv`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + tk() },
+            body: JSON.stringify({ periodos: csvPeriodosData }),
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error || "Error al importar");
+          showToast(`${data.insertados} periodo(s) importados correctamente`);
+          if (data.errores?.length) {
+            console.table(data.errores);
+            showToast(`${data.errores.length} fila(s) con errores — ver consola`, "error");
+          }
+          cerrarModal("modalImportPeriodos");
+          cargarPeriodos();
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+        }
+      }
+
+      function exportarCSVPeriodos() {
+        if (!periodosCargados?.length) {
+          showToast("No hay periodos para exportar", "error"); return;
+        }
+        const cols    = ["id_periodo","descripcion","fecha_inicio","fecha_fin","estatus"];
+        const headers = ["id_periodo","descripcion","fecha_inicio","fecha_fin","estatus"];
+        const datos   = periodosCargados.map((p) => ({
+          ...p,
+          fecha_inicio: p.fecha_inicio ? p.fecha_inicio.toString().split("T")[0] : "",
+          fecha_fin:    p.fecha_fin    ? p.fecha_fin.toString().split("T")[0]    : "",
+        }));
+        exportarXLSX(cols, headers, datos, "periodos_RCA");
+        showToast("Exportado correctamente");
       }
 
       soloPermitido?.("administrador");

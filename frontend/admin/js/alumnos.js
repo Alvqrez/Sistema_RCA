@@ -87,7 +87,7 @@ let expandedRow = null;
 function filtrar() {
   const q = document.getElementById("filtroBusqueda").value.toLowerCase();
   const carrera = document.getElementById("filtroCarrera").value;
-  const estatus = document.getElementById("filtroEstatus")?.value || "";
+  const estatus = "";
   const rol = localStorage.getItem("rol");
   let datos = alumnosGlobal.filter((a) => {
     const nombre =
@@ -98,7 +98,6 @@ function filtrar() {
         a.no_control.toLowerCase().includes(q) ||
         (a.correo_institucional || "").toLowerCase().includes(q)) &&
       (!carrera || a.id_carrera === carrera) &&
-      (!estatus || a.estatus === estatus)
     );
   });
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
@@ -114,14 +113,7 @@ function filtrar() {
         filtrar();
       },
     });
-  if (estatus)
-    chips.push({
-      label: estatus,
-      clear: () => {
-        document.getElementById("filtroEstatus").value = "";
-        filtrar();
-      },
-    });
+
   const chipsEl = document.getElementById("chipsActivos");
   if (chipsEl)
     chipsEl.innerHTML = chips
@@ -164,12 +156,7 @@ function renderTabla(datos, rol) {
     .map((a) => {
       const iniciales =
         `${a.nombre?.[0] ?? ""}${a.apellido_paterno?.[0] ?? ""}`.toUpperCase();
-      const estatusBadge =
-        a.estatus === "Activo"
-          ? `<span class="badge badge-success">${a.estatus}</span>`
-          : a.estatus === "Egresado"
-            ? `<span class="badge badge-info">${a.estatus}</span>`
-            : `<span class="badge badge-danger">${a.estatus || "—"}</span>`;
+
       const acciones =
         rol === "administrador"
           ? `<div class="table-actions">
@@ -192,7 +179,6 @@ function renderTabla(datos, rol) {
       <td><code>${a.no_control}</code></td>
       <td><span class="badge badge-info">${a.id_carrera}</span></td>
       <td>${a.correo_institucional ?? "—"}</td>
-      <td style="text-align:center">${estatusBadge}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
           ${acciones}
@@ -587,9 +573,9 @@ function exportarCSV() {
     "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
   ];
   const headers = [
-    "No. Control", "Nombre", "Apellido Paterno", "Apellido Materno",
-    "CURP", "Fecha Nacimiento", "Género", "Carrera",
-    "Correo Institucional", "Correo Personal", "Tel. Celular", "Tel. Casa", "Dirección",
+    "no_control", "nombre", "apellido_paterno", "apellido_materno",
+    "curp", "fecha_nacimiento", "genero", "id_carrera",
+    "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
   ];
   const fechasCols = ["fecha_nacimiento"];
   exportarXLSX(cols, headers, alumnosGlobal, "alumnos_RCA", (c, v) =>

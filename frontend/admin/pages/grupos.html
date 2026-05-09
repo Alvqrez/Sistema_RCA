@@ -278,7 +278,6 @@
                     <th>Maestro</th>
                     <th>Periodo</th>
                     <th style="text-align: center">Limite</th>
-                    <th>Horario</th>
                     <th>Estatus</th>
                     <th style="text-align: right">Acciones</th>
                   </tr>
@@ -421,7 +420,7 @@
               >Columnas opcionales:</strong
             >
             <code style="display: block; margin-top: 4px"
-              >limite_alumnos, horario</code
+              >limite_alumnos</code
             >
           </div>
           <div
@@ -502,69 +501,7 @@
               placeholder="30"
             />
           </div>
-          <div class="form-group">
-            <label>Horario</label>
-            <div style="margin-bottom: 8px">
-              <div
-                style="
-                  font-size: 0.8rem;
-                  color: var(--text-muted);
-                  margin-bottom: 6px;
-                "
-              >
-                Días de clase:
-              </div>
-              <div class="dias-grid" id="editDiasGrid">
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Lun" />Lun</label
-                >
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Mar" />Mar</label
-                >
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Mie" />Mie</label
-                >
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Jue" />Jue</label
-                >
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Vie" />Vie</label
-                >
-                <label class="dia-chip" onclick="toggleDiaEdit(this)"
-                  ><input type="checkbox" value="Sab" />Sab</label
-                >
-              </div>
-            </div>
-            <div class="form-grid-2">
-              <div class="fgroup">
-                <label>Hora inicio</label>
-                <input
-                  type="time"
-                  id="editHoraInicio"
-                  step="1800"
-                  onchange="actualizarEditHorarioPreview()"
-                />
-              </div>
-              <div class="fgroup">
-                <label>Hora fin</label>
-                <input
-                  type="time"
-                  id="editHoraFin"
-                  step="1800"
-                  onchange="actualizarEditHorarioPreview()"
-                />
-              </div>
-            </div>
-            <div
-              class="horario-preview"
-              id="editHorarioPreview"
-              style="margin-top: 6px"
-            >
-              <span style="color: var(--text-muted)"
-                >Selecciona días y horas para ver el horario</span
-              >
-            </div>
-          </div>
+
           <div class="form-group">
             <label>Estatus</label>
             <select id="editEstatus">

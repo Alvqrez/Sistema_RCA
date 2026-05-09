@@ -173,9 +173,18 @@ router.post("/csv", soloAdmin, async (req, res) => {
       });
       insertados++;
     } catch (e) {
+      let motivo = e.message;
+      if (e.code === "ER_NO_REFERENCED_ROW_2") {
+        if (motivo.includes("fk_Grupo_Mat")) motivo = `La materia '${clave_materia}' no existe en el sistema`;
+        else if (motivo.includes("fk_Grupo_Mae")) motivo = `El RFC '${rfc}' no existe como maestro`;
+        else if (motivo.includes("fk_Grupo_Per")) motivo = `El periodo '${id_periodo}' no existe`;
+        else motivo = `Referencia inválida: ${motivo}`;
+      } else if (e.code === "ER_DUP_ENTRY") {
+        motivo = "Grupo duplicado (mismo maestro, materia y periodo ya existe)";
+      }
       errores.push({
         fila: `${clave_materia}/${rfc}`,
-        motivo: e.message,
+        motivo,
       });
     }
   }

@@ -36,7 +36,7 @@ router.get("/", verificarToken, (req, res) => {
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const sql = `
     SELECT i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
-           m.nombre_materia, m.clave_materia, m.creditos_totales,
+           m.nombre_materia, m.clave_materia, COALESCE(r.creditos, 0) AS creditos_totales,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
            cf.calificacion_oficial, cf.estatus_final
@@ -176,10 +176,11 @@ router.post("/", soloAdmin, (req, res) => {
 
         // Sumar créditos actuales del alumno en este periodo
         const sqlCreditos = `
-          SELECT COALESCE(SUM(m.creditos_totales), 0) AS total
+          SELECT COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS total
           FROM inscripcion i
           JOIN grupo g      ON g.id_grupo = i.id_grupo
           JOIN materia m    ON m.clave_materia = g.clave_materia
+          LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
           WHERE i.no_control = ?
             AND g.id_periodo = (SELECT id_periodo FROM grupo WHERE id_grupo = ?)
             AND i.estatus = 'Cursando'
@@ -192,8 +193,10 @@ router.post("/", soloAdmin, (req, res) => {
 
           // Créditos de la materia nueva
           const sqlNuevos = `
-            SELECT m.creditos_totales
-            FROM grupo g JOIN materia m ON m.clave_materia = g.clave_materia
+            SELECT COALESCE(r.creditos, 0) AS creditos_totales
+            FROM grupo g
+            JOIN materia m ON m.clave_materia = g.clave_materia
+            LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
             WHERE g.id_grupo = ?
           `;
           db.query(sqlNuevos, [id_grupo], (errN, nuevosRows) => {
@@ -254,21 +257,53 @@ router.post("/", soloAdmin, (req, res) => {
 // Acepta dos formatos:
 //   Formato A (wizard): { no_controls: [...], id_grupo, tipo_curso }
 //   Formato B (CSV):    { inscripciones: [{no_control, id_grupo, tipo_curso}] }
-router.post("/bulk", soloAdmin, (req, res) => {
+router.post("/bulk", soloAdmin, async (req, res) => {
   let registros = []; // [{no_control, id_grupo, tipo_curso}]
 
   if (
     Array.isArray(req.body.inscripciones) &&
     req.body.inscripciones.length > 0
   ) {
-    // Formato B
-    registros = req.body.inscripciones
-      .map((r) => ({
-        no_control: r.no_control,
-        id_grupo: parseInt(r.id_grupo),
-        tipo_curso: r.tipo_curso || "Ordinario",
-      }))
-      .filter((r) => r.no_control && r.id_grupo);
+    // Formato B — acepta id_grupo numérico O clave_materia+rfc para resolución
+    const raw = req.body.inscripciones;
+    const necesitaResolver = raw.some((r) => !r.id_grupo && (r.clave_materia || r.rfc));
+
+    if (necesitaResolver) {
+      // Resolver clave_materia+rfc+id_periodo → id_grupo real
+      const uniqueKeys = [...new Set(raw.map((r) => `${r.clave_materia}|${r.rfc}|${r.id_periodo || ""}`))]
+        .map((k) => { const [cm, rfc, per] = k.split("|"); return { cm, rfc, per }; });
+
+      const resoluciones = await Promise.all(uniqueKeys.map(({ cm, rfc, per }) =>
+        new Promise((resolve) => {
+          const sql = per
+            ? `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? AND id_periodo=? LIMIT 1`
+            : `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? LIMIT 1`;
+          const params = per ? [cm, rfc, parseInt(per)] : [cm, rfc];
+          db.query(sql, params, (e, rows) =>
+            resolve({ key: `${cm}|${rfc}|${per}`, id_grupo: rows?.[0]?.id_grupo || null })
+          );
+        })
+      ));
+
+      const mapaGrupos = {};
+      resoluciones.forEach(({ key, id_grupo }) => { mapaGrupos[key] = id_grupo; });
+
+      registros = raw
+        .map((r) => {
+          const key = `${r.clave_materia}|${r.rfc}|${r.id_periodo || ""}`;
+          const id_grupo = r.id_grupo ? parseInt(r.id_grupo) : mapaGrupos[key];
+          return { no_control: r.no_control, id_grupo, tipo_curso: r.tipo_curso || "Ordinario" };
+        })
+        .filter((r) => r.no_control && r.id_grupo);
+    } else {
+      registros = raw
+        .map((r) => ({
+          no_control: r.no_control,
+          id_grupo: parseInt(r.id_grupo),
+          tipo_curso: r.tipo_curso || "Ordinario",
+        }))
+        .filter((r) => r.no_control && r.id_grupo);
+    }
   } else if (
     Array.isArray(req.body.no_controls) &&
     req.body.no_controls.length > 0 &&
@@ -290,11 +325,12 @@ router.post("/bulk", soloAdmin, (req, res) => {
   // Detectar si el periodo es semestral (Enero o Agosto) para validar créditos
   const sqlPeriodoDesc = `
     SELECT p.descripcion, g.id_periodo,
-           m.creditos_totales AS creditos_nuevos
+           COALESCE(r.creditos, 0) AS creditos_nuevos
     FROM grupo g
     JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
-    JOIN materia m ON m.clave_materia = g.clave_materia
+    LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
+    LIMIT 1
   `;
 
   // Obtener todos los id_grupo únicos del lote
@@ -355,10 +391,10 @@ router.post("/bulk", soloAdmin, (req, res) => {
             if (!esSemestral) return resolve({ reg, ok: true });
 
             const sqlCred = `
-              SELECT COALESCE(SUM(m.creditos_totales), 0) AS total
+              SELECT COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS total
               FROM inscripcion i
               JOIN grupo g   ON g.id_grupo = i.id_grupo
-              JOIN materia m ON m.clave_materia = g.clave_materia
+              LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
               WHERE i.no_control = ?
                 AND g.id_periodo = ?
                 AND i.estatus = 'Cursando'
@@ -541,7 +577,7 @@ router.post("/validar-carga", verificarToken, (req, res) => {
     return res.status(400).json({ error: "Parametros requeridos" });
 
   const sqlGrupo = `
-    SELECT p.descripcion, g.id_periodo, m.creditos_totales
+    SELECT p.descripcion, g.id_periodo, COALESCE(r.creditos, 0) AS creditos_totales
     FROM grupo g
     JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
     JOIN materia m ON m.clave_materia = g.clave_materia
@@ -570,10 +606,11 @@ router.post("/validar-carga", verificarToken, (req, res) => {
          WHERE i.no_control IN (${placeholders})
            AND g.id_periodo = ? AND i.estatus = 'Cursando'
          GROUP BY i.no_control`
-      : `SELECT i.no_control, COALESCE(SUM(m.creditos_totales), 0) AS carga
+      : `SELECT i.no_control, COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS carga
          FROM inscripcion i
          JOIN grupo g ON g.id_grupo = i.id_grupo
          JOIN materia m ON m.clave_materia = g.clave_materia
+         LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
          WHERE i.no_control IN (${placeholders})
            AND g.id_periodo = ? AND i.estatus = 'Cursando'
          GROUP BY i.no_control`;

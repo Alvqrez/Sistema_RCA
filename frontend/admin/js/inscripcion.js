@@ -755,10 +755,17 @@ function renderTablaInsc(insc) {
       <td><span class="badge ${colores[i.estatus] || "badge-pendiente"}">${i.estatus}</span></td>
       <td>
         <div class="table-actions">
-          <button class="btn-icon" title="Dar de baja"
-            onclick="abrirModalBaja('${i.no_control}','${i.id_grupo}')">
-            <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
-          </button>
+          ${i.estatus === 'Baja'
+            ? `<button class="btn-icon" title="Reactivar inscripción"
+                style="color:var(--success)"
+                onclick="reactivarInscripcion('${i.no_control}','${i.id_grupo}')">
+                <iconify-icon icon="mdi:account-check-outline"></iconify-icon>
+               </button>`
+            : `<button class="btn-icon" title="Dar de baja"
+                onclick="abrirModalBaja('${i.no_control}','${i.id_grupo}')">
+                <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
+               </button>`
+          }
           <button class="btn-icon btn-del" title="Eliminar"
             onclick="eliminarInscripcion('${i.no_control}','${i.id_grupo}')">
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
@@ -770,6 +777,30 @@ function renderTablaInsc(insc) {
 }
 
 // ── Acciones de inscripción ────────────────────────────────────────────────
+async function reactivarInscripcion(no_control, id_grupo) {
+  try {
+    const r = await fetch(
+      `${API_URL}/api/inscripciones/${no_control}/${id_grupo}/estatus`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify({ estatus: "Cursando" }),
+      },
+    );
+    if (r.ok) {
+      showToast("Inscripción reactivada", "success");
+      await cargarInscripciones();
+    } else {
+      showToast("Error al reactivar", "error");
+    }
+  } catch {
+    showToast("Error de conexión", "error");
+  }
+}
+
 let bajaCtx = null;
 function abrirModalBaja(no_control, id_grupo) {
   bajaCtx = { no_control, id_grupo };
@@ -845,15 +876,18 @@ function leerCSVInsc(e) {
   const file = e.target.files[0];
   if (!file) return;
   leerArchivo(file, (headers, rows) => {
-    if (!headers.includes("no_control") || !headers.includes("id_grupo")) {
-      showToast("Archivo inválido: faltan columnas no_control o id_grupo", "error");
+    if (!headers.includes("no_control") || (!headers.includes("id_grupo") && !headers.includes("clave_materia"))) {
+      showToast("Archivo inválido: necesita no_control y (id_grupo o clave_materia)", "error");
       return;
     }
     csvInscData = rows.map((r) => ({
-      no_control: r.no_control?.trim(),
-      id_grupo: parseInt(r.id_grupo?.trim()),
-      tipo_curso: r.tipo_curso?.trim() || "Ordinario",
-    }));
+      no_control:    r.no_control?.trim(),
+      id_grupo:      r.id_grupo ? parseInt(r.id_grupo.trim()) : null,
+      clave_materia: r.clave_materia?.trim() || null,
+      rfc:           r.rfc?.trim() || null,
+      id_periodo:    r.id_periodo ? parseInt(r.id_periodo.trim()) : null,
+      tipo_curso:    r.tipo_curso?.trim() || "Ordinario",
+    })).filter((r) => r.no_control && (r.id_grupo || r.clave_materia));
     const preview = document.getElementById("csvPreviewInsc");
     preview.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">${csvInscData.length} inscripciones detectadas (primeros 5):</p>`;
     const pre = document.createElement("pre");
@@ -907,8 +941,8 @@ async function exportarCSVInscripciones() {
     "nombre_maestro", "periodo", "tipo_curso", "estatus",
   ];
   const headers = [
-    "No. Control", "Nombre Alumno", "ID Grupo", "Materia",
-    "Maestro", "Periodo", "Tipo Curso", "Estatus",
+    "no_control", "nombre_alumno", "id_grupo", "nombre_materia",
+    "nombre_maestro", "periodo_desc", "tipo_curso", "estatus",
   ];
   exportarXLSX(cols, headers, todasInsc, "inscripciones_rca");
   showToast("Exportado correctamente");

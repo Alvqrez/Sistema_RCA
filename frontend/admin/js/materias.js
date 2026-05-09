@@ -469,7 +469,7 @@ async function exportarCSVMaterias() {
       return;
     }
     const cols = ["clave_materia", "nombre_materia", "no_unidades"];
-    const headers = ["Clave Materia", "Nombre Materia", "No. Unidades"];
+    const headers = ["clave_materia", "nombre_materia", "no_unidades"];
     exportarXLSX(cols, headers, materias, "materias_RCA");
     toast("Exportado correctamente");
   } catch {
