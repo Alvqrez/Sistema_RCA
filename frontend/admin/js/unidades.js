@@ -610,21 +610,6 @@ function renderizarBloqueado(unidades, nombreMateria) {
     .join("");
 
   grid.innerHTML = `
-    <div class="bloque-opciones" style="opacity:.75">
-      <div class="opciones-label">
-        <iconify-icon icon="lucide:tag" style="vertical-align:middle;font-size:.85rem"></iconify-icon>
-        Opciones para el maestro
-        <span class="opciones-sublabel">— ${
-          tiposSeleccionados.length > 0
-            ? tiposSeleccionados.length + " tipo(s) habilitado(s)"
-            : "Todos los tipos disponibles"
-        }</span>
-      </div>
-      <div class="tipos-chips">${
-        tiposNombres ||
-        '<span style="color:var(--text-muted);font-size:.78rem">Todos los tipos disponibles</span>'
-      }</div>
-    </div>
     <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
          color:var(--text-muted);margin:4px 0 8px">Unidades registradas</div>
     ${unidades

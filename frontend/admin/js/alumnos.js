@@ -9,7 +9,7 @@ function fechaAISO(ddmmyyyy) {
   if (!ddmmyyyy) return null;
   const partes = ddmmyyyy.trim().split("/");
   if (partes.length === 3 && partes[0].length <= 2) {
-    return `${partes[2]}-${partes[1].padStart(2,"0")}-${partes[0].padStart(2,"0")}`;
+    return `${partes[2]}-${partes[1].padStart(2, "0")}-${partes[0].padStart(2, "0")}`;
   }
   return ddmmyyyy;
 }
@@ -97,7 +97,7 @@ function filtrar() {
         nombre.includes(q) ||
         a.no_control.toLowerCase().includes(q) ||
         (a.correo_institucional || "").toLowerCase().includes(q)) &&
-      (!carrera || a.id_carrera === carrera) &&
+      (!carrera || a.id_carrera === carrera)
     );
   });
   datos.sort((a, b) => a.apellido_paterno.localeCompare(b.apellido_paterno));
@@ -568,18 +568,38 @@ function exportarCSV() {
     return;
   }
   const cols = [
-    "no_control", "nombre", "apellido_paterno", "apellido_materno",
-    "curp", "fecha_nacimiento", "genero", "id_carrera",
-    "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
+    "no_control",
+    "nombre",
+    "apellido_paterno",
+    "apellido_materno",
+    "curp",
+    "fecha_nacimiento",
+    "genero",
+    "id_carrera",
+    "correo_institucional",
+    "correo_personal",
+    "tel_celular",
+    "tel_casa",
+    "direccion",
   ];
   const headers = [
-    "no_control", "nombre", "apellido_paterno", "apellido_materno",
-    "curp", "fecha_nacimiento", "genero", "id_carrera",
-    "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
+    "no_control",
+    "nombre",
+    "apellido_paterno",
+    "apellido_materno",
+    "curp",
+    "fecha_nacimiento",
+    "genero",
+    "id_carrera",
+    "correo_institucional",
+    "correo_personal",
+    "tel_celular",
+    "tel_casa",
+    "direccion",
   ];
   const fechasCols = ["fecha_nacimiento"];
   exportarXLSX(cols, headers, alumnosGlobal, "alumnos_RCA", (c, v) =>
-    fechasCols.includes(c) ? fechaADisplay(v) : (v ?? "")
+    fechasCols.includes(c) ? fechaADisplay(v) : (v ?? ""),
   );
   toast("Exportado correctamente");
 }
@@ -654,7 +674,8 @@ async function importarCSV() {
       body: JSON.stringify({
         alumnos: csvData.map((a) => ({
           ...a,
-          fecha_nacimiento: fechaAISO(a.fecha_nacimiento) || a.fecha_nacimiento || null,
+          fecha_nacimiento:
+            fechaAISO(a.fecha_nacimiento) || a.fecha_nacimiento || null,
         })),
       }),
     });
