@@ -356,8 +356,9 @@ router.get("/backup", soloAdmin, (req, res) => {
 });
 
 // POST — importar / restaurar respaldo JSON
-// Usa INSERT IGNORE para no romper datos existentes con la misma PK
-router.post("/backup/restore", soloAdmin, (req, res) => {
+// Usa REPLACE INTO para que el respaldo siempre sobreescriba datos existentes
+// (resuelve el conflicto cuando seedVacia.js ya creó un usuario con id=1)
+router.post("/backup/restore", soloAdmin, async (req, res) => {
   const { datos, sistema } = req.body;
 
   if (!datos || sistema !== "RCA")
@@ -389,49 +390,58 @@ router.post("/backup/restore", soloAdmin, (req, res) => {
     { clave: "modificaciones_final", tabla: "modificacion_final" },
   ];
 
+  const q = (sql, params = []) =>
+    new Promise((resolve, reject) =>
+      db.query(sql, params, (err, r) => (err ? reject(err) : resolve(r))),
+    );
+
   const resumen = {};
-  let idx = 0;
 
-  function procesarSiguiente() {
-    if (idx >= orden.length) {
-      return res.json({
-        success: true,
-        mensaje: "Respaldo restaurado correctamente",
-        resumen,
-      });
-    }
+  try {
+    await q("SET FOREIGN_KEY_CHECKS = 0");
 
-    const { clave, tabla } = orden[idx++];
-    const filas = datos[clave];
+    for (const { clave, tabla } of orden) {
+      const filas = datos[clave];
+      if (!filas || !Array.isArray(filas) || filas.length === 0) {
+        resumen[clave] = { insertadas: 0, omitidas: 0 };
+        continue;
+      }
 
-    if (!filas || !Array.isArray(filas) || filas.length === 0) {
-      resumen[clave] = { insertadas: 0, omitidas: 0 };
-      return procesarSiguiente();
-    }
+      let insertadas = 0,
+        omitidas = 0;
 
-    let insertadas = 0,
-      omitidas = 0,
-      pendientes = filas.length;
-
-    filas.forEach((fila) => {
-      const cols = Object.keys(fila);
-      const vals = cols.map((c) => fila[c]);
-      const colsStr = cols.map((c) => `\`${c}\``).join(", ");
-      const placeholders = cols.map(() => "?").join(", ");
-      const sql = `INSERT IGNORE INTO \`${tabla}\` (${colsStr}) VALUES (${placeholders})`;
-
-      db.query(sql, vals, (err, r) => {
-        if (err || !r.affectedRows) omitidas++;
-        else insertadas++;
-        if (--pendientes === 0) {
-          resumen[clave] = { insertadas, omitidas };
-          procesarSiguiente();
+      for (const fila of filas) {
+        const cols = Object.keys(fila);
+        const vals = cols.map((c) => fila[c]);
+        const colsStr = cols.map((c) => `\`${c}\``).join(", ");
+        const placeholders = cols.map(() => "?").join(", ");
+        // REPLACE INTO elimina el registro existente con la misma PK e inserta el del respaldo
+        const sql = `REPLACE INTO \`${tabla}\` (${colsStr}) VALUES (${placeholders})`;
+        try {
+          const r = await q(sql, vals);
+          if (r.affectedRows) insertadas++;
+          else omitidas++;
+        } catch (_) {
+          omitidas++;
         }
-      });
-    });
-  }
+      }
 
-  procesarSiguiente();
+      resumen[clave] = { insertadas, omitidas };
+    }
+
+    await q("SET FOREIGN_KEY_CHECKS = 1");
+
+    return res.json({
+      success: true,
+      mensaje: "Respaldo restaurado correctamente",
+      resumen,
+    });
+  } catch (err) {
+    await q("SET FOREIGN_KEY_CHECKS = 1").catch(() => {});
+    return res
+      .status(500)
+      .json({ error: "Error al restaurar el respaldo", detalle: err.message });
+  }
 });
 
 // ── PERFIL PROPIO ──────────────────────────────────────────────────────────────
