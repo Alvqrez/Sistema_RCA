@@ -710,3 +710,31 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  +    cambiar_estatus_periodo()       → cambio manual con override
 --  +    quitar_override_periodo()       → regresa al control automático
 -- ============================================================
+
+-- ============================================================
+--  Tabla de notificaciones RCA
+--  Ejecutar UNA VEZ sobre la BD existente
+--  Uso: SOURCE database/add_notificaciones.sql;
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `notificacion` (
+  `id_notificacion` INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+  `titulo`          VARCHAR(100)     NOT NULL                   COMMENT 'Título corto visible en bold',
+  `mensaje`         TEXT             NOT NULL                   COMMENT 'Cuerpo del aviso',
+  `tipo`            ENUM('info','warning','danger','success')
+                                     NOT NULL DEFAULT 'info'    COMMENT 'Color del ícono',
+  `icono`           VARCHAR(60)      NOT NULL DEFAULT 'lucide:bell' COMMENT 'Ícono de iconify',
+  `rol_destino`     ENUM('todos','administrador','maestro','alumno')
+                                     NOT NULL DEFAULT 'todos'   COMMENT 'Quién ve este aviso',
+  `url_accion`      VARCHAR(200)     NULL DEFAULT NULL          COMMENT 'Enlace opcional "Ver →"',
+  `activa`          TINYINT(1)       NOT NULL DEFAULT 1,
+  `fecha_inicio`    DATE             NULL DEFAULT NULL          COMMENT 'NULL = visible de inmediato',
+  `fecha_fin`       DATE             NULL DEFAULT NULL          COMMENT 'NULL = sin vencimiento',
+  `creado_por`      VARCHAR(13)      NOT NULL                   COMMENT 'RFC del admin que la creó',
+  `fecha_creacion`  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_notificacion`),
+  INDEX `idx_notif_rol_activa` (`rol_destino`, `activa`)
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_spanish_ci
+  COMMENT='Avisos creados por Admin, visibles en el panel de notificaciones por rol';
