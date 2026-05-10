@@ -412,7 +412,19 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
 
       for (const fila of filas) {
         const cols = Object.keys(fila);
-        const vals = cols.map((c) => fila[c]);
+        // Convertir strings ISO (2026-05-10T06:00:00.000Z) al formato MySQL (2026-05-10 06:00:00)
+        // El driver de Node devuelve DATE/DATETIME como objetos Date que JSON serializa en ISO.
+        // MySQL con STRICT_TRANS_TABLES rechaza el formato ISO → hay que normalizarlo.
+        const vals = cols.map((c) => {
+          const v = fila[c];
+          if (
+            typeof v === "string" &&
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)
+          ) {
+            return v.replace("T", " ").slice(0, 19);
+          }
+          return v;
+        });
         const colsStr = cols.map((c) => `\`${c}\``).join(", ");
         const placeholders = cols.map(() => "?").join(", ");
         // REPLACE INTO elimina el registro existente con la misma PK e inserta el del respaldo
