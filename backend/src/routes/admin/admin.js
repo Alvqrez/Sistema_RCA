@@ -309,21 +309,26 @@ router.delete("/administradores/:id", soloAdmin, (req, res) => {
 // GET — exportar respaldo completo del sistema en JSON
 router.get("/backup", soloAdmin, (req, res) => {
   const tablas = {
-    alumnos:
-      "SELECT no_control, nombre, apellido_paterno, apellido_materno, id_carrera, correo_institucional FROM alumno",
-    maestros:
-      "SELECT rfc, nombre, apellido_paterno, apellido_materno, correo_institucional, departamento, estatus FROM maestro",
     carreras: "SELECT * FROM carrera",
-    materias: "SELECT * FROM materia",
     periodos: "SELECT * FROM periodo_escolar",
+    materias: "SELECT * FROM materia",
+    unidades: "SELECT * FROM unidad",
+    alumnos: "SELECT * FROM alumno",
+    maestros: "SELECT * FROM maestro",
+    administradores: "SELECT * FROM administrador",
+    usuarios: "SELECT * FROM usuario",
+    reticula: "SELECT * FROM reticula",
     grupos: "SELECT * FROM grupo",
     inscripciones: "SELECT * FROM inscripcion",
-    unidades: "SELECT * FROM unidad",
+    tipo_actividad: "SELECT * FROM tipo_actividad",
+    materia_actividad: "SELECT * FROM materia_actividad",
     actividades: "SELECT * FROM actividad",
+    resultado_actividad: "SELECT * FROM resultado_actividad",
     calificaciones_unidad: "SELECT * FROM calificacion_unidad",
     calificaciones_final: "SELECT * FROM calificacion_final",
     bonus_unidad: "SELECT * FROM bonusunidad",
     bonus_final: "SELECT * FROM bonusfinal",
+    modificaciones_final: "SELECT * FROM modificacion_final",
   };
 
   const keys = Object.keys(tablas);
@@ -365,16 +370,23 @@ router.post("/backup/restore", soloAdmin, (req, res) => {
     { clave: "carreras", tabla: "carrera" },
     { clave: "periodos", tabla: "periodo_escolar" },
     { clave: "materias", tabla: "materia" },
+    { clave: "unidades", tabla: "unidad" },
     { clave: "alumnos", tabla: "alumno" },
     { clave: "maestros", tabla: "maestro" },
+    { clave: "administradores", tabla: "administrador" },
+    { clave: "usuarios", tabla: "usuario" },
+    { clave: "reticula", tabla: "reticula" },
     { clave: "grupos", tabla: "grupo" },
     { clave: "inscripciones", tabla: "inscripcion" },
-    { clave: "unidades", tabla: "unidad" },
+    { clave: "tipo_actividad", tabla: "tipo_actividad" },
+    { clave: "materia_actividad", tabla: "materia_actividad" },
     { clave: "actividades", tabla: "actividad" },
+    { clave: "resultado_actividad", tabla: "resultado_actividad" },
     { clave: "calificaciones_unidad", tabla: "calificacion_unidad" },
     { clave: "calificaciones_final", tabla: "calificacion_final" },
     { clave: "bonus_unidad", tabla: "bonusunidad" },
     { clave: "bonus_final", tabla: "bonusfinal" },
+    { clave: "modificaciones_final", tabla: "modificacion_final" },
   ];
 
   const resumen = {};

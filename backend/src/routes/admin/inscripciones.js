@@ -45,6 +45,8 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
     JOIN materia m ON g.clave_materia = m.clave_materia
     JOIN maestro mae ON g.rfc = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
+    LEFT JOIN alumno a ON a.no_control = i.no_control
+    LEFT JOIN reticula r ON r.clave_materia = g.clave_materia AND r.id_carrera = a.id_carrera
     LEFT JOIN calificacion_final cf ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
     WHERE i.no_control = ?
     ORDER BY p.fecha_inicio DESC
@@ -140,8 +142,7 @@ router.post("/", soloAdmin, (req, res) => {
           return res.status(500).json({ error: "Error interno del servidor" });
 
         const desc = (periodoRows[0]?.descripcion || "").toLowerCase();
-        const esSemestral =
-          desc.includes("enero") || desc.includes("agosto");
+        const esSemestral = desc.includes("enero") || desc.includes("agosto");
 
         const esVerano = desc.includes("verano");
 
@@ -155,18 +156,24 @@ router.post("/", soloAdmin, (req, res) => {
               AND g.id_periodo = (SELECT id_periodo FROM grupo WHERE id_grupo = ?)
               AND i.estatus = 'Cursando'
           `;
-          return db.query(sqlVerano, [no_control, id_grupo], (errV, veraRows) => {
-            if (errV)
-              return res.status(500).json({ error: "Error interno del servidor" });
-            const materiasVerano = parseInt(veraRows[0]?.total || 0);
-            if (materiasVerano >= 2) {
-              return res.status(400).json({
-                error: `El alumno ya tiene ${materiasVerano} materia(s) en este verano. El máximo permitido es 2.`,
-                materias_verano: materiasVerano,
-              });
-            }
-            insertarInscripcion();
-          });
+          return db.query(
+            sqlVerano,
+            [no_control, id_grupo],
+            (errV, veraRows) => {
+              if (errV)
+                return res
+                  .status(500)
+                  .json({ error: "Error interno del servidor" });
+              const materiasVerano = parseInt(veraRows[0]?.total || 0);
+              if (materiasVerano >= 2) {
+                return res.status(400).json({
+                  error: `El alumno ya tiene ${materiasVerano} materia(s) en este verano. El máximo permitido es 2.`,
+                  materias_verano: materiasVerano,
+                });
+              }
+              insertarInscripcion();
+            },
+          );
         }
 
         if (!esSemestral) {
@@ -187,7 +194,9 @@ router.post("/", soloAdmin, (req, res) => {
         `;
         db.query(sqlCreditos, [no_control, id_grupo], (errC, credRows) => {
           if (errC)
-            return res.status(500).json({ error: "Error interno del servidor" });
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
 
           const creditosActuales = parseFloat(credRows[0]?.total || 0);
 
@@ -201,14 +210,19 @@ router.post("/", soloAdmin, (req, res) => {
           `;
           db.query(sqlNuevos, [id_grupo], (errN, nuevosRows) => {
             if (errN)
-              return res.status(500).json({ error: "Error interno del servidor" });
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
 
-            const creditosNuevos = parseFloat(nuevosRows[0]?.creditos_totales || 0);
+            const creditosNuevos = parseFloat(
+              nuevosRows[0]?.creditos_totales || 0,
+            );
             const total = creditosActuales + creditosNuevos;
 
             if (total > 36) {
               return res.status(400).json({
-                error: `El alumno excedería la carga máxima de 36 créditos. ` +
+                error:
+                  `El alumno excedería la carga máxima de 36 créditos. ` +
                   `Tiene ${creditosActuales} créditos y esta materia agrega ${creditosNuevos} (total: ${total}).`,
                 creditos_actuales: creditosActuales,
                 creditos_nuevos: creditosNuevos,
@@ -243,9 +257,10 @@ router.post("/", soloAdmin, (req, res) => {
                 mensaje: "El alumno ya estaba inscrito (sin cambios)",
               });
 
-            res
-              .status(201)
-              .json({ success: true, mensaje: "Alumno inscrito correctamente" });
+            res.status(201).json({
+              success: true,
+              mensaje: "Alumno inscrito correctamente",
+            });
           },
         );
       }
@@ -266,33 +281,53 @@ router.post("/bulk", soloAdmin, async (req, res) => {
   ) {
     // Formato B — acepta id_grupo numérico O clave_materia+rfc para resolución
     const raw = req.body.inscripciones;
-    const necesitaResolver = raw.some((r) => !r.id_grupo && (r.clave_materia || r.rfc));
+    const necesitaResolver = raw.some(
+      (r) => !r.id_grupo && (r.clave_materia || r.rfc),
+    );
 
     if (necesitaResolver) {
       // Resolver clave_materia+rfc+id_periodo → id_grupo real
-      const uniqueKeys = [...new Set(raw.map((r) => `${r.clave_materia}|${r.rfc}|${r.id_periodo || ""}`))]
-        .map((k) => { const [cm, rfc, per] = k.split("|"); return { cm, rfc, per }; });
+      const uniqueKeys = [
+        ...new Set(
+          raw.map((r) => `${r.clave_materia}|${r.rfc}|${r.id_periodo || ""}`),
+        ),
+      ].map((k) => {
+        const [cm, rfc, per] = k.split("|");
+        return { cm, rfc, per };
+      });
 
-      const resoluciones = await Promise.all(uniqueKeys.map(({ cm, rfc, per }) =>
-        new Promise((resolve) => {
-          const sql = per
-            ? `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? AND id_periodo=? LIMIT 1`
-            : `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? LIMIT 1`;
-          const params = per ? [cm, rfc, parseInt(per)] : [cm, rfc];
-          db.query(sql, params, (e, rows) =>
-            resolve({ key: `${cm}|${rfc}|${per}`, id_grupo: rows?.[0]?.id_grupo || null })
-          );
-        })
-      ));
+      const resoluciones = await Promise.all(
+        uniqueKeys.map(
+          ({ cm, rfc, per }) =>
+            new Promise((resolve) => {
+              const sql = per
+                ? `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? AND id_periodo=? LIMIT 1`
+                : `SELECT id_grupo FROM grupo WHERE clave_materia=? AND rfc=? LIMIT 1`;
+              const params = per ? [cm, rfc, parseInt(per)] : [cm, rfc];
+              db.query(sql, params, (e, rows) =>
+                resolve({
+                  key: `${cm}|${rfc}|${per}`,
+                  id_grupo: rows?.[0]?.id_grupo || null,
+                }),
+              );
+            }),
+        ),
+      );
 
       const mapaGrupos = {};
-      resoluciones.forEach(({ key, id_grupo }) => { mapaGrupos[key] = id_grupo; });
+      resoluciones.forEach(({ key, id_grupo }) => {
+        mapaGrupos[key] = id_grupo;
+      });
 
       registros = raw
         .map((r) => {
           const key = `${r.clave_materia}|${r.rfc}|${r.id_periodo || ""}`;
           const id_grupo = r.id_grupo ? parseInt(r.id_grupo) : mapaGrupos[key];
-          return { no_control: r.no_control, id_grupo, tipo_curso: r.tipo_curso || "Ordinario" };
+          return {
+            no_control: r.no_control,
+            id_grupo,
+            tipo_curso: r.tipo_curso || "Ordinario",
+          };
         })
         .filter((r) => r.no_control && r.id_grupo);
     } else {
@@ -374,18 +409,22 @@ router.post("/bulk", soloAdmin, async (req, res) => {
                   AND g.id_periodo = ?
                   AND i.estatus = 'Cursando'
               `;
-              return db.query(sqlVer, [reg.no_control, info.id_periodo], (ev, vrows) => {
-                if (ev) return resolve({ reg, ok: true });
-                const materiasVerano = parseInt(vrows[0]?.total || 0);
-                if (materiasVerano >= 2) {
-                  return resolve({
-                    reg,
-                    ok: false,
-                    razon: `Excede el límite de 2 materias en verano (tiene ${materiasVerano})`,
-                  });
-                }
-                resolve({ reg, ok: true });
-              });
+              return db.query(
+                sqlVer,
+                [reg.no_control, info.id_periodo],
+                (ev, vrows) => {
+                  if (ev) return resolve({ reg, ok: true });
+                  const materiasVerano = parseInt(vrows[0]?.total || 0);
+                  if (materiasVerano >= 2) {
+                    return resolve({
+                      reg,
+                      ok: false,
+                      razon: `Excede el límite de 2 materias en verano (tiene ${materiasVerano})`,
+                    });
+                  }
+                  resolve({ reg, ok: true });
+                },
+              );
             }
 
             if (!esSemestral) return resolve({ reg, ok: true });
@@ -399,24 +438,20 @@ router.post("/bulk", soloAdmin, async (req, res) => {
                 AND g.id_periodo = ?
                 AND i.estatus = 'Cursando'
             `;
-            db.query(
-              sqlCred,
-              [reg.no_control, info.id_periodo],
-              (e, rows) => {
-                if (e) return resolve({ reg, ok: true }); // si falla la validación, dejamos pasar
-                const actuales = parseFloat(rows[0]?.total || 0);
-                const nuevos = parseFloat(info.creditos_nuevos || 0);
-                const total = actuales + nuevos;
-                if (total > 36) {
-                  return resolve({
-                    reg,
-                    ok: false,
-                    razon: `Excede 36 créditos (tiene ${actuales}, agrega ${nuevos})`,
-                  });
-                }
-                resolve({ reg, ok: true });
-              },
-            );
+            db.query(sqlCred, [reg.no_control, info.id_periodo], (e, rows) => {
+              if (e) return resolve({ reg, ok: true }); // si falla la validación, dejamos pasar
+              const actuales = parseFloat(rows[0]?.total || 0);
+              const nuevos = parseFloat(info.creditos_nuevos || 0);
+              const total = actuales + nuevos;
+              if (total > 36) {
+                return resolve({
+                  reg,
+                  ok: false,
+                  razon: `Excede 36 créditos (tiene ${actuales}, agrega ${nuevos})`,
+                });
+              }
+              resolve({ reg, ok: true });
+            });
           }),
       );
 
@@ -427,7 +462,9 @@ router.post("/bulk", soloAdmin, async (req, res) => {
           .map((r) => ({ no_control: r.reg.no_control, razon: r.razon }));
 
         if (!aprobados.length) {
-          const todosVerano = rechazados.every((r) => r.razon?.includes("verano"));
+          const todosVerano = rechazados.every((r) =>
+            r.razon?.includes("verano"),
+          );
           const errorMsg = todosVerano
             ? "Ningún alumno pudo inscribirse por límite de materias en periodo de verano (máximo 2 por verano)."
             : "Ningún alumno pudo inscribirse por límite de créditos.";
@@ -451,88 +488,89 @@ router.post("/bulk", soloAdmin, async (req, res) => {
                 ),
               ),
           ),
-        ).then((caps) => {
-          const capMap = {};
-          caps.forEach(({ idg, cap }) => (capMap[idg] = cap));
+        )
+          .then((caps) => {
+            const capMap = {};
+            caps.forEach(({ idg, cap }) => (capMap[idg] = cap));
 
-          // Filtrar aprobados que no excedan la capacidad del grupo
-          const aprobadosFinal = [];
-          const rechazadosCapacidad = [];
+            // Filtrar aprobados que no excedan la capacidad del grupo
+            const aprobadosFinal = [];
+            const rechazadosCapacidad = [];
 
-          // Agrupar aprobados por grupo para contar cuántos se van a inscribir
-          const porGrupo = {};
-          aprobados.forEach((r) => {
-            if (!porGrupo[r.id_grupo]) porGrupo[r.id_grupo] = [];
-            porGrupo[r.id_grupo].push(r);
-          });
-
-          Object.entries(porGrupo).forEach(([idg, regs]) => {
-            const cap = capMap[parseInt(idg)];
-            const limite = cap?.limite_alumnos || 0;
-            const actuales = cap?.inscritos_actuales || 0;
-            if (limite && actuales >= limite) {
-              regs.forEach((r) =>
-                rechazadosCapacidad.push({
-                  no_control: r.no_control,
-                  razon: `El grupo #${idg} ya está lleno (${actuales}/${limite})`,
-                }),
-              );
-            } else if (limite && actuales + regs.length > limite) {
-              const espacios = limite - actuales;
-              regs.slice(0, espacios).forEach((r) => aprobadosFinal.push(r));
-              regs.slice(espacios).forEach((r) =>
-                rechazadosCapacidad.push({
-                  no_control: r.no_control,
-                  razon: `El grupo #${idg} no tiene suficiente espacio (${actuales}/${limite})`,
-                }),
-              );
-            } else {
-              regs.forEach((r) => aprobadosFinal.push(r));
-            }
-          });
-
-          const todosRechazados = [...rechazados, ...rechazadosCapacidad];
-
-          if (!aprobadosFinal.length) {
-            return res.status(400).json({
-              error: "Ningún alumno pudo inscribirse. Los grupos están llenos.",
-              rechazados: todosRechazados,
+            // Agrupar aprobados por grupo para contar cuántos se van a inscribir
+            const porGrupo = {};
+            aprobados.forEach((r) => {
+              if (!porGrupo[r.id_grupo]) porGrupo[r.id_grupo] = [];
+              porGrupo[r.id_grupo].push(r);
             });
-          }
 
-          const fecha = new Date().toISOString().split("T")[0];
-          const vals = aprobadosFinal.map((r) => [
-            r.no_control,
-            r.id_grupo,
-            fecha,
-            "Cursando",
-            r.tipo_curso,
-          ]);
+            Object.entries(porGrupo).forEach(([idg, regs]) => {
+              const cap = capMap[parseInt(idg)];
+              const limite = cap?.limite_alumnos || 0;
+              const actuales = cap?.inscritos_actuales || 0;
+              if (limite && actuales >= limite) {
+                regs.forEach((r) =>
+                  rechazadosCapacidad.push({
+                    no_control: r.no_control,
+                    razon: `El grupo #${idg} ya está lleno (${actuales}/${limite})`,
+                  }),
+                );
+              } else if (limite && actuales + regs.length > limite) {
+                const espacios = limite - actuales;
+                regs.slice(0, espacios).forEach((r) => aprobadosFinal.push(r));
+                regs.slice(espacios).forEach((r) =>
+                  rechazadosCapacidad.push({
+                    no_control: r.no_control,
+                    razon: `El grupo #${idg} no tiene suficiente espacio (${actuales}/${limite})`,
+                  }),
+                );
+              } else {
+                regs.forEach((r) => aprobadosFinal.push(r));
+              }
+            });
 
-          db.query(
-            "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
-            [vals],
-            (err, r) => {
-              if (err)
-                return res.status(500).json({
-                  error: "Error interno del servidor",
-                  detalle: err.message,
-                });
-              res.status(201).json({
-                success: true,
-                insertados: r.affectedRows,
+            const todosRechazados = [...rechazados, ...rechazadosCapacidad];
+
+            if (!aprobadosFinal.length) {
+              return res.status(400).json({
+                error:
+                  "Ningún alumno pudo inscribirse. Los grupos están llenos.",
                 rechazados: todosRechazados,
               });
-            },
+            }
+
+            const fecha = new Date().toISOString().split("T")[0];
+            const vals = aprobadosFinal.map((r) => [
+              r.no_control,
+              r.id_grupo,
+              fecha,
+              "Cursando",
+              r.tipo_curso,
+            ]);
+
+            db.query(
+              "INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso) VALUES ?",
+              [vals],
+              (err, r) => {
+                if (err)
+                  return res.status(500).json({
+                    error: "Error interno del servidor",
+                    detalle: err.message,
+                  });
+                res.status(201).json({
+                  success: true,
+                  insertados: r.affectedRows,
+                  rechazados: todosRechazados,
+                });
+              },
+            );
+          })
+          .catch(() =>
+            res.status(500).json({ error: "Error interno del servidor" }),
           );
-        }).catch(() =>
-          res.status(500).json({ error: "Error interno del servidor" }),
-        );
       });
     })
-    .catch(() =>
-      res.status(500).json({ error: "Error interno del servidor" }),
-    );
+    .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
 });
 
 // PUT — cambiar estatus de inscripción
@@ -567,7 +605,6 @@ router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
   );
 });
 
-
 // POST — validar carga de alumnos sin insertar
 // Recibe { no_controls: [...], id_grupo } y devuelve por cada alumno
 // si puede inscribirse o no, con el detalle de su carga actual.
@@ -585,7 +622,9 @@ router.post("/validar-carga", verificarToken, (req, res) => {
   `;
   db.query(sqlGrupo, [id_grupo], (errG, grupoRows) => {
     if (errG || !grupoRows.length)
-      return res.status(500).json({ error: "Error al obtener datos del grupo" });
+      return res
+        .status(500)
+        .json({ error: "Error al obtener datos del grupo" });
 
     const { descripcion, id_periodo, creditos_totales } = grupoRows[0];
     const desc = (descripcion || "").toLowerCase();
@@ -594,7 +633,12 @@ router.post("/validar-carga", verificarToken, (req, res) => {
 
     if (!esVerano && !esSemestral) {
       return res.json(
-        no_controls.map((nc) => ({ no_control: nc, ok: true, carga_actual: 0, limite: null }))
+        no_controls.map((nc) => ({
+          no_control: nc,
+          ok: true,
+          carga_actual: 0,
+          limite: null,
+        })),
       );
     }
 
@@ -628,7 +672,15 @@ router.post("/validar-carga", verificarToken, (req, res) => {
       const resultado = no_controls.map((nc) => {
         const carga_actual = cargaMap[nc] || 0;
         const total = carga_actual + agregar;
-        return { no_control: nc, ok: total <= limite, carga_actual, agrega: agregar, total, limite, es_verano: esVerano };
+        return {
+          no_control: nc,
+          ok: total <= limite,
+          carga_actual,
+          agrega: agregar,
+          total,
+          limite,
+          es_verano: esVerano,
+        };
       });
 
       res.json(resultado);

@@ -1361,7 +1361,7 @@ async function seed() {
     console.log("  RORH790320HVZ  / maestro789   (Roberto Rodríguez)");
     console.log("  FUMA880510MVZ  / maestro000   (Laura Fuentes)");
     console.log("  CAGR760112HVZ  / maestro111   (Carlos Castro)");
-    console.log("  2026001..2026020 / alumno001..alumno020");
+    console.log("  26000001..26000020 / alumno001..alumno020");
     console.log(
       "─────────────────────────────────────────────────────────────",
     );
