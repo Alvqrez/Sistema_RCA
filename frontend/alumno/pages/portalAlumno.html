@@ -101,7 +101,7 @@
           <div style="position: relative">
             <button
               id="btnNotifAlumno"
-              onclick="toggleNotifAlumno()"
+              
               style="
                 position: relative;
                 display: flex;
@@ -225,7 +225,7 @@
                     text-decoration: none;
                     font-weight: 600;
                   "
-                  >Ver todas →</a
+                  id="verTodasAlumno">Ver todas →</a
                 >
               </div>
             </div>
@@ -340,102 +340,68 @@
 
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../alumno/js/portalAlumno.js"></script>
+    <script src="../../shared/js/notificaciones.js"></script>
     <script>
-      // ── Notificaciones del header alumno ─────────────────────────
-      function toggleNotifAlumno() {
-        const drop = document.getElementById("notifDropAlumno");
-        drop.style.display = drop.style.display === "none" ? "block" : "none";
-      }
-      document.addEventListener("click", function (e) {
-        const btn = document.getElementById("btnNotifAlumno");
-        const drop = document.getElementById("notifDropAlumno");
-        if (
-          btn &&
-          drop &&
-          !btn.contains(e.target) &&
-          !drop.contains(e.target)
-        ) {
-          drop.style.display = "none";
-        }
-      });
-      async function cargarNotifAlumno() {
+      document.addEventListener("DOMContentLoaded", () => {
         const tk = localStorage.getItem("token");
-        if (!tk) return;
-        const heads = { Authorization: `Bearer ${tk}` };
-        const notifs = [];
-        try {
-          const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
-          const periodos = await rp.json();
-          const activo = periodos.find(
-            (p) => p.estatus === "Activo" || p.estatus === "activo",
-          );
-          if (activo?.fecha_fin) {
-            const dias = Math.ceil(
-              (new Date(activo.fecha_fin) - new Date()) / 86400000,
-            );
-            if (dias > 0 && dias <= 30)
-              notifs.push({
-                tipo: "warning",
-                icono: "lucide:clock",
-                texto: `El periodo escolar cierra en ${dias} día${dias !== 1 ? "s" : ""}`,
-              });
-          }
-        } catch {}
-        try {
-          const rm = await fetch(`${API_URL}/api/calificaciones/alumno`, {
-            headers: heads,
-          });
-          const mats = await rm.json();
-          const reprobadas = (mats || []).filter(
-            (m) =>
-              m.calificacion_final !== null &&
-              parseFloat(m.calificacion_final) < 70,
-          );
-          if (reprobadas.length)
-            notifs.push({
-              tipo: "danger",
-              icono: "lucide:alert-triangle",
-              texto: `Tienes ${reprobadas.length} materia${reprobadas.length > 1 ? "s" : ""} reprobada${reprobadas.length > 1 ? "s" : ""}`,
-            });
-        } catch {}
-        if (!notifs.length)
-          notifs.push({
-            tipo: "success",
-            icono: "lucide:check-circle",
-            texto: "Sin alertas pendientes. ¡Todo en orden!",
-          });
-        const coloresD = {
-          danger: { bg: "var(--danger-light)", icon: "var(--danger)" },
-          warning: { bg: "var(--warning-light)", icon: "var(--warning)" },
-          info: { bg: "var(--primary-light)", icon: "var(--primary)" },
-          success: { bg: "var(--success-light)", icon: "var(--success)" },
-        };
-        const alertas = notifs.filter((n) => n.tipo !== "success");
-        if (alertas.length) {
-          document.getElementById("notifCountAlumno").textContent =
-            alertas.length;
-          document.getElementById("notifCountAlumno").style.display =
-            "inline-block";
-          document.getElementById("notifDropBadgeAlumno").textContent =
-            alertas.length + " alerta" + (alertas.length !== 1 ? "s" : "");
-          document.getElementById("notifDropBadgeAlumno").style.display =
-            "inline-block";
-        }
-        document.getElementById("notifDropListAlumno").innerHTML = notifs
-          .map((n) => {
-            const c = coloresD[n.tipo] || coloresD.info;
-            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
-            <span style="width:28px;height:28px;border-radius:8px;background:${c.bg};color:${c.icon};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-              <iconify-icon icon="${n.icono}" style="font-size:0.95rem"></iconify-icon>
-            </span>
-            <p style="font-size:0.82rem;color:var(--text-main);margin:0;line-height:1.4;flex:1">${n.texto}</p>
-          </div>`;
-          })
-          .join("");
-      }
-      document.addEventListener("DOMContentLoaded", () =>
-        setTimeout(cargarNotifAlumno, 600),
-      );
+        const noControl = tk ? JSON.parse(atob(tk.split(".")[1])).id_referencia : null;
+
+        RCANotif.init({
+          btnId:      "btnNotifAlumno",
+          dropId:     "notifDropAlumno",
+          countId:    "notifCountAlumno",
+          badgeId:    "notifDropBadgeAlumno",
+          listId:     "notifDropListAlumno",
+          verTodasId: "verTodasAlumno",
+          autoAlertasFn: async () => {
+            const heads = { Authorization: `Bearer ${tk}` };
+            const notifs = [];
+            try {
+              const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
+              const periodos = await rp.json();
+              const activo = periodos.find(p => p.estatus === "Vigente");
+              if (activo?.fecha_fin) {
+                const dias = Math.ceil((new Date(activo.fecha_fin) - new Date()) / 86400000);
+                if (dias > 0 && dias <= 14)
+                  notifs.push({
+                    _id: "auto_alum_cierre",
+                    tipo: "warning", icono: "lucide:clock",
+                    titulo: "Fin de periodo próximo",
+                    texto: `El periodo escolar cierra en ${dias} día${dias !== 1 ? "s" : ""}.`,
+                    url: null,
+                  });
+              }
+            } catch {}
+            try {
+              if (noControl) {
+                const ri = await fetch(`${API_URL}/api/inscripciones/alumno/${noControl}`, { headers: heads });
+                const inscs = await ri.json();
+                const reprobadas = (inscs || []).filter(
+                  i => i.estatus_final === "Reprobado"
+                );
+                if (reprobadas.length)
+                  notifs.push({
+                    _id: "auto_alum_repr",
+                    tipo: "danger", icono: "lucide:alert-triangle",
+                    titulo: "Materia(s) reprobada(s)",
+                    texto: `Tienes ${reprobadas.length} materia${reprobadas.length > 1 ? "s" : ""} reprobada${reprobadas.length > 1 ? "s" : ""}. Consulta con tu coordinador.`,
+                    url: null,
+                  });
+                const cursando = (inscs || []).filter(i => i.estatus === "Cursando");
+                if (!cursando.length && inscs.length === 0)
+                  notifs.push({
+                    _id: "auto_alum_sin_insc",
+                    tipo: "info", icono: "lucide:info",
+                    titulo: "Sin inscripciones",
+                    texto: "No tienes materias inscritas en el periodo actual. Acude a servicios escolares.",
+                    url: null,
+                  });
+              }
+            } catch {}
+            return notifs;
+          },
+        });
+      });
     </script>
   </body>
 </html>

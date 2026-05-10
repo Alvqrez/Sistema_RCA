@@ -32,7 +32,7 @@
           <div style="position: relative">
             <button
               id="btnNotifMisGrupos"
-              onclick="toggleNotifMisGrupos()"
+              
               style="
                 position: relative;
                 width: 38px;
@@ -159,7 +159,7 @@
                     text-decoration: none;
                     font-weight: 600;
                   "
-                  >Ver todas las alertas →</a
+                  id="verTodasMaestro">Ver todas las alertas →</a
                 >
               </div>
             </div>
@@ -656,111 +656,58 @@
 
       cargarMisGrupos();
     </script>
+    <script src="../../shared/js/notificaciones.js"></script>
     <script>
-      // ── Notificaciones del header ────────────────────────────────
-      function toggleNotifMisGrupos() {
-        const drop = document.getElementById("notifDropMisGrupos");
-        drop.style.display = drop.style.display === "none" ? "block" : "none";
-      }
-      document.addEventListener("click", function (e) {
-        const btn = document.getElementById("btnNotifMisGrupos");
-        const drop = document.getElementById("notifDropMisGrupos");
-        if (
-          btn &&
-          drop &&
-          !btn.contains(e.target) &&
-          !drop.contains(e.target)
-        ) {
-          drop.style.display = "none";
-        }
+      document.addEventListener("DOMContentLoaded", () => {
+        RCANotif.init({
+          btnId:      "btnNotifMisGrupos",
+          dropId:     "notifDropMisGrupos",
+          countId:    "notifCountMisGrupos",
+          badgeId:    "notifDropBadgeMisGrupos",
+          listId:     "notifDropListMisGrupos",
+          verTodasId: "verTodasMaestro",
+          autoAlertasFn: async () => {
+            const tk = localStorage.getItem("token");
+            const heads = { Authorization: `Bearer ${tk}` };
+            const notifs = [];
+            try {
+              const rg = await fetch(`${API_URL}/api/grupos`, { headers: heads });
+              const grupos = await rg.json();
+              // Solo grupos del maestro actual
+              const miRfc = JSON.parse(atob(tk.split(".")[1])).id_referencia;
+              const misGrupos = grupos.filter(g => g.rfc === miRfc && g.estatus === "Activo");
+              const sinConfig = misGrupos.filter(g =>
+                !Object.keys(localStorage).some(k => k.startsWith(`pcts_${g.id_grupo}_`))
+              );
+              if (sinConfig.length)
+                notifs.push({
+                  _id: "auto_mae_sin_config",
+                  tipo: "danger", icono: "lucide:alert-triangle",
+                  titulo: "Grupos sin configurar",
+                  texto: `Tienes ${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} activo${sinConfig.length > 1 ? "s" : ""} sin actividades definidas.`,
+                  url: "mis_grupos.html",
+                });
+            } catch {}
+            try {
+              const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
+              const periodos = await rp.json();
+              const activo = periodos.find(p => p.estatus === "Vigente");
+              if (activo?.fecha_fin) {
+                const dias = Math.ceil((new Date(activo.fecha_fin) - new Date()) / 86400000);
+                if (dias > 0 && dias <= 14)
+                  notifs.push({
+                    _id: "auto_mae_cierre",
+                    tipo: "warning", icono: "lucide:clock",
+                    titulo: "Cierre de periodo",
+                    texto: `El periodo escolar cierra en ${dias} día${dias !== 1 ? "s" : ""}. Asegúrate de tener todas las calificaciones capturadas.`,
+                    url: null,
+                  });
+              }
+            } catch {}
+            return notifs;
+          },
+        });
       });
-      async function cargarNotifMisGrupos() {
-        const tk = localStorage.getItem("token");
-        if (!tk) return;
-        const heads = { Authorization: `Bearer ${tk}` };
-        const notifs = [];
-        try {
-          const rg = await fetch(`${API_URL}/api/grupos`, { headers: heads });
-          const grupos = await rg.json();
-          const sinConfig = grupos.filter(
-            (g) =>
-              g.estatus === "Activo" &&
-              !Object.keys(localStorage).some((k) =>
-                k.startsWith(`pcts_${g.id_grupo}_`),
-              ),
-          );
-          if (sinConfig.length)
-            notifs.push({
-              tipo: "danger",
-              icono: "lucide:alert-triangle",
-              texto: `${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} sin actividades configuradas`,
-            });
-          const sinMaestro = grupos.filter(
-            (g) => !g.rfc && g.estatus === "Activo",
-          );
-          if (sinMaestro.length)
-            notifs.push({
-              tipo: "info",
-              icono: "lucide:user-x",
-              texto: `${sinMaestro.length} grupo${sinMaestro.length > 1 ? "s" : ""} sin maestro asignado`,
-            });
-        } catch {}
-        try {
-          const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
-          const periodos = await rp.json();
-          const activo = periodos.find(
-            (p) => p.estatus === "Activo" || p.estatus === "activo",
-          );
-          if (activo?.fecha_fin) {
-            const dias = Math.ceil(
-              (new Date(activo.fecha_fin) - new Date()) / 86400000,
-            );
-            if (dias > 0 && dias <= 30)
-              notifs.push({
-                tipo: "warning",
-                icono: "lucide:clock",
-                texto: `Cierre de periodo en ${dias} día${dias !== 1 ? "s" : ""}`,
-              });
-          }
-        } catch {}
-        if (!notifs.length)
-          notifs.push({
-            tipo: "success",
-            icono: "lucide:check-circle",
-            texto: "Todo en orden. Sin alertas pendientes.",
-          });
-        const coloresD = {
-          danger: { bg: "var(--danger-light)", icon: "var(--danger)" },
-          warning: { bg: "var(--warning-light)", icon: "var(--warning)" },
-          info: { bg: "var(--primary-light)", icon: "var(--primary)" },
-          success: { bg: "var(--success-light)", icon: "var(--success)" },
-        };
-        const alertas = notifs.filter((n) => n.tipo !== "success");
-        if (alertas.length) {
-          document.getElementById("notifCountMisGrupos").textContent =
-            alertas.length;
-          document.getElementById("notifCountMisGrupos").style.display =
-            "inline-block";
-          document.getElementById("notifDropBadgeMisGrupos").textContent =
-            alertas.length + " alerta" + (alertas.length !== 1 ? "s" : "");
-          document.getElementById("notifDropBadgeMisGrupos").style.display =
-            "inline-block";
-        }
-        document.getElementById("notifDropListMisGrupos").innerHTML = notifs
-          .map((n) => {
-            const c = coloresD[n.tipo] || coloresD.info;
-            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
-            <span style="width:28px;height:28px;border-radius:8px;background:${c.bg};color:${c.icon};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-              <iconify-icon icon="${n.icono}" style="font-size:0.95rem"></iconify-icon>
-            </span>
-            <p style="font-size:0.82rem;color:var(--text-main);margin:0;line-height:1.4;flex:1">${n.texto}</p>
-          </div>`;
-          })
-          .join("");
-      }
-      document.addEventListener("DOMContentLoaded", () =>
-        setTimeout(cargarNotifMisGrupos, 600),
-      );
     </script>
   </body>
 </html>
