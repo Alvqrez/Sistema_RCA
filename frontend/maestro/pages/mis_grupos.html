@@ -28,15 +28,141 @@
             <h1>Mis Grupos</h1>
             <p class="page-subtitle">Grupos asignados en el periodo actual</p>
           </div>
-          <div style="display:flex;gap:6px;background:var(--bg-app);border:1px solid var(--border);border-radius:8px;padding:4px">
-            <button id="btnVistaCards" onclick="setVista('cards')"
-              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:none;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.15s;background:var(--primary);color:white">
-              <iconify-icon icon="lucide:layout-grid"></iconify-icon> Cards
+          <!-- Botón de notificaciones -->
+          <div style="position: relative">
+            <button
+              id="btnNotifMisGrupos"
+              onclick="toggleNotifMisGrupos()"
+              style="
+                position: relative;
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                border: 1.5px solid var(--border);
+                background: var(--card-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                color: var(--text-muted);
+                transition: background 0.15s;
+              "
+              title="Notificaciones"
+            >
+              <iconify-icon
+                icon="lucide:bell"
+                style="font-size: 1.1rem"
+              ></iconify-icon>
+              <span
+                id="notifCountMisGrupos"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 4px;
+                  right: 4px;
+                  background: var(--danger);
+                  color: white;
+                  font-size: 9px;
+                  font-weight: 700;
+                  padding: 1px 4px;
+                  border-radius: 99px;
+                  border: 1.5px solid var(--card-bg);
+                  min-width: 16px;
+                  text-align: center;
+                  line-height: 14px;
+                "
+                >0</span
+              >
             </button>
-            <button id="btnVistaLista" onclick="setVista('lista')"
-              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:none;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--text-muted)">
-              <iconify-icon icon="lucide:list"></iconify-icon> Lista
-            </button>
+            <div
+              id="notifDropMisGrupos"
+              style="
+                display: none;
+                position: absolute;
+                top: 46px;
+                right: 0;
+                z-index: 500;
+                width: 300px;
+                background: var(--card-bg);
+                border: 1.5px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-lg);
+                overflow: hidden;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  padding: 12px 14px;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span
+                  style="
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    color: var(--text-main);
+                  "
+                  >Notificaciones</span
+                >
+                <span
+                  id="notifDropBadgeMisGrupos"
+                  style="
+                    background: var(--danger-light);
+                    color: var(--danger);
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    padding: 2px 8px;
+                    border-radius: 99px;
+                    display: none;
+                  "
+                  >0</span
+                >
+              </div>
+              <div
+                id="notifDropListMisGrupos"
+                style="max-height: 320px; overflow-y: auto"
+              >
+                <div
+                  style="
+                    padding: 20px;
+                    text-align: center;
+                    color: var(--text-muted);
+                    font-size: 0.82rem;
+                  "
+                >
+                  <iconify-icon
+                    icon="lucide:loader-2"
+                    style="
+                      font-size: 1.3rem;
+                      display: block;
+                      margin: 0 auto 6px;
+                    "
+                  ></iconify-icon>
+                  Cargando alertas...
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 10px 14px;
+                  border-top: 1px solid var(--border);
+                  text-align: center;
+                "
+              >
+                <a
+                  href="#"
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--primary);
+                    text-decoration: none;
+                    font-weight: 600;
+                  "
+                  >Ver todas las alertas →</a
+                >
+              </div>
+            </div>
           </div>
         </div>
 
@@ -157,6 +283,63 @@
           </div>
         </div>
 
+        <!-- Toggle vista Cards / Lista -->
+        <div
+          style="display: flex; justify-content: flex-end; margin-bottom: 14px"
+        >
+          <div
+            style="
+              display: flex;
+              gap: 6px;
+              background: var(--bg-app);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: 4px;
+            "
+          >
+            <button
+              id="btnVistaCards"
+              onclick="setVista('cards')"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s;
+                background: var(--primary);
+                color: white;
+              "
+            >
+              <iconify-icon icon="lucide:layout-grid"></iconify-icon> Cards
+            </button>
+            <button
+              id="btnVistaLista"
+              onclick="setVista('lista')"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s;
+                background: transparent;
+                color: var(--text-muted);
+              "
+            >
+              <iconify-icon icon="lucide:list"></iconify-icon> Lista
+            </button>
+          </div>
+        </div>
+
         <!-- Group cards grid -->
         <div
           id="loadingGrupos"
@@ -171,18 +354,96 @@
         <!-- Vista Cards -->
         <div
           id="gruposGrid"
-          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+          "
         ></div>
 
         <!-- Vista Lista -->
-        <div id="gruposLista" style="display:none">
-          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-            <div style="display:grid;grid-template-columns:2fr 90px 110px 110px 1fr;padding:9px 18px;background:var(--bg-app);border-bottom:1px solid var(--border)">
-              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0">Grupo / Materia</p>
-              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Alumnos</p>
-              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Evaluación</p>
-              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:center">Estatus</p>
-              <p style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0;text-align:right">Acciones</p>
+        <div id="gruposLista" style="display: none">
+          <div
+            style="
+              background: var(--card-bg);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              overflow: hidden;
+            "
+          >
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 2fr 90px 110px 110px 1fr;
+                padding: 9px 18px;
+                background: var(--bg-app);
+                border-bottom: 1px solid var(--border);
+              "
+            >
+              <p
+                style="
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  margin: 0;
+                "
+              >
+                Grupo / Materia
+              </p>
+              <p
+                style="
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  margin: 0;
+                  text-align: center;
+                "
+              >
+                Alumnos
+              </p>
+              <p
+                style="
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  margin: 0;
+                  text-align: center;
+                "
+              >
+                Evaluación
+              </p>
+              <p
+                style="
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  margin: 0;
+                  text-align: center;
+                "
+              >
+                Estatus
+              </p>
+              <p
+                style="
+                  font-size: 0.72rem;
+                  font-weight: 700;
+                  color: var(--text-muted);
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  margin: 0;
+                  text-align: right;
+                "
+              >
+                Acciones
+              </p>
             </div>
             <div id="gruposListaBody"></div>
           </div>
@@ -215,14 +476,22 @@
       const tkn = () => localStorage.getItem("token");
 
       function parsearToken(t) {
-        try { return JSON.parse(atob(t.split(".")[1])); } catch { return null; }
+        try {
+          return JSON.parse(atob(t.split(".")[1]));
+        } catch {
+          return null;
+        }
       }
 
       function setVista(v) {
         localStorage.setItem("vista_grupos", v);
         const isCards = v === "cards";
-        document.getElementById("gruposGrid").style.display = isCards ? "grid" : "none";
-        document.getElementById("gruposLista").style.display = isCards ? "none" : "block";
+        document.getElementById("gruposGrid").style.display = isCards
+          ? "grid"
+          : "none";
+        document.getElementById("gruposLista").style.display = isCards
+          ? "none"
+          : "block";
         const btnC = document.getElementById("btnVistaCards");
         const btnL = document.getElementById("btnVistaLista");
         btnC.style.background = isCards ? "var(--primary)" : "transparent";
@@ -248,7 +517,9 @@
               headers: { Authorization: `Bearer ${tkn()}` },
             });
             const todos = await r2.json();
-            grupos = id_ref ? todos.filter((g) => String(g.rfc) === String(id_ref)) : todos;
+            grupos = id_ref
+              ? todos.filter((g) => String(g.rfc) === String(id_ref))
+              : todos;
           }
 
           document.getElementById("loadingGrupos").style.display = "none";
@@ -263,7 +534,9 @@
 
           const activos = grupos.filter((g) => g.estatus === "Activo").length;
           const cfgs = grupos.filter((g) =>
-            Object.keys(localStorage).some((k) => k.startsWith(`pcts_${g.id_grupo}_`))
+            Object.keys(localStorage).some((k) =>
+              k.startsWith(`pcts_${g.id_grupo}_`),
+            ),
           ).length;
 
           document.getElementById("statTotal").textContent = grupos.length;
@@ -276,12 +549,13 @@
 
           // Poblar lista
           const listaBody = document.getElementById("gruposListaBody");
-          listaBody.innerHTML = grupos.map((g, i) => buildGrupoRow(g, i, grupos.length)).join("");
+          listaBody.innerHTML = grupos
+            .map((g, i) => buildGrupoRow(g, i, grupos.length))
+            .join("");
 
           // Aplicar vista guardada
           const vistaGuardada = localStorage.getItem("vista_grupos") || "cards";
           setVista(vistaGuardada);
-
         } catch (e) {
           document.getElementById("loadingGrupos").innerHTML = `
             <iconify-icon icon="lucide:wifi-off" style="font-size:2rem;color:var(--danger);display:block;margin:0 auto 8px"></iconify-icon>
@@ -293,13 +567,16 @@
       }
 
       function buildGrupoRow(g, i, total) {
-        const hasConfig = Object.keys(localStorage).some((k) => k.startsWith(`pcts_${g.id_grupo}_`));
+        const hasConfig = Object.keys(localStorage).some((k) =>
+          k.startsWith(`pcts_${g.id_grupo}_`),
+        );
         const cfgBadge = hasConfig
           ? `<span class="badge badge-success" style="font-size:0.7rem">Configurado</span>`
           : `<span class="badge badge-warning" style="font-size:0.7rem">Sin config</span>`;
-        const statusBadge = g.estatus === "Activo"
-          ? `<span class="badge badge-success">${g.estatus}</span>`
-          : `<span class="badge badge-danger">${g.estatus || "—"}</span>`;
+        const statusBadge =
+          g.estatus === "Activo"
+            ? `<span class="badge badge-success">${g.estatus}</span>`
+            : `<span class="badge badge-danger">${g.estatus || "—"}</span>`;
         const isLast = i === total - 1;
         return `<div style="display:grid;grid-template-columns:2fr 90px 110px 110px 1fr;padding:12px 18px;align-items:center;${!isLast ? "border-bottom:1px solid var(--border)" : ""}">
           <div>
@@ -378,6 +655,112 @@
       }
 
       cargarMisGrupos();
+    </script>
+    <script>
+      // ── Notificaciones del header ────────────────────────────────
+      function toggleNotifMisGrupos() {
+        const drop = document.getElementById("notifDropMisGrupos");
+        drop.style.display = drop.style.display === "none" ? "block" : "none";
+      }
+      document.addEventListener("click", function (e) {
+        const btn = document.getElementById("btnNotifMisGrupos");
+        const drop = document.getElementById("notifDropMisGrupos");
+        if (
+          btn &&
+          drop &&
+          !btn.contains(e.target) &&
+          !drop.contains(e.target)
+        ) {
+          drop.style.display = "none";
+        }
+      });
+      async function cargarNotifMisGrupos() {
+        const tk = localStorage.getItem("token");
+        if (!tk) return;
+        const heads = { Authorization: `Bearer ${tk}` };
+        const notifs = [];
+        try {
+          const rg = await fetch(`${API_URL}/api/grupos`, { headers: heads });
+          const grupos = await rg.json();
+          const sinConfig = grupos.filter(
+            (g) =>
+              g.estatus === "Activo" &&
+              !Object.keys(localStorage).some((k) =>
+                k.startsWith(`pcts_${g.id_grupo}_`),
+              ),
+          );
+          if (sinConfig.length)
+            notifs.push({
+              tipo: "danger",
+              icono: "lucide:alert-triangle",
+              texto: `${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} sin actividades configuradas`,
+            });
+          const sinMaestro = grupos.filter(
+            (g) => !g.rfc && g.estatus === "Activo",
+          );
+          if (sinMaestro.length)
+            notifs.push({
+              tipo: "info",
+              icono: "lucide:user-x",
+              texto: `${sinMaestro.length} grupo${sinMaestro.length > 1 ? "s" : ""} sin maestro asignado`,
+            });
+        } catch {}
+        try {
+          const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
+          const periodos = await rp.json();
+          const activo = periodos.find(
+            (p) => p.estatus === "Activo" || p.estatus === "activo",
+          );
+          if (activo?.fecha_fin) {
+            const dias = Math.ceil(
+              (new Date(activo.fecha_fin) - new Date()) / 86400000,
+            );
+            if (dias > 0 && dias <= 30)
+              notifs.push({
+                tipo: "warning",
+                icono: "lucide:clock",
+                texto: `Cierre de periodo en ${dias} día${dias !== 1 ? "s" : ""}`,
+              });
+          }
+        } catch {}
+        if (!notifs.length)
+          notifs.push({
+            tipo: "success",
+            icono: "lucide:check-circle",
+            texto: "Todo en orden. Sin alertas pendientes.",
+          });
+        const coloresD = {
+          danger: { bg: "var(--danger-light)", icon: "var(--danger)" },
+          warning: { bg: "var(--warning-light)", icon: "var(--warning)" },
+          info: { bg: "var(--primary-light)", icon: "var(--primary)" },
+          success: { bg: "var(--success-light)", icon: "var(--success)" },
+        };
+        const alertas = notifs.filter((n) => n.tipo !== "success");
+        if (alertas.length) {
+          document.getElementById("notifCountMisGrupos").textContent =
+            alertas.length;
+          document.getElementById("notifCountMisGrupos").style.display =
+            "inline-block";
+          document.getElementById("notifDropBadgeMisGrupos").textContent =
+            alertas.length + " alerta" + (alertas.length !== 1 ? "s" : "");
+          document.getElementById("notifDropBadgeMisGrupos").style.display =
+            "inline-block";
+        }
+        document.getElementById("notifDropListMisGrupos").innerHTML = notifs
+          .map((n) => {
+            const c = coloresD[n.tipo] || coloresD.info;
+            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
+            <span style="width:28px;height:28px;border-radius:8px;background:${c.bg};color:${c.icon};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+              <iconify-icon icon="${n.icono}" style="font-size:0.95rem"></iconify-icon>
+            </span>
+            <p style="font-size:0.82rem;color:var(--text-main);margin:0;line-height:1.4;flex:1">${n.texto}</p>
+          </div>`;
+          })
+          .join("");
+      }
+      document.addEventListener("DOMContentLoaded", () =>
+        setTimeout(cargarNotifMisGrupos, 600),
+      );
     </script>
   </body>
 </html>

@@ -201,6 +201,123 @@
             <h1>Panel de Administración</h1>
             <p class="page-subtitle">Vista general del sistema RCA</p>
           </div>
+          <!-- Botón de notificaciones -->
+          <div style="position: relative">
+            <button
+              id="btnNotifAdmin"
+              onclick="toggleNotifAdmin()"
+              style="
+                position: relative;
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                border: 1.5px solid var(--border);
+                background: var(--card-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                color: var(--text-muted);
+                transition: background 0.15s;
+              "
+              title="Notificaciones"
+            >
+              <iconify-icon
+                icon="lucide:bell"
+                style="font-size: 1.1rem"
+              ></iconify-icon>
+              <span
+                id="notifCountAdmin"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 4px;
+                  right: 4px;
+                  background: var(--danger);
+                  color: white;
+                  font-size: 9px;
+                  font-weight: 700;
+                  padding: 1px 4px;
+                  border-radius: 99px;
+                  border: 1.5px solid var(--card-bg);
+                  min-width: 16px;
+                  text-align: center;
+                  line-height: 14px;
+                "
+                >0</span
+              >
+            </button>
+            <div
+              id="notifDropAdmin"
+              style="
+                display: none;
+                position: absolute;
+                top: 46px;
+                right: 0;
+                z-index: 500;
+                width: 300px;
+                background: var(--card-bg);
+                border: 1.5px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-lg);
+                overflow: hidden;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  padding: 12px 14px;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                <span
+                  style="
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    color: var(--text-main);
+                  "
+                  >Notificaciones</span
+                >
+                <span
+                  id="notifDropBadge"
+                  style="
+                    background: var(--danger-light);
+                    color: var(--danger);
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    padding: 2px 8px;
+                    border-radius: 99px;
+                    display: none;
+                  "
+                  >0</span
+                >
+              </div>
+              <div
+                id="notifDropListAdmin"
+                style="max-height: 320px; overflow-y: auto"
+              ></div>
+              <div
+                style="
+                  padding: 10px 14px;
+                  border-top: 1px solid var(--border);
+                  text-align: center;
+                "
+              >
+                <a
+                  href="#"
+                  style="
+                    font-size: 0.78rem;
+                    color: var(--primary);
+                    text-decoration: none;
+                    font-weight: 600;
+                  "
+                  >Ver todas las alertas →</a
+                >
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- STATS — se rellena por admin.js con estructura c-{color} -->
@@ -397,20 +514,70 @@
         <!-- /gridInferior -->
 
         <!-- ── Fila inferior: Notificaciones + Grupos con menor avance ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px" id="gridNotifGrupos">
-
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+          "
+          id="gridNotifGrupos"
+        >
           <!-- Notificaciones / Alertas inteligentes -->
           <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <h2 style="margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:8px">
-                <iconify-icon icon="lucide:bell" style="color:var(--warning)"></iconify-icon>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <iconify-icon
+                  icon="lucide:bell"
+                  style="color: var(--warning)"
+                ></iconify-icon>
                 Notificaciones
               </h2>
-              <span id="badgeNotif" style="background:var(--danger);color:white;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;display:none">0</span>
+              <span
+                id="badgeNotif"
+                style="
+                  background: var(--danger);
+                  color: white;
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  padding: 2px 8px;
+                  border-radius: 20px;
+                  display: none;
+                "
+                >0</span
+              >
             </div>
-            <div id="listaNotificaciones" style="display:flex;flex-direction:column;gap:8px">
-              <div style="text-align:center;padding:24px;color:var(--text-muted)">
-                <iconify-icon icon="lucide:loader-2" style="font-size:1.5rem;display:block;margin:0 auto 8px"></iconify-icon>
+            <div
+              id="listaNotificaciones"
+              style="display: flex; flex-direction: column; gap: 8px"
+            >
+              <div
+                style="
+                  text-align: center;
+                  padding: 24px;
+                  color: var(--text-muted);
+                "
+              >
+                <iconify-icon
+                  icon="lucide:loader-2"
+                  style="font-size: 1.5rem; display: block; margin: 0 auto 8px"
+                ></iconify-icon>
                 Cargando alertas...
               </div>
             </div>
@@ -418,26 +585,77 @@
 
           <!-- Grupos con menor avance -->
           <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <h2 style="margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:8px">
-                <iconify-icon icon="lucide:trending-down" style="color:var(--danger)"></iconify-icon>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <iconify-icon
+                  icon="lucide:trending-down"
+                  style="color: var(--danger)"
+                ></iconify-icon>
                 Grupos con menor avance
               </h2>
-              <a href="grupos.html" style="font-size:0.8rem;color:var(--primary);text-decoration:none">Ver todos →</a>
+              <a
+                href="grupos.html"
+                style="
+                  font-size: 0.8rem;
+                  color: var(--primary);
+                  text-decoration: none;
+                "
+                >Ver todos →</a
+              >
             </div>
-            <div style="display:grid;grid-template-columns:1fr 90px 80px;gap:0;font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px;border-bottom:1px solid var(--border)">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 90px 80px;
+                gap: 0;
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                padding: 0 0 8px;
+                border-bottom: 1px solid var(--border);
+              "
+            >
               <span>Grupo / Maestro</span>
-              <span style="text-align:center">Avance</span>
-              <span style="text-align:right">Estado</span>
+              <span style="text-align: center">Avance</span>
+              <span style="text-align: right">Estado</span>
             </div>
-            <div id="listaGruposBajos" style="display:flex;flex-direction:column">
-              <div style="text-align:center;padding:24px;color:var(--text-muted)">
-                <iconify-icon icon="lucide:loader-2" style="font-size:1.5rem;display:block;margin:0 auto 8px"></iconify-icon>
+            <div
+              id="listaGruposBajos"
+              style="display: flex; flex-direction: column"
+            >
+              <div
+                style="
+                  text-align: center;
+                  padding: 24px;
+                  color: var(--text-muted);
+                "
+              >
+                <iconify-icon
+                  icon="lucide:loader-2"
+                  style="font-size: 1.5rem; display: block; margin: 0 auto 8px"
+                ></iconify-icon>
                 Cargando grupos...
               </div>
             </div>
           </div>
-
         </div>
         <!-- /gridNotifGrupos -->
       </main>
@@ -510,68 +728,120 @@
           const grupos = await rg.json();
 
           const notifs = [];
-          const sinConfig = grupos.filter(g =>
-            g.estatus === "Activo" && !Object.keys(localStorage).some(k => k.startsWith(`pcts_${g.id_grupo}_`))
+          const sinConfig = grupos.filter(
+            (g) =>
+              g.estatus === "Activo" &&
+              !Object.keys(localStorage).some((k) =>
+                k.startsWith(`pcts_${g.id_grupo}_`),
+              ),
           );
           if (sinConfig.length) {
-            notifs.push({ tipo: "danger", icono: "lucide:alert-triangle", texto: `${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} activo${sinConfig.length > 1 ? "s" : ""} sin actividades configuradas`, accion: "grupos.html" });
+            notifs.push({
+              tipo: "danger",
+              icono: "lucide:alert-triangle",
+              texto: `${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} activo${sinConfig.length > 1 ? "s" : ""} sin actividades configuradas`,
+              accion: "grupos.html",
+            });
           }
 
           // Periodo activo
           try {
-            const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
+            const rp = await fetch(`${API_URL}/api/periodos`, {
+              headers: heads,
+            });
             const periodos = await rp.json();
-            const activo = periodos.find(p => p.estatus === "Activo" || p.estatus === "activo");
+            const activo = periodos.find(
+              (p) => p.estatus === "Activo" || p.estatus === "activo",
+            );
             if (activo?.fecha_fin) {
-              const diasRestantes = Math.ceil((new Date(activo.fecha_fin) - new Date()) / 86400000);
+              const diasRestantes = Math.ceil(
+                (new Date(activo.fecha_fin) - new Date()) / 86400000,
+              );
               if (diasRestantes > 0 && diasRestantes <= 30) {
-                notifs.push({ tipo: "warning", icono: "lucide:clock", texto: `Cierre de periodo en ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""}`, accion: "periodos.html" });
+                notifs.push({
+                  tipo: "warning",
+                  icono: "lucide:clock",
+                  texto: `Cierre de periodo en ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""}`,
+                  accion: "periodos.html",
+                });
               }
             }
           } catch {}
 
           // Grupos con maestros sin cargar
-          const sinMaestro = grupos.filter(g => !g.rfc && g.estatus === "Activo");
+          const sinMaestro = grupos.filter(
+            (g) => !g.rfc && g.estatus === "Activo",
+          );
           if (sinMaestro.length) {
-            notifs.push({ tipo: "info", icono: "lucide:user-x", texto: `${sinMaestro.length} grupo${sinMaestro.length > 1 ? "s" : ""} sin maestro asignado`, accion: "grupos.html" });
+            notifs.push({
+              tipo: "info",
+              icono: "lucide:user-x",
+              texto: `${sinMaestro.length} grupo${sinMaestro.length > 1 ? "s" : ""} sin maestro asignado`,
+              accion: "grupos.html",
+            });
           }
 
           if (!notifs.length) {
-            notifs.push({ tipo: "success", icono: "lucide:check-circle", texto: "Todo en orden. No hay alertas pendientes.", accion: null });
+            notifs.push({
+              tipo: "success",
+              icono: "lucide:check-circle",
+              texto: "Todo en orden. No hay alertas pendientes.",
+              accion: null,
+            });
           }
 
           const badge = document.getElementById("badgeNotif");
-          const alertas = notifs.filter(n => n.tipo !== "success");
-          if (alertas.length) { badge.textContent = alertas.length; badge.style.display = "inline-block"; }
+          const alertas = notifs.filter((n) => n.tipo !== "success");
+          if (alertas.length) {
+            badge.textContent = alertas.length;
+            badge.style.display = "inline-block";
+          }
 
-          const colores = { danger: { bg: "var(--danger-light)", icon: "var(--danger)" }, warning: { bg: "var(--warning-light)", icon: "var(--warning)" }, info: { bg: "var(--primary-light)", icon: "var(--primary)" }, success: { bg: "var(--success-light)", icon: "var(--success)" } };
+          const colores = {
+            danger: { bg: "var(--danger-light)", icon: "var(--danger)" },
+            warning: { bg: "var(--warning-light)", icon: "var(--warning)" },
+            info: { bg: "var(--primary-light)", icon: "var(--primary)" },
+            success: { bg: "var(--success-light)", icon: "var(--success)" },
+          };
 
-          document.getElementById("listaNotificaciones").innerHTML = notifs.map(n => {
-            const c = colores[n.tipo] || colores.info;
-            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:${c.bg}">
+          document.getElementById("listaNotificaciones").innerHTML = notifs
+            .map((n) => {
+              const c = colores[n.tipo] || colores.info;
+              return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:${c.bg}">
               <iconify-icon icon="${n.icono}" style="color:${c.icon};font-size:1.1rem;flex-shrink:0;margin-top:2px"></iconify-icon>
               <p style="font-size:0.83rem;color:var(--text-main);margin:0;flex:1">${n.texto}</p>
               ${n.accion ? `<a href="${n.accion}" style="font-size:0.75rem;color:var(--primary);text-decoration:none;flex-shrink:0;margin-top:2px">Ver →</a>` : ""}
             </div>`;
-          }).join("");
+            })
+            .join("");
+
+          renderNotifDropAdmin(notifs);
 
           // Grupos con menor avance (sin config primero, luego activos)
           const gruposOrdenados = [...grupos]
-            .filter(g => g.estatus === "Activo")
+            .filter((g) => g.estatus === "Activo")
             .sort((a, b) => {
-              const aConf = Object.keys(localStorage).some(k => k.startsWith(`pcts_${a.id_grupo}_`));
-              const bConf = Object.keys(localStorage).some(k => k.startsWith(`pcts_${b.id_grupo}_`));
+              const aConf = Object.keys(localStorage).some((k) =>
+                k.startsWith(`pcts_${a.id_grupo}_`),
+              );
+              const bConf = Object.keys(localStorage).some((k) =>
+                k.startsWith(`pcts_${b.id_grupo}_`),
+              );
               return (aConf ? 1 : 0) - (bConf ? 1 : 0);
             })
             .slice(0, 6);
 
-          document.getElementById("listaGruposBajos").innerHTML = gruposOrdenados.length
-            ? gruposOrdenados.map((g, i) => {
-                const hasConfig = Object.keys(localStorage).some(k => k.startsWith(`pcts_${g.id_grupo}_`));
-                const badgeHtml = hasConfig
-                  ? `<span class="badge badge-warning" style="font-size:0.68rem">Pendiente</span>`
-                  : `<span class="badge badge-danger" style="font-size:0.68rem">Sin config</span>`;
-                return `<div style="display:grid;grid-template-columns:1fr 90px 80px;align-items:center;padding:10px 0;${i < gruposOrdenados.length - 1 ? "border-bottom:1px solid var(--border)" : ""}">
+          document.getElementById("listaGruposBajos").innerHTML =
+            gruposOrdenados.length
+              ? gruposOrdenados
+                  .map((g, i) => {
+                    const hasConfig = Object.keys(localStorage).some((k) =>
+                      k.startsWith(`pcts_${g.id_grupo}_`),
+                    );
+                    const badgeHtml = hasConfig
+                      ? `<span class="badge badge-warning" style="font-size:0.68rem">Pendiente</span>`
+                      : `<span class="badge badge-danger" style="font-size:0.68rem">Sin config</span>`;
+                    return `<div style="display:grid;grid-template-columns:1fr 90px 80px;align-items:center;padding:10px 0;${i < gruposOrdenados.length - 1 ? "border-bottom:1px solid var(--border)" : ""}">
                   <div>
                     <p style="font-size:0.85rem;font-weight:600;color:var(--text-main);margin:0">${g.nombre_materia || "—"}</p>
                     <p style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 0">${g.nombre_maestro || g.rfc || "Sin maestro"}</p>
@@ -583,15 +853,68 @@
                   </div>
                   <div style="text-align:right">${badgeHtml}</div>
                 </div>`;
-              }).join("")
-            : `<p style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.85rem">No hay grupos activos</p>`;
-
+                  })
+                  .join("")
+              : `<p style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.85rem">No hay grupos activos</p>`;
         } catch (e) {
-          document.getElementById("listaNotificaciones").innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;padding:12px">No se pudieron cargar las alertas</p>`;
-          document.getElementById("listaGruposBajos").innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;padding:12px">No se pudieron cargar los grupos</p>`;
+          document.getElementById("listaNotificaciones").innerHTML =
+            `<p style="color:var(--text-muted);font-size:0.85rem;padding:12px">No se pudieron cargar las alertas</p>`;
+          document.getElementById("listaGruposBajos").innerHTML =
+            `<p style="color:var(--text-muted);font-size:0.85rem;padding:12px">No se pudieron cargar los grupos</p>`;
         }
       }
 
+      // ── Toggle dropdown notificaciones (header) ─────────────────
+      function toggleNotifAdmin() {
+        const drop = document.getElementById("notifDropAdmin");
+        drop.style.display = drop.style.display === "none" ? "block" : "none";
+      }
+      document.addEventListener("click", function (e) {
+        const btn = document.getElementById("btnNotifAdmin");
+        const drop = document.getElementById("notifDropAdmin");
+        if (
+          btn &&
+          drop &&
+          !btn.contains(e.target) &&
+          !drop.contains(e.target)
+        ) {
+          drop.style.display = "none";
+        }
+      });
+      function renderNotifDropAdmin(notifs) {
+        const coloresD = {
+          danger: { bg: "var(--danger-light)", icon: "var(--danger)" },
+          warning: { bg: "var(--warning-light)", icon: "var(--warning)" },
+          info: { bg: "var(--primary-light)", icon: "var(--primary)" },
+          success: { bg: "var(--success-light)", icon: "var(--success)" },
+        };
+        const list = document.getElementById("notifDropListAdmin");
+        const badge = document.getElementById("notifCountAdmin");
+        const dropBadge = document.getElementById("notifDropBadge");
+        if (!list) return;
+        const alertas = notifs.filter((n) => n.tipo !== "success");
+        if (alertas.length) {
+          badge.textContent = alertas.length;
+          badge.style.display = "inline-block";
+          dropBadge.textContent =
+            alertas.length + " alerta" + (alertas.length !== 1 ? "s" : "");
+          dropBadge.style.display = "inline-block";
+        }
+        list.innerHTML = notifs
+          .map((n) => {
+            const c = coloresD[n.tipo] || coloresD.info;
+            return `<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
+            <span style="width:28px;height:28px;border-radius:8px;background:${c.bg};color:${c.icon};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+              <iconify-icon icon="${n.icono}" style="font-size:0.95rem"></iconify-icon>
+            </span>
+            <div style="flex:1">
+              <p style="font-size:0.82rem;color:var(--text-main);margin:0;line-height:1.4">${n.texto}</p>
+              ${n.accion ? `<a href="${n.accion}" style="font-size:0.75rem;color:var(--primary);text-decoration:none;font-weight:600">Ver \u2192</a>` : ""}
+            </div>
+          </div>`;
+          })
+          .join("");
+      }
       document.addEventListener("DOMContentLoaded", () => {
         setTimeout(cargarNotificacionesYGrupos, 800);
       });
