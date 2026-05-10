@@ -976,33 +976,81 @@
         alumnos: {
           url: "/api/alumnos",
           cols: [
-            "no_control", "nombre", "apellido_paterno", "apellido_materno",
-            "curp", "fecha_nacimiento", "genero", "id_carrera",
-            "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
+            "no_control",
+            "nombre",
+            "apellido_paterno",
+            "apellido_materno",
+            "curp",
+            "fecha_nacimiento",
+            "genero",
+            "id_carrera",
+            "correo_institucional",
+            "correo_personal",
+            "tel_celular",
+            "tel_casa",
+            "direccion",
           ],
           headers: [
-            "no_control", "nombre", "apellido_paterno", "apellido_materno",
-            "curp", "fecha_nacimiento", "genero", "id_carrera",
-            "correo_institucional", "correo_personal", "tel_celular", "tel_casa", "direccion",
+            "no_control",
+            "nombre",
+            "apellido_paterno",
+            "apellido_materno",
+            "curp",
+            "fecha_nacimiento",
+            "genero",
+            "id_carrera",
+            "correo_institucional",
+            "correo_personal",
+            "tel_celular",
+            "tel_casa",
+            "direccion",
           ],
         },
         maestros: {
           url: "/api/maestros",
           cols: [
-            "rfc", "nombre", "apellido_paterno", "correo_institucional",
-            "username", "pwd",
-            "apellido_materno", "departamento", "especialidad", "grado_academico",
-            "tipo_contrato", "tel_celular", "estatus",
-            "curp", "fecha_nacimiento", "genero", "correo_personal",
-            "tel_oficina", "direccion", "fecha_ingreso",
+            "rfc",
+            "nombre",
+            "apellido_paterno",
+            "correo_institucional",
+            "username",
+            "pwd",
+            "apellido_materno",
+            "departamento",
+            "especialidad",
+            "grado_academico",
+            "tipo_contrato",
+            "tel_celular",
+            "estatus",
+            "curp",
+            "fecha_nacimiento",
+            "genero",
+            "correo_personal",
+            "tel_oficina",
+            "direccion",
+            "fecha_ingreso",
           ],
           headers: [
-            "rfc", "nombre", "apellido_paterno", "correo_institucional",
-            "username", "pwd",
-            "apellido_materno", "departamento", "especialidad", "grado_academico",
-            "tipo_contrato", "tel_celular", "estatus",
-            "curp", "fecha_nacimiento", "genero", "correo_personal",
-            "tel_oficina", "direccion", "fecha_ingreso",
+            "rfc",
+            "nombre",
+            "apellido_paterno",
+            "correo_institucional",
+            "username",
+            "pwd",
+            "apellido_materno",
+            "departamento",
+            "especialidad",
+            "grado_academico",
+            "tipo_contrato",
+            "tel_celular",
+            "estatus",
+            "curp",
+            "fecha_nacimiento",
+            "genero",
+            "correo_personal",
+            "tel_oficina",
+            "direccion",
+            "fecha_ingreso",
           ],
         },
         materias: {
@@ -1013,34 +1061,70 @@
         grupos: {
           url: "/api/grupos",
           cols: [
-            "id_grupo", "clave_materia", "nombre_materia", "rfc", "nombre_maestro",
-            "id_periodo", "limite_alumnos", "estatus",
+            "id_grupo",
+            "clave_materia",
+            "nombre_materia",
+            "rfc",
+            "nombre_maestro",
+            "id_periodo",
+            "limite_alumnos",
+            "estatus",
           ],
           headers: [
-            "id_grupo", "clave_materia", "nombre_materia", "rfc", "nombre_maestro",
-            "id_periodo", "limite_alumnos", "estatus",
+            "id_grupo",
+            "clave_materia",
+            "nombre_materia",
+            "rfc",
+            "nombre_maestro",
+            "id_periodo",
+            "limite_alumnos",
+            "estatus",
           ],
         },
         inscripciones: {
           url: "/api/inscripciones",
           cols: [
-            "no_control", "nombre_alumno", "id_grupo", "nombre_materia",
-            "nombre_maestro", "periodo_desc", "tipo_curso", "estatus",
+            "no_control",
+            "nombre_alumno",
+            "id_grupo",
+            "nombre_materia",
+            "nombre_maestro",
+            "periodo_desc",
+            "tipo_curso",
+            "estatus",
           ],
           headers: [
-            "no_control", "nombre_alumno", "id_grupo", "nombre_materia",
-            "nombre_maestro", "periodo_desc", "tipo_curso", "estatus",
+            "no_control",
+            "nombre_alumno",
+            "id_grupo",
+            "nombre_materia",
+            "nombre_maestro",
+            "periodo_desc",
+            "tipo_curso",
+            "estatus",
           ],
         },
         calificaciones: {
           url: "/api/calificaciones",
           cols: [
-            "no_control", "nombre_alumno", "id_unidad", "nombre_unidad",
-            "id_grupo", "promedio_ponderado", "calificacion_unidad_final", "estatus_unidad",
+            "no_control",
+            "nombre_alumno",
+            "id_unidad",
+            "nombre_unidad",
+            "id_grupo",
+            "promedio_ponderado",
+            "calificacion_unidad_final",
+            "estatus_unidad",
           ],
           headers: [
-            "no_control", "nombre_alumno", "id_unidad", "nombre_unidad",
-            "id_grupo", "promedio_ponderado", "calificacion_unidad_final", "estatus_unidad",
+            "no_control",
+            "nombre_alumno",
+            "id_unidad",
+            "nombre_unidad",
+            "id_grupo",
+            "promedio_ponderado",
+            "calificacion_unidad_final",
+            "estatus_unidad",
           ],
         },
       };
@@ -1174,9 +1258,23 @@
             },
             body: JSON.stringify(_backupData),
           });
-          const data = await r.json();
+          if (r.status === 413) {
+            errEl.textContent =
+              "El archivo de respaldo es demasiado grande para el servidor.";
+            errEl.style.display = "block";
+            toast("Archivo demasiado grande", "error");
+            return;
+          }
+          let data;
+          try {
+            data = await r.json();
+          } catch {
+            data = {};
+          }
           if (!r.ok) {
-            errEl.textContent = data.error || "Error al importar el respaldo.";
+            errEl.textContent =
+              data.error ||
+              `Error del servidor (${r.status}) al importar el respaldo.`;
             errEl.style.display = "block";
             toast("Error al importar respaldo", "error");
             return;
@@ -1254,7 +1352,7 @@
               <td style="font-size:.85rem">${esc(a.correo_institucional)}</td>
               <td style="font-size:.85rem">${esc(a.tel_celular || "—")}</td>
               <td style="text-align:center">
-                <span style="font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;${a.activo ? 'background:#d1fae5;color:#065f46' : 'background:#fee2e2;color:#991b1b'}">
+                <span style="font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;${a.activo ? "background:#d1fae5;color:#065f46" : "background:#fee2e2;color:#991b1b"}">
                   ${a.activo ? "Activo" : "Inactivo"}
                 </span>
               </td>
@@ -1470,17 +1568,31 @@
           });
           const usuarios = await r.json();
           const u = usuarios.find(
-            (x) => x.rol === "administrador" && String(x.id_referencia) === String(id),
+            (x) =>
+              x.rol === "administrador" &&
+              String(x.id_referencia) === String(id),
           );
-          if (!u) { toast("No se encontró el usuario asociado", "error"); return; }
+          if (!u) {
+            toast("No se encontró el usuario asociado", "error");
+            return;
+          }
 
-          const r2 = await fetch(`${API_URL}/api/admin/usuarios/${u.id_usuario}/estatus`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk()}` },
-            body: JSON.stringify({ activo: 1 }),
-          });
+          const r2 = await fetch(
+            `${API_URL}/api/admin/usuarios/${u.id_usuario}/estatus`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${tk()}`,
+              },
+              body: JSON.stringify({ activo: 1 }),
+            },
+          );
           const data = await r2.json();
-          if (!r2.ok) { toast(data.error || "Error al activar", "error"); return; }
+          if (!r2.ok) {
+            toast(data.error || "Error al activar", "error");
+            return;
+          }
           toast(`${nombre} activado correctamente`, "success");
           await cargarAdmins();
         } catch {
