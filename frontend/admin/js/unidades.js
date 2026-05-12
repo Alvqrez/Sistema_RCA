@@ -170,43 +170,10 @@ function renderizarFormulario(n, nombreMateria, existentes) {
   titulo.textContent = `Configurar unidades — ${nombreMateria}`;
   instrucciones.textContent =
     existentes.length > 0
-      ? `${existentes.length} de ${n} unidad(es) registradas. Edita los nombres y las opciones disponibles.`
-      : `Asigna un nombre a cada unidad y elige qué tipos de actividad puede usar el maestro.`;
+      ? `${existentes.length} de ${n} unidad(es) registradas. Edita los nombres si lo necesitas.`
+      : `Asigna un nombre a cada unidad.`;
 
   grid.innerHTML = "";
-
-  // ── Bloque de opciones para el maestro (a nivel materia, no por unidad) ──────
-  if (tiposCatalogo.length > 0) {
-    const bloqueOpciones = document.createElement("div");
-    bloqueOpciones.className = "bloque-opciones";
-    bloqueOpciones.innerHTML = `
-      <div class="opciones-label">
-        <iconify-icon icon="lucide:tag" style="vertical-align:middle;font-size:.85rem"></iconify-icon>
-        Opciones para el maestro
-        <span class="opciones-sublabel">— aplica igual a todas las unidades de esta materia</span>
-      </div>
-      <div class="tipos-chips" id="chips-materia">
-        ${tiposCatalogo
-          .map(
-            (t) => `
-          <button type="button"
-            class="tipo-chip-toggle ${tiposSeleccionados.includes(t.id_tipo) ? "activo" : ""}"
-            data-tipo-id="${t.id_tipo}"
-            onclick="toggleChip(this)">
-            ${escHtml(t.nombre)}
-          </button>`,
-          )
-          .join("")}
-      </div>
-      <div class="opciones-hint" id="opciones-hint">
-        ${
-          tiposSeleccionados.length === 0
-            ? "Sin opciones seleccionadas — el maestro verá todos los tipos disponibles"
-            : `${tiposSeleccionados.length} tipo(s) seleccionado(s)`
-        }
-      </div>`;
-    grid.appendChild(bloqueOpciones);
-  }
 
   // ── Separador ─────────────────────────────────────────────────────────────────
   const sep = document.createElement("div");
@@ -497,9 +464,9 @@ async function guardarUnidades() {
       return;
     }
 
-    // 2. Guardar MISMO set de tipos para TODAS las unidades de la materia
+    // 2. Guardar tipos vacío → el maestro verá todos los tipos disponibles
     const resultados = data.resultados || [];
-    const idTipos = tiposSeleccionados;
+    const idTipos = [];
 
     await Promise.all(
       resultados.map((r) =>
@@ -562,19 +529,7 @@ function renderizarResumen(unidades, clave, nombreMateria) {
     return;
   }
 
-  const tiposNombres = tiposCatalogo
-    .filter((t) => tiposSeleccionados.includes(t.id_tipo))
-    .map(
-      (
-        t,
-      ) => `<span style="background:var(--bg-secondary);border:1px solid var(--border);
-                     padding:1px 7px;border-radius:999px;font-size:.72rem">${escHtml(t.nombre)}</span>`,
-    )
-    .join(" ");
-
-  const tiposCell =
-    tiposNombres ||
-    '<span style="color:var(--text-muted);font-size:.75rem">Todos los tipos</span>';
+  const tiposCell = '<span style="color:var(--text-muted);font-size:.75rem">Todos los tipos</span>';
 
   cuerpo.innerHTML = unidades
     .map(
@@ -600,14 +555,6 @@ function renderizarBloqueado(unidades, nombreMateria) {
 
   titulo.textContent = `Configurar unidades — ${nombreMateria}`;
   if (instr) instr.textContent = "";
-
-  const tiposNombres = tiposCatalogo
-    .filter((t) => tiposSeleccionados.includes(t.id_tipo))
-    .map(
-      (t) =>
-        `<span class="tipo-chip-toggle activo" style="cursor:default">${escHtml(t.nombre)}</span>`,
-    )
-    .join("");
 
   grid.innerHTML = `
     <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;

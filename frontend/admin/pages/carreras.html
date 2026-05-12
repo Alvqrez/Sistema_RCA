@@ -263,22 +263,10 @@
           <button class="modal-close" onclick="cerrarModalImport()">✕</button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              background: var(--bg-app);
-              border-radius: 8px;
-              padding: 10px 14px;
-              margin-bottom: 14px;
-              font-size: 0.82rem;
-              color: var(--text-muted);
-            "
-          >
-            <strong>Columnas requeridas:</strong>
-            <code style="display: block; margin-top: 4px">id_carrera, nombre_carrera</code>
-            <strong style="margin-top: 8px; display: block">Columnas opcionales:</strong>
-            <code style="display: block; margin-top: 4px">siglas</code>
-            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
-            <code style="display: block; margin-top: 4px">ISC,Ingeniería en Sistemas Computacionales,ISC</code>
+          <div style="margin-bottom: 12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVCarreras()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
           </div>
           <div
             id="dropZoneCarreras"
@@ -650,6 +638,17 @@
         t.style.opacity = "1";
         clearTimeout(t._t);
         t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
+      }
+
+      function descargarEjemploCSVCarreras() {
+        const encabezado = "id_carrera,nombre_carrera,siglas\n";
+        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ejemplo_carreras.csv";
+        a.click();
+        URL.revokeObjectURL(url);
       }
     </script>
       <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>

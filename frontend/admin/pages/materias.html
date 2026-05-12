@@ -257,30 +257,10 @@
           </button>
         </div>
         <div class="modal-body">
-          <div
-            style="
-              background: var(--bg-app);
-              border-radius: 8px;
-              padding: 10px 14px;
-              margin-bottom: 14px;
-              font-size: 0.82rem;
-              color: var(--text-muted);
-            "
-          >
-            <strong>Columnas requeridas:</strong>
-            <code style="display: block; margin-top: 4px"
-              >clave_materia, nombre_materia</code
-            >
-            <strong style="margin-top: 8px; display: block"
-              >Columnas opcionales:</strong
-            >
-            <code style="display: block; margin-top: 4px"
-              >no_unidades</code
-            >
-            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
-            <code style="display: block; margin-top: 4px"
-              >FBD001,Fundamentos de Bases de Datos,3</code
-            >
+          <div style="margin-bottom: 12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVMaterias()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
           </div>
           <!-- FIX: era "drop-zone", CSS define "csv-drop-zone" -->
           <div
@@ -359,6 +339,17 @@
     <script>
       function cerrarModalEliminarMateria() {
         document.getElementById("modalEliminarMateria").classList.remove("visible");
+      }
+
+      function descargarEjemploCSVMaterias() {
+        const encabezado = "clave_materia,nombre_materia,no_unidades\n";
+        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ejemplo_materias.csv";
+        a.click();
+        URL.revokeObjectURL(url);
       }
     </script>
   </body>

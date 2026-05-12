@@ -931,6 +931,11 @@
           </button>
         </div>
         <div class="modal-body">
+          <div style="margin-bottom: 12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVInscripciones()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
+          </div>
           <div
             class="csv-drop-zone"
             onclick="document.getElementById('inputCSVInsc').click()"
@@ -941,9 +946,9 @@
             ondragleave="this.classList.remove('drag-over')"
             ondrop="soltarInsc(event)"
           >
-            <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
-            <p>Haz clic o arrastra tu archivo CSV</p>
-            <small>Columnas: no_control, clave_materia, rfc, id_periodo, tipo_curso</small>
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>no_control, clave_materia, rfc, id_periodo, tipo_curso</small>
             <input
               type="file"
               id="inputCSVInsc"
@@ -951,11 +956,6 @@
               style="display: none"
               onchange="leerCSVInsc(event)"
             />
-          </div>
-          <div class="csv-format-hint">
-            Columnas requeridas: no_control, clave_materia, rfc, id_periodo<br />
-            Alternativa: no_control, id_grupo, tipo_curso<br />
-            Ejemplo: 26000001,FBD001,PELJ800101HVZ,4,Ordinario
           </div>
           <div id="csvPreviewInsc"></div>
           <p
@@ -991,5 +991,17 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="../../shared/js/exportUtils.js"></script>
     <script src="../../admin/js/inscripcion.js"></script>
+    <script>
+      function descargarEjemploCSVInscripciones() {
+        const encabezado = "no_control,clave_materia,rfc,id_periodo,tipo_curso\n";
+        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ejemplo_inscripciones.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    </script>
   </body>
 </html>

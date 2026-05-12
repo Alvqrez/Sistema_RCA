@@ -279,13 +279,10 @@
           </button>
         </div>
         <div class="modal-body">
-          <div style="background:var(--bg-secondary);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;color:var(--text-muted)">
-            <strong style="color:var(--text-main)">Columnas requeridas:</strong>
-            <code style="display:block;margin-top:4px">descripcion, fecha_inicio, fecha_fin</code>
-            <strong style="margin-top:6px;display:block;color:var(--text-main)">Columnas opcionales:</strong>
-            <code style="display:block;margin-top:4px">estatus (Proximo / Vigente / Concluido)</code>
-            <strong style="margin-top:6px;display:block;color:var(--text-main)">Ejemplo:</strong>
-            <code style="display:block;margin-top:4px">Enero-Junio,2026-01-12,2026-06-19,Vigente</code>
+          <div style="margin-bottom:12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem;gap:6px;" onclick="descargarEjemploCSVPeriodos()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
           </div>
           <div id="dropZonePeriodos" class="csv-drop-zone"
             ondragover="event.preventDefault();this.classList.add('drag-over')"
@@ -293,7 +290,8 @@
             ondrop="soltarCSVPeriodos(event)"
             onclick="document.getElementById('inputCSVPeriodos').click()">
             <iconify-icon icon="lucide:file-up"></iconify-icon>
-            <p>Arrastra tu archivo CSV o <strong>haz clic para seleccionar</strong></p>
+            <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>descripcion, fecha_inicio, fecha_fin, estatus</small>
           </div>
           <input type="file" id="inputCSVPeriodos" accept=".csv,.xlsx,.xls"
             style="display:none" onchange="leerCSVPeriodos(event)" />
@@ -590,6 +588,17 @@
 
       soloPermitido?.("administrador");
       cargarPeriodos();
+
+      function descargarEjemploCSVPeriodos() {
+        const encabezado = "descripcion,fecha_inicio,fecha_fin,estatus\n";
+        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ejemplo_periodos.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     </script>
 
     <!-- Modal confirmación eliminar periodo -->

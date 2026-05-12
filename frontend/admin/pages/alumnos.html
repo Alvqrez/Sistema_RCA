@@ -506,6 +506,11 @@
           </button>
         </div>
         <div class="modal-body">
+          <div style="margin-bottom: 12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVAlumnos()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
+          </div>
           <div
             class="csv-drop-zone"
             id="dropZone"
@@ -517,9 +522,9 @@
             ondragleave="this.classList.remove('drag-over')"
             ondrop="soltar(event)"
           >
-            <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
-            <p>Haz clic o arrastra tu archivo CSV</p>
-            <small>El archivo debe tener encabezados en la primera fila</small>
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>no_control, nombre, apellido_paterno, id_carrera, correo_institucional, password</small>
             <input
               type="file"
               id="inputCSV"
@@ -527,16 +532,6 @@
               style="display: none"
               onchange="leerCSV(event)"
             />
-          </div>
-          <div class="csv-format-hint">
-            <strong>Columnas requeridas:</strong> no_control, nombre,
-            apellido_paterno, id_carrera<br />
-            <strong>Opcionales:</strong> apellido_materno, fecha_nacimiento
-            (YYYY-MM-DD), genero, curp, correo_institucional, password<br />
-            <span style="color: var(--success); font-size: 0.78rem">
-              ✓ Si no incluyes correo o password, se generan automáticamente
-              desde no_control y fecha de nacimiento.
-            </span>
           </div>
           <div id="csvPreview"></div>
         </div>
@@ -665,6 +660,15 @@
       function cerrarModalEliminarAlumno() {
         document.getElementById("modalEliminarAlumno").classList.remove("visible");
         document.getElementById("eliminarAlumnoError").style.display = "none";
+      }
+
+      function descargarEjemploCSVAlumnos() {
+        const cols = ["no_control","nombre","apellido_paterno","apellido_materno","id_carrera","fecha_nacimiento","genero","curp","correo_institucional","password"];
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([cols]);
+        ws["!cols"] = cols.map(c => ({ wch: c.length + 2 }));
+        XLSX.utils.book_append_sheet(wb, ws, "alumnos");
+        XLSX.writeFile(wb, "ejemplo_alumnos.xlsx");
       }
     </script>
   </body>

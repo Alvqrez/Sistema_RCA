@@ -432,32 +432,10 @@
         </div>
         <div class="modal-body">
           <!-- Formato esperado -->
-          <div
-            style="
-              background: var(--bg-app);
-              border-radius: 8px;
-              padding: 10px 14px;
-              margin-bottom: 14px;
-              font-size: 0.82rem;
-              color: var(--text-muted);
-            "
-          >
-            <strong>Columnas requeridas:</strong>
-            <code style="display: block; margin-top: 4px">
-              rfc, nombre, apellido_paterno, correo_institucional, username,
-              password
-            </code>
-            <strong style="margin-top: 8px; display: block"
-              >Columnas opcionales:</strong
-            >
-            <code style="display: block; margin-top: 4px">
-              apellido_materno, departamento, especialidad, grado_academico,
-              tipo_contrato, tel_celular
-            </code>
-            <strong style="margin-top: 8px; display: block">Ejemplo:</strong>
-            <code style="display: block; margin-top: 4px">
-              EMP003,Carlos,Ramírez,Soto,cramírez@itver.edu.mx,prof03,pass123,Sistemas,Redes,Maestría,Asignatura,2281000000
-            </code>
+          <div style="margin-bottom: 12px;">
+            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVMaestros()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+            </button>
           </div>
 
           <!-- Drop zone -->
@@ -542,6 +520,17 @@
     <script>
       function cerrarModalEliminarMaestro() {
         document.getElementById("modalEliminarMaestro").classList.remove("visible");
+      }
+
+      function descargarEjemploCSVMaestros() {
+        const encabezado = "rfc,nombre,apellido_paterno,apellido_materno,correo_institucional,username,password,departamento,especialidad,grado_academico,tipo_contrato,tel_celular\n";
+        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ejemplo_maestros.csv";
+        a.click();
+        URL.revokeObjectURL(url);
       }
     </script>
   </body>
