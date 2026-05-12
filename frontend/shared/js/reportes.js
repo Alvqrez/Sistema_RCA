@@ -139,7 +139,6 @@ async function cargarReporte(id_grupo) {
 
 function mostrarReporte({ grupo, unidades, alumnos, stats }) {
   document.getElementById("reporteContainer").style.display = "block";
-  document.getElementById("exportActions").style.display = "flex";
   document.getElementById("selectorCard").style.marginBottom = "20px";
 
   document.getElementById("infoMateria").textContent =
@@ -205,7 +204,7 @@ function renderTablaReporte(alumnos, unidades) {
               : uc.estatus === "Reprobada"
                 ? "cal-reprobado"
                 : "cal-pendiente";
-          return `<td class="reporte-cal ${cls}">${uc.calificacion ?? "—"}</td>`;
+          return `<td class="reporte-cal ${cls}">${uc.calificacion_unidad_final ?? "—"}</td>`;
         })
         .join("");
 
@@ -251,39 +250,65 @@ function filtrarTablaReporte() {
 
 function volverSelector() {
   document.getElementById("reporteContainer").style.display = "none";
-  document.getElementById("exportActions").style.display = "none";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function exportarReporteCSV() {
-  if (!reporteActual) return;
-  const { grupo, unidades, alumnos } = reporteActual;
+  // Si hay un reporte de grupo abierto → exportar ese reporte detallado
+  if (reporteActual) {
+    const { grupo, unidades, alumnos } = reporteActual;
 
-  const cols = ["no_control", "nombre_completo", "estatus_inscripcion",
-    ...unidades.map((u) => u.id_unidad.toString()),
-    "promedio_unidades", "calificacion_oficial", "estatus_final",
-  ];
-  const headers = ["No. Control", "Nombre Completo", "Estatus",
-    ...unidades.map((u) => u.nombre_unidad),
-    "Promedio Unidades", "Calificación Oficial", "Estatus Final",
-  ];
+    const cols = ["no_control", "nombre_completo", "estatus_inscripcion",
+      ...unidades.map((u) => u.id_unidad.toString()),
+      "promedio_unidades", "calificacion_oficial", "estatus_final",
+    ];
+    const headers = ["No. Control", "Nombre Completo", "Estatus",
+      ...unidades.map((u) => u.nombre_unidad),
+      "Promedio Unidades", "Calificación Oficial", "Estatus Final",
+    ];
 
-  const datos = alumnos.map((a) => {
-    const row = {
-      no_control: a.no_control,
-      nombre_completo: a.nombre_completo,
-      estatus_inscripcion: a.estatus_inscripcion ?? "",
-      promedio_unidades: a.promedio_unidades ?? "",
-      calificacion_oficial: a.calificacion_oficial ?? "",
-      estatus_final: a.estatus_final ?? "Pendiente",
-    };
-    unidades.forEach((u) => {
-      const uc = a.unidades?.[u.id_unidad];
-      row[u.id_unidad.toString()] = uc?.calificacion ?? "";
+    const datos = alumnos.map((a) => {
+      const row = {
+        no_control: a.no_control,
+        nombre_completo: a.nombre_completo,
+        estatus_inscripcion: a.estatus_inscripcion ?? "",
+        promedio_unidades: a.promedio_unidades ?? "",
+        calificacion_oficial: a.calificacion_oficial ?? "",
+        estatus_final: a.estatus_final ?? "Pendiente",
+      };
+      unidades.forEach((u) => {
+        const uc = a.unidades?.[u.id_unidad];
+        row[u.id_unidad.toString()] = uc?.calificacion_unidad_final ?? "";
+      });
+      return row;
     });
-    return row;
-  });
 
-  exportarXLSX(cols, headers, datos, `reporte_${grupo.clave_materia}_${grupo.id_grupo}`);
-  toast("Reporte exportado correctamente");
+    exportarXLSX(cols, headers, datos, `reporte_${grupo.clave_materia}_${grupo.id_grupo}`);
+    toast("Reporte exportado correctamente");
+    return;
+  }
+
+  // Sin reporte abierto → exportar la lista de grupos actualmente visible
+  const gruposVisibles = alumnosRenderizados.length > 0
+    ? alumnosRenderizados
+    : todosGrupos;
+
+  if (!gruposVisibles.length) {
+    toast("No hay grupos para exportar", "error");
+    return;
+  }
+
+  const cols = ["clave_materia", "nombre_materia", "nombre_maestro", "periodo", "anio", "estatus"];
+  const headers = ["Clave", "Materia", "Docente", "Periodo", "Año", "Estatus"];
+  const datos = todosGrupos.map((g) => ({
+    clave_materia: g.clave_materia,
+    nombre_materia: g.nombre_materia,
+    nombre_maestro: g.nombre_maestro,
+    periodo: g.periodo,
+    anio: g.anio,
+    estatus: g.estatus,
+  }));
+
+  exportarXLSX(cols, headers, datos, `lista_grupos_${new Date().toISOString().slice(0, 10)}`);
+  toast("Lista de grupos exportada correctamente");
 }

@@ -155,7 +155,7 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
       i.id_grupo, i.tipo_curso, i.estatus AS estatus_inscripcion,
       m.nombre_materia, m.clave_materia,
       CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
-      p.descripcion AS periodo, p.anio,
+      p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
       cf.calificacion_oficial, cf.estatus_final
     FROM inscripcion i
     JOIN grupo g         ON i.id_grupo         = g.id_grupo

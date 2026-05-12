@@ -36,11 +36,11 @@ async function seed() {
     // 2. CARRERAS
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO carrera
-               (id_carrera,nombre_carrera,siglas,estatus)
+               (id_carrera,nombre_carrera,siglas)
              VALUES
-               ('ISC','Ingeniería en Sistemas Computacionales','ISC','Aceptada'),
-               ('IIA','Ingeniería en Inteligencia Artificial','IIA','Aceptada'),
-               ('IGE','Ingeniería en Gestión Empresarial','IGE','Aceptada')`);
+               ('ISC','Ingeniería en Sistemas Computacionales','ISC'),
+               ('IIA','Ingeniería en Inteligencia Artificial','IIA'),
+               ('IGE','Ingeniería en Gestión Empresarial','IGE')`);
     console.log("✓ Carreras   → ISC, IIA, IGE");
 
     // ══════════════════════════════════════════════════════════════════════

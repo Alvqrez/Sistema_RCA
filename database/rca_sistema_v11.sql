@@ -28,10 +28,7 @@
 --         combinaciones grupo-unidad que no existan.
 --
 --  + NUEVO: Sistema de estatus automático para periodo_escolar
---           • Columna override_manual agregada a periodo_escolar
 --           • Event Scheduler diario que recalcula estatus por fecha
---           • Procedimiento cambiar_estatus_periodo() para cambio manual
---           • Procedimiento quitar_override_periodo() para volver al automático
 --
 --  CAMBIOS v11
 --  ─────────────────────────────────────────────────────────
@@ -113,11 +110,6 @@ CREATE TABLE `carrera` (
   `id_carrera`      VARCHAR(10)   NOT NULL,
   `nombre_carrera`  VARCHAR(100)  NOT NULL,
   `siglas`          VARCHAR(10)   NULL DEFAULT NULL,
-  `modalidad`       ENUM('Presencial','A distancia','Mixta') NULL DEFAULT 'Presencial',
-  `estatus`         ENUM('Pendiente','Aceptada','Rechazada') NOT NULL DEFAULT 'Pendiente',
-  `creado_por`      VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la creó',
-  `aprobado_por`    VARCHAR(13)   NULL DEFAULT NULL COMMENT 'RFC del admin que la aprobó',
-  `fecha_creacion`  DATETIME      NULL DEFAULT NOW(),
   PRIMARY KEY (`id_carrera`),
   UNIQUE INDEX `uq_Carrera_nombre` (`nombre_carrera`)
 ) ENGINE=InnoDB
@@ -159,7 +151,6 @@ CREATE TABLE `alumno` (
 --  de fecha_inicio: PK → fecha_inicio → anio.
 --  Usar YEAR(fecha_inicio) en las consultas que necesiten el año.
 --
---  + NUEVO: override_manual — si es TRUE el scheduler no toca el estatus,
 --           permitiendo cambios manuales sin que se sobreescriban al día siguiente.
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `periodo_escolar` (
@@ -169,8 +160,6 @@ CREATE TABLE `periodo_escolar` (
   `fecha_inicio`    DATE          NOT NULL,
   `fecha_fin`       DATE          NOT NULL,
   `estatus`         ENUM('Vigente','Concluido','Proximo') NOT NULL DEFAULT 'Proximo',
-  `override_manual` TINYINT(1)    NOT NULL DEFAULT 0
-    COMMENT 'Si es 1 el scheduler respeta el estatus manual y no lo sobreescribe',
   PRIMARY KEY (`id_periodo`),
   UNIQUE INDEX `uq_periodo_desc_inicio` (`descripcion`, `fecha_inicio`)
 ) ENGINE=InnoDB
@@ -596,12 +585,11 @@ SET estatus =
     WHEN CURDATE() < fecha_inicio THEN 'Proximo'
     WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
     WHEN CURDATE() > fecha_fin THEN 'Concluido'
-  END
-WHERE override_manual = 0;
+  END;
 
 
 -- Evento automático diario
--- Recalcula el estatus de todos los periodos sin override manual
+-- Recalcula el estatus de todos los periodos automáticamente
 DROP EVENT IF EXISTS evt_actualizar_estatus_periodos;
 
 CREATE EVENT evt_actualizar_estatus_periodos
@@ -614,58 +602,7 @@ DO
       WHEN CURDATE() < fecha_inicio THEN 'Proximo'
       WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
       WHEN CURDATE() > fecha_fin THEN 'Concluido'
-    END
-  WHERE override_manual = 0;
-
-
--- ─────────────────────────────────────────────────────────────────────────────
---  PROCEDIMIENTOS — Control manual de estatus
--- ─────────────────────────────────────────────────────────────────────────────
-
-DROP PROCEDURE IF EXISTS cambiar_estatus_periodo;
-
-DELIMITER //
-
--- Cambia el estatus manualmente y activa el override
--- para que el scheduler no lo sobreescriba
--- Uso: CALL cambiar_estatus_periodo(2, 'Concluido');
-CREATE PROCEDURE cambiar_estatus_periodo(
-  IN p_id_periodo INT UNSIGNED,
-  IN p_estatus    VARCHAR(20)
-)
-BEGIN
-  UPDATE periodo_escolar
-  SET estatus         = p_estatus,
-      override_manual = 1
-  WHERE id_periodo = p_id_periodo;
-END //
-
-DELIMITER ;
-
-
-DROP PROCEDURE IF EXISTS quitar_override_periodo;
-
-DELIMITER //
-
--- Regresa el periodo al control automático y recalcula
--- su estatus de inmediato con base en la fecha actual
--- Uso: CALL quitar_override_periodo(2);
-CREATE PROCEDURE quitar_override_periodo(
-  IN p_id_periodo INT UNSIGNED
-)
-BEGIN
-  UPDATE periodo_escolar
-  SET override_manual = 0,
-      estatus =
-        CASE
-          WHEN CURDATE() < fecha_inicio THEN 'Proximo'
-          WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
-          WHEN CURDATE() > fecha_fin THEN 'Concluido'
-        END
-  WHERE id_periodo = p_id_periodo;
-END //
-
-DELIMITER ;
+    END;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -705,10 +642,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  REF  actividad           → nueva FK hacia grupo_unidad(id_grupo,id_unidad)
 --
 --  NUEVO EN ESTE ARCHIVO:
---  +    periodo_escolar     → columna override_manual TINYINT(1) DEFAULT 0
 --  +    evt_actualizar_estatus_periodos → evento diario automático
---  +    cambiar_estatus_periodo()       → cambio manual con override
---  +    quitar_override_periodo()       → regresa al control automático
 -- ============================================================
 
 -- ============================================================
