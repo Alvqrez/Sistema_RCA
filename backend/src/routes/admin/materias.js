@@ -95,8 +95,8 @@ router.post("/csv", soloAdmin, (req, res) => {
         // 2. Si viene id_carrera, vincular en retícula
         if (id_carrera && String(id_carrera).trim() !== "") {
           db.query(
-            `INSERT INTO reticula (clave_materia, id_carrera, semestre, creditos)
-             VALUES (?, ?, ?, 0)
+            `INSERT INTO reticula (clave_materia, id_carrera, semestre)
+             VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE semestre = VALUES(semestre)`,
             [
               clave_materia.trim(),
@@ -136,7 +136,7 @@ router.get("/:clave", verificarToken, (req, res) => {
         return res.status(404).json({ error: "Materia no encontrada" });
       const m = results[0];
       db.query(
-        `SELECT r.id_carrera, c.nombre_carrera, r.semestre, r.creditos
+        `SELECT r.id_carrera, c.nombre_carrera, r.semestre
          FROM reticula r JOIN carrera c ON r.id_carrera = c.id_carrera
          WHERE r.clave_materia = ? ORDER BY c.nombre_carrera`,
         [req.params.clave],
@@ -219,15 +219,15 @@ router.delete("/:clave", soloAdmin, (req, res) => {
 
 // POST — vincular materia a una carrera
 router.post("/:clave/carreras", soloAdmin, (req, res) => {
-  const { id_carrera, semestre, creditos } = req.body;
+  const { id_carrera, semestre } = req.body;
   if (!id_carrera)
     return res.status(400).json({ error: "Se requiere id_carrera" });
 
   db.query(
-    `INSERT INTO reticula (clave_materia, id_carrera, semestre, creditos)
-     VALUES (?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE semestre=VALUES(semestre), creditos=VALUES(creditos)`,
-    [req.params.clave, id_carrera, semestre ?? 1, creditos ?? 0],
+    `INSERT INTO reticula (clave_materia, id_carrera, semestre)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE semestre=VALUES(semestre)`,
+    [req.params.clave, id_carrera, semestre ?? 1],
     (err) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });

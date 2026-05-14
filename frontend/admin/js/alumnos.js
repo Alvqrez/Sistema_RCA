@@ -435,10 +435,7 @@ async function guardarAlumno() {
     ? {
         curp: curpVal || null,
         fecha_nacimiento: fecha_nacimiento || null,
-        genero: document.getElementById("f_genero").value || null,
-        direccion: document.getElementById("f_direccion").value.trim() || null,
         tel_celular: document.getElementById("f_celular").value.trim() || null,
-        tel_casa: document.getElementById("f_tel_casa").value.trim() || null,
         correo_personal:
           document.getElementById("f_correo_personal").value.trim() || null,
       }
