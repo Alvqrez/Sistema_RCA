@@ -11,12 +11,9 @@ const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
-// GET — listar todas (admin ve todas; maestro/alumno solo las activas)
+// GET — listar todas
 router.get("/", verificarToken, (req, res) => {
-  const soloActivos = req.usuario.rol !== "administrador";
-  const sql = soloActivos
-    ? "SELECT id_tipo, nombre, descripcion FROM tipo_actividad WHERE activo = 1 ORDER BY nombre"
-    : "SELECT id_tipo, nombre, descripcion FROM tipo_actividad ORDER BY nombre";
+  const sql = "SELECT id_tipo, nombre, descripcion FROM tipo_actividad ORDER BY nombre";
   db.query(sql, (err, rows) => {
     if (err) return res.status(500).json({ error: "Error interno del servidor" });
     res.json(rows);
@@ -43,7 +40,7 @@ router.post("/", soloAdmin, (req, res) => {
     return res.status(400).json({ error: "El nombre es requerido" });
 
   db.query(
-    "INSERT INTO tipo_actividad (nombre, descripcion, activo) VALUES (?, ?, 1)",
+    "INSERT INTO tipo_actividad (nombre, descripcion) VALUES (?, ?)",
     [nombre.trim(), descripcion?.trim() || null],
     (err, result) => {
       if (err) {
@@ -91,7 +88,8 @@ router.post("/csv", soloAdmin, (req, res) => {
     }
 
     db.query(
-      `INSERT INTO tipo_actividad (nombre, descripcion, activo) VALUES (?, ?, 1)
+      `INSERT INTO tipo_actividad (nombre, descripcion)
+       VALUES (?, ?)
        ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion)`,
       [nombre, descripcion],
       (err, result) => {
@@ -109,7 +107,7 @@ router.post("/csv", soloAdmin, (req, res) => {
   }
 });
 
-// PUT /:id — editar (activo siempre se mantiene en 1, no se expone en UI)
+// PUT /:id — editar nombre y descripcion
 router.put("/:id", soloAdmin, (req, res) => {
   const { nombre, descripcion } = req.body;
   if (!nombre || !nombre.trim())

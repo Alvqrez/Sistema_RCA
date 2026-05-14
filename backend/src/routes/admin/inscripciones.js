@@ -36,7 +36,7 @@ router.get("/", verificarToken, (req, res) => {
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const sql = `
     SELECT i.id_grupo, i.fecha_inscripcion, i.estatus, i.tipo_curso,
-           m.nombre_materia, m.clave_materia, COALESCE(r.creditos, 0) AS creditos_totales,
+           m.nombre_materia, m.clave_materia,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
            cf.calificacion_oficial, cf.estatus_final
@@ -181,58 +181,8 @@ router.post("/", soloAdmin, (req, res) => {
           return insertarInscripcion();
         }
 
-        // Sumar créditos actuales del alumno en este periodo
-        const sqlCreditos = `
-          SELECT COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS total
-          FROM inscripcion i
-          JOIN grupo g      ON g.id_grupo = i.id_grupo
-          JOIN materia m    ON m.clave_materia = g.clave_materia
-          LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
-          WHERE i.no_control = ?
-            AND g.id_periodo = (SELECT id_periodo FROM grupo WHERE id_grupo = ?)
-            AND i.estatus = 'Cursando'
-        `;
-        db.query(sqlCreditos, [no_control, id_grupo], (errC, credRows) => {
-          if (errC)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
-
-          const creditosActuales = parseFloat(credRows[0]?.total || 0);
-
-          // Créditos de la materia nueva
-          const sqlNuevos = `
-            SELECT COALESCE(r.creditos, 0) AS creditos_totales
-            FROM grupo g
-            JOIN materia m ON m.clave_materia = g.clave_materia
-            LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
-            WHERE g.id_grupo = ?
-          `;
-          db.query(sqlNuevos, [id_grupo], (errN, nuevosRows) => {
-            if (errN)
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
-
-            const creditosNuevos = parseFloat(
-              nuevosRows[0]?.creditos_totales || 0,
-            );
-            const total = creditosActuales + creditosNuevos;
-
-            if (total > 36) {
-              return res.status(400).json({
-                error:
-                  `El alumno excedería la carga máxima de 36 créditos. ` +
-                  `Tiene ${creditosActuales} créditos y esta materia agrega ${creditosNuevos} (total: ${total}).`,
-                creditos_actuales: creditosActuales,
-                creditos_nuevos: creditosNuevos,
-                total,
-              });
-            }
-
-            insertarInscripcion();
-          });
-        });
+        // Validación de créditos eliminada (campo creditos removido en v12)
+        insertarInscripcion();
       });
 
       function insertarInscripcion() {
@@ -357,13 +307,11 @@ router.post("/bulk", soloAdmin, async (req, res) => {
       .status(400)
       .json({ error: "No_controls y grupo son requeridos" });
 
-  // Detectar si el periodo es semestral (Enero o Agosto) para validar créditos
+  // Detectar si el periodo es semestral (Enero o Agosto) o verano
   const sqlPeriodoDesc = `
-    SELECT p.descripcion, g.id_periodo,
-           COALESCE(r.creditos, 0) AS creditos_nuevos
+    SELECT p.descripcion, g.id_periodo
     FROM grupo g
     JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
-    LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
     LIMIT 1
   `;
@@ -383,7 +331,7 @@ router.post("/bulk", soloAdmin, async (req, res) => {
     ),
   )
     .then((gruposInfo) => {
-      const grupoMap = {}; // id_grupo → { descripcion, id_periodo, creditos_nuevos }
+      const grupoMap = {}; // id_grupo → { descripcion, id_periodo }
       gruposInfo.forEach(({ idg, info }) => (grupoMap[idg] = info));
 
       // Para cada alumno en cada grupo semestral, verificar créditos
@@ -427,31 +375,9 @@ router.post("/bulk", soloAdmin, async (req, res) => {
               );
             }
 
+            // Validación de créditos eliminada en v12
             if (!esSemestral) return resolve({ reg, ok: true });
-
-            const sqlCred = `
-              SELECT COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS total
-              FROM inscripcion i
-              JOIN grupo g   ON g.id_grupo = i.id_grupo
-              LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
-              WHERE i.no_control = ?
-                AND g.id_periodo = ?
-                AND i.estatus = 'Cursando'
-            `;
-            db.query(sqlCred, [reg.no_control, info.id_periodo], (e, rows) => {
-              if (e) return resolve({ reg, ok: true }); // si falla la validación, dejamos pasar
-              const actuales = parseFloat(rows[0]?.total || 0);
-              const nuevos = parseFloat(info.creditos_nuevos || 0);
-              const total = actuales + nuevos;
-              if (total > 36) {
-                return resolve({
-                  reg,
-                  ok: false,
-                  razon: `Excede 36 créditos (tiene ${actuales}, agrega ${nuevos})`,
-                });
-              }
-              resolve({ reg, ok: true });
-            });
+            resolve({ reg, ok: true });
           }),
       );
 
@@ -462,13 +388,10 @@ router.post("/bulk", soloAdmin, async (req, res) => {
           .map((r) => ({ no_control: r.reg.no_control, razon: r.razon }));
 
         if (!aprobados.length) {
-          const todosVerano = rechazados.every((r) =>
-            r.razon?.includes("verano"),
-          );
-          const errorMsg = todosVerano
-            ? "Ningún alumno pudo inscribirse por límite de materias en periodo de verano (máximo 2 por verano)."
-            : "Ningún alumno pudo inscribirse por límite de créditos.";
-          return res.status(400).json({ error: errorMsg, rechazados });
+          return res.status(400).json({
+            error: "Ningún alumno pudo inscribirse por límite de materias en periodo de verano (máximo 2).",
+            rechazados
+          });
         }
 
         // Verificar capacidad máxima de cada grupo antes de insertar
@@ -606,32 +529,28 @@ router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
 });
 
 // POST — validar carga de alumnos sin insertar
-// Recibe { no_controls: [...], id_grupo } y devuelve por cada alumno
-// si puede inscribirse o no, con el detalle de su carga actual.
+// v12: validación de créditos eliminada (campo removido de reticula)
+// Solo valida límite de 2 materias en periodo de verano.
 router.post("/validar-carga", verificarToken, (req, res) => {
   const { no_controls, id_grupo } = req.body;
   if (!Array.isArray(no_controls) || !no_controls.length || !id_grupo)
     return res.status(400).json({ error: "Parametros requeridos" });
 
   const sqlGrupo = `
-    SELECT p.descripcion, g.id_periodo, COALESCE(r.creditos, 0) AS creditos_totales
+    SELECT p.descripcion, g.id_periodo
     FROM grupo g
     JOIN periodo_escolar p ON p.id_periodo = g.id_periodo
-    JOIN materia m ON m.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
   `;
   db.query(sqlGrupo, [id_grupo], (errG, grupoRows) => {
     if (errG || !grupoRows.length)
-      return res
-        .status(500)
-        .json({ error: "Error al obtener datos del grupo" });
+      return res.status(500).json({ error: "Error al obtener datos del grupo" });
 
-    const { descripcion, id_periodo, creditos_totales } = grupoRows[0];
-    const desc = (descripcion || "").toLowerCase();
-    const esVerano = desc.includes("verano");
-    const esSemestral = desc.includes("enero") || desc.includes("agosto");
+    const { descripcion, id_periodo } = grupoRows[0];
+    const esVerano = (descripcion || "").toLowerCase().includes("verano");
 
-    if (!esVerano && !esSemestral) {
+    if (!esVerano) {
+      // Sin validación de carga — todos pasan
       return res.json(
         no_controls.map((nc) => ({
           no_control: nc,
@@ -642,44 +561,34 @@ router.post("/validar-carga", verificarToken, (req, res) => {
       );
     }
 
+    // Periodo de verano: máximo 2 materias
     const placeholders = no_controls.map(() => "?").join(",");
-    const sqlCarga = esVerano
-      ? `SELECT i.no_control, COUNT(*) AS carga
-         FROM inscripcion i
-         JOIN grupo g ON g.id_grupo = i.id_grupo
-         WHERE i.no_control IN (${placeholders})
-           AND g.id_periodo = ? AND i.estatus = 'Cursando'
-         GROUP BY i.no_control`
-      : `SELECT i.no_control, COALESCE(SUM(COALESCE(r.creditos, 0)), 0) AS carga
-         FROM inscripcion i
-         JOIN grupo g ON g.id_grupo = i.id_grupo
-         JOIN materia m ON m.clave_materia = g.clave_materia
-         LEFT JOIN reticula r ON r.clave_materia = g.clave_materia
-         WHERE i.no_control IN (${placeholders})
-           AND g.id_periodo = ? AND i.estatus = 'Cursando'
-         GROUP BY i.no_control`;
+    const sqlCarga = `
+      SELECT i.no_control, COUNT(*) AS carga
+      FROM inscripcion i
+      JOIN grupo g ON g.id_grupo = i.id_grupo
+      WHERE i.no_control IN (${placeholders})
+        AND g.id_periodo = ? AND i.estatus = 'Cursando'
+      GROUP BY i.no_control`;
 
     db.query(sqlCarga, [...no_controls, id_periodo], (errC, cargaRows) => {
       if (errC)
         return res.status(500).json({ error: "Error al calcular carga" });
 
       const cargaMap = {};
-      cargaRows.forEach((r) => (cargaMap[r.no_control] = parseFloat(r.carga)));
-
-      const limite = esVerano ? 2 : 36;
-      const agregar = esVerano ? 1 : parseFloat(creditos_totales || 0);
+      cargaRows.forEach((r) => (cargaMap[r.no_control] = parseInt(r.carga)));
 
       const resultado = no_controls.map((nc) => {
         const carga_actual = cargaMap[nc] || 0;
-        const total = carga_actual + agregar;
+        const total = carga_actual + 1;
         return {
           no_control: nc,
-          ok: total <= limite,
+          ok: total <= 2,
           carga_actual,
-          agrega: agregar,
+          agrega: 1,
           total,
-          limite,
-          es_verano: esVerano,
+          limite: 2,
+          es_verano: true,
         };
       });
 
