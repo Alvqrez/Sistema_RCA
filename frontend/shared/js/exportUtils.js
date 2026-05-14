@@ -1,11 +1,11 @@
-// ─── exportUtils.js ──────────────────────────────────────────────────────────
+// ─── exportUtils.js ───────────────────────────────────────────────────────────
 // Requiere SheetJS cargado ANTES en el HTML (vía CDN o local):
 //   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── exportarXLSX ─────────────────────────────────────────────────────────────
-// Exporta datos a .xlsx (con SheetJS) con columnas autoajustadas al contenido.
-// Si SheetJS no está disponible, genera .csv como fallback.
+// ── exportarXLSX ──────────────────────────────────────────────────────────────
+// Exporta datos a .xlsx con columnas autoajustadas y codificación correcta.
+// Si SheetJS no está disponible genera .csv con BOM como fallback.
 // cols      → claves internas   ["no_control", "nombre", ...]
 // headers   → nombres visibles  ["No. Control", "Nombre", ...]
 // datos     → array de objetos
@@ -23,27 +23,28 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
     );
   });
 
-  // ── Ruta XLSX con SheetJS (columnas autoajustadas) ────────────────────────
+  // ── Ruta XLSX con SheetJS ─────────────────────────────────────────────────
   if (window.XLSX) {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(filas);
 
-    // Calcular ancho óptimo de cada columna según el contenido más largo
+    // Calcular ancho óptimo midiendo caracteres reales (acentos cuentan como 1)
     const anchos = cols.map((_, ci) => {
       const maxLen = filas.reduce((max, fila) => {
         const celda = fila[ci] != null ? String(fila[ci]) : "";
         return Math.max(max, celda.length);
-      }, 10); // mínimo 10 caracteres de ancho
-      return { wch: Math.min(maxLen + 2, 80) }; // +2 margen, tope 80 chars
+      }, headers[ci]?.length ?? 10);
+      return { wch: Math.min(maxLen + 4, 80) };
     });
     ws["!cols"] = anchos;
 
+    // book_append_sheet es obligatorio — sin esto el workbook queda vacío
     XLSX.utils.book_append_sheet(wb, ws, "Datos");
     XLSX.writeFile(wb, `${filename}.xlsx`);
     return;
   }
 
-  // ── Fallback: CSV (cuando SheetJS no está cargado) ────────────────────────
+  // ── Fallback: CSV con BOM UTF-8 ───────────────────────────────────────────
   const escapar = (v) => {
     const s = String(v ?? "");
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -59,16 +60,14 @@ function exportarXLSX(cols, headers, datos, filename, formatFn) {
   URL.revokeObjectURL(url);
 }
 
-// ── leerArchivo ──────────────────────────────────────────────────────────────
+// ── leerArchivo ───────────────────────────────────────────────────────────────
 // Acepta .csv O .xlsx/.xls y devuelve { headers, rows } de forma uniforme.
 // Llama al callback cb(headers, rows) cuando termina.
-// Si el archivo es Excel, lo convierte internamente a filas de objetos.
 function leerArchivo(file, cb) {
   const nombre = file.name.toLowerCase();
   const esExcel = nombre.endsWith(".xlsx") || nombre.endsWith(".xls");
 
   if (esExcel) {
-    // ── Leer como binario con SheetJS ────────────────────────────────────────
     if (!window.XLSX) {
       alert("SheetJS no está cargado. No se puede leer archivos Excel.");
       return;
@@ -77,7 +76,6 @@ function leerArchivo(file, cb) {
     reader.onload = (e) => {
       const wb = XLSX.read(e.target.result, { type: "binary", cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      // Convertir a array de arrays
       const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
       if (aoa.length < 2) { cb([], []); return; }
 
@@ -90,12 +88,11 @@ function leerArchivo(file, cb) {
           const obj = {};
           headers.forEach((h, i) => {
             let v = r[i] ?? "";
-            // Fechas: SheetJS devuelve Date cuando cellDates:true
             if (v instanceof Date) {
               const yy = v.getFullYear();
               const mm = String(v.getMonth() + 1).padStart(2, "0");
               const dd = String(v.getDate()).padStart(2, "0");
-              v = `${dd}/${mm}/${yy}`;
+              v = `${yy}-${mm}-${dd}`; // ISO para compatibilidad con backend
             }
             obj[h] = String(v).trim();
           });
@@ -105,7 +102,7 @@ function leerArchivo(file, cb) {
     };
     reader.readAsBinaryString(file);
   } else {
-    // ── Leer como texto CSV ───────────────────────────────────────────────────
+    // CSV: intentar UTF-8 primero, si hay caracteres raros releer con latin-1
     const reader = new FileReader();
     reader.onload = (e) => {
       const { headers, rows } = parseCSVRobusto(e.target.result);

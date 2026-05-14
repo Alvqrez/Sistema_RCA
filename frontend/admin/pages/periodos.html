@@ -590,7 +590,8 @@
       cargarPeriodos();
 
       function descargarEjemploCSVPeriodos() {
-        const encabezado = "descripcion,fecha_inicio,fecha_fin,estatus\n";
+        const BOM = "\uFEFF";
+        const encabezado = BOM + "descripcion,fecha_inicio,fecha_fin,estatus\n";
         const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");

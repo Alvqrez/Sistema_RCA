@@ -459,13 +459,12 @@ async function importarCSVMaterias() {
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
-    toast(`${data.insertados} materia(s) importadas correctamente`);
-    if (data.reticulas > 0)
-      toast(`${data.reticulas} vínculo(s) de carrera procesados`, "info");
-    if (data.errores?.length) {
-      toast(`${data.errores.length} fila(s) con errores`, "info");
-      console.table(data.errores);
-    }
+    // Toast unificado — un solo mensaje con el resumen completo
+    const partes = [`${data.insertados} materia(s) importadas`];
+    if (data.reticulas > 0) partes.push(`${data.reticulas} vínculo(s) de carrera`);
+    if (data.errores?.length) partes.push(`${data.errores.length} error(es)`);
+    toast(partes.join(" · "), data.errores?.length ? "info" : "success");
+    if (data.errores?.length) console.table(data.errores);
     cerrarModalCSVMaterias();
     cargarMaterias();
   } catch (err) {
