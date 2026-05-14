@@ -267,7 +267,6 @@ form.addEventListener("submit", async function (e) {
         body: JSON.stringify({
           id_carrera: c.id_carrera,
           semestre: c.semestre,
-          creditos: 0,
         }),
       });
     }

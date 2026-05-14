@@ -8,159 +8,20 @@
         document.documentElement.classList.add("dark-mode");
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link
-      rel="icon"
-      type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../../css/styles.css" />
     <style>
-      /* ── Tabs del modal ─────────────────────────────────────────────── */
-      .modal-tabs {
-        display: flex;
-        gap: 2px;
-        background: var(--bg-app);
-        border-radius: 10px;
-        padding: 4px;
-        margin-bottom: 20px;
-      }
-      .modal-tab {
-        flex: 1;
-        padding: 8px 12px;
-        border: none;
-        background: transparent;
-        border-radius: 8px;
-        font-size: 0.82rem;
-        font-weight: 500;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          color 0.15s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        font-family: inherit;
-      }
-      .modal-tab.active {
-        background: var(--bg-card);
-        color: var(--text-main);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      }
-      .modal-tab:hover:not(.active) {
-        background: var(--bg-card);
-        color: var(--text-main);
-      }
-      .tab-panel {
-        display: none;
-      }
-      .tab-panel.active {
-        display: block;
-      }
-
-      /* ── Info chips de ayuda ────────────────────────────────────────── */
-      .required-hint {
-        font-size: 0.78rem;
-        color: var(--text-muted);
-        margin: -12px 0 14px;
-      }
-      .required-hint strong {
-        color: var(--danger);
-      }
-
-      /* ── Avatar grande en la cabecera del modal ─────────────────────── */
-      .modal-avatar-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 20px;
-        background: var(--bg-app);
-        border-radius: 10px;
-        margin-bottom: 18px;
-      }
-      .modal-avatar-big {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        background: var(--success-light);
-        color: var(--success);
-        font-size: 1.4rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .modal-avatar-info p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-      }
-      .modal-avatar-info strong {
-        font-size: 1rem;
-        color: var(--text-main);
-      }
-
-      /* ── Sección dentro del tab ─────────────────────────────────────── */
-      .form-section-label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        color: var(--text-muted);
-        margin: 0 0 10px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      /* ── Modal maestros ──────────────────────────────────────────────── */
-      #modalMaestro .modal-body {
-        overflow-y: auto;
-        max-height: 70vh;
-      }
-
-      .modal-section {
-        padding: 16px 22px;
-        border-top: 1px solid var(--border);
-      }
-      .modal-section:first-child {
-        border-top: none;
-      }
+      .modal-section { padding: 16px 22px; border-top: 1px solid var(--border); }
+      .modal-section:first-child { border-top: none; }
       .modal-section-label {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-muted);
-        margin: 0 0 13px;
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--text-muted); margin: 0 0 13px;
       }
-      .modal-section-label iconify-icon {
-        font-size: 0.95rem;
-        color: var(--primary);
-      }
-      .required-hint {
-        font-size: 0.78rem;
-        color: var(--text-muted);
-        margin: 0 0 12px;
-      }
-
-      /* ── Badge de estatus inline ───────────────────────────────────── */
-      .estatus-select-wrap {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .estatus-select-wrap select {
-        flex: 1;
-      }
+      .modal-section-label iconify-icon { font-size: 0.95rem; color: var(--primary); }
+      .required-hint { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 12px; }
+      #modalMaestro .modal-body { overflow-y: auto; max-height: 70vh; }
     </style>
   </head>
   <body>
@@ -172,7 +33,7 @@
             <h1>Maestros</h1>
             <p class="page-subtitle">Gestión del personal docente</p>
           </div>
-          <div class="header-actions" id="headerActions" style="display: none">
+          <div class="header-actions" id="headerActions" style="display:none">
             <button class="btn btn-outline" onclick="abrirModalCSVMaestros()">
               <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
             </button>
@@ -180,8 +41,7 @@
               <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
             </button>
             <button class="btn btn-primary" onclick="abrirModalNuevo()">
-              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo
-              maestro
+              <iconify-icon icon="lucide:user-plus"></iconify-icon> Nuevo maestro
             </button>
           </div>
         </div>
@@ -190,69 +50,36 @@
         <div class="stats-row">
           <div class="stat-card">
             <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-            <div>
-              <p id="statTotal">—</p>
-              <span>Total maestros</span>
-            </div>
-          </div>
-          <div class="stat-card stat-success">
-            <iconify-icon icon="lucide:user-check"></iconify-icon>
-            <div>
-              <p id="statActivos">—</p>
-              <span>Activos</span>
-            </div>
+            <div><p id="statTotal">—</p><span>Total maestros</span></div>
           </div>
           <div class="stat-card stat-purple">
             <iconify-icon icon="lucide:filter"></iconify-icon>
-            <div>
-              <p id="statFiltrados">—</p>
-              <span>Mostrando</span>
-            </div>
+            <div><p id="statFiltrados">—</p><span>Mostrando</span></div>
           </div>
         </div>
 
         <!-- Tabla -->
         <div class="card">
-          <div class="card-filter-bar" style="flex-wrap:wrap;gap:8px">
-            <input
-              type="text"
-              id="filtroBusqueda"
+          <div class="card-filter-bar">
+            <input type="text" id="filtroBusqueda"
               placeholder="Buscar por nombre, RFC, correo…"
-              oninput="filtrarMaestros()"
-              style="flex:1;min-width:200px"
-            />
-            <select id="filtroDepartamento" onchange="filtrarMaestros()">
-              <option value="">Todos los departamentos</option>
-            </select>
-            <select id="filtroEstatus" onchange="filtrarMaestros()">
-              <option value="">Todos los estatus</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-              <option value="Jubilado">Jubilado</option>
-            </select>
+              oninput="filtrarMaestros()" style="flex:1;min-width:200px" />
           </div>
-          <div id="chipsMaestros" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px;min-height:0"></div>
-          <div style="overflow-x: auto">
+          <div style="overflow-x:auto">
             <table>
               <thead>
                 <tr>
                   <th>Maestro</th>
                   <th>RFC</th>
-                  <th>Departamento</th>
-                  <th>Correo</th>
-                  <th style="text-align:center">Estatus</th>
-                  <th style="text-align: right">Acciones</th>
+                  <th>Correo institucional</th>
+                  <th>Teléfono</th>
+                  <th style="text-align:right">Acciones</th>
                 </tr>
               </thead>
               <tbody id="tablaMaestros">
-                <tr>
-                  <td colspan="6">
-                    <div class="empty-state">
-                      <iconify-icon icon="lucide:loader-2"></iconify-icon>
-                      <p>Cargando…</p>
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colspan="5"><div class="empty-state">
+                  <iconify-icon icon="lucide:loader-2"></iconify-icon><p>Cargando…</p>
+                </div></td></tr>
               </tbody>
             </table>
           </div>
@@ -260,39 +87,40 @@
       </main>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         MODAL MAESTRO — diseño con tabs
-    ════════════════════════════════════════════════════════════════════ -->
+    <!-- ── Modal Crear / Editar ──────────────────────────────────────────── -->
     <div id="modalMaestro" class="modal-overlay">
-      <div class="modal-panel" style="max-width:700px">
+      <div class="modal-panel" style="max-width:620px">
         <div class="modal-header">
           <h2 id="modalTitulo">Nuevo maestro</h2>
           <button class="modal-close" onclick="cerrarModal('modalMaestro')">✕</button>
         </div>
-
         <div class="modal-body">
 
-          <!-- IDENTIFICACIÓN -->
+          <!-- Identificación -->
           <div class="modal-section">
-            <p class="modal-section-label"><iconify-icon icon="lucide:id-card"></iconify-icon> Identificación</p>
-            <p class="required-hint">Los campos marcados con <strong>*</strong> son obligatorios.</p>
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:id-card"></iconify-icon> Identificación
+            </p>
+            <p class="required-hint">Los campos marcados con <strong style="color:var(--danger)">*</strong> son obligatorios.</p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>RFC *</label>
-                <input type="text" id="f_rfc" placeholder="Ej: PERJ850101HDF" maxlength="13" oninput="this.value=this.value.toUpperCase()" />
-                <small style="color:var(--text-muted);font-size:0.72rem">El RFC será el identificador y nombre de usuario del maestro</small>
+                <input type="text" id="f_rfc" placeholder="Ej: PERJ850101HDF"
+                  maxlength="13" oninput="this.value=this.value.toUpperCase()" />
+                <small style="color:var(--text-muted);font-size:0.72rem">Será el identificador y nombre de usuario</small>
               </div>
               <div class="form-group">
-                <label>Correo institucional</label>
+                <label>Correo institucional *</label>
                 <input type="email" id="f_correo" placeholder="correo@veracruz.tecnm.mx" />
-                
               </div>
             </div>
           </div>
 
-          <!-- NOMBRE COMPLETO -->
+          <!-- Nombre completo -->
           <div class="modal-section">
-            <p class="modal-section-label"><iconify-icon icon="lucide:user"></iconify-icon> Nombre completo</p>
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:user"></iconify-icon> Nombre completo
+            </p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>Nombre(s) *</label>
@@ -306,37 +134,24 @@
                 <label>Apellido materno</label>
                 <input type="text" id="f_ap_mat" placeholder="Ej: López" />
               </div>
-              <div class="form-group">
-                <label>Estatus</label>
-                <select id="f_estatus">
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                  <option value="Licencia">Licencia</option>
-                </select>
-              </div>
             </div>
           </div>
 
-          <!-- PERSONAL -->
+          <!-- Datos personales -->
           <div class="modal-section">
-            <p class="modal-section-label"><iconify-icon icon="lucide:user-circle"></iconify-icon> Datos personales <span style="font-weight:400;font-size:0.68rem;text-transform:none;color:var(--text-muted)">(opcional)</span></p>
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:user-circle"></iconify-icon>
+              Datos personales <span style="font-weight:400;font-size:0.68rem;text-transform:none;color:var(--text-muted)">(opcional)</span>
+            </p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>CURP</label>
-                <input type="text" id="f_curp" maxlength="18" placeholder="18 caracteres" style="text-transform:uppercase" />
+                <input type="text" id="f_curp" maxlength="18"
+                  placeholder="18 caracteres" style="text-transform:uppercase" />
               </div>
               <div class="form-group">
                 <label>Fecha de nacimiento</label>
                 <input type="date" id="f_fnac" />
-              </div>
-              <div class="form-group">
-                <label>Género</label>
-                <select id="f_genero">
-                  <option value="">— Selecciona —</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="Otro">Otro</option>
-                </select>
               </div>
               <div class="form-group">
                 <label>Tel. celular</label>
@@ -346,71 +161,27 @@
                 <label>Correo personal</label>
                 <input type="email" id="f_correo_personal" placeholder="correo@gmail.com" />
               </div>
-              <div class="form-group">
-                <label>Dirección</label>
-                <input type="text" id="f_direccion" placeholder="Calle, número, colonia…" />
-              </div>
             </div>
           </div>
 
-          <!-- LABORAL -->
-          <div class="modal-section">
-            <p class="modal-section-label"><iconify-icon icon="lucide:briefcase"></iconify-icon> Datos laborales <span style="font-weight:400;font-size:0.68rem;text-transform:none;color:var(--text-muted)">(opcional)</span></p>
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label>Departamento</label>
-                <input type="text" id="f_departamento" placeholder="Ej: Sistemas y Computación" />
-              </div>
-              <div class="form-group">
-                <label>Especialidad</label>
-                <input type="text" id="f_especialidad" placeholder="Ej: Bases de Datos" />
-              </div>
-              <div class="form-group">
-                <label>Grado académico</label>
-                <select id="f_grado">
-                  <option value="">— Selecciona —</option>
-                  <option>Licenciatura</option>
-                  <option>Especialidad</option>
-                  <option>Maestría</option>
-                  <option>Doctorado</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Tipo de contrato</label>
-                <select id="f_contrato">
-                  <option value="">— Selecciona —</option>
-                  <option>Tiempo completo</option>
-                  <option>Medio tiempo</option>
-                  <option>Asignatura</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Fecha de ingreso</label>
-                <input type="date" id="f_ingreso" />
-              </div>
-              <div class="form-group">
-                <label>Tel. oficina / extensión</label>
-                <input type="text" id="f_tel_oficina" placeholder="Ext. 1234" />
-              </div>
-            </div>
-          </div>
-
-          <!-- ACCESO -->
+          <!-- Acceso al sistema -->
           <div class="modal-section" id="grupoPassword">
-            <p class="modal-section-label"><iconify-icon icon="lucide:lock"></iconify-icon> Acceso al sistema</p>
+            <p class="modal-section-label">
+              <iconify-icon icon="lucide:lock"></iconify-icon> Acceso al sistema
+            </p>
             <div class="form-grid-2">
               <div class="form-group">
                 <label>Contraseña inicial *</label>
-                <input type="password" id="f_password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+                <input type="password" id="f_password"
+                  placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
               </div>
             </div>
           </div>
 
-          <p id="modalError" style="color:var(--danger);font-size:0.85rem;margin:8px 0 0;display:none;background:rgba(239,68,68,0.08);padding:8px 12px;border-radius:8px;border-left:3px solid var(--danger)"></p>
-
+          <p id="modalError" style="color:var(--danger);font-size:0.85rem;margin:8px 0 0;
+             display:none;background:rgba(239,68,68,0.08);padding:8px 12px;
+             border-radius:8px;border-left:3px solid var(--danger)"></p>
         </div>
-        <!-- /modal-body -->
-
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="cerrarModal('modalMaestro')">Cancelar</button>
           <button class="btn btn-primary" id="btnGuardar" onclick="guardarMaestro()">
@@ -419,79 +190,8 @@
         </div>
       </div>
     </div>
-    <div id="toast-container"></div>
 
-    <!-- Modal Importar CSV Maestros -->
-    <div class="modal-overlay" id="modalImportMaestros">
-      <div class="modal-panel" style="max-width: 580px">
-        <div class="modal-header">
-          <h2>Importar Maestros desde CSV</h2>
-          <button class="modal-close" onclick="cerrarModalCSVMaestros()">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <!-- Formato esperado -->
-          <div style="margin-bottom: 12px;">
-            <button class="btn btn-outline" style="font-size:0.85rem; gap:6px;" onclick="descargarEjemploCSVMaestros()">
-              <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
-            </button>
-          </div>
-
-          <!-- Drop zone -->
-          <div
-            id="dropZoneMaestros"
-            class="csv-drop-zone"
-            ondragover="dragOverMaestros(event)"
-            ondrop="soltarCSVMaestros(event)"
-            onclick="document.getElementById('inputCSVMaestros').click()"
-          >
-            <iconify-icon icon="lucide:file-up"></iconify-icon>
-            <p>
-              Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong>
-            </p>
-            <small
-              >Columnas: rfc, nombre, apellido_paterno, correo_institucional,
-              username, password</small
-            >
-          </div>
-          <input
-            type="file"
-            id="inputCSVMaestros"
-            accept=".csv,.xlsx,.xls"
-            style="display: none"
-            onchange="leerCSVMaestros(event)"
-          />
-
-          <!-- Preview -->
-          <div
-            id="csvMaestrosPreview"
-            style="overflow-x: auto; margin-top: 6px"
-          ></div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModalCSVMaestros()">
-            Cancelar
-          </button>
-          <button
-            id="btnImportarMaestros"
-            class="btn btn-primary"
-            disabled
-            onclick="importarCSVMaestros()"
-          >
-            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <script src="../../shared/js/sidebar.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <script src="../../shared/js/exportUtils.js"></script>
-    <script src="../../admin/js/maestros.js"></script>
-
-    <!-- Modal eliminar maestro -->
+    <!-- ── Modal Eliminar ────────────────────────────────────────────────── -->
     <div id="modalEliminarMaestro" class="modal-overlay">
       <div class="modal-panel modal-sm">
         <div class="modal-header">
@@ -499,10 +199,7 @@
           <button class="modal-close" onclick="cerrarModalEliminarMaestro()">✕</button>
         </div>
         <div class="modal-body">
-          <p style="margin: 0 0 8px">
-            ¿Estás seguro de eliminar al maestro
-            <strong id="nombreEliminarMaestro"></strong>?
-          </p>
+          <p style="margin:0 0 8px">¿Eliminar al maestro <strong id="nombreEliminarMaestro"></strong>?</p>
           <p style="font-size:0.82rem;color:var(--danger);display:flex;align-items:center;gap:6px;margin:0">
             <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
             Esta acción no se puede deshacer. No podrás eliminarlo si tiene grupos vinculados.
@@ -517,19 +214,56 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Modal Importar CSV ────────────────────────────────────────────── -->
+    <div class="modal-overlay" id="modalImportMaestros">
+      <div class="modal-panel" style="max-width:580px">
+        <div class="modal-header">
+          <h2>Importar Maestros desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModalCSVMaestros()">✕</button>
+        </div>
+        <div class="modal-body">
+          <button class="btn btn-outline" style="font-size:0.85rem;gap:6px;margin-bottom:14px"
+            onclick="descargarEjemploCSVMaestros()">
+            <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+          </button>
+          <div id="dropZoneMaestros" class="csv-drop-zone"
+            ondragover="dragOverMaestros(event)"
+            ondrop="soltarCSVMaestros(event)"
+            onclick="document.getElementById('inputCSVMaestros').click()">
+            <iconify-icon icon="lucide:file-up"></iconify-icon>
+            <p>Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>Columnas: rfc, nombre, apellido_paterno, correo_institucional, username, password</small>
+          </div>
+          <input type="file" id="inputCSVMaestros" accept=".csv,.xlsx,.xls"
+            style="display:none" onchange="leerCSVMaestros(event)" />
+          <div id="csvMaestrosPreview" style="overflow-x:auto;margin-top:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalCSVMaestros()">Cancelar</button>
+          <button id="btnImportarMaestros" class="btn btn-primary" disabled onclick="importarCSVMaestros()">
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="../../shared/js/exportUtils.js"></script>
+    <script src="../../admin/js/maestros.js"></script>
     <script>
       function cerrarModalEliminarMaestro() {
         document.getElementById("modalEliminarMaestro").classList.remove("visible");
       }
-
       function descargarEjemploCSVMaestros() {
-        const encabezado = "rfc,nombre,apellido_paterno,apellido_materno,correo_institucional,username,password,departamento,especialidad,grado_academico,tipo_contrato,tel_celular\n";
-        const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });
+        const BOM = "\uFEFF";
+        const contenido = BOM + "rfc,nombre,apellido_paterno,apellido_materno,correo_institucional,username,password,curp,fecha_nacimiento,correo_personal,tel_celular\n";
+        const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url;
-        a.download = "ejemplo_maestros.csv";
-        a.click();
+        a.href = url; a.download = "ejemplo_maestros.csv"; a.click();
         URL.revokeObjectURL(url);
       }
     </script>

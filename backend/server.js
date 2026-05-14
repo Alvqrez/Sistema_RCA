@@ -126,7 +126,6 @@ app.use("/api/unidades", require("./src/routes/maestro/unidades")); // ← era s
 // SHARED
 app.use("/api/grupos", require("./src/routes/shared/grupos"));
 app.use("/api/reportes", require("./src/routes/shared/reportes"));
-app.use("/api/notificaciones", require("./src/routes/shared/notificaciones"));
 app.use(
   "/api/tipo-actividades",
   require("./src/routes/shared/tipo_actividades"),

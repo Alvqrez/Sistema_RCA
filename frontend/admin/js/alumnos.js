@@ -192,7 +192,7 @@ function renderTabla(datos, rol) {
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">CURP</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.curp || "—"}</p></div>
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Correo personal</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.correo_personal || "—"}</p></div>
           <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Teléfono</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${a.tel_celular || "—"}</p></div>
-          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Fecha ingreso</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${fmtFecha ? fmtFecha(a.fecha_ingreso) : a.fecha_ingreso || "—"}</p></div>
+          <div><p style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px">Fecha nacimiento</p><p style="font-size:0.85rem;color:var(--text-main);margin:0">${fechaADisplay(a.fecha_nacimiento) || "—"}</p></div>
         </div>
       </td>
     </tr>`;
@@ -387,10 +387,7 @@ async function editarAlumno(no_control) {
   document.getElementById("f_fnac").value =
     a.fecha_nacimiento?.slice(0, 10) ?? "";
   document.getElementById("f_fnac").disabled = false;
-  document.getElementById("f_genero").value = a.genero ?? "";
-  document.getElementById("f_direccion").value = a.direccion ?? "";
   document.getElementById("f_celular").value = a.tel_celular ?? "";
-  document.getElementById("f_tel_casa").value = a.tel_casa ?? "";
   document.getElementById("f_correo_personal").value = a.correo_personal ?? "";
 
   const errEl = document.getElementById("modalError");
@@ -453,10 +450,7 @@ async function guardarAlumno() {
         id_carrera,
         fecha_nacimiento,
         curp: curpVal || null,
-        genero: document.getElementById("f_genero").value || null,
-        direccion: document.getElementById("f_direccion").value.trim() || null,
         tel_celular: document.getElementById("f_celular").value.trim() || null,
-        tel_casa: document.getElementById("f_tel_casa").value.trim() || null,
         correo_personal:
           document.getElementById("f_correo_personal").value.trim() || null,
       };
@@ -536,10 +530,7 @@ function limpiarForm() {
     "f_ap_mat",
     "f_curp",
     "f_fnac",
-    "f_genero",
-    "f_direccion",
     "f_celular",
-    "f_tel_casa",
     "f_correo_personal",
     "f_username",
   ].forEach((id) => {
@@ -574,13 +565,10 @@ function exportarCSV() {
     "apellido_materno",
     "curp",
     "fecha_nacimiento",
-    "genero",
     "id_carrera",
     "correo_institucional",
     "correo_personal",
     "tel_celular",
-    "tel_casa",
-    "direccion",
   ];
   const headers = [
     "no_control",
@@ -589,13 +577,10 @@ function exportarCSV() {
     "apellido_materno",
     "curp",
     "fecha_nacimiento",
-    "genero",
     "id_carrera",
     "correo_institucional",
     "correo_personal",
     "tel_celular",
-    "tel_casa",
-    "direccion",
   ];
   const fechasCols = ["fecha_nacimiento"];
   exportarXLSX(cols, headers, alumnosGlobal, "alumnos_RCA", (c, v) =>

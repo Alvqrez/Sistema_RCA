@@ -346,15 +346,6 @@
                 <input type="date" id="f_fnac" />
               </div>
               <div class="form-group">
-                <label>Género</label>
-                <select id="f_genero">
-                  <option value="">— Selecciona —</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-              <div class="form-group">
                 <label>CURP</label>
                 <input
                   type="text"
@@ -436,25 +427,6 @@
                   pattern="[0-9]*"
                   maxlength="10"
                   placeholder="10 dígitos"
-                />
-              </div>
-              <div class="form-group">
-                <label>Tel. casa</label>
-                <input
-                  type="tel"
-                  id="f_tel_casa"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  maxlength="10"
-                  placeholder="10 dígitos"
-                />
-              </div>
-              <div class="form-group span-2">
-                <label>Dirección</label>
-                <input
-                  type="text"
-                  id="f_direccion"
-                  placeholder="Calle, número, colonia…"
                 />
               </div>
               <div class="form-group span-2">
@@ -663,7 +635,7 @@
       }
 
       function descargarEjemploCSVAlumnos() {
-        const cols = ["no_control","nombre","apellido_paterno","apellido_materno","id_carrera","fecha_nacimiento","genero","curp","correo_institucional","password"];
+        const cols = ["no_control","nombre","apellido_paterno","apellido_materno","id_carrera","fecha_nacimiento","curp","correo_institucional","password"];
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet([cols]);
         ws["!cols"] = cols.map(c => ({ wch: c.length + 2 }));

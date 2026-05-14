@@ -1,4 +1,4 @@
-// src/routes/maestros.js — CORREGIDO (agrega GET por ID y PUT)
+// src/routes/admin/maestros.js — v12
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
@@ -9,82 +9,57 @@ const { verificarToken, soloAdmin } = require("../../middleware/auth");
 router.get("/", verificarToken, (req, res) => {
   db.query(
     `SELECT m.rfc, m.nombre, m.apellido_paterno, m.apellido_materno,
-            m.curp, m.fecha_nacimiento, m.genero,
-            m.correo_institucional, m.correo_personal,
-            m.tel_celular, m.tel_oficina, m.direccion,
-            m.tipo_contrato, m.estatus, m.fecha_ingreso,
-            m.grado_academico, m.especialidad, m.departamento,
+            m.curp, m.fecha_nacimiento,
+            m.correo_institucional, m.correo_personal, m.tel_celular,
             u.username, u.pwd
      FROM maestro m
      LEFT JOIN usuario u ON u.id_referencia = m.rfc AND u.rol = 'maestro'`,
     (err, results) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
       res.json(results);
     },
   );
 });
 
-// GET — un maestro por rfc  ← NUEVO
+// GET — un maestro por RFC
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
-    "SELECT * FROM maestro WHERE rfc = ?",
+    `SELECT rfc, nombre, apellido_paterno, apellido_materno,
+            curp, fecha_nacimiento,
+            correo_institucional, correo_personal, tel_celular
+     FROM maestro WHERE rfc = ?`,
     [req.params.id],
     (err, results) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (results.length === 0)
-        return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!results.length) return res.status(404).json({ error: "Maestro no encontrado" });
       res.json(results[0]);
     },
   );
 });
 
-// POST — registrar maestro + su usuario
+// POST CSV — importar maestros
 router.post("/csv", soloAdmin, async (req, res) => {
   const { maestros } = req.body;
-
-  if (!Array.isArray(maestros) || maestros.length === 0)
+  if (!Array.isArray(maestros) || !maestros.length)
     return res.status(400).json({ error: "No se recibieron datos" });
 
   const errores = [];
   let insertados = 0;
 
   for (const m of maestros) {
-    const {
-      rfc,
-      nombre,
-      apellido_paterno,
-      correo_institucional,
-      username,
-    } = m;
-
-    // Acepta tanto "password" (texto plano) como "pwd" (hash exportado)
+    const { rfc, nombre, apellido_paterno, correo_institucional, username } = m;
     const passwordRaw = m.password || m.pwd || "";
 
-    if (
-      !rfc ||
-      !nombre ||
-      !apellido_paterno ||
-      !correo_institucional ||
-      !username ||
-      !passwordRaw
-    ) {
-      errores.push({
-        rfc: rfc || "?",
-        motivo:
-          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password/pwd)",
-      });
+    if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !username || !passwordRaw) {
+      errores.push({ rfc: rfc || "?", motivo: "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)" });
       continue;
     }
 
     try {
-      // Si ya es un hash bcrypt lo usa directo; si es texto plano lo hashea
       const hash = passwordRaw.startsWith("$2b$") || passwordRaw.startsWith("$2a$")
         ? passwordRaw
         : await bcrypt.hash(passwordRaw.trim(), 10);
 
-      // Helper: convierte cualquier valor a string recortado o null
       const s = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : null);
 
       await new Promise((ok, fail) =>
@@ -92,11 +67,8 @@ router.post("/csv", soloAdmin, async (req, res) => {
           `INSERT IGNORE INTO maestro
              (rfc, nombre, apellido_paterno, apellido_materno,
               correo_institucional, correo_personal,
-              curp, fecha_nacimiento, genero,
-              tel_celular, tel_oficina, direccion,
-              departamento, especialidad, grado_academico,
-              tipo_contrato, fecha_ingreso, estatus)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              curp, fecha_nacimiento, tel_celular)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             rfc.trim().toUpperCase(),
             nombre.trim(),
@@ -106,22 +78,12 @@ router.post("/csv", soloAdmin, async (req, res) => {
             s(m.correo_personal),
             s(m.curp)?.toUpperCase() || null,
             s(m.fecha_nacimiento),
-            s(m.genero),
             s(m.tel_celular),
-            s(m.tel_oficina),
-            s(m.direccion),
-            s(m.departamento),
-            s(m.especialidad),
-            s(m.grado_academico),
-            s(m.tipo_contrato),
-            s(m.fecha_ingreso),
-            s(m.estatus) || "Activo",
           ],
           (err) => (err ? fail(err) : ok()),
         ),
       );
 
-      // Crear usuario solo si no existe un usuario para este RFC
       await new Promise((ok, fail) =>
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia, activo)
@@ -140,85 +102,42 @@ router.post("/csv", soloAdmin, async (req, res) => {
     }
   }
 
-  res.json({
-    success: true,
-    insertados,
-    errores,
-    mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.`,
-  });
+  res.json({ success: true, insertados, errores, mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.` });
 });
 
+// POST — registrar maestro individual
 router.post("/", soloAdmin, async (req, res) => {
   const {
-    rfc,
-    nombre,
-    apellido_paterno,
-    apellido_materno,
-    curp,
-    fecha_nacimiento,
-    genero,
-    correo_institucional,
-    correo_personal,
-    tel_celular,
-    tel_oficina,
-    direccion,
-    tipo_contrato,
-    estatus,
-    fecha_ingreso,
-    grado_academico,
-    especialidad,
-    departamento,
+    rfc, nombre, apellido_paterno, apellido_materno,
+    curp, fecha_nacimiento,
+    correo_institucional, correo_personal, tel_celular,
     password,
   } = req.body;
 
-  if (
-    !rfc ||
-    !nombre ||
-    !apellido_paterno ||
-    !correo_institucional ||
-    !password
-  ) {
+  if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !password)
     return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
 
   try {
     const hash = await bcrypt.hash(password, 10);
+    const rfcClean = rfc.trim().toUpperCase();
 
-    const rfcClean = rfc?.trim().toUpperCase() || null;
     db.query(
-      `INSERT INTO maestro (rfc, nombre, apellido_paterno, apellido_materno,
-          curp, fecha_nacimiento, genero,
-          correo_institucional, correo_personal, tel_celular, tel_oficina,
-          direccion, tipo_contrato, estatus, fecha_ingreso, grado_academico, especialidad, departamento)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO maestro
+         (rfc, nombre, apellido_paterno, apellido_materno,
+          curp, fecha_nacimiento,
+          correo_institucional, correo_personal, tel_celular)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        rfcClean,
-        nombre,
-        apellido_paterno,
-        apellido_materno ?? null,
-        curp?.trim().toUpperCase() || null,
-        fecha_nacimiento ?? null,
-        genero ?? null,
-        correo_institucional,
-        correo_personal ?? null,
-        tel_celular ?? null,
-        tel_oficina ?? null,
-        direccion ?? null,
-        tipo_contrato ?? null,
-        estatus ?? "Activo",
-        fecha_ingreso ?? null,
-        grado_academico ?? null,
-        especialidad ?? null,
-        departamento ?? null,
+        rfcClean, nombre, apellido_paterno, apellido_materno ?? null,
+        curp?.trim().toUpperCase() || null, fecha_nacimiento ?? null,
+        correo_institucional, correo_personal ?? null, tel_celular ?? null,
       ],
       (err) => {
         if (err) {
-          console.error("ERROR INSERT maestro:", err.message, err.code);
           if (err.code === "ER_DUP_ENTRY")
             return res.status(409).json({ error: "El RFC ya está registrado" });
           return res.status(500).json({ error: err.message });
         }
-
         db.query(
           `INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'maestro', ?)`,
           [rfcClean, hash, rfcClean],
@@ -226,13 +145,9 @@ router.post("/", soloAdmin, async (req, res) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY")
                 return res.status(409).json({ error: "El username ya existe" });
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
+              return res.status(500).json({ error: "Error interno del servidor" });
             }
-            res
-              .status(201)
-              .json({ success: true, mensaje: "Maestro registrado" });
+            res.status(201).json({ success: true, mensaje: "Maestro registrado" });
           },
         );
       },
@@ -242,65 +157,32 @@ router.post("/", soloAdmin, async (req, res) => {
   }
 });
 
-// PUT — editar maestro  ← NUEVO
+// PUT — editar maestro
 router.put("/:id", soloAdmin, (req, res) => {
   const {
-    nombre,
-    apellido_paterno,
-    apellido_materno,
-    curp,
-    fecha_nacimiento,
-    genero,
-    correo_institucional,
-    correo_personal,
-    tel_celular,
-    tel_oficina,
-    direccion,
-    tipo_contrato,
-    estatus,
-    fecha_ingreso,
-    grado_academico,
-    especialidad,
-    departamento,
+    nombre, apellido_paterno, apellido_materno,
+    curp, fecha_nacimiento,
+    correo_institucional, correo_personal, tel_celular,
   } = req.body;
 
-  if (!nombre || !apellido_paterno || !correo_institucional) {
+  if (!nombre || !apellido_paterno || !correo_institucional)
     return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
 
   db.query(
     `UPDATE maestro
-     SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, curp = ?,
-         fecha_nacimiento = ?, genero = ?,
-         correo_institucional = ?, correo_personal = ?, tel_celular = ?, tel_oficina = ?,
-         direccion = ?, tipo_contrato = ?, estatus = ?, fecha_ingreso = ?,
-         grado_academico = ?, especialidad = ?, departamento = ?
+     SET nombre = ?, apellido_paterno = ?, apellido_materno = ?,
+         curp = ?, fecha_nacimiento = ?,
+         correo_institucional = ?, correo_personal = ?, tel_celular = ?
      WHERE rfc = ?`,
     [
-      nombre,
-      apellido_paterno,
-      apellido_materno ?? null,
-      curp ?? null,
-      fecha_nacimiento ?? null,
-      genero ?? null,
-      correo_institucional,
-      correo_personal ?? null,
-      tel_celular ?? null,
-      tel_oficina ?? null,
-      direccion ?? null,
-      tipo_contrato ?? null,
-      estatus ?? "Activo",
-      fecha_ingreso ?? null,
-      grado_academico ?? null,
-      especialidad ?? null,
-      departamento ?? null,
+      nombre, apellido_paterno, apellido_materno ?? null,
+      curp ?? null, fecha_nacimiento ?? null,
+      correo_institucional, correo_personal ?? null, tel_celular ?? null,
       req.params.id,
     ],
     (err, result) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows) return res.status(404).json({ error: "Maestro no encontrado" });
       res.json({ success: true, mensaje: "Maestro actualizado" });
     },
   );
@@ -312,10 +194,8 @@ router.delete("/:id", soloAdmin, (req, res) => {
     "DELETE FROM maestro WHERE rfc = ?",
     [req.params.id],
     (err, result) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows) return res.status(404).json({ error: "Maestro no encontrado" });
       res.json({ success: true, mensaje: "Maestro eliminado" });
     },
   );
