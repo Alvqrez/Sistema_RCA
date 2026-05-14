@@ -1,6 +1,5 @@
 // frontend/js/unidades.js
-// Admin: configura nombres de unidades + tipos de actividad a nivel MATERIA
-// Los tipos elegidos se aplican IGUAL a todas las unidades de esa materia.
+// Admin: configura nombres de unidades + importar/exportar CSV
 
 const rol = localStorage.getItem("rol");
 const token = localStorage.getItem("token");
@@ -10,13 +9,12 @@ const token = localStorage.getItem("token");
     window.location.href = "../../shared/pages/login.html";
 })();
 
-let materiaActual = null; // { clave_materia, nombre_materia, no_unidades }
-let unidadesGuardadas = []; // unidades existentes en DB
-let tiposCatalogo = []; // catálogo completo de tipo_actividad
-// Tipos seleccionados a nivel materia (aplican igual a TODAS las unidades)
-let tiposSeleccionados = []; // [ id_tipo, ... ]
+let materiaActual = null;
+let unidadesGuardadas = [];
+let tiposCatalogo = [];
+let tiposSeleccionados = [];
 
-// ─── Utilidades ───────────────────────────────────────────────────────────────
+// ─── Toast (un solo mensaje a la vez) ─────────────────────────────────────────
 function toast(msg, tipo = "success") {
   let t = document.getElementById("rca-toast");
   if (!t) {
@@ -79,8 +77,7 @@ async function poblarSelectMaterias() {
         texto.textContent = `Esta materia tiene ${opt.dataset.noUnidades} unidad(es) en su plan de estudios.`;
         info.style.display = "block";
       } else if (sel.value) {
-        texto.textContent =
-          "⚠️ Esta materia tiene 0 unidades. Edítala primero.";
+        texto.textContent = "⚠️ Esta materia tiene 0 unidades. Edítala primero.";
         info.style.display = "block";
       } else {
         info.style.display = "none";
@@ -96,10 +93,7 @@ async function poblarSelectMaterias() {
 async function cargarConfiguracion() {
   const sel = document.getElementById("selMateria");
   const clave = sel.value;
-  if (!clave) {
-    toast("Selecciona una materia primero", "error");
-    return;
-  }
+  if (!clave) { toast("Selecciona una materia primero", "error"); return; }
 
   const opt = sel.options[sel.selectedIndex];
   const noUnidades = parseInt(opt.dataset.noUnidades) || 0;
@@ -110,41 +104,28 @@ async function cargarConfiguracion() {
     return;
   }
 
-  materiaActual = {
-    clave_materia: clave,
-    nombre_materia: nombreMateria,
-    no_unidades: noUnidades,
-  };
+  materiaActual = { clave_materia: clave, nombre_materia: nombreMateria, no_unidades: noUnidades };
 
-  // Traer unidades existentes
   try {
     const res = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     unidadesGuardadas = res.ok ? await res.json() : [];
-  } catch (_) {
-    unidadesGuardadas = [];
-  }
+  } catch (_) { unidadesGuardadas = []; }
 
-  // Cargar tipos ya asignados (de la primera unidad — todas tienen los mismos)
   tiposSeleccionados = [];
   if (unidadesGuardadas.length > 0) {
     try {
       const r = await fetch(
         `${API_URL}/api/unidades/${unidadesGuardadas[0].id_unidad}/tipos`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       const tipos = r.ok ? await r.json() : [];
       tiposSeleccionados = tipos.map((t) => t.id_tipo);
     } catch (_) {}
   }
 
-  // Si todas las unidades ya están guardadas → mostrar vista bloqueada
   if (unidadesGuardadas.length >= noUnidades && noUnidades > 0) {
     renderizarResumen(unidadesGuardadas, clave, nombreMateria);
     renderizarBloqueado(unidadesGuardadas, nombreMateria);
@@ -153,7 +134,6 @@ async function cargarConfiguracion() {
     renderizarResumen(unidadesGuardadas, clave, nombreMateria);
   }
 
-  // Cargar y mostrar actividades (siempre que haya unidades guardadas)
   if (unidadesGuardadas.length > 0) {
     await cargarActividadesMateria(clave);
     renderActividadesCard();
@@ -175,7 +155,6 @@ function renderizarFormulario(n, nombreMateria, existentes) {
 
   grid.innerHTML = "";
 
-  // ── Separador ─────────────────────────────────────────────────────────────────
   const sep = document.createElement("div");
   sep.style.cssText =
     "font-size:.72rem;font-weight:700;text-transform:uppercase;" +
@@ -183,11 +162,9 @@ function renderizarFormulario(n, nombreMateria, existentes) {
   sep.textContent = "Nombres de las unidades";
   grid.appendChild(sep);
 
-  // ── Filas de unidades (solo nombre) ───────────────────────────────────────────
   for (let i = 0; i < n; i++) {
     const u = existentes[i] || null;
     const nombreActual = u ? u.nombre_unidad : "";
-
     const row = document.createElement("div");
     row.className = "unidad-row";
     row.innerHTML = `
@@ -201,21 +178,15 @@ function renderizarFormulario(n, nombreMateria, existentes) {
     grid.appendChild(row);
   }
 
-  // Enfocar primer campo vacío
   for (let i = 0; i < n; i++) {
     const inp = document.getElementById(`unidad-input-${i}`);
-    if (inp && !inp.value.trim()) {
-      inp.focus();
-      break;
-    }
+    if (inp && !inp.value.trim()) { inp.focus(); break; }
   }
 
   card.style.display = "block";
   card.scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("estadoGuardado").textContent = "";
 
-  // FIX #1: restaurar la visibilidad del botón guardar
-  // (renderizarBloqueado lo oculta; al cambiar a una materia sin configurar debe volver a verse)
   const btnGuardar = document.getElementById("btnGuardar");
   if (btnGuardar) {
     const btnRow = btnGuardar.closest("div");
@@ -224,11 +195,10 @@ function renderizarFormulario(n, nombreMateria, existentes) {
   }
 }
 
-// ─── Formulario editable con agregar/eliminar unidades ────────────────────────
-let unidadesEditables = []; // array de nombres durante edición
+// ─── Formulario editable ──────────────────────────────────────────────────────
+let unidadesEditables = [];
 
 function renderizarFormularioEditable(nombreMateria, existentes) {
-  // Inicializar con los nombres actuales
   unidadesEditables = existentes.map((u) => u.nombre_unidad || "");
   if (unidadesEditables.length === 0) unidadesEditables.push("");
 
@@ -243,8 +213,6 @@ function renderizarFormularioEditable(nombreMateria, existentes) {
 
   function rebuild() {
     grid.innerHTML = "";
-
-    // Separador
     const sep = document.createElement("div");
     sep.style.cssText =
       "font-size:.72rem;font-weight:700;text-transform:uppercase;" +
@@ -275,20 +243,14 @@ function renderizarFormularioEditable(nombreMateria, existentes) {
       grid.appendChild(row);
     });
 
-    // Botón agregar
     const addBtn = document.createElement("button");
     addBtn.type = "button";
     addBtn.className = "btn btn-outline btn-sm";
-    addBtn.style.cssText =
-      "margin-top:10px;display:flex;align-items:center;gap:6px";
+    addBtn.style.cssText = "margin-top:10px;display:flex;align-items:center;gap:6px";
     addBtn.innerHTML = `<iconify-icon icon="mdi:plus"></iconify-icon> Agregar unidad`;
-    addBtn.onclick = () => {
-      unidadesEditables.push("");
-      rebuild();
-    };
+    addBtn.onclick = () => { unidadesEditables.push(""); rebuild(); };
     grid.appendChild(addBtn);
 
-    // Botón guardar
     const saveRow = document.createElement("div");
     saveRow.style.cssText = "margin-top:14px;display:flex;gap:8px";
     saveRow.innerHTML = `
@@ -309,7 +271,7 @@ function eliminarUnidadEditable(idx) {
   unidadesEditables.splice(idx, 1);
   renderizarFormularioEditable(
     materiaActual.nombre_materia,
-    unidadesEditables.map((n) => ({ nombre_unidad: n })),
+    unidadesEditables.map((n) => ({ nombre_unidad: n }))
   );
 }
 
@@ -320,52 +282,37 @@ function cancelarEdicion() {
 
 async function guardarUnidadesEditables() {
   if (!materiaActual) return;
-  const nombres = unidadesEditables
-    .map((n) => n.trim())
-    .filter((n) => n.length > 0);
-  if (nombres.length === 0) {
-    toast("Debes tener al menos una unidad", "error");
-    return;
-  }
+  const nombres = unidadesEditables.map((n) => n.trim()).filter((n) => n.length > 0);
+  if (nombres.length === 0) { toast("Debes tener al menos una unidad", "error"); return; }
 
   const { clave_materia, nombre_materia } = materiaActual;
 
   try {
-    // FIX #4: si cambió el número de unidades, actualizar no_unidades en la materia
-    // ANTES de llamar a /configurar (ese endpoint valida que el conteo coincida con DB)
     if (nombres.length !== materiaActual.no_unidades) {
-      // Obtener datos actuales para no perder créditos y horas al hacer PUT
       const rGet = await fetch(
         `${API_URL}/api/materias/${encodeURIComponent(clave_materia)}`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       const matData = rGet.ok ? await rGet.json() : {};
-
       const rMat = await fetch(
         `${API_URL}/api/materias/${encodeURIComponent(clave_materia)}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             nombre_materia: matData.nombre_materia || nombre_materia,
             horas_teoricas: matData.horas_teoricas ?? 0,
             horas_practicas: matData.horas_practicas ?? 0,
             no_unidades: nombres.length,
           }),
-        },
+        }
       );
       if (!rMat.ok) {
         const d = await rMat.json();
-        toast(d.error || "Error al actualizar el número de unidades", "error"); // FIX #3
+        toast(d.error || "Error al actualizar el número de unidades", "error");
         return;
       }
       materiaActual.no_unidades = nombres.length;
-
-      // Actualizar el dataset del <option> en el select para que cargarConfiguracion
-      // use el valor correcto sin necesitar recargar la página
       const sel = document.getElementById("selMateria");
       if (sel) {
         const opt = sel.options[sel.selectedIndex];
@@ -373,44 +320,32 @@ async function guardarUnidadesEditables() {
       }
     }
 
-    // Guardar los nombres de las unidades
     const r = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(nombres.map((n) => ({ nombre_unidad: n }))),
-      },
+      }
     );
     const data = await r.json();
     if (!r.ok || !data.success) {
-      toast(data.error || "Error al guardar unidades", "error"); // FIX #3
+      toast(data.error || "Error al guardar unidades", "error");
       return;
     }
-
-    toast(
-      `✓ Unidades de "${nombre_materia}" actualizadas correctamente.`,
-      "success",
-    );
-
-    // FIX #5: recargar la configuración correctamente
+    toast(`✓ Unidades de "${nombre_materia}" actualizadas correctamente.`, "success");
     await cargarConfiguracion();
   } catch {
-    toast("Error de conexión con el servidor", "error"); // FIX #3
+    toast("Error de conexión con el servidor", "error");
   }
 }
 
 // ─── Toggle chip ───────────────────────────────────────────────────────────────
 function toggleChip(btn) {
   btn.classList.toggle("activo");
-  // Actualizar tiposSeleccionados
   tiposSeleccionados = Array.from(
-    document.querySelectorAll("#chips-materia .tipo-chip-toggle.activo"),
+    document.querySelectorAll("#chips-materia .tipo-chip-toggle.activo")
   ).map((c) => parseInt(c.dataset.tipoId));
-
   const hint = document.getElementById("opciones-hint");
   if (hint) {
     hint.textContent =
@@ -420,21 +355,16 @@ function toggleChip(btn) {
   }
 }
 
-// ─── Guardar unidades + tipos ──────────────────────────────────────────────────
+// ─── Guardar unidades ──────────────────────────────────────────────────────────
 async function guardarUnidades() {
   if (!materiaActual) return;
-
   const { clave_materia, no_unidades } = materiaActual;
   const payload = [];
 
   for (let i = 0; i < no_unidades; i++) {
     const inp = document.getElementById(`unidad-input-${i}`);
     const nombre = inp ? inp.value.trim() : "";
-    if (!nombre) {
-      toast(`El nombre de la Unidad ${i + 1} es obligatorio.`, "error");
-      inp?.focus();
-      return;
-    }
+    if (!nombre) { toast(`El nombre de la Unidad ${i + 1} es obligatorio.`, "error"); inp?.focus(); return; }
     payload.push({ nombre_unidad: nombre });
   }
 
@@ -444,59 +374,39 @@ async function guardarUnidades() {
   estadoSpan.textContent = "Guardando...";
 
   try {
-    // 1. Guardar nombres de unidades
     const res = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}/configurar`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
-      },
+      }
     );
     const data = await res.json();
-
     if (!res.ok || !data.success) {
       toast(data.error || "Error al guardar", "error");
       estadoSpan.textContent = "";
       return;
     }
 
-    // 2. Guardar tipos vacío → el maestro verá todos los tipos disponibles
     const resultados = data.resultados || [];
-    const idTipos = [];
-
     await Promise.all(
       resultados.map((r) =>
         fetch(`${API_URL}/api/unidades/${r.id}/tipos`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ id_tipos: idTipos }),
-        }).catch(() => {}),
-      ),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id_tipos: [] }),
+        }).catch(() => {})
+      )
     );
 
-    toast(
-      `✓ Unidades de "${materiaActual.nombre_materia}" guardadas correctamente.`,
-      "success",
-    );
-
-    // Recargar datos
+    toast(`✓ Unidades de "${materiaActual.nombre_materia}" guardadas correctamente.`, "success");
     const resGet = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     unidadesGuardadas = resGet.ok ? await resGet.json() : [];
-    renderizarResumen(
-      unidadesGuardadas,
-      clave_materia,
-      materiaActual.nombre_materia,
-    );
+    renderizarResumen(unidadesGuardadas, clave_materia, materiaActual.nombre_materia);
     renderizarBloqueado(unidadesGuardadas, materiaActual.nombre_materia);
   } catch (e) {
     toast("Error de conexión con el servidor", "error");
@@ -529,8 +439,6 @@ function renderizarResumen(unidades, clave, nombreMateria) {
     return;
   }
 
-  const tiposCell = '<span style="color:var(--text-muted);font-size:.75rem">Todos los tipos</span>';
-
   cuerpo.innerHTML = unidades
     .map(
       (u, i) => `
@@ -539,14 +447,13 @@ function renderizarResumen(unidades, clave, nombreMateria) {
       <td><span style="font-size:.8rem;background:var(--bg-secondary);padding:2px 8px;
                  border-radius:6px;color:var(--text-secondary)">${escHtml(clave)}</span></td>
       <td><strong>${escHtml(u.nombre_unidad)}</strong></td>
-    </tr>`,
+    </tr>`
     )
     .join("");
-
   card.style.display = "block";
 }
 
-// ─── Vista de solo lectura ────────────────────────────────────────────────────
+// ─── Vista de solo lectura ─────────────────────────────────────────────────────
 function renderizarBloqueado(unidades, nombreMateria) {
   const card = document.getElementById("cardConfigUnidades");
   const titulo = document.getElementById("tituloConfig");
@@ -569,7 +476,7 @@ function renderizarBloqueado(unidades, nombreMateria) {
           <iconify-icon icon="mdi:lock-outline" style="color:var(--text-muted);font-size:.9rem"
             title="Guardada y bloqueada"></iconify-icon>
         </div>
-      </div>`,
+      </div>`
       )
       .join("")}
     <div style="margin-top:14px;padding:10px 14px;background:var(--bg-secondary);
@@ -589,42 +496,31 @@ function renderizarBloqueado(unidades, nombreMateria) {
 
   const btnRow = document.getElementById("btnGuardar")?.closest("div");
   if (btnRow) btnRow.style.display = "none";
-
   card.style.display = "block";
   card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ─── Editar unidades ──────────────────────────────────────────────────────────
 function editarUnidades() {
   if (!materiaActual) return;
-  // Mostrar advertencia antes de entrar al editor
   document.getElementById("modalAdvertenciaUnidades").classList.add("visible");
 }
 
 function confirmarEditarUnidades() {
-  document
-    .getElementById("modalAdvertenciaUnidades")
-    .classList.remove("visible");
-  // No mostramos btnRow (el formulario editable ya incluye su propio botón "Guardar unidades")
+  document.getElementById("modalAdvertenciaUnidades").classList.remove("visible");
   renderizarFormularioEditable(materiaActual.nombre_materia, unidadesGuardadas);
 }
 
-// ─── Actividades de la materia (definidas por el Admin) ────────────────────────
-
-let actividadesMateria = []; // cache
+// ─── Actividades de la materia ─────────────────────────────────────────────────
+let actividadesMateria = [];
 
 async function cargarActividadesMateria(clave) {
   try {
     const res = await fetch(
       `${API_URL}/api/materia-actividades/materia/${encodeURIComponent(clave)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     actividadesMateria = res.ok ? await res.json() : [];
-  } catch (_) {
-    actividadesMateria = [];
-  }
+  } catch (_) { actividadesMateria = []; }
 }
 
 function renderActividadesCard() {
@@ -632,19 +528,11 @@ function renderActividadesCard() {
   if (!card || !materiaActual) return;
 
   const { clave_materia } = materiaActual;
-  if (!unidadesGuardadas.length) {
-    card.style.display = "none";
-    return;
-  }
+  if (!unidadesGuardadas.length) { card.style.display = "none"; return; }
 
-  // Group by unit
   const porUnidad = {};
-  unidadesGuardadas.forEach((u) => {
-    porUnidad[u.id_unidad] = [];
-  });
-  actividadesMateria.forEach((a) => {
-    if (porUnidad[a.id_unidad]) porUnidad[a.id_unidad].push(a);
-  });
+  unidadesGuardadas.forEach((u) => { porUnidad[u.id_unidad] = []; });
+  actividadesMateria.forEach((a) => { if (porUnidad[a.id_unidad]) porUnidad[a.id_unidad].push(a); });
 
   const tiposOptions = tiposCatalogo
     .map((t) => `<option value="${t.id_tipo}">${escHtml(t.nombre)}</option>`)
@@ -656,43 +544,32 @@ function renderActividadesCard() {
 
   unidadesGuardadas.forEach((u, i) => {
     const acts = porUnidad[u.id_unidad] || [];
-    const totalActs = acts.length;
-
     html += `
     <div class="act-unidad-block">
       <div class="act-unidad-header">
         <span class="act-unidad-num">${i + 1}</span>
         <span class="act-unidad-nombre">${escHtml(u.nombre_unidad)}</span>
-        <span class="act-unidad-badge">${totalActs} actividad${totalActs !== 1 ? "es" : ""}</span>
+        <span class="act-unidad-badge">${acts.length} actividad${acts.length !== 1 ? "es" : ""}</span>
       </div>
-
       <div class="act-list">
         ${
           acts.length
-            ? acts
-                .map(
-                  (a) => `
+            ? acts.map((a) => `
           <div class="act-item">
             <div class="act-item-info">
               <span class="act-item-nombre">${escHtml(a.nombre_actividad)}</span>
               ${a.nombre_tipo ? `<span class="act-item-tipo">${escHtml(a.nombre_tipo)}</span>` : ""}
             </div>
-            <button class="act-item-del" type="button"
-              title="Eliminar"
+            <button class="act-item-del" type="button" title="Eliminar"
               onclick="eliminarActividadMateria(${a.id_mat_act},'${clave_materia}')">
               <iconify-icon icon="mdi:close"></iconify-icon>
             </button>
-          </div>`,
-                )
-                .join("")
-            : `
-          <div class="act-empty">Sin actividades — agrega la primera abajo.</div>`
+          </div>`).join("")
+            : `<div class="act-empty">Sin actividades — agrega la primera abajo.</div>`
         }
       </div>
-
       <div class="act-form">
-        <input type="text" id="act-nombre-${u.id_unidad}"
-          class="act-form-input"
+        <input type="text" id="act-nombre-${u.id_unidad}" class="act-form-input"
           placeholder="Nombre de la actividad *"
           onkeydown="if(event.key==='Enter')agregarActividadMateria(${u.id_unidad},'${clave_materia}')" />
         <select id="act-tipo-${u.id_unidad}" class="act-form-select">
@@ -701,8 +578,7 @@ function renderActividadesCard() {
         </select>
         <button type="button" class="act-form-btn"
           onclick="agregarActividadMateria(${u.id_unidad},'${clave_materia}')">
-          <iconify-icon icon="mdi:plus"></iconify-icon>
-          Agregar
+          <iconify-icon icon="mdi:plus"></iconify-icon> Agregar
         </button>
       </div>
     </div>`;
@@ -716,39 +592,20 @@ async function agregarActividadMateria(idUnidad, claveMateria) {
   const nombreEl = document.getElementById(`act-nombre-${idUnidad}`);
   const tipoEl = document.getElementById(`act-tipo-${idUnidad}`);
   const nombre = nombreEl?.value?.trim();
-  const idTipo = tipoEl?.value || null;
-
-  if (!nombre) {
-    toast("El nombre de la actividad es obligatorio", "error");
-    return;
-  }
-
+  if (!nombre) { toast("El nombre de la actividad es obligatorio", "error"); return; }
   try {
     const res = await fetch(`${API_URL}/api/materia-actividades`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        clave_materia: claveMateria,
-        id_unidad: idUnidad,
-        nombre_actividad: nombre,
-        id_tipo: idTipo || null,
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ clave_materia: claveMateria, id_unidad: idUnidad, nombre_actividad: nombre, id_tipo: tipoEl?.value || null }),
     });
     const data = await res.json();
-    if (!res.ok) {
-      toast(data.error || "Error al agregar", "error");
-      return;
-    }
+    if (!res.ok) { toast(data.error || "Error al agregar", "error"); return; }
     nombreEl.value = "";
     await cargarActividadesMateria(claveMateria);
     renderActividadesCard();
     toast("✓ Actividad agregada", "success");
-  } catch (_) {
-    toast("Error de conexión", "error");
-  }
+  } catch (_) { toast("Error de conexión", "error"); }
 }
 
 async function eliminarActividadMateria(id, claveMateria) {
@@ -757,16 +614,11 @@ async function eliminarActividadMateria(id, claveMateria) {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) {
-      toast("Error al eliminar", "error");
-      return;
-    }
+    if (!res.ok) { toast("Error al eliminar", "error"); return; }
     await cargarActividadesMateria(claveMateria);
     renderActividadesCard();
     toast("Actividad eliminada", "success");
-  } catch (_) {
-    toast("Error de conexión", "error");
-  }
+  } catch (_) { toast("Error de conexión", "error"); }
 }
 
 function toggleActividades() {
@@ -775,9 +627,133 @@ function toggleActividades() {
   if (!content) return;
   const open = content.style.display !== "none";
   content.style.display = open ? "none" : "block";
-  if (icon)
-    icon.setAttribute("icon", open ? "mdi:chevron-down" : "mdi:chevron-up");
+  if (icon) icon.setAttribute("icon", open ? "mdi:chevron-down" : "mdi:chevron-up");
 }
+
+// ─── CSV: Exportar ─────────────────────────────────────────────────────────────
+async function exportarCSVUnidades() {
+  try {
+    const r = await fetch(`${API_URL}/api/unidades/csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) { toast("Error al obtener unidades", "error"); return; }
+    const filas = await r.json();
+    if (!filas.length) { toast("No hay unidades para exportar.", "error"); return; }
+
+    const cols = ["clave_materia", "numero_unidad", "nombre_unidad"];
+    exportarXLSX(cols, cols, filas, "unidades_RCA");
+    toast("Unidades exportadas correctamente");
+  } catch {
+    toast("Error al exportar unidades.", "error");
+  }
+}
+
+// ─── CSV: Modal Importar ───────────────────────────────────────────────────────
+let csvUnidadesData = [];
+
+function abrirModalCSVUnidades() {
+  csvUnidadesData = [];
+  document.getElementById("csvUnidadesPreview").innerHTML = "";
+  document.getElementById("btnImportarUnidades").disabled = true;
+  document.getElementById("inputCSVUnidades").value = "";
+  document.getElementById("modalImportUnidades").classList.add("visible");
+}
+
+function cerrarModalCSVUnidades() {
+  document.getElementById("modalImportUnidades").classList.remove("visible");
+}
+
+function dragOverUnidades(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneUnidades").classList.add("drag-over");
+}
+
+function soltarCSVUnidades(e) {
+  e.preventDefault();
+  document.getElementById("dropZoneUnidades").classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) procesarCSVUnidades(file);
+}
+
+function leerCSVUnidades(e) {
+  const file = e.target.files[0];
+  if (file) procesarCSVUnidades(file);
+}
+
+function procesarCSVUnidades(file) {
+  leerArchivo(file, (headers, rows) => {
+    if (!rows.length) {
+      const el = document.getElementById("csvUnidadesPreview");
+      if (el) el.innerHTML = "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+      return;
+    }
+    csvUnidadesData = rows;
+    mostrarPreviewCSVUnidades(headers, rows);
+    document.getElementById("btnImportarUnidades").disabled = false;
+  });
+}
+
+function mostrarPreviewCSVUnidades(headers, data) {
+  const muestra = data.slice(0, 5);
+  const preview = document.getElementById("csvUnidadesPreview");
+  preview.innerHTML = `
+    <p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">
+      ${data.length} registros detectados — vista previa (primeros 5):
+    </p>
+    <div class="csv-preview"><table>
+      <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+async function importarCSVUnidades() {
+  if (!csvUnidadesData.length) return;
+  const btn = document.getElementById("btnImportarUnidades");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Importando…`;
+  try {
+    const r = await fetch(`${API_URL}/api/unidades/csv`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ unidades: csvUnidadesData }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Error al importar");
+
+    // Un solo toast con el resumen completo
+    const partes = [`${data.materiasProcesadas} materia(s), ${data.unidadesGuardadas} unidad(es) importadas`];
+    if (data.errores?.length) partes.push(`${data.errores.length} fila(s) con errores`);
+    toast(partes.join(" · "), data.errores?.length ? "info" : "success");
+
+    if (data.errores?.length) console.table(data.errores);
+    cerrarModalCSVUnidades();
+    // Refrescar vista si hay materia activa
+    if (materiaActual) await cargarConfiguracion();
+    // Refrescar select en caso de que hayan cambiado no_unidades
+    await poblarSelectMaterias();
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<iconify-icon icon="lucide:upload"></iconify-icon> Importar`;
+  }
+}
+
+function descargarEjemploCSVUnidades() {
+  const BOM = "\uFEFF";
+  const contenido = BOM + "clave_materia,numero_unidad,nombre_unidad\n";
+  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ejemplo_unidades.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.id === "modalImportUnidades") cerrarModalCSVUnidades();
+});
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {

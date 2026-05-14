@@ -369,6 +369,14 @@
               Configura los nombres de las unidades de cada materia
             </p>
           </div>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="abrirModalCSVUnidades()">
+              <iconify-icon icon="lucide:upload"></iconify-icon> Importar CSV
+            </button>
+            <button class="btn btn-outline" onclick="exportarCSVUnidades()">
+              <iconify-icon icon="lucide:download"></iconify-icon> Exportar CSV
+            </button>
+          </div>
         </div>
 
         <!-- ① Seleccionar materia -->
@@ -464,6 +472,46 @@
 
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
+    <!-- Modal Importar CSV Unidades -->
+    <div class="modal-overlay" id="modalImportUnidades">
+      <div class="modal-panel modal-md">
+        <div class="modal-header">
+          <h2>Importar Unidades desde CSV</h2>
+          <button class="modal-close" onclick="cerrarModalCSVUnidades()">
+            <iconify-icon icon="mdi:close"></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <button class="btn btn-outline" style="font-size:0.85rem;gap:6px;margin-bottom:14px"
+            onclick="descargarEjemploCSVUnidades()">
+            <iconify-icon icon="lucide:download"></iconify-icon> Descargar ejemplo de importación
+          </button>
+          <div
+            class="csv-drop-zone"
+            ondragover="dragOverUnidades(event)"
+            ondrop="soltarCSVUnidades(event)"
+            onclick="document.getElementById('inputCSVUnidades').click()"
+          >
+            <iconify-icon icon="lucide:file-spreadsheet" style="font-size:2rem;color:var(--primary)"></iconify-icon>
+            <p style="margin:8px 0 4px;font-weight:600">Arrastra tu CSV aquí o <strong>haz clic para seleccionar</strong></p>
+            <p style="font-size:.78rem;color:var(--text-muted)">Columnas: clave_materia, numero_unidad, nombre_unidad</p>
+          </div>
+          <input type="file" id="inputCSVUnidades" accept=".csv,.xlsx,.xls"
+            style="display:none" onchange="leerCSVUnidades(event)" />
+          <div id="csvUnidadesPreview"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="cerrarModalCSVUnidades()">Cancelar</button>
+          <button class="btn btn-primary" id="btnImportarUnidades" disabled
+            onclick="importarCSVUnidades()">
+            <iconify-icon icon="lucide:upload"></iconify-icon> Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="../../shared/js/exportUtils.js"></script>
     <script src="../../admin/js/unidades.js"></script>
     <!-- Modal: Advertencia editar unidades -->
     <div class="modal-overlay" id="modalAdvertenciaUnidades">
