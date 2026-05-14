@@ -889,11 +889,24 @@ function leerCSVInsc(e) {
       tipo_curso:    r.tipo_curso?.trim() || "Ordinario",
     })).filter((r) => r.no_control && (r.id_grupo || r.clave_materia));
     const preview = document.getElementById("csvPreviewInsc");
-    preview.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);margin:10px 0 4px">${csvInscData.length} inscripciones detectadas (primeros 5):</p>`;
-    const pre = document.createElement("pre");
-    pre.style.cssText = "font-size:0.76rem;background:var(--bg-app);padding:8px 10px;border-radius:6px;overflow:auto;max-height:120px";
-    pre.textContent = csvInscData.slice(0, 5).map((d) => `${d.no_control} → G#${d.id_grupo} (${d.tipo_curso})`).join("\n");
-    preview.appendChild(pre);
+    const muestra = csvInscData.slice(0, 5);
+    // Detectar qué columnas realmente vienen en el CSV
+    const usaGrupo = muestra.some(r => r.id_grupo);
+    const cols = usaGrupo
+      ? ["no_control", "id_grupo", "tipo_curso"]
+      : ["no_control", "clave_materia", "rfc", "id_periodo", "tipo_curso"];
+    preview.innerHTML = `
+      <p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">
+        ${csvInscData.length} inscripción(es) detectadas — vista previa (primeros 5):
+      </p>
+      <div class="csv-preview">
+        <table>
+          <thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+          <tbody>${muestra.map(r =>
+            `<tr>${cols.map(c => `<td>${r[c] ?? "—"}</td>`).join("")}</tr>`
+          ).join("")}</tbody>
+        </table>
+      </div>`;
     document.getElementById("btnImportarInsc").disabled = false;
   });
 }
