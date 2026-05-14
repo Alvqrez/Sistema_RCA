@@ -39,13 +39,16 @@ router.get("/", verificarToken, (req, res) => {
 });
 
 // POST CSV — importar materias desde archivo
+// El CSV puede incluir columnas opcionales: id_carrera, semestre
+// Una materia con varias carreras se repite en varias filas con distinto id_carrera
 router.post("/csv", soloAdmin, (req, res) => {
   const { materias } = req.body;
   if (!Array.isArray(materias) || !materias.length)
     return res.status(400).json({ error: "No se recibieron datos" });
 
   const errores = [];
-  let insertados = 0;
+  let insertados = 0;          // materias nuevas
+  let reticulas = 0;           // vínculos carrera insertados/actualizados
   let pendientes = materias.length;
 
   const finalizar = () => {
@@ -53,13 +56,15 @@ router.post("/csv", soloAdmin, (req, res) => {
       res.json({
         success: true,
         insertados,
+        reticulas,
         errores,
-        mensaje: `${insertados} materia(s) importadas. ${errores.length} con errores.`,
+        mensaje: `${insertados} materia(s) importada(s), ${reticulas} vínculo(s) de carrera procesado(s). ${errores.length} fila(s) con errores.`,
       });
   };
 
   for (const mat of materias) {
-    const { clave_materia, nombre_materia } = mat;
+    const { clave_materia, nombre_materia, id_carrera, semestre } = mat;
+
     if (!clave_materia || !nombre_materia) {
       errores.push({
         clave: clave_materia || "?",
@@ -68,6 +73,8 @@ router.post("/csv", soloAdmin, (req, res) => {
       finalizar();
       continue;
     }
+
+    // 1. Insertar materia (ignorar si ya existe)
     db.query(
       `INSERT IGNORE INTO materia (clave_materia, nombre_materia, no_unidades)
        VALUES (?, ?, ?)`,
@@ -77,11 +84,42 @@ router.post("/csv", soloAdmin, (req, res) => {
         parseInt(mat.no_unidades) || 3,
       ],
       (err, result) => {
-        if (err) errores.push({ clave: clave_materia, motivo: err.message });
-        else if (result.affectedRows > 0) insertados++;
-        // affectedRows=0 → duplicado, se omite silenciosamente
-        finalizar();
-      },
+        if (err) {
+          errores.push({ clave: clave_materia, motivo: err.message });
+          finalizar();
+          return;
+        }
+
+        if (result.affectedRows > 0) insertados++;
+
+        // 2. Si viene id_carrera, vincular en retícula
+        if (id_carrera && String(id_carrera).trim() !== "") {
+          db.query(
+            `INSERT INTO reticula (clave_materia, id_carrera, semestre, creditos)
+             VALUES (?, ?, ?, 0)
+             ON DUPLICATE KEY UPDATE semestre = VALUES(semestre)`,
+            [
+              clave_materia.trim(),
+              String(id_carrera).trim(),
+              parseInt(semestre) || 1,
+            ],
+            (err2) => {
+              if (err2) {
+                errores.push({
+                  clave: clave_materia,
+                  motivo: `Retícula: ${err2.message}`,
+                });
+              } else {
+                reticulas++;
+              }
+              finalizar();
+            }
+          );
+        } else {
+          // Sin carrera → solo materia
+          finalizar();
+        }
+      }
     );
   }
 });
@@ -97,7 +135,6 @@ router.get("/:clave", verificarToken, (req, res) => {
       if (!results.length)
         return res.status(404).json({ error: "Materia no encontrada" });
       const m = results[0];
-      // Obtener carreras de la retícula
       db.query(
         `SELECT r.id_carrera, c.nombre_carrera, r.semestre, r.creditos
          FROM reticula r JOIN carrera c ON r.id_carrera = c.id_carrera
@@ -109,31 +146,23 @@ router.get("/:clave", verificarToken, (req, res) => {
               .status(500)
               .json({ error: "Error interno del servidor" });
           res.json({ ...m, carreras: carreras || [] });
-        },
+        }
       );
-    },
+    }
   );
 });
 
 // POST — crear materia
 router.post("/", soloAdmin, (req, res) => {
-  const {
-    clave_materia,
-    nombre_materia,
-    no_unidades,
-  } = req.body;
+  const { clave_materia, nombre_materia, no_unidades } = req.body;
   if (!clave_materia || !nombre_materia)
     return res.status(400).json({ error: "Clave y nombre son requeridos" });
 
   db.query(
     `INSERT INTO materia (clave_materia, nombre_materia, no_unidades)
      VALUES (?, ?, ?)`,
-    [
-      clave_materia,
-      nombre_materia,
-      no_unidades ?? 0,
-    ],
-    (err, result) => {
+    [clave_materia, nombre_materia, no_unidades ?? 0],
+    (err) => {
       if (err) {
         if (err.code === "ER_DUP_ENTRY")
           return res
@@ -142,59 +171,46 @@ router.post("/", soloAdmin, (req, res) => {
         return res.status(500).json({ error: "Error interno del servidor" });
       }
       res.status(201).json({ success: true, mensaje: "Materia registrada" });
-    },
+    }
   );
 });
 
 // PUT — editar materia
 router.put("/:clave", soloAdmin, (req, res) => {
-  const {
-    nombre_materia,
-    no_unidades,
-  } = req.body;
+  const { nombre_materia, no_unidades } = req.body;
   if (!nombre_materia)
     return res.status(400).json({ error: "El nombre es requerido" });
 
   db.query(
     `UPDATE materia SET nombre_materia=?, no_unidades=?
      WHERE clave_materia=?`,
-    [
-      nombre_materia,
-      no_unidades ?? 0,
-      req.params.clave,
-    ],
+    [nombre_materia, no_unidades ?? 0, req.params.clave],
     (err, result) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       if (!result.affectedRows)
         return res.status(404).json({ error: "Materia no encontrada" });
       res.json({ success: true, mensaje: "Materia actualizada" });
-    },
+    }
   );
 });
 
 // DELETE — eliminar materia (borra retícula primero para evitar error de FK)
 router.delete("/:clave", soloAdmin, (req, res) => {
   const clave = req.params.clave;
-  // 1. Borrar registros dependientes en retícula
-  db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err, result) => {
-    if (err) {
-      console.error("Error borrando retícula:", err);
+  db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err) => {
+    if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
-    }
-    // 2. Borrar la materia
     db.query(
       "DELETE FROM materia WHERE clave_materia=?",
       [clave],
       (err2, result) => {
-        if (err2) {
-          console.error("Error borrando materia:", err2);
+        if (err2)
           return res.status(500).json({ error: "Error interno del servidor" });
-        }
         if (!result.affectedRows)
           return res.status(404).json({ error: "Materia no encontrada" });
         res.json({ success: true, mensaje: "Materia eliminada" });
-      },
+      }
     );
   });
 });
@@ -212,11 +228,11 @@ router.post("/:clave/carreras", soloAdmin, (req, res) => {
      VALUES (?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE semestre=VALUES(semestre), creditos=VALUES(creditos)`,
     [req.params.clave, id_carrera, semestre ?? 1, creditos ?? 0],
-    (err, result) => {
+    (err) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
       res.status(201).json({ success: true, mensaje: "Carrera vinculada" });
-    },
+    }
   );
 });
 
@@ -231,9 +247,8 @@ router.delete("/:clave/carreras/:id_carrera", soloAdmin, (req, res) => {
       if (!result.affectedRows)
         return res.status(404).json({ error: "Vínculo no encontrado" });
       res.json({ success: true, mensaje: "Carrera desvinculada" });
-    },
+    }
   );
 });
-
 
 module.exports = router;

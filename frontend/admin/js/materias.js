@@ -92,11 +92,11 @@ function filtrarMaterias() {
     lista = lista.filter(
       (m) =>
         m.clave_materia.toLowerCase().includes(q) ||
-        m.nombre_materia.toLowerCase().includes(q),
+        m.nombre_materia.toLowerCase().includes(q)
     );
   if (carrera)
     lista = lista.filter((m) =>
-      (m.carreras || []).some((c) => c.id_carrera === carrera),
+      (m.carreras || []).some((c) => c.id_carrera === carrera)
     );
   renderTablaMaterias(lista);
 }
@@ -113,7 +113,7 @@ function renderTablaMaterias(materias) {
       (m.carreras || [])
         .map(
           (c) =>
-            `<span class="badge-unidad" title="Semestre ${c.semestre || "?"}" style="font-size:.7rem">${c.id_carrera}</span>`,
+            `<span class="badge-unidad" title="Semestre ${c.semestre || "?"}" style="font-size:.7rem">${c.id_carrera}</span>`
         )
         .join(" ") ||
       '<span style="color:var(--text-muted);font-size:.8rem">—</span>';
@@ -136,7 +136,6 @@ function renderTablaMaterias(materias) {
 }
 
 // ── Chips de carreras en el modal ─────────────────────────────────────────
-// carrerasActuales = array de {id_carrera, nombre_carrera, semestre} ya vinculadas
 let carrerasActuales = [];
 
 function renderChips() {
@@ -157,7 +156,7 @@ function renderChips() {
       <button type="button" onclick="quitarCarrera('${c.id_carrera}')"
         style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:.85rem;padding:0;line-height:1">✕</button>
     </span>
-  `,
+  `
     )
     .join("");
 }
@@ -172,7 +171,7 @@ function agregarCarreraLocal() {
   }
 
   const yaEsta = [...carrerasActuales, ...carrerasPendientes].some(
-    (c) => c.id_carrera === id,
+    (c) => c.id_carrera === id
   );
   if (yaEsta) {
     mostrarMensaje("Esa carrera ya está vinculada", "error");
@@ -182,7 +181,6 @@ function agregarCarreraLocal() {
   const carrera = carrerasDisponibles.find((c) => c.id_carrera === id);
   const semestre = parseInt(semInput.value) || 1;
 
-  // Si estaba en la lista de eliminar, la quitamos de ahí
   carrerasEliminar = carrerasEliminar.filter((x) => x !== id);
   carrerasPendientes.push({
     id_carrera: id,
@@ -199,10 +197,10 @@ function quitarCarrera(id_carrera) {
   const eraActual = carrerasActuales.some((c) => c.id_carrera === id_carrera);
   if (eraActual) carrerasEliminar.push(id_carrera);
   carrerasActuales = carrerasActuales.filter(
-    (c) => c.id_carrera !== id_carrera,
+    (c) => c.id_carrera !== id_carrera
   );
   carrerasPendientes = carrerasPendientes.filter(
-    (c) => c.id_carrera !== id_carrera,
+    (c) => c.id_carrera !== id_carrera
   );
   renderChips();
 }
@@ -253,7 +251,6 @@ form.addEventListener("submit", async function (e) {
 
     const clave = materiaEditando || materia.clave_materia;
 
-    // Guardar vínculos de carreras en retícula
     for (const c of carrerasEliminar) {
       await fetch(`${API_URL}/api/materias/${clave}/carreras/${c}`, {
         method: "DELETE",
@@ -400,7 +397,9 @@ function procesarCSVMaterias(file) {
   leerArchivo(file, (headers, rows) => {
     if (!rows.length) {
       const el = document.getElementById("csvMateriasPreview");
-      if (el) el.innerHTML = "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
+      if (el)
+        el.innerHTML =
+          "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Archivo vacío o sin datos.</p>";
       return;
     }
     csvMateriasData = rows;
@@ -418,10 +417,29 @@ function mostrarPreviewCSVMaterias(headers, data) {
       "<p style='color:var(--danger);font-size:.85rem;margin-top:8px'>Sin datos válidos.</p>";
     return;
   }
-  preview.innerHTML = `<p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">${data.length} registros detectados — vista previa (primeros 5):</p>
+
+  // Detectar si el CSV incluye columnas de retícula
+  const tieneCarrera = headers.includes("id_carrera");
+
+  preview.innerHTML = `
+    <p style="font-size:.8rem;color:var(--text-muted);margin:10px 0 4px">
+      ${data.length} registros detectados — vista previa (primeros 5):
+    </p>
+    ${tieneCarrera
+      ? `<p style="font-size:.78rem;color:var(--success,#22c55e);margin:0 0 6px">
+           <iconify-icon icon="lucide:check-circle" style="vertical-align:middle"></iconify-icon>
+           Columnas <strong>id_carrera</strong> y <strong>semestre</strong> detectadas — se vincularán automáticamente en la retícula.
+         </p>`
+      : `<p style="font-size:.78rem;color:var(--text-muted);margin:0 0 6px">
+           <iconify-icon icon="lucide:info" style="vertical-align:middle"></iconify-icon>
+           Sin columna <strong>id_carrera</strong> — las materias se importarán sin carrera asociada.
+         </p>`
+    }
     <div class="csv-preview"><table>
       <thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-      <tbody>${muestra.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      <tbody>${muestra
+        .map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ""}</td>`).join("")}</tr>`)
+        .join("")}</tbody>
     </table></div>`;
 }
 
@@ -443,6 +461,8 @@ async function importarCSVMaterias() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Error al importar");
     toast(`${data.insertados} materia(s) importadas correctamente`);
+    if (data.reticulas > 0)
+      toast(`${data.reticulas} vínculo(s) de carrera procesados`, "info");
     if (data.errores?.length) {
       toast(`${data.errores.length} fila(s) con errores`, "info");
       console.table(data.errores);
@@ -457,6 +477,9 @@ async function importarCSVMaterias() {
   }
 }
 
+// ── Exportar CSV incluyendo retícula ──────────────────────────────────────
+// Una materia con N carreras genera N filas en el CSV.
+// Una materia sin carrera genera 1 fila con id_carrera y semestre vacíos.
 async function exportarCSVMaterias() {
   const token = localStorage.getItem("token");
   try {
@@ -468,9 +491,34 @@ async function exportarCSVMaterias() {
       toast("No hay materias para exportar.", "error");
       return;
     }
-    const cols = ["clave_materia", "nombre_materia", "no_unidades"];
-    const headers = ["clave_materia", "nombre_materia", "no_unidades"];
-    exportarXLSX(cols, headers, materias, "materias_RCA");
+
+    // Expandir cada materia en tantas filas como carreras tenga
+    const filas = [];
+    materias.forEach((m) => {
+      if (m.carreras && m.carreras.length > 0) {
+        m.carreras.forEach((c) => {
+          filas.push({
+            clave_materia: m.clave_materia,
+            nombre_materia: m.nombre_materia,
+            no_unidades: m.no_unidades,
+            id_carrera: c.id_carrera,
+            semestre: c.semestre ?? "",
+          });
+        });
+      } else {
+        // Sin carrera vinculada → fila con campos vacíos
+        filas.push({
+          clave_materia: m.clave_materia,
+          nombre_materia: m.nombre_materia,
+          no_unidades: m.no_unidades,
+          id_carrera: "",
+          semestre: "",
+        });
+      }
+    });
+
+    const cols = ["clave_materia", "nombre_materia", "no_unidades", "id_carrera", "semestre"];
+    exportarXLSX(cols, cols, filas, "materias_RCA");
     toast("Exportado correctamente");
   } catch {
     toast("Error al exportar materias.", "error");
