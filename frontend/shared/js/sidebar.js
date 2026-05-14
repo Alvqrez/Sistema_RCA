@@ -131,11 +131,6 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:folder-open",
         hijos: [
           {
-            href: "../../admin/pages/periodos.html",
-            texto: "Periodos escolares",
-            icono: "mdi:calendar-range-outline",
-          },
-          {
             href: "../../admin/pages/carreras.html",
             texto: "Carreras",
             icono: "mdi:school-outline",
@@ -181,6 +176,11 @@ window.API_URL = "http://localhost:3000";
         texto: "Utilerías",
         icono: "lucide:settings-2",
         hijos: [
+          {
+            href: "../../admin/pages/periodos.html",
+            texto: "Periodos escolares",
+            icono: "mdi:calendar-range-outline",
+          },
           {
             href: "../../shared/pages/reportes.html",
             texto: "Reportes",

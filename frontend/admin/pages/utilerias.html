@@ -583,30 +583,8 @@
         </div>
         <!-- /util-grid -->
 
-        <!-- ── GESTIÓN DE NOTIFICACIONES ──────────────────────────────────── -->
-        <div class="card" style="margin-top: 24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="util-icon util-icon-blue" style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--primary-light);color:var(--primary)">
-                <iconify-icon icon="lucide:bell" style="font-size:1.05rem"></iconify-icon>
-              </div>
-              <div>
-                <div style="font-size:1rem;font-weight:700;color:var(--text-main)">Gestión de notificaciones</div>
-                <p style="font-size:0.78rem;color:var(--text-muted);margin:2px 0 0">Avisos visibles en la campanita de cada rol</p>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="abrirModalNotif()">
-              <iconify-icon icon="lucide:plus"></iconify-icon> Nueva notificación
-            </button>
-          </div>
 
-          <!-- Lista de notificaciones activas -->
-          <div id="listaNotifAdmin" style="display:flex;flex-direction:column;gap:6px">
-            <p style="color:var(--text-muted);font-size:0.83rem;text-align:center;padding:16px">
-              <iconify-icon icon="lucide:loader-2" style="animation:spin 1s linear infinite"></iconify-icon> Cargando...
-            </p>
-          </div>
-        </div>
+
 
         <!-- ── ADMINISTRADORES ─────────────────────────────────────────── -->
         <div class="card" style="margin-top: 24px">
@@ -1007,13 +985,10 @@
             "apellido_materno",
             "curp",
             "fecha_nacimiento",
-            "genero",
             "id_carrera",
             "correo_institucional",
             "correo_personal",
             "tel_celular",
-            "tel_casa",
-            "direccion",
           ],
           headers: [
             "no_control",
@@ -1022,13 +997,10 @@
             "apellido_materno",
             "curp",
             "fecha_nacimiento",
-            "genero",
             "id_carrera",
             "correo_institucional",
             "correo_personal",
             "tel_celular",
-            "tel_casa",
-            "direccion",
           ],
         },
         maestros: {
@@ -1037,45 +1009,27 @@
             "rfc",
             "nombre",
             "apellido_paterno",
+            "apellido_materno",
             "correo_institucional",
             "username",
             "pwd",
-            "apellido_materno",
-            "departamento",
-            "especialidad",
-            "grado_academico",
-            "tipo_contrato",
-            "tel_celular",
-            "estatus",
             "curp",
             "fecha_nacimiento",
-            "genero",
             "correo_personal",
-            "tel_oficina",
-            "direccion",
-            "fecha_ingreso",
+            "tel_celular",
           ],
           headers: [
             "rfc",
             "nombre",
             "apellido_paterno",
+            "apellido_materno",
             "correo_institucional",
             "username",
             "pwd",
-            "apellido_materno",
-            "departamento",
-            "especialidad",
-            "grado_academico",
-            "tipo_contrato",
-            "tel_celular",
-            "estatus",
             "curp",
             "fecha_nacimiento",
-            "genero",
             "correo_personal",
-            "tel_oficina",
-            "direccion",
-            "fecha_ingreso",
+            "tel_celular",
           ],
         },
         materias: {
@@ -1631,69 +1585,7 @@
           cerrarModalAdmin();
       });
     </script>
-    <!-- ── Modal: Nueva / Editar notificación ──────────────────────────── -->
-    <div id="modalNotif" class="modal-overlay" style="display:none" onclick="if(event.target===this)cerrarModalNotif()">
-      <div class="modal-panel" style="max-width:520px">
-        <div class="modal-header">
-          <h2 id="modalNotifTitulo">Nueva notificación</h2>
-          <button class="modal-close" onclick="cerrarModalNotif()">✕</button>
-        </div>
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
-          <input type="hidden" id="notifEditId" value="">
-          <div class="form-group">
-            <label>Título <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="notifTitulo" placeholder="Ej. Portal SII disponible" maxlength="100">
-          </div>
-          <div class="form-group">
-            <label>Mensaje <span style="color:var(--danger)">*</span></label>
-            <textarea id="notifMensaje" rows="3" placeholder="Texto completo del aviso..." style="resize:vertical;width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.85rem;background:var(--bg-app);color:var(--text-main)"></textarea>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group">
-              <label>Tipo</label>
-              <select id="notifTipo" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;background:var(--bg-app);color:var(--text-main)">
-                <option value="info">ℹ️ Información</option>
-                <option value="warning">⚠️ Advertencia</option>
-                <option value="danger">🔴 Urgente</option>
-                <option value="success">✅ Positivo</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Dirigido a</label>
-              <select id="notifRol" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;background:var(--bg-app);color:var(--text-main)">
-                <option value="todos">👥 Todos</option>
-                <option value="administrador">🔑 Solo Admin</option>
-                <option value="maestro">🧑‍🏫 Solo Maestros</option>
-                <option value="alumno">🎓 Solo Alumnos</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Enlace de acción (opcional)</label>
-            <input type="text" id="notifUrl" placeholder="Ej. https://sii.itver.edu.mx">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group">
-              <label>Visible desde (opcional)</label>
-              <input type="date" id="notifFechaInicio">
-            </div>
-            <div class="form-group">
-              <label>Visible hasta (opcional)</label>
-              <input type="date" id="notifFechaFin">
-            </div>
-          </div>
-          <p id="notifErr" style="color:var(--danger);font-size:0.83rem;margin:0;display:none"></p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModalNotif()">Cancelar</button>
-          <button class="btn btn-primary" onclick="guardarNotif()">
-            <iconify-icon icon="lucide:send"></iconify-icon> Publicar aviso
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <script>
+    <!-- ── Modal: Nueva / Editar notificación ──────────────────────────── -->    <script>
       // ── Gestión de Notificaciones ───────────────────────────────────────────
       const ICONOS_TIPO = {
         info: "lucide:info", warning: "lucide:alert-triangle",
@@ -1709,115 +1601,6 @@
         success: { bg: "var(--success-light)", icon: "var(--success)" },
       };
 
-      async function cargarNotifAdmin() {
-        const tkn = localStorage.getItem("token");
-        const r = await fetch(`${API_URL}/api/notificaciones/admin/todas`, {
-          headers: { Authorization: `Bearer ${tkn}` }
-        });
-        const lista = await r.json();
-        const cont = document.getElementById("listaNotifAdmin");
-        if (!lista.length) {
-          cont.innerHTML = `<p style="color:var(--text-muted);font-size:0.83rem;text-align:center;padding:16px">No hay notificaciones creadas aún.</p>`;
-          return;
-        }
-        cont.innerHTML = lista.map(n => {
-          const c = TIPO_COLORS[n.tipo] || TIPO_COLORS.info;
-          const badge_rol = `<span class="badge" style="background:var(--bg-app);border:1px solid var(--border);color:var(--text-muted);font-size:0.68rem;padding:2px 7px;border-radius:99px">${ROL_LABEL[n.rol_destino]||n.rol_destino}</span>`;
-          const badge_activa = n.activa
-            ? `<span class="badge badge-success" style="font-size:0.68rem">Activa</span>`
-            : `<span class="badge" style="font-size:0.68rem;opacity:0.5">Inactiva</span>`;
-          return `
-          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;
-                      background:var(--bg-app);border:1.5px solid var(--border);
-                      ${!n.activa ? 'opacity:0.55' : ''}">
-            <span style="width:32px;height:32px;border-radius:8px;background:${c.bg};color:${c.icon};
-                         display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
-              <iconify-icon icon="${ICONOS_TIPO[n.tipo]||'lucide:bell'}" style="font-size:1rem"></iconify-icon>
-            </span>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-                <strong style="font-size:0.87rem;color:var(--text-main)">${n.titulo}</strong>
-                ${badge_rol} ${badge_activa}
-              </div>
-              <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 4px;line-height:1.4">${n.mensaje}</p>
-              ${n.url_accion ? `<a href="${n.url_accion}" target="_blank" style="font-size:0.75rem;color:var(--primary)">${n.url_accion}</a>` : ""}
-              ${n.fecha_fin ? `<p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0">Expira: ${n.fecha_fin}</p>` : ""}
-            </div>
-            <div style="display:flex;gap:6px;flex-shrink:0">
-              <button class="btn btn-outline btn-sm" onclick="editarNotif(${n.id_notificacion})" title="Editar">
-                <iconify-icon icon="lucide:pencil"></iconify-icon>
-              </button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)"
-                onclick="eliminarNotif(${n.id_notificacion})" title="Desactivar">
-                <iconify-icon icon="lucide:trash-2"></iconify-icon>
-              </button>
-            </div>
-          </div>`;
-        }).join("");
-      }
-
-      function abrirModalNotif(data) {
-        document.getElementById("notifEditId").value = data?.id_notificacion || "";
-        document.getElementById("notifTitulo").value = data?.titulo || "";
-        document.getElementById("notifMensaje").value = data?.mensaje || "";
-        document.getElementById("notifTipo").value = data?.tipo || "info";
-        document.getElementById("notifRol").value = data?.rol_destino || "todos";
-        document.getElementById("notifUrl").value = data?.url_accion || "";
-        document.getElementById("notifFechaInicio").value = data?.fecha_inicio || "";
-        document.getElementById("notifFechaFin").value = data?.fecha_fin || "";
-        document.getElementById("notifErr").style.display = "none";
-        document.getElementById("modalNotifTitulo").textContent =
-          data ? "Editar notificación" : "Nueva notificación";
-        document.getElementById("modalNotif").style.display = "flex";
-      }
-      function cerrarModalNotif() {
-        document.getElementById("modalNotif").style.display = "none";
-      }
-
-      async function guardarNotif() {
-        const id = document.getElementById("notifEditId").value;
-        const titulo = document.getElementById("notifTitulo").value.trim();
-        const mensaje = document.getElementById("notifMensaje").value.trim();
-        const errEl = document.getElementById("notifErr");
-        if (!titulo || !mensaje) {
-          errEl.textContent = "Título y mensaje son obligatorios.";
-          errEl.style.display = "block"; return;
-        }
-        const body = {
-          titulo, mensaje,
-          tipo:         document.getElementById("notifTipo").value,
-          icono:        ICONOS_TIPO[document.getElementById("notifTipo").value] || "lucide:bell",
-          rol_destino:  document.getElementById("notifRol").value,
-          url_accion:   document.getElementById("notifUrl").value.trim() || null,
-          fecha_inicio: document.getElementById("notifFechaInicio").value || null,
-          fecha_fin:    document.getElementById("notifFechaFin").value || null,
-        };
-        const tkn = localStorage.getItem("token");
-        const url = id
-          ? `${API_URL}/api/notificaciones/${id}`
-          : `${API_URL}/api/notificaciones`;
-        const r = await fetch(url, {
-          method: id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${tkn}` },
-          body: JSON.stringify(body),
-        });
-        const d = await r.json();
-        if (!r.ok) { errEl.textContent = d.error || "Error al guardar."; errEl.style.display = "block"; return; }
-        cerrarModalNotif();
-        toast("Notificación publicada correctamente", "success");
-        cargarNotifAdmin();
-      }
-
-      async function editarNotif(id) {
-        const tkn = localStorage.getItem("token");
-        const r = await fetch(`${API_URL}/api/notificaciones/admin/todas`, {
-          headers: { Authorization: `Bearer ${tkn}` }
-        });
-        const lista = await r.json();
-        const notif = lista.find(n => n.id_notificacion === id);
-        if (notif) abrirModalNotif(notif);
-      }
-
       async function eliminarNotif(id) {
         if (!confirm("¿Desactivar esta notificación? Dejará de aparecer para los usuarios.")) return;
         const tkn = localStorage.getItem("token");
@@ -1825,11 +1608,10 @@
           method: "DELETE",
           headers: { Authorization: `Bearer ${tkn}` }
         });
-        if (r.ok) { toast("Notificación desactivada", "success"); cargarNotifAdmin(); }
+        if (r.ok) { toast("Notificación desactivada", "success"); cargarAdmins(); }
         else toast("Error al desactivar", "error");
       }
 
-      document.addEventListener("DOMContentLoaded", cargarNotifAdmin);
     </script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="../../shared/js/exportUtils.js"></script>
