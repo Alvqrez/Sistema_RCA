@@ -728,8 +728,8 @@
           padding:12px 16px;display:none;align-items:flex-start;gap:12px">
           <iconify-icon icon="lucide:info" style="color:var(--primary);font-size:1.1rem;flex-shrink:0;margin-top:2px"></iconify-icon>
           <div style="flex:1;font-size:.86rem">
-            <strong>Sin rubros configurados</strong><br>
-            <span style="color:var(--text-muted)">Configura los rubros y ponderaciones de este grupo en Configurar grupo antes de registrar calificaciones.</span>
+            <strong>Sin actividades configuradas</strong><br>
+            <span style="color:var(--text-muted)">Configura las actividades y ponderaciones de este grupo en <a href="gruposMaestro.html" style="color:var(--primary)">Configurar unidad</a> antes de registrar calificaciones.</span>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
             <a href="gruposMaestro.html" class="btn btn-sm btn-primary">Ir</a>
@@ -1765,7 +1765,7 @@
           actsHTML = `<div class="hint-banner">
             <iconify-icon icon="lucide:info" style="flex-shrink:0"></iconify-icon>
             Esta unidad no tiene actividades. Ve a
-            <a href="configurar_actividades.html">Configurar actividades →</a>
+            <a href="gruposMaestro.html">Configurar unidad →</a>
           </div>`;
         } else {
           const tipoColores = {
@@ -1789,7 +1789,7 @@
             actsHTML += `
               <div class="act-card${unidadCerrada ? " disabled" : ""}">
                 <div class="act-card-info">
-                  <strong>${a.nombre_actividad}</strong>
+                  <strong>${a.nombre_tipo || a.nombre_actividad || 'Actividad'}</strong>
                   <div class="act-card-meta">
                     <span class="act-tipo-chip" style="background:${tc.bg};color:${tc.color}">
                       ${a.tipo_actividad || "Actividad"}
@@ -1861,7 +1861,7 @@
                         ? ((val * parseFloat(a.ponderacion)) / 100).toFixed(2)
                         : "—";
                     return `<div class="summary-row">
-                    <span class="summary-label">${a.nombre_actividad} (${parseFloat(a.ponderacion).toFixed(0)}%)</span>
+                    <span class="summary-label">${a.nombre_tipo || a.nombre_actividad || 'Actividad'} (${parseFloat(a.ponderacion).toFixed(0)}%)</span>
                     <span class="summary-val" id="sum_${al.no_control}_${a.id_actividad}">${aporte} pts</span>
                   </div>`;
                   })
@@ -1923,6 +1923,8 @@
               </button>
             </div>
           </div>`;
+        // Recalcular promedio/ring DESPUÉS de insertar el HTML en el DOM
+        _actualizarPromRing(al.no_control);
       }
 
       function navAlumno(dir) {
@@ -2162,15 +2164,21 @@
           document.getElementById("seccionFinal").style.display = "block";
           calcularVistaFinal();
         }
-        // Mostrar notificación de configurar grupo si no hay actividades
-        if (!localStorage.getItem("hint_config_eval_olvidado")) {
-          const tieneActs = estado.actividades && estado.actividades.length > 0;
+        // Mostrar hint solo si el grupo no tiene actividades bloqueadas en BD
+        if (!localStorage.getItem("hint_config_eval_olvidado") && estado.grupoId) {
           const hint = document.getElementById("hintConfigEval");
-          if (!tieneActs && estado.grupoId) {
-            hint.style.display = "flex";
-          } else {
-            hint.style.display = "none";
-          }
+          try {
+            const rActs = await fetch(`${API_URL}/api/actividades`, {
+              headers: { Authorization: `Bearer ${token()}` }
+            });
+            if (rActs.ok) {
+              const todasActs = await rActs.json();
+              const tieneConfig = todasActs.some(
+                a => parseInt(a.id_grupo) === parseInt(estado.grupoId) && a.bloqueado
+              );
+              if (hint) hint.style.display = tieneConfig ? "none" : "flex";
+            }
+          } catch (_) {}
         }
 
         // Si hay alumnos pero no actividades, mostrar la lista igual

@@ -215,15 +215,12 @@ async function cargarGrupo() {
 
   await Promise.all([cargarUnidadesGrupo(), cargarAlumnos()]);
 
+  // verificarConfigGrupo decide si ocultar el hint — no lo mostramos aquí
   await verificarConfigGrupo(id);
 
   // Show paso 3
   const paso3 = document.getElementById("cardPaso3");
   if (paso3) { paso3.style.display = "block"; paso3.classList.add("open"); }
-
-  // Show hint
-  const hint = document.getElementById("hintConfigEval");
-  if (hint) hint.style.display = "flex";
 
   // Mark paso 1 as done
   const _n1 = document.getElementById("numPaso1");
@@ -236,33 +233,29 @@ async function cargarGrupo() {
 }
 
 async function verificarConfigGrupo(id_grupo) {
+  const hint = document.getElementById("hintConfigEval");
   try {
-    const res = await fetch(
-      `${API_URL}/api/config-evaluacion/grupo/${id_grupo}`,
-      { headers: { Authorization: `Bearer ${token()}` } },
-    );
+    const res = await fetch(`${API_URL}/api/actividades`, {
+      headers: { Authorization: `Bearer ${token()}` },
+    });
     if (res.ok) {
-      const configs = await res.json();
-      if (Array.isArray(configs) && configs.length > 0) {
+      const todas = await res.json();
+      const delGrupo = todas.filter(a => parseInt(a.id_grupo) === parseInt(id_grupo));
+      const tieneConfig = delGrupo.some(a => a.bloqueado);
+      if (tieneConfig) {
         actualizarEstadoBadge(true);
-        // Poblar localStorage con los valores de BD para que los rubros
-        // aparezcan correctamente al abrir cada unidad
-        configs.forEach((c) => {
-          const key = `pcts_${id_grupo}_${c.id_unidad}`;
-          if (!localStorage.getItem(key)) {
-            localStorage.setItem(
-              key,
-              JSON.stringify({
-                pct_actividades: c.pct_actividades,
-                pct_examen: c.pct_examen,
-                pct_asistencia: c.pct_asistencia,
-              }),
-            );
-          }
-        });
+        if (hint) hint.style.display = "none"; // grupo configurado, ocultar hint
+      } else {
+        // Sin actividades bloqueadas — mostrar hint solo si no fue olvidado
+        if (hint && !localStorage.getItem("hint_config_eval_olvidado"))
+          hint.style.display = "flex";
       }
     }
-  } catch (_) {}
+  } catch (_) {
+    // En caso de error, mostrar hint por precaución
+    if (hint && !localStorage.getItem("hint_config_eval_olvidado"))
+      hint.style.display = "flex";
+  }
 }
 
 async function verificarUnidadesCerradas(id_grupo) {
@@ -306,13 +299,15 @@ function resetVista() {
 
 async function cargarUnidadesGrupo() {
   try {
+    // Usar layout-unidades para respetar divisiones y fusiones del maestro
     const res = await fetch(
-      `${API_URL}/api/grupos/${estado.grupoId}/unidades`,
+      `${API_URL}/api/grupos/${estado.grupoId}/layout-unidades`,
       { headers: { Authorization: `Bearer ${token()}` } },
     );
-    let unidades = await res.json();
+    let unidades = res.ok ? await res.json() : [];
 
     if (!Array.isArray(unidades) || !unidades.length) {
+      // Fallback: unidades originales de la materia
       const info = await (
         await fetch(`${API_URL}/api/grupos/${estado.grupoId}`, {
           headers: { Authorization: `Bearer ${token()}` },
@@ -323,11 +318,7 @@ async function cargarUnidadesGrupo() {
         { headers: { Authorization: `Bearer ${token()}` } },
       );
       unidades = await r2.json();
-      unidades = unidades.map((u, i) => ({
-        ...u,
-        ponderacion: 0,
-        numero_unidad: i + 1,
-      }));
+      unidades = unidades.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
     } else {
       unidades = unidades.map((u, i) => ({
         ...u,
@@ -535,6 +526,19 @@ async function actualizarActividades() {
 }
 
 async function cargarResultadosExistentes() {
+  // Preservar cambios pendientes (capturados pero no guardados en BD)
+  const pendientes = {};
+  if (_cambiosPendientes) {
+    Object.entries(estado.resultados).forEach(([nc, acts]) => {
+      Object.entries(acts).forEach(([id_act, r]) => {
+        if (r._pendiente) {
+          if (!pendientes[nc]) pendientes[nc] = {};
+          pendientes[nc][id_act] = r;
+        }
+      });
+    });
+  }
+
   estado.resultados = {};
   for (const act of estado.actividades) {
     try {
@@ -553,6 +557,17 @@ async function cargarResultadosExistentes() {
       });
     } catch (_) {}
   }
+
+  // Restaurar cambios pendientes sobre los datos de BD
+  Object.entries(pendientes).forEach(([nc, acts]) => {
+    Object.entries(acts).forEach(([id_act, r]) => {
+      if (!estado.resultados[nc]) estado.resultados[nc] = {};
+      // Solo restaurar si no hay dato guardado en BD para esta combinación
+      if (!estado.resultados[nc][id_act]) {
+        estado.resultados[nc][id_act] = r;
+      }
+    });
+  });
 }
 
 async function cargarBonusUnidad() {
@@ -595,7 +610,7 @@ function renderRubrosBar() {
   // Mostrar las actividades reales del maestro como chips
   if (estado.actividades.length) {
     estado.actividades.forEach((a) => {
-      html += `<span class="rchip rchip-act">${a.nombre_actividad} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
+      html += `<span class="rchip rchip-act">${a.nombre_tipo || a.nombre_actividad || 'Actividad'} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
     });
   } else {
     html += `<span style="font-size:.78rem;color:var(--text-muted)">Sin actividades configuradas</span>`;
@@ -641,7 +656,7 @@ function renderTablaCalificaciones() {
 
   estado.actividades.forEach((a) => {
     thead += `<th style="min-width:100px">
-      <span style="color:#2563eb">${a.nombre_actividad}</span>
+      <span style="color:#2563eb">${a.nombre_tipo || a.nombre_actividad || 'Actividad'}</span>
       <small>${parseFloat(a.ponderacion).toFixed(0)}%</small>
     </th>`;
   });
@@ -676,18 +691,9 @@ function renderTablaCalificaciones() {
       </td>`;
     });
 
-    // Base (sin bonus) — req. Etapa 2 §3.2: mostrar diferencia antes/después del bonus
-    const base = calcularBaseScore(al.no_control);
-    const baseColor =
-      base === null
-        ? "var(--text-muted)"
-        : base >= 70
-          ? "var(--success)"
-          : "var(--danger)";
+    // Base — se calcula después de insertar el HTML en el DOM (ver recalcularFila al final)
     tbody += `<td style="text-align:center">
-      <span id="base-${al.no_control}" style="color:${baseColor};font-weight:600">
-        ${base !== null ? base : "—"}
-      </span>
+      <span id="base-${al.no_control}" style="color:var(--text-muted);font-weight:600">—</span>
     </td>`;
 
     // Bonus — puntos + justificación inline
@@ -708,18 +714,9 @@ function renderTablaCalificaciones() {
         oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
     </td>`;
 
-    // Cal. Final
-    const final = calcularCalFinal(al.no_control);
-    const fColor =
-      final === null
-        ? "var(--text-muted)"
-        : final >= 70
-          ? "var(--success)"
-          : "var(--danger)";
+    // Cal. Final — se calcula después de insertar el HTML (ver recalcularFila al final)
     tbody += `<td class="td-final">
-      <span id="final-${al.no_control}" style="color:${fColor}">
-        ${final !== null ? final : "—"}
-      </span>
+      <span id="final-${al.no_control}" style="color:var(--text-muted)">—</span>
     </td></tr>`;
   });
 
@@ -756,12 +753,25 @@ function clampCal(val) {
 
 // Llama desde oninput en cada input de calificación
 function onCalInput(inp) {
-  const val = parseFloat(inp.value);
+  let val = parseFloat(inp.value);
   if (!isNaN(val)) {
-    if (val > 100) inp.value = 100;
-    if (val < 0) inp.value = 0;
+    if (val > 100) { val = 100; inp.value = 100; }
+    if (val < 0)   { val = 0;   inp.value = 0;   }
   }
   _cambiosPendientes = true;
+
+  // Persistir en estado.resultados para que no se pierda al navegar entre alumnos
+  const no_control = inp.dataset.no_control;
+  const id_actividad = parseInt(inp.dataset.actividad);
+  if (no_control && id_actividad) {
+    if (!estado.resultados[no_control]) estado.resultados[no_control] = {};
+    estado.resultados[no_control][id_actividad] = {
+      ...(estado.resultados[no_control][id_actividad] || {}),
+      cal: isNaN(val) ? null : val,
+      estatus: isNaN(val) ? "Pendiente" : "Validada",
+      _pendiente: true,
+    };
+  }
 }
 
 function calcularPromedioActividades(no_control) {
@@ -904,7 +914,7 @@ function abrirModalActividades(no_control) {
         ? `<iconify-icon icon="mdi:lock-outline" style="font-size:.7rem;color:var(--warning,#f59e0b);margin-left:4px"></iconify-icon>`
         : "";
       return `<tr>
-      <td style="font-weight:500">${a.nombre_actividad}${lock}</td>
+      <td style="font-weight:500">${a.nombre_tipo || a.nombre_actividad || 'Actividad'}${lock}</td>
       <td><span style="font-size:0.78rem;color:var(--text-muted)">${a.ponderacion}%</span></td>
       <td>
         <input class="grade-input modal-act-input" type="number" min="0" max="100"
@@ -1171,6 +1181,10 @@ async function _ejecutarGuardado() {
   if (total > 0) {
     mostrarToast(`${total} calificaciones guardadas`, "success");
     _cambiosPendientes = false;
+    // Limpiar marcas _pendiente ahora que están en BD
+    Object.values(estado.resultados).forEach(acts =>
+      Object.values(acts).forEach(r => { delete r._pendiente; })
+    );
   }
   await cargarResultadosExistentes();
   renderTablaCalificaciones();
@@ -1407,7 +1421,7 @@ function actualizarSelectCSVActividad() {
   if (!sel) return;
   sel.innerHTML = `<option value="">— Selecciona actividad —</option>`;
   estado.actividades.forEach((a) => {
-    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_actividad} (${a.ponderacion}%)</option>`;
+    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_tipo || a.nombre_actividad || 'Actividad'} (${a.ponderacion}%)</option>`;
   });
 }
 function manejarArchivoCSV(e) {

@@ -388,7 +388,7 @@
 
           const activos = grupos.filter((g) => g.estatus === "Activo").length;
 
-          // Consultar actividades y unidades para determinar grupos configurados
+          // Consultar actividades bloqueadas
           let actividadesBloqueadas = [];
           try {
             const rActs = await fetch(`${API_URL}/api/actividades`, {
@@ -397,7 +397,7 @@
             if (rActs.ok) actividadesBloqueadas = await rActs.json();
           } catch (_) {}
 
-          // Unidades bloqueadas por grupo (id_unidad con al menos 1 actividad bloqueada)
+          // Unidades con al menos 1 actividad bloqueada, por grupo
           const unidadesBloqueadasPorGrupo = {};
           for (const a of actividadesBloqueadas.filter(a => a.bloqueado)) {
             if (!unidadesBloqueadasPorGrupo[a.id_grupo])
@@ -405,28 +405,24 @@
             unidadesBloqueadasPorGrupo[a.id_grupo].add(a.id_unidad);
           }
 
-          // Consultar cuántas unidades tiene la materia de cada grupo
-          // Agrupamos por clave_materia para evitar llamadas duplicadas
-          const unidadesPorMateria = {};
-          const clavesUnicas = [...new Set(grupos.map(g => g.clave_materia))];
-          await Promise.all(clavesUnicas.map(async (clave) => {
+          // Consultar unidades EFECTIVAS de cada grupo via layout-unidades
+          // (respeta divisiones y fusiones, a diferencia de /unidades/materia)
+          const unidadesTotalesPorGrupo = {};
+          await Promise.all(grupos.map(async (g) => {
             try {
-              const r = await fetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(clave)}`, {
+              const r = await fetch(`${API_URL}/api/grupos/${g.id_grupo}/layout-unidades`, {
                 headers: { Authorization: `Bearer ${tkn()}` },
               });
               if (r.ok) {
                 const uns = await r.json();
-                unidadesPorMateria[clave] = uns.length;
+                unidadesTotalesPorGrupo[g.id_grupo] = uns.length;
+              } else {
+                unidadesTotalesPorGrupo[g.id_grupo] = 0;
               }
-            } catch (_) {}
+            } catch (_) { unidadesTotalesPorGrupo[g.id_grupo] = 0; }
           }));
 
-          const unidadesTotalesPorGrupo = {};
-          for (const g of grupos) {
-            unidadesTotalesPorGrupo[g.id_grupo] = unidadesPorMateria[g.clave_materia] || 0;
-          }
-
-          // Configurado = todas las unidades del grupo tienen al menos 1 actividad bloqueada
+          // Configurado = todas las unidades efectivas del grupo están bloqueadas
           const gruposConActividad = new Set(
             grupos
               .filter(g => {
