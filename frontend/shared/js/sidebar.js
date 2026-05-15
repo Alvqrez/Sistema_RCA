@@ -70,25 +70,11 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:book-open",
         hijos: [
           {
-            href: "../../maestro/pages/configurar_actividades.html",
-            texto: "Configurar actividades",
+            href: "../../maestro/pages/gruposMaestro.html",
+            texto: "Configurar unidad",
             icono: "lucide:sliders-horizontal",
           },
-          {
-            href: "../../maestro/pages/gruposMaestro.html",
-            texto: "Peso por unidad", // antes "Ponderacion de unidades"
-            icono: "lucide:scale",
-          },
-          {
-            href: "../../maestro/pages/asistencia.html",
-            texto: "Registrar asistencia", // verbo más claro
-            icono: "lucide:calendar-check",
-          },
-          {
-            href: "../../maestro/pages/lista_asistencia.html",
-            texto: "Historial de asistencia",
-            icono: "lucide:calendar-clock",
-          },
+
         ],
       },
       {

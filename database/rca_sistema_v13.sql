@@ -1,51 +1,41 @@
 -- ============================================================
 --  Sistema de Registro y Cálculo de Resultados Académicos
---  Esquema — versión 11
+--  Esquema — versión 12
 --  Instituto Tecnológico de Veracruz
 --
---  CAMBIOS RESPECTO A v6 — CORRECCIONES 1NF / 2NF / 3NF
+--  CAMBIOS RESPECTO A v11
 --  ─────────────────────────────────────────────────────────
---  3NF  • periodo_escolar.anio eliminado: el año se deriva
---         funcionalmente de fecha_inicio (anio → fecha_inicio → anio),
---         lo que introduce una dependencia transitiva.
---         Usar YEAR(fecha_inicio) en las consultas que necesiten el año.
+--  maestro        → eliminados: tel_oficina, direccion,
+--                   tipo_contrato, estatus, genero,
+--                   fecha_ingreso, grado_academico,
+--                   especialidad, departamento
 --
---  3NF  • config_evaluacion_unidad.cal_examen eliminado: almacena
---         una calificación que ya existe (o puede calcularse) en
---         resultado_actividad. Mantenerla duplica datos y puede
---         producir inconsistencias si la calificación de la actividad
---         tipo Examen se modifica.
+--  alumno         → eliminados: genero, tel_casa, direccion
 --
---  DISEÑO • modificacionfinal ahora tiene PK auto-incremental:
---           el documento de análisis dice explícitamente "Pueden
---           existir múltiples modificaciones a la calificación final
---           de un mismo alumno en el mismo grupo". La PK compuesta
---           (no_control, id_grupo) sólo permitía una por par.
+--  materia        → eliminados: horas_teoricas, horas_practicas
+--                   (antes eran ALTER TABLE al final del v11)
 --
---  INTEGRIDAD REFERENCIAL
---       • actividad agrega FK hacia grupo_unidad(id_grupo, id_unidad)
---         para garantizar que no se creen actividades en
---         combinaciones grupo-unidad que no existan.
+--  reticula       → eliminado: creditos
 --
---  + NUEVO: Sistema de estatus automático para periodo_escolar
---           • Event Scheduler diario que recalcula estatus por fecha
+--  tipo_actividad → eliminado: activo
+--                   (el catálogo es global, todas están activas)
 --
---  CAMBIOS v11
+--  notificacion   → tabla eliminada por completo
+--
+--  LIMPIEZA GENERAL
 --  ─────────────────────────────────────────────────────────
---  DISEÑO • grupo.horario y grupo.aula eliminados: el formulario
---           de creación de grupos ya no captura estos campos.
---           Se simplifican el POST, PUT y el importador CSV.
+--  Se eliminaron los parches sueltos al final del archivo
+--  (ALTER TABLE, UPDATE, SELECT) integrándolos directamente
+--  en sus CREATE TABLE correspondientes.
 -- ============================================================
 
--- Quitar modo seguro
 SET SQL_SAFE_UPDATES = 0;
 
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS,   UNIQUE_CHECKS=0;
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS,     UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE,
     SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
--- Activar el Event Scheduler (necesario para el estatus automático)
 SET GLOBAL event_scheduler = ON;
 
 -- ── Base de datos ─────────────────────────────────────────────────────────────
@@ -60,7 +50,6 @@ USE `rca_sistema`;
 --  TABLAS SIN DEPENDENCIAS
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Administrador
 CREATE TABLE `administrador` (
   `rfc`                  VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del administrador',
   `nombre`               VARCHAR(80)   NOT NULL,
@@ -78,25 +67,19 @@ CREATE TABLE `administrador` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- v13: eliminados tel_oficina, direccion, tipo_contrato, estatus,
+--      genero, fecha_ingreso, grado_academico, especialidad, departamento
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `maestro` (
-  `rfc`               VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del docente',
-  `nombre`            VARCHAR(80)   NOT NULL,
-  `apellido_paterno`  VARCHAR(50)   NOT NULL,
-  `apellido_materno`  VARCHAR(50)   NULL DEFAULT NULL,
-  `curp`              CHAR(18)      NULL DEFAULT NULL,
-  `fecha_nacimiento`  DATE          NULL DEFAULT NULL,
-  `genero`            ENUM('M','F','Otro') NULL DEFAULT NULL,
-  `correo_institucional` VARCHAR(100) NOT NULL,
-  `correo_personal`   VARCHAR(100)  NULL DEFAULT NULL,
-  `tel_celular`       VARCHAR(15)   NULL DEFAULT NULL,
-  `tel_oficina`       VARCHAR(15)   NULL DEFAULT NULL,
-  `direccion`         VARCHAR(200)  NULL DEFAULT NULL,
-  `tipo_contrato`     VARCHAR(40)   NULL DEFAULT NULL  COMMENT 'Ej. Tiempo completo, Hora-semana-mes',
-  `estatus`           ENUM('Activo','Licencia','Inactivo') NOT NULL DEFAULT 'Activo',
-  `fecha_ingreso`     DATE          NULL DEFAULT NULL,
-  `grado_academico`   VARCHAR(40)   NULL DEFAULT NULL,
-  `especialidad`      VARCHAR(100)  NULL DEFAULT NULL,
-  `departamento`      VARCHAR(80)   NULL DEFAULT NULL,
+  `rfc`                  VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del docente',
+  `nombre`               VARCHAR(80)   NOT NULL,
+  `apellido_paterno`     VARCHAR(50)   NOT NULL,
+  `apellido_materno`     VARCHAR(50)   NULL DEFAULT NULL,
+  `curp`                 CHAR(18)      NULL DEFAULT NULL,
+  `fecha_nacimiento`     DATE          NULL DEFAULT NULL,
+  `correo_institucional` VARCHAR(100)  NOT NULL,
+  `correo_personal`      VARCHAR(100)  NULL DEFAULT NULL,
+  `tel_celular`          VARCHAR(15)   NULL DEFAULT NULL,
   PRIMARY KEY (`rfc`),
   UNIQUE INDEX `uq_Maestro_CURP` (`curp`)
 ) ENGINE=InnoDB
@@ -105,7 +88,6 @@ CREATE TABLE `maestro` (
   COMMENT='Docente que imparte grupos';
 
 
--- Carrera (sin cambios)
 CREATE TABLE `carrera` (
   `id_carrera`      VARCHAR(10)   NOT NULL,
   `nombre_carrera`  VARCHAR(100)  NOT NULL,
@@ -119,20 +101,19 @@ CREATE TABLE `carrera` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- v13: eliminados genero, tel_casa, direccion
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `alumno` (
-  `no_control`           VARCHAR(8)   NOT NULL,
+  `no_control`           VARCHAR(8)    NOT NULL,
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
   `nombre`               VARCHAR(80)   NOT NULL,
   `apellido_paterno`     VARCHAR(50)   NOT NULL,
   `apellido_materno`     VARCHAR(50)   NULL DEFAULT NULL,
   `curp`                 CHAR(18)      NULL DEFAULT NULL,
   `fecha_nacimiento`     DATE          NULL DEFAULT NULL,
-  `genero`               ENUM('M','F','Otro') NULL DEFAULT NULL,
   `correo_institucional` VARCHAR(100)  NOT NULL,
   `correo_personal`      VARCHAR(100)  NULL DEFAULT NULL,
   `tel_celular`          VARCHAR(15)   NULL DEFAULT NULL,
-  `tel_casa`             VARCHAR(15)   NULL DEFAULT NULL,
-  `direccion`            VARCHAR(200)  NULL DEFAULT NULL,
   PRIMARY KEY (`no_control`),
   UNIQUE INDEX `uq_Alumno_CURP` (`curp`),
   INDEX `fk_Alumno_Car` (`id_carrera`),
@@ -146,20 +127,14 @@ CREATE TABLE `alumno` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN 3NF — Periodo escolar
---  Se elimina la columna `anio` porque depende transitivamente
---  de fecha_inicio: PK → fecha_inicio → anio.
---  Usar YEAR(fecha_inicio) en las consultas que necesiten el año.
---
---           permitiendo cambios manuales sin que se sobreescriban al día siguiente.
+--  3NF — anio eliminado: se obtiene con YEAR(fecha_inicio)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `periodo_escolar` (
-  `id_periodo`      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `descripcion`     VARCHAR(60)   NOT NULL  COMMENT 'Ej. Enero-Junio 2025',
-  -- `anio` ELIMINADO — se obtiene con YEAR(fecha_inicio) (3NF)
-  `fecha_inicio`    DATE          NOT NULL,
-  `fecha_fin`       DATE          NOT NULL,
-  `estatus`         ENUM('Vigente','Concluido','Proximo') NOT NULL DEFAULT 'Proximo',
+  `id_periodo`   INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `descripcion`  VARCHAR(60)   NOT NULL  COMMENT 'Ej. Enero-Junio 2025',
+  `fecha_inicio` DATE          NOT NULL,
+  `fecha_fin`    DATE          NOT NULL,
+  `estatus`      ENUM('Vigente','Concluido','Proximo') NOT NULL DEFAULT 'Proximo',
   PRIMARY KEY (`id_periodo`),
   UNIQUE INDEX `uq_periodo_desc_inicio` (`descripcion`, `fecha_inicio`)
 ) ENGINE=InnoDB
@@ -168,13 +143,13 @@ CREATE TABLE `periodo_escolar` (
   COMMENT='Ciclo académico semestral con estatus automático por fecha';
 
 
--- Materia (sin cambios)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- v13: eliminados horas_teoricas, horas_practicas
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `materia` (
-  `clave_materia`    VARCHAR(15)      NOT NULL,
-  `nombre_materia`   VARCHAR(100)     NOT NULL,
-  `horas_teoricas`   TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `horas_practicas`  TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `no_unidades`      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `clave_materia`  VARCHAR(15)      NOT NULL,
+  `nombre_materia` VARCHAR(100)     NOT NULL,
+  `no_unidades`    TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`clave_materia`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
@@ -182,7 +157,6 @@ CREATE TABLE `materia` (
   COMMENT='Asignatura del plan de estudios';
 
 
--- Usuario (sin cambios)
 CREATE TABLE `usuario` (
   `id_usuario`     INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `username`       VARCHAR(50)   NOT NULL,
@@ -197,33 +171,35 @@ CREATE TABLE `usuario` (
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
-  COMMENT='Autenticación y control de acceso.';
+  COMMENT='Autenticación y control de acceso';
 
 
--- Tipo de actividad (sin cambios)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- v13: eliminado campo activo — el catálogo es global, todas visibles
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `tipo_actividad` (
   `id_tipo`     INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `nombre`      VARCHAR(80)  NOT NULL,
   `descripcion` VARCHAR(255) NULL DEFAULT NULL,
-  `activo`      TINYINT(1)   NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_tipo`),
   UNIQUE INDEX `uq_tipo_nombre` (`nombre`)
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
-  COMMENT='Catálogo de tipos de actividad evaluable';
+  COMMENT='Catálogo global de actividades evaluables';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  TABLAS CON DEPENDENCIAS
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Retícula (sin cambios)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- v13: eliminado campo creditos
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `reticula` (
   `clave_materia` VARCHAR(15)      NOT NULL,
   `id_carrera`    VARCHAR(10)      NOT NULL,
   `semestre`      TINYINT UNSIGNED NOT NULL,
-  `creditos`      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`clave_materia`, `id_carrera`),
   INDEX `fk_Reticula_Car` (`id_carrera`),
   CONSTRAINT `fk_Reticula_Mat`
@@ -238,35 +214,33 @@ CREATE TABLE `reticula` (
   COMMENT='Asocia Materia con Carrera en el plan de estudios';
 
 
--- Grupo (v11: sin columnas horario ni aula)
 CREATE TABLE `grupo` (
-  `id_grupo`        INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `clave_materia`   VARCHAR(15)   NOT NULL,
-  `rfc`             VARCHAR(13)   NOT NULL,
-  `id_periodo`      INT UNSIGNED  NOT NULL,
-  `limite_alumnos`  TINYINT UNSIGNED NOT NULL DEFAULT 30,
-  `estatus`         ENUM('Activo','Cerrado','Cancelado') NOT NULL DEFAULT 'Activo',
+  `id_grupo`       INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+  `clave_materia`  VARCHAR(15)      NOT NULL,
+  `rfc`            VARCHAR(13)      NOT NULL,
+  `id_periodo`     INT UNSIGNED     NOT NULL,
+  `limite_alumnos` TINYINT UNSIGNED NOT NULL DEFAULT 30,
+  `estatus`        ENUM('Activo','Cerrado','Cancelado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`id_grupo`),
-  INDEX `fk_Grupo_Mat`      (`clave_materia`),
-  INDEX `fk_Grupo_Mae`      (`rfc`),
-  INDEX `idx_grupo_periodo`  (`id_periodo`),
+  INDEX `fk_Grupo_Mat`     (`clave_materia`),
+  INDEX `fk_Grupo_Mae`     (`rfc`),
+  INDEX `idx_grupo_periodo` (`id_periodo`),
   CONSTRAINT `fk_Grupo_Mat`
-    FOREIGN KEY (`clave_materia`)  REFERENCES `materia`         (`clave_materia`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`clave_materia`) REFERENCES `materia`         (`clave_materia`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_Grupo_Mae`
-    FOREIGN KEY (`rfc`)            REFERENCES `maestro`         (`rfc`)           ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`rfc`)           REFERENCES `maestro`         (`rfc`)           ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_Grupo_Per`
-    FOREIGN KEY (`id_periodo`)     REFERENCES `periodo_escolar` (`id_periodo`)    ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`id_periodo`)    REFERENCES `periodo_escolar` (`id_periodo`)    ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
   COMMENT='Instancia de una materia en un periodo impartida por un maestro';
 
 
--- Unidad (sin cambios)
 CREATE TABLE `unidad` (
-  `id_unidad`     INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `clave_materia` VARCHAR(15)   NOT NULL,
-  `nombre_unidad` VARCHAR(100)  NOT NULL,
+  `id_unidad`     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `clave_materia` VARCHAR(15)  NOT NULL,
+  `nombre_unidad` VARCHAR(100) NOT NULL,
   PRIMARY KEY (`id_unidad`),
   INDEX `fk_Unidad_Mat` (`clave_materia`),
   CONSTRAINT `fk_Unidad_Mat`
@@ -278,7 +252,6 @@ CREATE TABLE `unidad` (
   COMMENT='División de contenido de una materia';
 
 
--- Unidad-Tipo de actividad (sin cambios)
 CREATE TABLE `unidad_tipo_actividad` (
   `id_unidad` INT UNSIGNED NOT NULL,
   `id_tipo`   INT UNSIGNED NOT NULL,
@@ -293,13 +266,12 @@ CREATE TABLE `unidad_tipo_actividad` (
   COMMENT='Tipos de actividad permitidos por unidad';
 
 
--- Actividades predefinidas por Admin (sin cambios)
 CREATE TABLE `materia_actividad` (
-  `id_mat_act`       INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `clave_materia`    VARCHAR(15)   NOT NULL,
-  `id_unidad`        INT UNSIGNED  NOT NULL,
-  `nombre_actividad` VARCHAR(100)  NOT NULL,
-  `id_tipo`          INT UNSIGNED  NULL DEFAULT NULL,
+  `id_mat_act`       INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `clave_materia`    VARCHAR(15)  NOT NULL,
+  `id_unidad`        INT UNSIGNED NOT NULL,
+  `nombre_actividad` VARCHAR(100) NOT NULL,
+  `id_tipo`          INT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`id_mat_act`),
   INDEX `fk_MActiv_Mat`    (`clave_materia`),
   INDEX `fk_MActiv_Unidad` (`id_unidad`),
@@ -313,10 +285,9 @@ CREATE TABLE `materia_actividad` (
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
-  COMMENT='Actividades definidas por Admin para cada materia';
+  COMMENT='Actividades definidas por Admin por materia-unidad (legacy, en desuso)';
 
 
--- Grupo-Unidad (sin cambios)
 CREATE TABLE `grupo_unidad` (
   `id_grupo`      INT UNSIGNED NOT NULL,
   `id_unidad`     INT UNSIGNED NOT NULL,
@@ -333,22 +304,14 @@ CREATE TABLE `grupo_unidad` (
   COMMENT='Peso de cada unidad dentro de un grupo específico';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN — Actividad
---  Se agrega FK hacia grupo_unidad(id_grupo, id_unidad) para garantizar
---  que no existan actividades en pares grupo-unidad no configurados.
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `actividad` (
   `id_actividad`      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `id_grupo`          INT UNSIGNED  NOT NULL,
   `id_unidad`         INT UNSIGNED  NOT NULL,
   `id_tipo_actividad` INT UNSIGNED  NULL DEFAULT NULL,
-  `nombre_actividad`  VARCHAR(100)  NOT NULL,
   `ponderacion`       DECIMAL(5,2)  NOT NULL
     COMMENT 'Porcentaje (0-100); suma por (id_grupo, id_unidad) = 100',
-  `tipo_evaluacion`   ENUM('Formativa','Sumativa','Diagnóstica') NOT NULL DEFAULT 'Sumativa',
-  `estatus`           ENUM('Pendiente','Calificada','Cerrada') NOT NULL DEFAULT 'Pendiente',
-  `fecha_entrega`     DATE          NULL DEFAULT NULL,
+  `estatus`           ENUM('Pendiente','Calificada','Cerrada')   NOT NULL DEFAULT 'Pendiente',
   `bloqueado`         TINYINT(1)    NOT NULL DEFAULT 0,
   PRIMARY KEY (`id_actividad`),
   INDEX `fk_Activ_GrupoUnidad` (`id_grupo`, `id_unidad`),
@@ -366,10 +329,7 @@ CREATE TABLE `actividad` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN 3NF — Config evaluación por unidad
---  Se elimina cal_examen: es una calificación que ya existe en
---  resultado_actividad (o se puede derivar de ella). Almacenarla aquí
---  crea una dependencia transitiva y produce inconsistencias.
+--  3NF — cal_examen eliminado: ya existe en resultado_actividad
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `config_evaluacion_unidad` (
   `id_grupo`        INT UNSIGNED NOT NULL,
@@ -377,7 +337,6 @@ CREATE TABLE `config_evaluacion_unidad` (
   `pct_actividades` DECIMAL(5,2) NOT NULL DEFAULT 60.00,
   `pct_examen`      DECIMAL(5,2) NOT NULL DEFAULT 30.00,
   `pct_asistencia`  DECIMAL(5,2) NOT NULL DEFAULT 10.00,
-  -- `cal_examen` ELIMINADO — obtener de resultado_actividad (3NF)
   `nota`            VARCHAR(255) NULL DEFAULT NULL,
   `fecha_config`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_grupo`, `id_unidad`),
@@ -389,13 +348,12 @@ CREATE TABLE `config_evaluacion_unidad` (
   COMMENT='Distribución porcentual de rubros por grupo-unidad';
 
 
--- Inscripción (sin cambios)
 CREATE TABLE `inscripcion` (
   `no_control`        VARCHAR(15)  NOT NULL,
-  `id_grupo`         INT UNSIGNED NOT NULL,
+  `id_grupo`          INT UNSIGNED NOT NULL,
   `fecha_inscripcion` DATE         NOT NULL,
-  `estatus`          ENUM('Cursando','Baja','Aprobado','Reprobado') NOT NULL DEFAULT 'Cursando',
-  `tipo_curso`       ENUM('Ordinario','Recursado','Especial')       NOT NULL DEFAULT 'Ordinario',
+  `estatus`           ENUM('Cursando','Baja','Aprobado','Reprobado') NOT NULL DEFAULT 'Cursando',
+  `tipo_curso`        ENUM('Ordinario','Recursado','Especial')       NOT NULL DEFAULT 'Ordinario',
   PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_Inscr_Grupo` (`id_grupo`),
   CONSTRAINT `fk_Inscr_Alumno`
@@ -408,20 +366,19 @@ CREATE TABLE `inscripcion` (
   COMMENT='Relación alumno-grupo';
 
 
--- Resultado por actividad (sin cambios)
 CREATE TABLE `resultado_actividad` (
   `no_control`             VARCHAR(15)  NOT NULL,
-  `id_actividad`          INT UNSIGNED NOT NULL,
-  `calificacion_obtenida` DECIMAL(5,2) NULL DEFAULT NULL,
-  `calificacion_anterior` DECIMAL(5,2) NULL DEFAULT NULL,
-  `fecha_registro`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `estatus`               ENUM('Pendiente','Validada','NP') NOT NULL DEFAULT 'Pendiente',
-  `rfc`                   VARCHAR(13)  NOT NULL,
+  `id_actividad`           INT UNSIGNED NOT NULL,
+  `calificacion_obtenida`  DECIMAL(5,2) NULL DEFAULT NULL,
+  `calificacion_anterior`  DECIMAL(5,2) NULL DEFAULT NULL,
+  `fecha_registro`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `estatus`                ENUM('Pendiente','Validada','NP') NOT NULL DEFAULT 'Pendiente',
+  `rfc`                    VARCHAR(13)  NOT NULL,
   PRIMARY KEY (`no_control`, `id_actividad`),
   INDEX `fk_RA_Actividad` (`id_actividad`),
   INDEX `fk_RA_Maestro`   (`rfc`),
   CONSTRAINT `fk_RA_Alumno`
-    FOREIGN KEY (`no_control`)   REFERENCES `alumno`    (`no_control`)    ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`no_control`)   REFERENCES `alumno`    (`no_control`)   ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Actividad`
     FOREIGN KEY (`id_actividad`) REFERENCES `actividad` (`id_actividad`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_RA_Maestro`
@@ -432,36 +389,34 @@ CREATE TABLE `resultado_actividad` (
   COMMENT='Calificación individual del alumno por actividad';
 
 
--- Calificación por unidad (sin cambios)
 CREATE TABLE `calificacion_unidad` (
   `no_control`                VARCHAR(15)  NOT NULL,
-  `id_unidad`                INT UNSIGNED NOT NULL,
-  `id_grupo`                 INT UNSIGNED NOT NULL,
-  `promedio_ponderado`       DECIMAL(5,2) NULL DEFAULT NULL,
+  `id_unidad`                 INT UNSIGNED NOT NULL,
+  `id_grupo`                  INT UNSIGNED NOT NULL,
+  `promedio_ponderado`        DECIMAL(5,2) NULL DEFAULT NULL,
   `calificacion_unidad_final` DECIMAL(5,2) NULL DEFAULT NULL,
-  `estatus_unidad`           ENUM('Pendiente','Aprobada','Reprobada') NOT NULL DEFAULT 'Pendiente',
+  `estatus_unidad`            ENUM('Pendiente','Aprobada','Reprobada') NOT NULL DEFAULT 'Pendiente',
   PRIMARY KEY (`no_control`, `id_unidad`, `id_grupo`),
   INDEX `fk_CU_Unidad` (`id_unidad`),
   INDEX `fk_CU_Grupo`  (`id_grupo`),
   CONSTRAINT `fk_CU_Alumno`
     FOREIGN KEY (`no_control`) REFERENCES `alumno`  (`no_control`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CU_Unidad`
-    FOREIGN KEY (`id_unidad`) REFERENCES `unidad`  (`id_unidad`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`id_unidad`)  REFERENCES `unidad`  (`id_unidad`)  ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CU_Grupo`
-    FOREIGN KEY (`id_grupo`)  REFERENCES `grupo`   (`id_grupo`)  ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`id_grupo`)   REFERENCES `grupo`   (`id_grupo`)   ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_spanish_ci
   COMMENT='Promedio de unidad por alumno (caché)';
 
 
--- Calificación final (sin cambios)
 CREATE TABLE `calificacion_final` (
   `no_control`            VARCHAR(15)  NOT NULL,
-  `id_grupo`             INT UNSIGNED NOT NULL,
-  `promedio_unidades`    DECIMAL(5,2) NULL DEFAULT NULL,
-  `calificacion_oficial` DECIMAL(5,2) NULL DEFAULT NULL,
-  `estatus_final`        ENUM('Pendiente','Aprobado','Reprobado','Especial') NOT NULL DEFAULT 'Pendiente',
+  `id_grupo`              INT UNSIGNED NOT NULL,
+  `promedio_unidades`     DECIMAL(5,2) NULL DEFAULT NULL,
+  `calificacion_oficial`  DECIMAL(5,2) NULL DEFAULT NULL,
+  `estatus_final`         ENUM('Pendiente','Aprobado','Reprobado','Especial') NOT NULL DEFAULT 'Pendiente',
   PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_CF_Grupo` (`id_grupo`),
   CONSTRAINT `fk_CF_Alumno`
@@ -474,17 +429,16 @@ CREATE TABLE `calificacion_final` (
   COMMENT='Calificación final del alumno en el grupo';
 
 
--- Bonus por unidad (sin cambios)
 CREATE TABLE `bonusunidad` (
   `no_control`          VARCHAR(15)  NOT NULL,
-  `id_unidad`          INT UNSIGNED NOT NULL,
-  `id_grupo`           INT UNSIGNED NOT NULL,
-  `rfc`                VARCHAR(13)  NOT NULL,
-  `puntos_otorgados`   DECIMAL(4,2) NOT NULL,
-  `justificacion`      TEXT         NOT NULL,
-  `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
-  `fecha_modificacion` DATE         NULL DEFAULT NULL,
-  `estatus`            ENUM('Activo','Cancelado') NOT NULL DEFAULT 'Activo',
+  `id_unidad`           INT UNSIGNED NOT NULL,
+  `id_grupo`            INT UNSIGNED NOT NULL,
+  `rfc`                 VARCHAR(13)  NOT NULL,
+  `puntos_otorgados`    DECIMAL(4,2) NOT NULL,
+  `justificacion`       TEXT         NOT NULL,
+  `fecha_asignacion`    DATE         NOT NULL DEFAULT (CURDATE()),
+  `fecha_modificacion`  DATE         NULL DEFAULT NULL,
+  `estatus`             ENUM('Activo','Cancelado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`no_control`, `id_unidad`, `id_grupo`),
   INDEX `fk_BU_Unidad`  (`id_unidad`),
   INDEX `fk_BU_Grupo`   (`id_grupo`),
@@ -503,16 +457,15 @@ CREATE TABLE `bonusunidad` (
   COMMENT='Puntos adicionales por unidad';
 
 
--- Bonus final (sin cambios)
 CREATE TABLE `bonusfinal` (
   `no_control`          VARCHAR(15)  NOT NULL,
-  `id_grupo`           INT UNSIGNED NOT NULL,
-  `rfc`                VARCHAR(13)  NOT NULL,
-  `puntos_otorgados`   DECIMAL(4,2) NOT NULL,
-  `justificacion`      TEXT         NOT NULL,
-  `fecha_asignacion`   DATE         NOT NULL DEFAULT (CURDATE()),
-  `fecha_modificacion` DATE         NULL DEFAULT NULL,
-  `estatus`            ENUM('Activo','Aplicado') NOT NULL DEFAULT 'Activo',
+  `id_grupo`            INT UNSIGNED NOT NULL,
+  `rfc`                 VARCHAR(13)  NOT NULL,
+  `puntos_otorgados`    DECIMAL(4,2) NOT NULL,
+  `justificacion`       TEXT         NOT NULL,
+  `fecha_asignacion`    DATE         NOT NULL DEFAULT (CURDATE()),
+  `fecha_modificacion`  DATE         NULL DEFAULT NULL,
+  `estatus`             ENUM('Activo','Aplicado') NOT NULL DEFAULT 'Activo',
   PRIMARY KEY (`no_control`, `id_grupo`),
   INDEX `fk_BF_Maestro` (`rfc`),
   CONSTRAINT `fk_BF_CalFinal`
@@ -528,14 +481,12 @@ CREATE TABLE `bonusfinal` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  CORRECCIÓN DISEÑO — Modificación final
---  La PK compuesta (no_control, id_grupo) solo permitía UNA modificación
---  por alumno-grupo. Se agrega id_modificacion como PK auto-incremental.
+--  PK auto-incremental — permite múltiples modificaciones por alumno-grupo
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `modificacionfinal` (
-  `id_modificacion`     INT UNSIGNED NOT NULL AUTO_INCREMENT
+  `id_modificacion`    INT UNSIGNED NOT NULL AUTO_INCREMENT
     COMMENT 'PK — permite múltiples modificaciones por alumno-grupo',
-  `no_control`          VARCHAR(15)  NOT NULL,
+  `no_control`         VARCHAR(15)  NOT NULL,
   `id_grupo`           INT UNSIGNED NOT NULL,
   `rfc`                VARCHAR(13)  NOT NULL,
   `calif_original`     DECIMAL(5,2) NOT NULL,
@@ -574,54 +525,31 @@ INSERT INTO `tipo_actividad` (`nombre`, `descripcion`) VALUES
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
---  SISTEMA DE ESTATUS AUTOMÁTICO — periodo_escolar
+--  ESTATUS AUTOMÁTICO DE PERIODOS
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Actualización inicial al ejecutar el script
--- (aplica el estatus correcto con base en la fecha de hoy)
-UPDATE periodo_escolar
+UPDATE `periodo_escolar`
 SET estatus =
   CASE
-    WHEN CURDATE() < fecha_inicio THEN 'Proximo'
-    WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
-    WHEN CURDATE() > fecha_fin THEN 'Concluido'
+    WHEN CURDATE() < fecha_inicio                        THEN 'Proximo'
+    WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin    THEN 'Vigente'
+    ELSE 'Concluido'
   END;
 
+DROP EVENT IF EXISTS `evt_actualizar_estatus_periodos`;
 
--- Evento automático diario
--- Recalcula el estatus de todos los periodos automáticamente
-DROP EVENT IF EXISTS evt_actualizar_estatus_periodos;
-
-CREATE EVENT evt_actualizar_estatus_periodos
+CREATE EVENT `evt_actualizar_estatus_periodos`
 ON SCHEDULE EVERY 1 DAY
 STARTS CURRENT_TIMESTAMP
 DO
-  UPDATE periodo_escolar
+  UPDATE `periodo_escolar`
   SET estatus =
     CASE
-      WHEN CURDATE() < fecha_inicio THEN 'Proximo'
-      WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 'Vigente'
-      WHEN CURDATE() > fecha_fin THEN 'Concluido'
+      WHEN CURDATE() < fecha_inicio                      THEN 'Proximo'
+      WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin  THEN 'Vigente'
+      ELSE 'Concluido'
     END;
 
-
--- ─────────────────────────────────────────────────────────────────────────────
---  PATCH: Cambiar username de alumnos a su número de control
---  Ejecutar UNA VEZ si ya tienes datos en la BD
--- ─────────────────────────────────────────────────────────────────────────────
-UPDATE usuario
-SET username = id_referencia
-WHERE rol = 'alumno';
-
--- Verificar resultado
-SELECT username, id_referencia, rol
-FROM usuario
-WHERE rol = 'alumno';
-
--- Mas campos innesesarios
-ALTER TABLE materia 
-  DROP COLUMN horas_teoricas,
-  DROP COLUMN horas_practicas;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  RESTAURAR MODOS
@@ -632,43 +560,18 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 
 -- ============================================================
---  FIN DEL ESQUEMA v7 + PERIODOS AUTOMÁTICOS
+--  FIN DEL ESQUEMA v13
 --
---  RESUMEN DE CAMBIOS DE NORMALIZACIÓN (heredados de v7):
---  direccion de maestro y alumno se mantiene como VARCHAR(200) simple
---  3NF  periodo_escolar     → eliminado `anio` (derivado de fecha_inicio)
---  3NF  config_eval_unidad  → eliminado `cal_examen` (en resultado_actividad)
---  DIS  modificacionfinal   → nueva PK auto-incremental (múltiples por par)
---  REF  actividad           → nueva FK hacia grupo_unidad(id_grupo,id_unidad)
---
---  NUEVO EN ESTE ARCHIVO:
---  +    evt_actualizar_estatus_periodos → evento diario automático
+--  CAMBIOS ACUMULADOS DESDE v1:
+--  3NF  periodo_escolar          → eliminado `anio`
+--  3NF  config_evaluacion_unidad → eliminado `cal_examen`
+--  DIS  modificacionfinal        → PK auto-incremental
+--  REF  actividad                → FK hacia grupo_unidad
+--  v11  grupo                    → eliminados horario, aula
+--  v13  maestro                  → eliminados 9 campos no usados
+--  v13  alumno                   → eliminados genero, tel_casa, direccion
+--  v13  materia                  → eliminados horas_teoricas, horas_practicas
+--  v13  reticula                 → eliminado creditos
+--  v13  tipo_actividad           → eliminado activo
+--  v13  notificacion             → tabla eliminada por completo
 -- ============================================================
-
--- ============================================================
---  Tabla de notificaciones RCA
---  Ejecutar UNA VEZ sobre la BD existente
---  Uso: SOURCE database/add_notificaciones.sql;
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS `notificacion` (
-  `id_notificacion` INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-  `titulo`          VARCHAR(100)     NOT NULL                   COMMENT 'Título corto visible en bold',
-  `mensaje`         TEXT             NOT NULL                   COMMENT 'Cuerpo del aviso',
-  `tipo`            ENUM('info','warning','danger','success')
-                                     NOT NULL DEFAULT 'info'    COMMENT 'Color del ícono',
-  `icono`           VARCHAR(60)      NOT NULL DEFAULT 'lucide:bell' COMMENT 'Ícono de iconify',
-  `rol_destino`     ENUM('todos','administrador','maestro','alumno')
-                                     NOT NULL DEFAULT 'todos'   COMMENT 'Quién ve este aviso',
-  `url_accion`      VARCHAR(200)     NULL DEFAULT NULL          COMMENT 'Enlace opcional "Ver →"',
-  `activa`          TINYINT(1)       NOT NULL DEFAULT 1,
-  `fecha_inicio`    DATE             NULL DEFAULT NULL          COMMENT 'NULL = visible de inmediato',
-  `fecha_fin`       DATE             NULL DEFAULT NULL          COMMENT 'NULL = sin vencimiento',
-  `creado_por`      VARCHAR(13)      NOT NULL                   COMMENT 'RFC del admin que la creó',
-  `fecha_creacion`  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_notificacion`),
-  INDEX `idx_notif_rol_activa` (`rol_destino`, `activa`)
-) ENGINE=InnoDB
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_spanish_ci
-  COMMENT='Avisos creados por Admin, visibles en el panel de notificaciones por rol';

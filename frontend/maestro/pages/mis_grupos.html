@@ -72,7 +72,7 @@
               <a href="gruposMaestro.html" class="quick-link">
                 <iconify-icon icon="lucide:scale"></iconify-icon>
                 <div>
-                  <strong>Ponderacion de unidades</strong>
+                  <strong>Configurar unidad</strong>
                   <p>Distribución del peso por unidad en el grupo</p>
                 </div>
                 <iconify-icon
@@ -80,7 +80,7 @@
                   class="ql-arrow"
                 ></iconify-icon>
               </a>
-              <a href="configurar_actividades.html" class="quick-link">
+              <a href="gruposMaestro.html" class="quick-link">
                 <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
                 <div>
                   <strong>Actividades</strong>
@@ -132,17 +132,7 @@
                   class="ql-arrow"
                 ></iconify-icon>
               </a>
-              <a href="asistencia.html" class="quick-link">
-                <iconify-icon icon="lucide:calendar-check"></iconify-icon>
-                <div>
-                  <strong>Asistencia</strong>
-                  <p>Registrar asistencia por grupo y unidad</p>
-                </div>
-                <iconify-icon
-                  icon="lucide:chevron-right"
-                  class="ql-arrow"
-                ></iconify-icon>
-              </a>
+
             </div>
           </div>
         </div>
@@ -491,14 +481,14 @@
             <p style="font-size:0.9rem;font-weight:600;color:var(--text-main);margin:0">${g.nombre_materia || "—"}</p>
             <p style="font-size:0.78rem;color:var(--text-muted);margin:2px 0 0">Grupo #${g.id_grupo} · ${g.descripcion_periodo || "Periodo " + g.id_periodo}${g.horario ? " · " + g.horario : ""}</p>
           </div>
-          <p style="font-size:0.9rem;color:var(--text-main);margin:0;text-align:center">${g.limite_alumnos ?? "—"}</p>
+          <p style="font-size:0.9rem;color:var(--text-main);margin:0;text-align:center">${g.total_inscritos ?? 0}</p>
           <div style="text-align:center">${cfgBadge}</div>
           <div style="text-align:center">${statusBadge}</div>
           <div style="display:flex;gap:6px;justify-content:flex-end">
             <a href="captura_calificaciones.html?grupo=${g.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none">
               <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
             </a>
-            <a href="configurar_actividades.html?grupo=${g.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none">
+            <a href="gruposMaestro.html" class="btn btn-outline btn-sm" style="text-decoration:none">
               <iconify-icon icon="lucide:settings"></iconify-icon>
             </a>
           </div>
@@ -551,7 +541,7 @@
                    class="btn btn-primary btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:pencil"></iconify-icon> Calificar
                 </a>
-                <a href="configurar_actividades.html?grupo=${g.id_grupo}"
+                <a href="gruposMaestro.html"
                    class="btn btn-outline btn-sm" style="text-decoration:none;flex:1;justify-content:center">
                   <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon> Configurar
                 </a>

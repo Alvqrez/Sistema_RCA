@@ -2,357 +2,86 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Configurar Evaluación — RCA</title>
+    <title>Peso por unidad — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link
-      rel="icon"
-      type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../../css/styles.css" />
     <style>
       /* ── Grupo card ─────────────────────────────────────────────── */
-      .grupo-card {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--card-bg);
-        margin-bottom: 18px;
-        overflow: hidden;
-        box-shadow: var(--shadow);
-        transition: box-shadow 0.2s;
-      }
-      .grupo-card:hover {
-        box-shadow: var(--shadow-lg);
-      }
-      .grupo-card-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 16px 20px;
-        cursor: pointer;
-        user-select: none;
-        border-bottom: 1px solid transparent;
-        transition:
-          background 0.15s,
-          border-color 0.2s;
-      }
-      .grupo-card-header:hover {
-        background: var(--bg-app);
-      }
-      .grupo-card.open .grupo-card-header {
-        border-bottom-color: var(--border);
-      }
-      .grupo-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        background: var(--primary-light);
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-      }
-      .grupo-info {
-        flex: 1;
-        min-width: 0;
-      }
-      .grupo-info h3 {
-        margin: 0 0 3px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text-main);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .grupo-info p {
-        margin: 0;
-        font-size: 0.78rem;
-        color: var(--text-muted);
-      }
-      .grupo-chevron {
-        color: var(--text-muted);
-        font-size: 1.2rem;
-        transition: transform 0.25s;
-        flex-shrink: 0;
-      }
-      .grupo-card.open .grupo-chevron {
-        transform: rotate(180deg);
-      }
-
-      /* ── Grupo card body ────────────────────────────────────────── */
-      .grupo-card-body {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .grupo-card.open .grupo-card-body {
-        max-height: 4000px;
-      }
-      .grupo-card-body-inner {
-        padding: 20px;
-      }
+      .grupo-card { border:1px solid var(--border);border-radius:12px;background:var(--card-bg);margin-bottom:18px;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s; }
+      .grupo-card:hover { box-shadow:var(--shadow-lg); }
+      .grupo-card-header { display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background .15s,border-color .2s; }
+      .grupo-card-header:hover { background:var(--bg-app); }
+      .grupo-card.open .grupo-card-header { border-bottom-color:var(--border); }
+      .grupo-icon { width:44px;height:44px;border-radius:10px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0; }
+      .grupo-info { flex:1;min-width:0; }
+      .grupo-info h3 { margin:0 0 3px;font-size:.95rem;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .grupo-info p  { margin:0;font-size:.78rem;color:var(--text-muted); }
+      .grupo-chevron { color:var(--text-muted);font-size:1.2rem;transition:transform .25s;flex-shrink:0; }
+      .grupo-card.open .grupo-chevron { transform:rotate(180deg); }
+      .grupo-card-body { max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1); }
+      .grupo-card.open .grupo-card-body { max-height:5000px; }
+      .grupo-card-body-inner { padding:20px; }
 
       /* ── Unidad config block ─────────────────────────────────────── */
-      .unidad-config-block {
-        margin-bottom: 16px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        overflow: hidden;
-      }
-      .unidad-config-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
-        background: var(--bg-app);
-        cursor: pointer;
-        font-size: 0.86rem;
-        font-weight: 600;
-        color: var(--text-main);
-        user-select: none;
-        border-bottom: 1px solid transparent;
-        transition: background 0.15s;
-      }
-      .unidad-config-header:hover {
-        background: var(--border);
-      }
-      .unidad-config-block.open .unidad-config-header {
-        border-bottom-color: var(--border);
-      }
-      .unidad-config-chevron {
-        margin-left: auto;
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        transition: transform 0.2s;
-      }
-      .unidad-config-block.open .unidad-config-chevron {
-        transform: rotate(180deg);
-      }
-      .unidad-config-body {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.28s ease;
-      }
-      .unidad-config-block.open .unidad-config-body {
-        max-height: 1000px;
-      }
-      .unidad-config-body-inner {
-        padding: 14px 16px;
-      }
+      .unidad-config-block { margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden; }
+      .unidad-config-header { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-app);cursor:pointer;font-size:.86rem;font-weight:600;color:var(--text-main);user-select:none;border-bottom:1px solid transparent;transition:background .15s; }
+      .unidad-config-header:hover { background:var(--border); }
+      .unidad-config-block.open .unidad-config-header { border-bottom-color:var(--border); }
+      .unidad-config-chevron { margin-left:auto;font-size:.9rem;color:var(--text-muted);transition:transform .2s; }
+      .unidad-config-block.open .unidad-config-chevron { transform:rotate(180deg); }
+      .unidad-config-body { max-height:0;overflow:hidden;transition:max-height .28s ease; }
+      .unidad-config-block.open .unidad-config-body { max-height:1200px; }
+      .unidad-config-body-inner { padding:14px 16px; }
 
-      /* ── Rubro row ───────────────────────────────────────────────── */
-      .rubros-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .rubro-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--bg-app);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 12px;
-        transition: border-color 0.15s;
-      }
-      .rubro-row:hover {
-        border-color: var(--primary);
-      }
-      .rubro-icon {
-        font-size: 1rem;
-        color: var(--text-muted);
-        flex-shrink: 0;
-      }
-      .rubro-nombre {
-        flex: 1;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--text-main);
-      }
-      .rubro-nombre-input {
-        flex: 1;
-        font-size: 0.85rem;
-        font-weight: 500;
-        padding: 4px 8px;
-        border: 1.5px solid var(--border);
-        border-radius: 6px;
-        background: var(--card-bg);
-        color: var(--text-main);
-        font-family: inherit;
-      }
-      .rubro-nombre-input:focus {
-        outline: none;
-        border-color: var(--primary);
-      }
-      .rubro-pct-input {
-        width: 72px;
-        padding: 5px 8px;
-        border-radius: 6px;
-        border: 1.5px solid var(--border);
-        background: var(--card-bg);
-        color: var(--text-main);
-        font-size: 0.88rem;
-        text-align: center;
-        font-family: inherit;
-        transition: border-color 0.15s;
-      }
-      .rubro-pct-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-      }
-      .rubro-pct-label {
-        font-size: 0.78rem;
-        color: var(--text-muted);
-        flex-shrink: 0;
-      }
-      .btn-del-rubro {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--danger);
-        font-size: 1rem;
-        padding: 4px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        transition: background 0.15s;
-        flex-shrink: 0;
-      }
-      .btn-del-rubro:hover {
-        background: var(--danger-light);
-      }
-      .btn-del-rubro:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
+      /* ── Rubros / actividades ─────────────────────────────────────── */
+      .rubros-list { display:flex;flex-direction:column;gap:8px;margin-bottom:10px; }
+      .rubro-row { display:flex;align-items:center;gap:10px;background:var(--bg-app);border:1px solid var(--border);border-radius:8px;padding:8px 12px;transition:border-color .15s; }
+      .rubro-row:hover { border-color:var(--primary); }
+      .rubro-icon  { font-size:1rem;color:var(--text-muted);flex-shrink:0; }
+      .rubro-nombre { flex:1;font-size:.85rem;font-weight:500;color:var(--text-main); }
+      .rubro-pct-input { width:72px;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text-main);font-size:.88rem;text-align:center;font-family:inherit;transition:border-color .15s; }
+      .rubro-pct-input:focus { outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(30,64,175,.1); }
+      .rubro-pct-label { font-size:.78rem;color:var(--text-muted);flex-shrink:0; }
+      .btn-del-rubro { background:none;border:none;cursor:pointer;color:var(--danger);font-size:1rem;padding:4px;border-radius:6px;display:flex;align-items:center;transition:background .15s;flex-shrink:0; }
+      .btn-del-rubro:hover { background:var(--danger-light); }
+
+      /* ── Agregar actividad btn ───────────────────────────────────── */
+      .btn-agregar-act { display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1.5px dashed var(--border);background:transparent;color:var(--text-muted);font-size:.82rem;cursor:pointer;transition:all .15s;font-family:inherit;width:100%; justify-content:center; }
+      .btn-agregar-act:hover { border-color:var(--primary);color:var(--primary);background:var(--primary-light); }
 
       /* ── Suma badge ──────────────────────────────────────────────── */
-      .suma-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px dashed var(--border);
-      }
-      .suma-badge {
-        font-size: 0.82rem;
-        font-weight: 700;
-        padding: 3px 12px;
-        border-radius: 999px;
-      }
-      .suma-ok {
-        background: var(--success-light);
-        color: var(--success);
-      }
-      .suma-err {
-        background: var(--warning-light);
-        color: var(--warning);
-      }
+      .suma-row { display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border); }
+      .suma-badge { font-size:.82rem;font-weight:700;padding:3px 12px;border-radius:999px; }
+      .suma-ok  { background:var(--success-light);color:var(--success); }
+      .suma-err { background:var(--warning-light);color:var(--warning); }
 
-      /* ── Actions row ─────────────────────────────────────────────── */
-      .unidad-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 12px;
-      }
+      /* ── cfg badge ───────────────────────────────────────────────── */
+      .cfg-badge { display:inline-flex;align-items:center;gap:3px;font-size:.72rem;padding:2px 8px;border-radius:999px;font-weight:600;vertical-align:middle;margin-left:6px; }
+      .cfg-badge-ok      { background:var(--success-light);color:var(--success); }
+      .cfg-badge-pending { background:var(--warning-light);color:var(--warning); }
 
-      /* ── Estado badge ────────────────────────────────────────────── */
-      .cfg-badge {
-        font-size: 0.72rem;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-weight: 600;
-        margin-left: 6px;
-      }
-      .cfg-badge-ok {
-        background: var(--success-light);
-        color: var(--success);
-      }
-      .cfg-badge-pending {
-        background: var(--warning-light);
-        color: var(--warning);
-      }
+      /* ── Rubros toolbar ──────────────────────────────────────────── */
+      .rubros-toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--bg-app);border-radius:8px;border:1px dashed var(--border);margin-bottom:14px; }
+      .rubros-toolbar-info { display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;font-size:.82rem;color:var(--text-muted); }
 
-      /* ── Rubros toolbar ─────────────────────────────────────────────── */
-      .rubros-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        padding: 10px 14px;
-        background: var(--bg-app);
-        border-radius: 8px;
-        border: 1px dashed var(--border);
-        margin-bottom: 14px;
-      }
-      .rubros-toolbar-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        flex: 1;
-        font-size: 0.82rem;
-        color: var(--text-muted);
-      }
-      .rubro-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: var(--bonus-light);
-        color: var(--bonus, #7c3aed);
-        border-radius: 999px;
-        padding: 2px 8px 2px 10px;
-        font-size: 0.75rem;
-        font-weight: 500;
-      }
-      .rubro-chip button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: inherit;
-        opacity: 0.6;
-        font-size: 0.9rem;
-        line-height: 1;
-        padding: 0 2px;
-      }
-      .rubro-chip button:hover {
-        opacity: 1;
-      }
+      /* ── Modal tipos ─────────────────────────────────────────────── */
+      .tipos-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:280px;overflow-y:auto;padding:4px 0; }
+      .tipo-card { display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-app);transition:all .15s;text-align:center; }
+      .tipo-card:hover { border-color:var(--primary);background:var(--primary-light);color:var(--primary); }
+      .tipo-card-sel  { border-color:var(--primary)!important;background:var(--primary-light)!important;color:var(--primary)!important; }
+      .tipo-card-usada { opacity:.45;cursor:not-allowed;pointer-events:none; }
+      .tipo-card-icon { font-size:1.5rem; }
+      .tipo-card-nombre { font-size:.76rem;font-weight:600;line-height:1.2; }
 
-      /* ── cfg badge inline ────────────────────────────────────────────── */
-      .cfg-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        font-size: 0.72rem;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-weight: 600;
-        vertical-align: middle;
-      }
-      .cfg-badge-ok {
-        background: var(--success-light);
-        color: var(--success);
-      }
-      .cfg-badge-pending {
-        background: var(--warning-light);
-        color: var(--warning);
-      }
+      /* ── Modal confirm ───────────────────────────────────────────── */
+      #modalConfirm { display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);align-items:center;justify-content:center; }
+      #modalConfirm > div { background:var(--card-bg);border-radius:14px;padding:28px 28px 22px;max-width:400px;width:90%;box-shadow:var(--shadow-lg); }
     </style>
   </head>
   <body>
@@ -361,10 +90,8 @@
       <main class="content">
         <div class="page-header-v2">
           <div>
-            <h1>Configurar Evaluación</h1>
-            <p class="page-subtitle">
-              Define cómo se califica cada unidad por grupo
-            </p>
+            <h1>Peso por unidad</h1>
+            <p class="page-subtitle">Define las actividades y su ponderación en cada unidad</p>
           </div>
         </div>
 
@@ -372,117 +99,102 @@
         <div class="stats-row">
           <div class="stat-card">
             <iconify-icon icon="lucide:library"></iconify-icon>
-            <div>
-              <p id="statGrupos">—</p>
-              <span>Mis grupos</span>
-            </div>
+            <div><p id="statGrupos">—</p><span>Mis grupos</span></div>
           </div>
           <div class="stat-card stat-success">
             <iconify-icon icon="lucide:check-circle"></iconify-icon>
-            <div>
-              <p id="statConfigurados">—</p>
-              <span>Configurados</span>
-            </div>
+            <div><p id="statConfigurados">—</p><span>Configurados</span></div>
           </div>
           <div class="stat-card stat-purple">
             <iconify-icon icon="lucide:alert-circle"></iconify-icon>
-            <div>
-              <p id="statPendientes">—</p>
-              <span>Sin configurar</span>
-            </div>
+            <div><p id="statPendientes">—</p><span>Sin configurar</span></div>
           </div>
         </div>
 
         <!-- Info banner -->
         <div class="info-banner">
-          <iconify-icon
-            icon="lucide:info"
-            style="font-size: 1.1rem; flex-shrink: 0; margin-top: 1px"
-          ></iconify-icon>
-          <span>
-            Aquí defines
-            <strong>cómo se distribuye la calificación de cada unidad</strong>
-            por rubro: Actividades (tareas/trabajos), Examen, Asistencia y
-            cualquier rubro personalizado. La suma de porcentajes por unidad
-            <strong>debe ser exactamente 100%</strong>.
-          </span>
+          <iconify-icon icon="lucide:info" style="font-size:1.1rem;flex-shrink:0;margin-top:1px"></iconify-icon>
+          <span>Agrega las actividades del catálogo del administrador a cada unidad y asígnales su porcentaje.
+          La suma debe ser <strong>exactamente 100%</strong> por unidad para poder guardarla.</span>
         </div>
 
         <!-- Loading / list -->
-        <div
-          id="loadingState"
-          style="text-align: center; padding: 48px; color: var(--text-muted)"
-        >
-          <iconify-icon
-            icon="lucide:loader-2"
-            style="font-size: 2rem; display: block; margin: 0 auto 10px"
-          ></iconify-icon>
+        <div id="loadingState" style="text-align:center;padding:48px;color:var(--text-muted)">
+          <iconify-icon icon="lucide:loader-2" style="font-size:2rem;display:block;margin:0 auto 10px"></iconify-icon>
           <p>Cargando grupos…</p>
         </div>
-
-        <div id="listaGrupos" style="display: none"></div>
-
-        <div
-          id="emptyState"
-          style="
-            display: none;
-            text-align: center;
-            padding: 64px 24px;
-            color: var(--text-muted);
-          "
-        >
-          <iconify-icon
-            icon="lucide:inbox"
-            style="font-size: 3rem; display: block; margin: 0 auto 12px"
-          ></iconify-icon>
-          <p style="font-size: 1rem; margin: 0 0 6px; font-weight: 600">
-            Sin grupos asignados
-          </p>
-          <p style="font-size: 0.85rem">
-            Cuando te asignen grupos aparecerán aquí.
-          </p>
+        <div id="listaGrupos" style="display:none"></div>
+        <div id="emptyState" style="display:none;text-align:center;padding:64px 24px;color:var(--text-muted)">
+          <iconify-icon icon="lucide:inbox" style="font-size:3rem;display:block;margin:0 auto 12px"></iconify-icon>
+          <p style="font-size:1rem;margin:0 0 6px;font-weight:600">Sin grupos asignados</p>
+          <p style="font-size:.85rem">Cuando te asignen grupos aparecerán aquí.</p>
         </div>
       </main>
     </div>
-    <div
-      id="modalUnidades"
-      class="modal-overlay"
-      onclick="if (event.target === this) cerrarModalUnidades();"
-    >
-      <div class="modal-panel" style="max-width: 560px; width: 95vw">
+
+    <!-- ── Modal: Agregar actividad ──────────────────────────────────────── -->
+    <div id="modalAgregarAct" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.45);align-items:center;justify-content:center">
+      <div style="background:var(--card-bg);border-radius:14px;padding:0;max-width:520px;width:94vw;box-shadow:var(--shadow-lg);overflow:hidden">
         <div class="modal-header">
-          <h2 style="display: flex; align-items: center; gap: 10px">
-            <iconify-icon icon="lucide:layout-list"></iconify-icon>
-            Gestionar unidades
+          <div>
+            <h2 style="margin:0;font-size:1rem">Agregar actividad</h2>
+            <p id="modalActSubtitulo" style="margin:2px 0 0;font-size:.78rem;color:var(--text-muted)"></p>
+          </div>
+          <button class="modal-close" onclick="cerrarModalAgregarAct()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:16px 20px">
+          <p style="font-size:.78rem;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin:0 0 10px">SELECCIONA EL TIPO DE ACTIVIDAD</p>
+          <div class="tipos-grid" id="tiposGrid"></div>
+
+          <div id="descActBox" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg-app);border-radius:8px;border-left:3px solid var(--primary)">
+            <p id="descActTitulo" style="margin:0 0 3px;font-size:.78rem;font-weight:600;color:var(--primary)"></p>
+            <p id="descActTexto"  style="margin:0;font-size:.78rem;color:var(--text-muted);line-height:1.5"></p>
+          </div>
+
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <span style="font-size:.72rem;font-weight:600;letter-spacing:.05em;color:var(--text-muted)">TIPO SELECCIONADO</span>
+              <p id="tipoSelLabel" style="margin:2px 0 0;font-size:.92rem;font-weight:600;color:var(--primary)">—</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <span style="font-size:.72rem;font-weight:600;letter-spacing:.05em;color:var(--text-muted)">% PONDERACIÓN</span>
+              <input id="actPct" type="number" min="1" max="100" step="1" placeholder="0"
+                     style="width:90px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text-main);font-size:.95rem;text-align:center;font-family:inherit" />
+              <span id="pctDisponible" style="font-size:.72rem;color:var(--text-muted)"></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding:12px 20px;gap:10px">
+          <button class="btn btn-outline" onclick="cerrarModalAgregarAct()">Cancelar</button>
+          <button id="btnAgregarAct" class="btn btn-primary" onclick="confirmarAgregarAct()" disabled>
+            <iconify-icon icon="lucide:plus"></iconify-icon> Agregar actividad
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Modal: Gestionar unidades ─────────────────────────────────────── -->
+    <div id="modalUnidades" class="modal-overlay" onclick="if(event.target===this)cerrarModalUnidades()">
+      <div class="modal-panel" style="max-width:560px;width:95vw">
+        <div class="modal-header">
+          <h2 style="display:flex;align-items:center;gap:10px">
+            <iconify-icon icon="lucide:layout-list"></iconify-icon> Gestionar unidades
           </h2>
           <button class="modal-close" onclick="cerrarModalUnidades()">✕</button>
         </div>
         <div class="modal-body">
-          <p
-            style="
-              font-size: 0.83rem;
-              color: var(--text-muted);
-              margin: 0 0 16px;
-            "
-          >
-            Puedes <strong>dividir</strong> una unidad en dos partes, o
-            <strong>fusionar</strong> dos unidades consecutivas en una sola. Los
-            cambios son exclusivos para este grupo.
+          <p style="font-size:.83rem;color:var(--text-muted);margin:0 0 16px">
+            Puedes <strong>dividir</strong> una unidad en dos partes, o <strong>fusionar</strong> dos unidades consecutivas.
+            Los cambios son exclusivos para este grupo.
           </p>
-          <div
-            id="modalUnidadesLista"
-            style="display: flex; flex-direction: column; gap: 8px"
-          ></div>
+          <div id="modalUnidadesLista" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
-        <div class="modal-footer" style="justify-content: space-between">
+        <div class="modal-footer" style="justify-content:space-between">
           <button class="btn btn-outline" onclick="restaurarUnidadesOriginal()">
-            <iconify-icon icon="lucide:rotate-ccw"></iconify-icon> Restaurar
-            original
+            <iconify-icon icon="lucide:rotate-ccw"></iconify-icon> Restaurar original
           </button>
-          <div style="display: flex; gap: 8px">
-            <button class="btn btn-outline" onclick="cerrarModalUnidades()">
-              Cancelar
-            </button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" onclick="cerrarModalUnidades()">Cancelar</button>
             <button class="btn btn-primary" onclick="guardarUnidadesModal()">
               <iconify-icon icon="lucide:save"></iconify-icon> Guardar
             </button>
@@ -491,150 +203,27 @@
       </div>
     </div>
 
+    <!-- ── Modal confirmación genérico ───────────────────────────────────── -->
+    <div id="modalConfirm">
+      <div style="background:var(--card-bg);border-radius:12px;padding:0;max-width:380px;width:90%;box-shadow:var(--shadow-lg);overflow:hidden">
+        <div style="padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div id="confirmIcon" style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--bg-app)"></div>
+          <div>
+            <p id="confirmTitle" style="font-size:.95rem;font-weight:600;color:var(--text-main);margin:0"></p>
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px">
+          <p id="confirmMsg" style="font-size:.84rem;color:var(--text-muted);margin:0;line-height:1.6"></p>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 22px;background:var(--bg-app);border-top:1px solid var(--border)">
+          <button id="confirmCancel" style="padding:7px 16px;border-radius:7px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-main);font-size:.84rem;cursor:pointer;font-family:inherit;font-weight:500">Cancelar</button>
+          <button id="confirmOk"     style="padding:7px 16px;border-radius:7px;border:none;background:var(--danger);color:#fff;font-size:.84rem;cursor:pointer;font-family:inherit;font-weight:600"></button>
+        </div>
+      </div>
+    </div>
+
     <div id="toast-container"></div>
     <script src="../../shared/js/sidebar.js"></script>
     <script src="../../maestro/js/gruposMaestro.js"></script>
-
-    <!-- Modal Agregar Rubro -->
-    <div class="modal-overlay" id="modalAgregarRubro">
-      <div class="modal-panel modal-sm">
-        <div class="modal-header">
-          <h2 style="display: flex; align-items: center; gap: 8px">
-            <iconify-icon
-              icon="lucide:layers"
-              style="color: var(--primary)"
-            ></iconify-icon>
-            Agregar rubro de evaluación
-          </h2>
-          <button class="modal-close" onclick="cerrarModalRubro()">✕</button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="rubroGrupoId" />
-
-          <div class="form-group" style="margin-bottom: 14px">
-            <label>Nombre del rubro *</label>
-            <input
-              type="text"
-              id="rubroNombre"
-              placeholder="Ej: Participación, Proyecto, Práctica…"
-              maxlength="40"
-              oninput="previewRubroKey()"
-            />
-            <span
-              style="
-                font-size: 0.75rem;
-                color: var(--text-muted);
-                margin-top: 4px;
-                display: block;
-              "
-            >
-              Clave generada:
-              <code id="rubroKeyPreview" style="color: var(--primary)">—</code>
-            </span>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 14px">
-            <label>Ícono</label>
-            <div
-              style="display: flex; gap: 8px; flex-wrap: wrap"
-              id="iconPicker"
-            >
-              <!-- se rellena con JS -->
-            </div>
-            <input type="hidden" id="rubroIcono" value="lucide:star" />
-          </div>
-
-          <p
-            id="rubroError"
-            style="
-              color: var(--danger);
-              font-size: 0.83rem;
-              margin: 8px 0 0;
-              display: none;
-            "
-          ></p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModalRubro()">
-            Cancelar
-          </button>
-          <button class="btn btn-primary" onclick="confirmarAgregarRubro()">
-            <iconify-icon icon="lucide:plus-circle"></iconify-icon> Agregar
-            rubro
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal confirmar eliminar rubro -->
-    <div class="modal-overlay" id="modalEliminarRubro">
-      <div class="modal-panel modal-sm">
-        <div class="modal-header">
-          <h2 style="display: flex; align-items: center; gap: 8px">
-            <iconify-icon
-              icon="lucide:trash-2"
-              style="color: var(--danger)"
-            ></iconify-icon>
-            Eliminar rubro
-          </h2>
-          <button class="modal-close" onclick="cerrarModalEliminarRubro()">
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <p style="margin: 0; font-size: 0.95rem">
-            ¿Eliminar el rubro <strong id="eliminarRubroNombre"></strong> de
-            todas las unidades de este grupo?
-          </p>
-          <p
-            style="
-              margin: 10px 0 0;
-              font-size: 0.85rem;
-              color: var(--text-muted);
-            "
-          >
-            Los porcentajes guardados para ese rubro se perderán.
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" onclick="cerrarModalEliminarRubro()">
-            Cancelar
-          </button>
-          <button
-            class="btn btn-danger"
-            id="btnConfirmarEliminarRubro"
-            onclick="ejecutarEliminarRubro()"
-          >
-            <iconify-icon icon="lucide:trash-2"></iconify-icon> Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <style>
-      .icon-opt {
-        width: 38px;
-        height: 38px;
-        border: 2px solid var(--border);
-        border-radius: 8px;
-        background: var(--bg-app);
-        color: var(--text-muted);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        transition: all 0.15s;
-      }
-      .icon-opt:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-      }
-      .icon-opt.selected {
-        border-color: var(--primary);
-        background: var(--primary-light);
-        color: var(--primary);
-      }
-    </style>
   </body>
 </html>

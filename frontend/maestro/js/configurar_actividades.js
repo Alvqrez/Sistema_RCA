@@ -213,18 +213,26 @@ async function cargarGrupos() {
       return;
     }
 
-    // Pre-cargar datos para stats
+    // Pre-cargar datos para stats y detectar grupos configurados desde la BD
     let configuradas = 0,
       pendientes = 0;
+    const gruposConfigurados = new Set();
     for (const g of grupos) {
       const uns = await fetchUnidades(g.id_grupo, g.clave_materia);
+      let todasBloqueadas = uns.length > 0;
       for (const u of uns) {
         const acts = await fetchActividades(g.id_grupo, u.id_unidad);
-        esUnidadGuardada(acts) ? configuradas++ : pendientes++;
+        if (esUnidadGuardada(acts)) {
+          configuradas++;
+        } else {
+          pendientes++;
+          todasBloqueadas = false;
+        }
       }
+      if (todasBloqueadas && uns.length > 0) gruposConfigurados.add(g.id_grupo);
     }
     actualizarStats(grupos.length, configuradas, pendientes);
-    contenedor.innerHTML = grupos.map((g) => renderGrupoCard(g)).join("");
+    contenedor.innerHTML = grupos.map((g) => renderGrupoCard(g, gruposConfigurados)).join("");
     // Render resumen de ponderaciones
     await renderResumenActividades(grupos);
   } catch (e) {
@@ -249,9 +257,9 @@ function esUnidadGuardada(acts) {
 }
 
 // ─── Tarjeta de grupo ──────────────────────────────────────────────────────
-function renderGrupoCard(g) {
+function renderGrupoCard(g, gruposConfigurados = new Set()) {
   const periodo = g.descripcion_periodo || `Periodo ${g.id_periodo}`;
-  const guardado = getGrupoGuardado(g.id_grupo);
+  const guardado = gruposConfigurados.has(g.id_grupo);
   return `
   <div class="grupo-card" id="gcard-${g.id_grupo}">
     <div class="grupo-card-header"

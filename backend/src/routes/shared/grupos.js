@@ -47,12 +47,15 @@ router.get("/mis-grupos", verificarToken, (req, res) => {
       CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro,
       g.id_periodo,
       pe.descripcion AS descripcion_periodo, YEAR(pe.fecha_inicio) AS anio,
-      g.limite_alumnos, g.estatus
+      g.limite_alumnos, g.estatus,
+      COUNT(i.no_control) AS total_inscritos
     FROM grupo g
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
+    LEFT JOIN inscripcion i ON g.id_grupo = i.id_grupo AND i.estatus = 'Cursando'
     WHERE g.rfc = ?
+    GROUP BY g.id_grupo
     ORDER BY g.id_grupo DESC
   `;
   db.query(query, [rfc], (err, results) => {
