@@ -593,3 +593,25 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  v14  tipo_actividad           → eliminado activo
 --  v14  notificacion             → tabla eliminada por completo
 -- ============================================================
+
+-- ============================================================
+-- Migración de seguridad v15
+-- Corrección A-3: forzar cambio de contraseña en primer acceso
+-- ============================================================
+-- Ejecutar UNA sola vez en la base de datos de producción.
+-- El campo primer_acceso = 1 indica que el usuario nunca ha
+-- cambiado su contraseña desde que fue creada por el sistema.
+-- ============================================================
+
+ALTER TABLE usuario
+  ADD COLUMN IF NOT EXISTS primer_acceso TINYINT(1) NOT NULL DEFAULT 1
+  COMMENT '1 = contraseña temporal (generada por el sistema), 0 = ya fue cambiada por el usuario';
+
+-- Marcar como ya cambiada a todos los usuarios existentes
+-- (se asume que los administradores ya tienen contraseñas propias).
+-- Si deseas que TODOS deban cambiarla, comenta esta línea.
+UPDATE usuario SET primer_acceso = 0 WHERE activo = 1;
+
+-- Solo dejar primer_acceso = 1 en cuentas de maestros recién importados
+-- (ajusta el criterio según tu flujo de onboarding):
+-- UPDATE usuario SET primer_acceso = 1 WHERE rol = 'maestro';
