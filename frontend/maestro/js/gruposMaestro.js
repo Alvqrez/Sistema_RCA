@@ -10,9 +10,8 @@ let unidadesPorGrupo = {};          // { id_grupo: [unidad, …] }
 let actividadesPorGrupoUnidad = {}; // { "id_grupo_id_unidad": [actividad, …] }
 let tiposActividad   = [];          // catálogo del admin
 // unidades custom (dividir/fusionar) siguen en localStorage solo como layout
-const getUnidadesCustom  = (g) => { try { return JSON.parse(localStorage.getItem(`ucustom_${g}`)) || null; } catch { return null; } };
-const setUnidadesCustom  = (g, v) => localStorage.setItem(`ucustom_${g}`, JSON.stringify(v));
-const getUnidadesEfectivas = (g) => getUnidadesCustom(g) || unidadesPorGrupo[g] || [];
+// Sin localStorage — las unidades efectivas vienen de la BD via layout-unidades
+const getUnidadesEfectivas = (g) => unidadesPorGrupo[g] || [];
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 function auFetch(url, opts = {}) {
@@ -91,12 +90,40 @@ async function cargarGrupos() {
 
 async function cargarUnidades(grupo) {
   try {
-    // Primero intenta auto-vincular para asegurar grupo_unidad
+    // Auto-vincular para asegurar grupo_unidad si no existe aún
     await fetch(`${API_URL}/api/grupos/${grupo.id_grupo}/unidades/auto-vincular`, { method: "POST", headers: { Authorization: `Bearer ${tk()}` } });
   } catch {}
   try {
+    // Usar layout-unidades: devuelve unidades efectivas respetando divisiones/fusiones
+    const uns = await auFetch(`${API_URL}/api/grupos/${grupo.id_grupo}/layout-unidades`);
+    if (Array.isArray(uns) && uns.length) {
+      // Obtener todas las unidades originales de la materia para calcular posición real
+      let todasOriginales = [];
+      try { todasOriginales = await auFetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`); } catch {}
+      const posicionOriginal = {}; // { id_unidad: posicion_1_based }
+      todasOriginales.forEach((u, i) => { posicionOriginal[u.id_unidad] = i + 1; });
+
+      return uns.map(u => {
+        // Para unidades originales: posición directa
+        // Para fusiones/divisiones: posición del id de origen más pequeño
+        let numero;
+        if (u.ids_origen) {
+          const minOrigen = Math.min(...u.ids_origen.split(",").map(Number));
+          numero = posicionOriginal[minOrigen] ?? u.id_orden_base;
+          // División: agregar sufijo a/b según tipo_layout
+          if (u.tipo_layout === "division_a") numero = `${numero}a`;
+          else if (u.tipo_layout === "division_b") numero = `${numero}b`;
+        } else {
+          numero = posicionOriginal[u.id_unidad] ?? (u.id_orden_base);
+        }
+        return { ...u, numero_unidad: numero, _origen: u.ids_origen || String(u.id_unidad) };
+      });
+    }
+  } catch {}
+  // Fallback: unidades originales de la materia
+  try {
     const uns = await auFetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`);
-    return Array.isArray(uns) ? uns.map((u, i) => ({ ...u, numero_unidad: u.numero_unidad ?? i + 1 })) : [];
+    return Array.isArray(uns) ? uns.map((u, i) => ({ ...u, numero_unidad: i + 1, _origen: String(u.id_unidad) })) : [];
   } catch { return []; }
 }
 
@@ -524,8 +551,13 @@ function estadoUnidadParaModal(id_grupo, id_unidad) {
 
 function abrirModalUnidades(id_grupo) {
   _mGrupoId  = id_grupo;
-  const base = getUnidadesEfectivas(id_grupo).length ? getUnidadesEfectivas(id_grupo) : unidadesPorGrupo[id_grupo] || [];
-  _mUnidades = base.map((u, i) => ({ id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad, numero_unidad: u.numero_unidad ?? i + 1, _origen: u._origen || String(u.id_unidad) }));
+  const base = getUnidadesEfectivas(id_grupo);
+  _mUnidades = base.map((u, i) => ({
+    id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad,
+    numero_unidad: u.numero_unidad ?? i + 1,
+    _origen: u._origen || String(u.id_unidad),
+    tipo_layout: u.tipo_layout || null
+  }));
   renderModalUnidades();
   document.getElementById("modalUnidades").classList.add("visible");
 }
@@ -605,50 +637,111 @@ function renderModalUnidades() {
   }).join("");
 }
 
-function dividirUnidad(idx) {
+async function dividirUnidad(idx) {
   const u = _mUnidades[idx];
-  _mUnidades.splice(idx, 1, { id_unidad: `${u._origen}_a`, nombre_unidad: `${u.nombre_unidad} — Parte A`, numero_unidad: `${u.numero_unidad}a`, _origen: u._origen }, { id_unidad: `${u._origen}_b`, nombre_unidad: `${u.nombre_unidad} — Parte B`, numero_unidad: `${u.numero_unidad}b`, _origen: u._origen });
-  renderModalUnidades();
+  const nombre_a = `${u.nombre_unidad} — Parte A`;
+  const nombre_b = `${u.nombre_unidad} — Parte B`;
+  try {
+    const data = await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/dividir-unidad`, {
+      method: "POST",
+      body: JSON.stringify({ id_unidad: u.id_unidad, nombre_a, nombre_b })
+    });
+    // Reemplazar en _mUnidades con los IDs reales devueltos por el backend
+    _mUnidades.splice(idx, 1,
+      { id_unidad: data.id_a, nombre_unidad: data.nombre_a, numero_unidad: `${u.numero_unidad}a`, _origen: String(u.id_unidad), tipo_layout: "division_a" },
+      { id_unidad: data.id_b, nombre_unidad: data.nombre_b, numero_unidad: `${u.numero_unidad}b`, _origen: String(u.id_unidad), tipo_layout: "division_b" }
+    );
+    // Recargar unidades del grupo desde BD
+    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
+    renderModalUnidades();
+    showToast(`Unidad dividida en "${data.nombre_a}" y "${data.nombre_b}"`, "success");
+  } catch(e) { showToast(e.message, "error"); }
 }
 
-function fusionarUnidades(idx) {
+async function fusionarUnidades(idx) {
   const a = _mUnidades[idx], b = _mUnidades[idx + 1];
-  _mUnidades.splice(idx, 2, { id_unidad: `${a._origen}_${b._origen}`, nombre_unidad: `${a.nombre_unidad} + ${b.nombre_unidad}`, numero_unidad: `${a.numero_unidad}-${b.numero_unidad}`, _origen: `${a._origen}_${b._origen}` });
-  renderModalUnidades();
+  const nombre_fusion = `${a.nombre_unidad} + ${b.nombre_unidad}`;
+  try {
+    const data = await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/fusionar-unidades`, {
+      method: "POST",
+      body: JSON.stringify({ id_unidad_a: a.id_unidad, id_unidad_b: b.id_unidad, nombre_fusion })
+    });
+    // numero_unidad = el menor de los dos (la fusión ocupa la posición de la unidad menor)
+    const numMenor = Math.min(
+      parseInt(a.numero_unidad) || 999,
+      parseInt(b.numero_unidad) || 999
+    );
+    _mUnidades.splice(idx, 2, {
+      id_unidad: data.id_fusion,
+      nombre_unidad: data.nombre_fusion,
+      numero_unidad: numMenor,
+      _origen: `${a.id_unidad},${b.id_unidad}`,
+      tipo_layout: "fusion"
+    });
+    // Recargar unidades del grupo desde BD
+    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
+    renderModalUnidades();
+    showToast(`Unidades fusionadas en "${data.nombre_fusion}"`, "success");
+  } catch(e) { showToast(e.message, "error"); }
 }
 
-function eliminarUnidadModal(idx) {
+async function eliminarUnidadModal(idx) {
   const u = _mUnidades[idx];
-  const origenBase = String(u._origen).split("_")[0];
-  const original = (unidadesPorGrupo[_mGrupoId] || []).find(o => String(o.id_unidad) === origenBase);
-  if (original) _mUnidades.splice(idx, 1, { id_unidad: original.id_unidad, nombre_unidad: original.nombre_unidad, numero_unidad: original.numero_unidad, _origen: String(original.id_unidad) });
-  else _mUnidades.splice(idx, 1);
-  renderModalUnidades();
+  try {
+    await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/revertir-unidad`, {
+      method: "POST",
+      body: JSON.stringify({ id_unidad_real: u.id_unidad })
+    });
+    // Recargar unidades desde BD
+    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
+    // Reconstruir _mUnidades desde la BD
+    _mUnidades = unidadesPorGrupo[_mGrupoId].map((u2, i) => ({
+      id_unidad: u2.id_unidad, nombre_unidad: u2.nombre_unidad,
+      numero_unidad: u2.numero_unidad ?? i + 1, _origen: u2._origen || String(u2.id_unidad),
+      tipo_layout: u2.tipo_layout || null
+    }));
+    renderModalUnidades();
+    showToast("División/fusión revertida", "info");
+  } catch(e) { showToast(e.message, "error"); }
 }
 
-function restaurarUnidadesOriginal() {
-  // Verificar si alguna unidad ya está bloqueada o tiene actividades sin guardar
-  const hayBloqueadas  = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "bloqueada");
-  const haySinGuardar  = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "sin_guardar");
-  if (hayBloqueadas) {
-    showToast("No se puede restaurar: hay unidades ya guardadas", "error");
-    return;
+async function restaurarUnidadesOriginal() {
+  const hayBloqueadas = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "bloqueada");
+  const haySinGuardar = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "sin_guardar");
+  if (hayBloqueadas) { showToast("No se puede restaurar: hay unidades ya guardadas", "error"); return; }
+  if (haySinGuardar) { showToast("Guarda o elimina las actividades pendientes antes de restaurar", "error"); return; }
+  if (!confirm("¿Restaurar las unidades originales? Se perderán todas las divisiones y fusiones.")) return;
+
+  // Revertir todas las unidades custom (divisiones y fusiones)
+  const custom = _mUnidades.filter(u => u.tipo_layout);
+  for (const u of custom) {
+    try {
+      await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/revertir-unidad`, {
+        method: "POST",
+        body: JSON.stringify({ id_unidad_real: u.id_unidad })
+      });
+    } catch(e) { showToast(`Error al revertir ${u.nombre_unidad}: ${e.message}`, "error"); return; }
   }
-  if (haySinGuardar) {
-    showToast("Guarda o elimina las actividades pendientes antes de restaurar", "error");
-    return;
-  }
-  if (!confirm("¿Restaurar las unidades originales? Se perderán las divisiones y fusiones.")) return;
-  localStorage.removeItem(`ucustom_${_mGrupoId}`);
-  _mUnidades = (unidadesPorGrupo[_mGrupoId] || []).map((u, i) => ({ id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad, numero_unidad: u.numero_unidad ?? i + 1, _origen: String(u.id_unidad) }));
+
+  // Recargar desde BD
+  const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+  if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
+  _mUnidades = unidadesPorGrupo[_mGrupoId].map((u, i) => ({
+    id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad,
+    numero_unidad: u.numero_unidad ?? i + 1, _origen: u._origen || String(u.id_unidad),
+    tipo_layout: u.tipo_layout || null
+  }));
   renderModalUnidades();
-  showToast("Unidades restablecidas", "info");
+  showToast("Unidades restablecidas al original", "info");
 }
 
 async function guardarUnidadesModal() {
   if (!_mGrupoId || !_mUnidades.length) return;
-  const final = _mUnidades.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
-  setUnidadesCustom(_mGrupoId, final);
+  // Las divisiones/fusiones ya se guardaron en BD al ejecutarlas.
+  // Solo cerramos el modal y re-renderizamos.
   const idGrupo = _mGrupoId;
   cerrarModalUnidades();
   await rerenderGrupoBody(idGrupo);

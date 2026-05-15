@@ -67,7 +67,7 @@ CREATE TABLE `administrador` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- v13: eliminados tel_oficina, direccion, tipo_contrato, estatus,
+-- v14: eliminados tel_oficina, direccion, tipo_contrato, estatus,
 --      genero, fecha_ingreso, grado_academico, especialidad, departamento
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `maestro` (
@@ -101,7 +101,7 @@ CREATE TABLE `carrera` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- v13: eliminados genero, tel_casa, direccion
+-- v14: eliminados genero, tel_casa, direccion
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `alumno` (
   `no_control`           VARCHAR(8)    NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE `periodo_escolar` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- v13: eliminados horas_teoricas, horas_practicas
+-- v14: eliminados horas_teoricas, horas_practicas
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `materia` (
   `clave_materia`  VARCHAR(15)      NOT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE `usuario` (
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- v13: eliminado campo activo — el catálogo es global, todas visibles
+-- v14: eliminado campo activo — el catálogo es global, todas visibles
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `tipo_actividad` (
   `id_tipo`     INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -194,7 +194,7 @@ CREATE TABLE `tipo_actividad` (
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- v13: eliminado campo creditos
+-- v14: eliminado campo creditos
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `reticula` (
   `clave_materia` VARCHAR(15)      NOT NULL,
@@ -303,6 +303,26 @@ CREATE TABLE `grupo_unidad` (
 ) ENGINE=InnoDB
   COMMENT='Peso de cada unidad dentro de un grupo específico';
 
+
+
+
+CREATE TABLE `grupo_unidad_layout` (
+  `id_grupo`        INT UNSIGNED  NOT NULL,
+  `id_unidad_real`  INT UNSIGNED  NOT NULL
+    COMMENT 'FK a unidad — ID real creado al dividir o fusionar',
+  `ids_origen`      VARCHAR(200)  NOT NULL
+    COMMENT 'IDs originales separados por coma. Ej: "1" (division) o "1,2" (fusion)',
+  `tipo`            ENUM('division_a','division_b','fusion') NOT NULL,
+  PRIMARY KEY (`id_grupo`, `id_unidad_real`),
+  INDEX `fk_GUL_Unidad` (`id_unidad_real`),
+  CONSTRAINT `fk_GUL_Grupo`
+    FOREIGN KEY (`id_grupo`)       REFERENCES `grupo`  (`id_grupo`)  ON DELETE CASCADE,
+  CONSTRAINT `fk_GUL_Unidad`
+    FOREIGN KEY (`id_unidad_real`) REFERENCES `unidad` (`id_unidad`) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_spanish_ci
+  COMMENT='Registra divisiones y fusiones de unidades por grupo. Permite trazabilidad y reversión.';
 
 CREATE TABLE `actividad` (
   `id_actividad`      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -560,7 +580,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 
 -- ============================================================
---  FIN DEL ESQUEMA v13
+--  FIN DEL ESQUEMA v14
 --
 --  CAMBIOS ACUMULADOS DESDE v1:
 --  3NF  periodo_escolar          → eliminado `anio`
@@ -568,10 +588,10 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 --  DIS  modificacionfinal        → PK auto-incremental
 --  REF  actividad                → FK hacia grupo_unidad
 --  v11  grupo                    → eliminados horario, aula
---  v13  maestro                  → eliminados 9 campos no usados
---  v13  alumno                   → eliminados genero, tel_casa, direccion
---  v13  materia                  → eliminados horas_teoricas, horas_practicas
---  v13  reticula                 → eliminado creditos
---  v13  tipo_actividad           → eliminado activo
---  v13  notificacion             → tabla eliminada por completo
+--  v14  maestro                  → eliminados 9 campos no usados
+--  v14  alumno                   → eliminados genero, tel_casa, direccion
+--  v14  materia                  → eliminados horas_teoricas, horas_practicas
+--  v14  reticula                 → eliminado creditos
+--  v14  tipo_actividad           → eliminado activo
+--  v14  notificacion             → tabla eliminada por completo
 -- ============================================================
