@@ -604,8 +604,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- ============================================================
 
 ALTER TABLE usuario
-  ADD COLUMN IF NOT EXISTS primer_acceso TINYINT(1) NOT NULL DEFAULT 1
-  COMMENT '1 = contraseña temporal (generada por el sistema), 0 = ya fue cambiada por el usuario';
+  ADD COLUMN primer_acceso TINYINT(1) NOT NULL DEFAULT 1;
 
 -- Marcar como ya cambiada a todos los usuarios existentes
 -- (se asume que los administradores ya tienen contraseñas propias).
