@@ -28,142 +28,6 @@
             <h1>Mis Grupos</h1>
             <p class="page-subtitle">Grupos asignados en el periodo actual</p>
           </div>
-          <!-- Botón de notificaciones -->
-          <div style="position: relative">
-            <button
-              id="btnNotifMisGrupos"
-              
-              style="
-                position: relative;
-                width: 38px;
-                height: 38px;
-                border-radius: 10px;
-                border: 1.5px solid var(--border);
-                background: var(--card-bg);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                color: var(--text-muted);
-                transition: background 0.15s;
-              "
-              title="Notificaciones"
-            >
-              <iconify-icon
-                icon="lucide:bell"
-                style="font-size: 1.1rem"
-              ></iconify-icon>
-              <span
-                id="notifCountMisGrupos"
-                style="
-                  display: none;
-                  position: absolute;
-                  top: 4px;
-                  right: 4px;
-                  background: var(--danger);
-                  color: white;
-                  font-size: 9px;
-                  font-weight: 700;
-                  padding: 1px 4px;
-                  border-radius: 99px;
-                  border: 1.5px solid var(--card-bg);
-                  min-width: 16px;
-                  text-align: center;
-                  line-height: 14px;
-                "
-                >0</span
-              >
-            </button>
-            <div
-              id="notifDropMisGrupos"
-              style="
-                display: none;
-                position: absolute;
-                top: 46px;
-                right: 0;
-                z-index: 500;
-                width: 300px;
-                background: var(--card-bg);
-                border: 1.5px solid var(--border);
-                border-radius: 12px;
-                box-shadow: var(--shadow-lg);
-                overflow: hidden;
-              "
-            >
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                  padding: 12px 14px;
-                  border-bottom: 1px solid var(--border);
-                "
-              >
-                <span
-                  style="
-                    font-size: 0.9rem;
-                    font-weight: 700;
-                    color: var(--text-main);
-                  "
-                  >Notificaciones</span
-                >
-                <span
-                  id="notifDropBadgeMisGrupos"
-                  style="
-                    background: var(--danger-light);
-                    color: var(--danger);
-                    font-size: 0.7rem;
-                    font-weight: 700;
-                    padding: 2px 8px;
-                    border-radius: 99px;
-                    display: none;
-                  "
-                  >0</span
-                >
-              </div>
-              <div
-                id="notifDropListMisGrupos"
-                style="max-height: 320px; overflow-y: auto"
-              >
-                <div
-                  style="
-                    padding: 20px;
-                    text-align: center;
-                    color: var(--text-muted);
-                    font-size: 0.82rem;
-                  "
-                >
-                  <iconify-icon
-                    icon="lucide:loader-2"
-                    style="
-                      font-size: 1.3rem;
-                      display: block;
-                      margin: 0 auto 6px;
-                    "
-                  ></iconify-icon>
-                  Cargando alertas...
-                </div>
-              </div>
-              <div
-                style="
-                  padding: 10px 14px;
-                  border-top: 1px solid var(--border);
-                  text-align: center;
-                "
-              >
-                <a
-                  href="#"
-                  style="
-                    font-size: 0.78rem;
-                    color: var(--primary);
-                    text-decoration: none;
-                    font-weight: 600;
-                  "
-                  id="verTodasMaestro">Ver todas las alertas →</a
-                >
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Stats -->
@@ -533,11 +397,57 @@
           }
 
           const activos = grupos.filter((g) => g.estatus === "Activo").length;
-          const cfgs = grupos.filter((g) =>
-            Object.keys(localStorage).some((k) =>
-              k.startsWith(`pcts_${g.id_grupo}_`),
-            ),
-          ).length;
+
+          // Consultar actividades y unidades para determinar grupos configurados
+          let actividadesBloqueadas = [];
+          try {
+            const rActs = await fetch(`${API_URL}/api/actividades`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            if (rActs.ok) actividadesBloqueadas = await rActs.json();
+          } catch (_) {}
+
+          // Unidades bloqueadas por grupo (id_unidad con al menos 1 actividad bloqueada)
+          const unidadesBloqueadasPorGrupo = {};
+          for (const a of actividadesBloqueadas.filter(a => a.bloqueado)) {
+            if (!unidadesBloqueadasPorGrupo[a.id_grupo])
+              unidadesBloqueadasPorGrupo[a.id_grupo] = new Set();
+            unidadesBloqueadasPorGrupo[a.id_grupo].add(a.id_unidad);
+          }
+
+          // Consultar cuántas unidades tiene la materia de cada grupo
+          // Agrupamos por clave_materia para evitar llamadas duplicadas
+          const unidadesPorMateria = {};
+          const clavesUnicas = [...new Set(grupos.map(g => g.clave_materia))];
+          await Promise.all(clavesUnicas.map(async (clave) => {
+            try {
+              const r = await fetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(clave)}`, {
+                headers: { Authorization: `Bearer ${tkn()}` },
+              });
+              if (r.ok) {
+                const uns = await r.json();
+                unidadesPorMateria[clave] = uns.length;
+              }
+            } catch (_) {}
+          }));
+
+          const unidadesTotalesPorGrupo = {};
+          for (const g of grupos) {
+            unidadesTotalesPorGrupo[g.id_grupo] = unidadesPorMateria[g.clave_materia] || 0;
+          }
+
+          // Configurado = todas las unidades del grupo tienen al menos 1 actividad bloqueada
+          const gruposConActividad = new Set(
+            grupos
+              .filter(g => {
+                const totalUnidades = unidadesTotalesPorGrupo[g.id_grupo] || 0;
+                const bloqueadas = unidadesBloqueadasPorGrupo[g.id_grupo];
+                if (totalUnidades === 0 || !bloqueadas) return false;
+                return bloqueadas.size === totalUnidades;
+              })
+              .map(g => g.id_grupo)
+          );
+          const cfgs = gruposConActividad.size;
 
           document.getElementById("statTotal").textContent = grupos.length;
           document.getElementById("statActivos").textContent = activos;
@@ -545,12 +455,12 @@
 
           // Poblar cards
           const grid = document.getElementById("gruposGrid");
-          grid.innerHTML = grupos.map((g) => buildGrupoCard(g)).join("");
+          grid.innerHTML = grupos.map((g) => buildGrupoCard(g, gruposConActividad)).join("");
 
           // Poblar lista
           const listaBody = document.getElementById("gruposListaBody");
           listaBody.innerHTML = grupos
-            .map((g, i) => buildGrupoRow(g, i, grupos.length))
+            .map((g, i) => buildGrupoRow(g, i, grupos.length, gruposConActividad))
             .join("");
 
           // Aplicar vista guardada
@@ -566,10 +476,8 @@
         }
       }
 
-      function buildGrupoRow(g, i, total) {
-        const hasConfig = Object.keys(localStorage).some((k) =>
-          k.startsWith(`pcts_${g.id_grupo}_`),
-        );
+      function buildGrupoRow(g, i, total, gruposConActividad = new Set()) {
+        const hasConfig = gruposConActividad.has(g.id_grupo);
         const cfgBadge = hasConfig
           ? `<span class="badge badge-success" style="font-size:0.7rem">Configurado</span>`
           : `<span class="badge badge-warning" style="font-size:0.7rem">Sin config</span>`;
@@ -597,12 +505,10 @@
         </div>`;
       }
 
-      function buildGrupoCard(g) {
+      function buildGrupoCard(g, gruposConActividad = new Set()) {
         const statusColor =
           g.estatus === "Activo" ? "badge-success" : "badge-danger";
-        const hasConfig = Object.keys(localStorage).some((k) =>
-          k.startsWith(`pcts_${g.id_grupo}_`),
-        );
+        const hasConfig = gruposConActividad.has(g.id_grupo);
         const cfgBadge = hasConfig
           ? `<span class="badge badge-success" style="font-size:0.7rem">Configurado</span>`
           : `<span class="badge badge-warning" style="font-size:0.7rem">Sin config</span>`;
@@ -655,59 +561,6 @@
       }
 
       cargarMisGrupos();
-    </script>
-    <script src="../../shared/js/notificaciones.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        RCANotif.init({
-          btnId:      "btnNotifMisGrupos",
-          dropId:     "notifDropMisGrupos",
-          countId:    "notifCountMisGrupos",
-          badgeId:    "notifDropBadgeMisGrupos",
-          listId:     "notifDropListMisGrupos",
-          verTodasId: "verTodasMaestro",
-          autoAlertasFn: async () => {
-            const tk = localStorage.getItem("token");
-            const heads = { Authorization: `Bearer ${tk}` };
-            const notifs = [];
-            try {
-              const rg = await fetch(`${API_URL}/api/grupos`, { headers: heads });
-              const grupos = await rg.json();
-              // Solo grupos del maestro actual
-              const miRfc = JSON.parse(atob(tk.split(".")[1])).id_referencia;
-              const misGrupos = grupos.filter(g => g.rfc === miRfc && g.estatus === "Activo");
-              const sinConfig = misGrupos.filter(g =>
-                !Object.keys(localStorage).some(k => k.startsWith(`pcts_${g.id_grupo}_`))
-              );
-              if (sinConfig.length)
-                notifs.push({
-                  _id: "auto_mae_sin_config",
-                  tipo: "danger", icono: "lucide:alert-triangle",
-                  titulo: "Grupos sin configurar",
-                  texto: `Tienes ${sinConfig.length} grupo${sinConfig.length > 1 ? "s" : ""} activo${sinConfig.length > 1 ? "s" : ""} sin actividades definidas.`,
-                  url: "mis_grupos.html",
-                });
-            } catch {}
-            try {
-              const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
-              const periodos = await rp.json();
-              const activo = periodos.find(p => p.estatus === "Vigente");
-              if (activo?.fecha_fin) {
-                const dias = Math.ceil((new Date(activo.fecha_fin) - new Date()) / 86400000);
-                if (dias > 0 && dias <= 14)
-                  notifs.push({
-                    _id: "auto_mae_cierre",
-                    tipo: "warning", icono: "lucide:clock",
-                    titulo: "Cierre de periodo",
-                    texto: `El periodo escolar cierra en ${dias} día${dias !== 1 ? "s" : ""}. Asegúrate de tener todas las calificaciones capturadas.`,
-                    url: null,
-                  });
-              }
-            } catch {}
-            return notifs;
-          },
-        });
-      });
     </script>
   </body>
 </html>

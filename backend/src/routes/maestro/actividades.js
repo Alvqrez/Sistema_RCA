@@ -11,7 +11,8 @@ router.get("/", verificarToken, (req, res) => {
   const camposSql = `
         a.*,
         u.nombre_unidad,
-        u.clave_materia
+        u.clave_materia,
+        ta.nombre AS nombre_tipo
     `;
 
   if (rol === "maestro") {
@@ -20,6 +21,7 @@ router.get("/", verificarToken, (req, res) => {
             FROM actividad a
             JOIN grupo  g ON a.id_grupo  = g.id_grupo
             LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+            LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
             WHERE g.rfc = ?
             ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
         `;
@@ -33,6 +35,7 @@ router.get("/", verificarToken, (req, res) => {
             SELECT ${camposSql}
             FROM actividad a
             LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+            LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
             ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
         `;
     db.query(sql, (err, r) => {
@@ -48,10 +51,7 @@ router.post("/", maestroOAdmin, (req, res) => {
   const {
     id_grupo,
     id_unidad,
-    nombre_actividad,
     ponderacion,
-    tipo_evaluacion,
-    fecha_entrega,
     id_tipo_actividad,
   } = req.body;
 
@@ -64,25 +64,7 @@ router.post("/", maestroOAdmin, (req, res) => {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
-  // Si no viene nombre, usar el nombre del tipo de actividad
-  const resolverNombre = (cb) => {
-    if (nombre_actividad && nombre_actividad.trim()) {
-      return cb(null, nombre_actividad.trim());
-    }
-    if (id_tipo_actividad) {
-      db.query(
-        "SELECT nombre FROM tipo_actividad WHERE id_tipo = ?",
-        [id_tipo_actividad],
-        (err, rows) => {
-          if (err || !rows.length)
-            return cb("No se pudo resolver el nombre de la actividad");
-          cb(null, rows[0].nombre);
-        },
-      );
-    } else {
-      return cb("El nombre de la actividad es requerido");
-    }
-  };
+
 
   const pond = parseFloat(ponderacion);
   if (isNaN(pond) || pond <= 0 || pond > 100) {
@@ -91,10 +73,7 @@ router.post("/", maestroOAdmin, (req, res) => {
       .json({ error: "La ponderación debe ser un valor entre 1 y 100" });
   }
 
-  resolverNombre((errNombre, nombreFinal) => {
-    if (errNombre) return res.status(400).json({ error: errNombre });
-
-    // Verificar que la unidad pertenece a la materia del grupo
+  // Verificar que la unidad pertenece a la materia del grupo
     const sqlVerifica = `
       SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad,
              u.nombre_unidad
@@ -136,16 +115,13 @@ router.post("/", maestroOAdmin, (req, res) => {
         }
 
         db.query(
-          `INSERT INTO actividad (id_grupo, id_unidad, id_tipo_actividad, nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO actividad (id_grupo, id_unidad, id_tipo_actividad, ponderacion)
+           VALUES (?, ?, ?, ?)`,
           [
             id_grupo,
             id_unidad,
             id_tipo_actividad ?? null,
-            nombreFinal,
             pond,
-            tipo_evaluacion ?? "Sumativa",
-            fecha_entrega ?? null,
           ],
           (err2, result2) => {
             if (err2)
@@ -161,13 +137,11 @@ router.post("/", maestroOAdmin, (req, res) => {
         );
       });
     });
-  });
 });
 
 // PUT — editar actividad
 router.put("/:id", maestroOAdmin, (req, res) => {
-  const { nombre_actividad, ponderacion, tipo_evaluacion, fecha_entrega } =
-    req.body;
+  const { ponderacion } = req.body;
 
   db.query(
     "SELECT bloqueado, id_grupo, id_unidad FROM actividad WHERE id_actividad = ?",
@@ -216,16 +190,10 @@ router.put("/:id", maestroOAdmin, (req, res) => {
       function ejecutarUpdate() {
         db.query(
           `UPDATE actividad
-           SET nombre_actividad = COALESCE(?, nombre_actividad),
-               ponderacion       = COALESCE(?, ponderacion),
-               tipo_evaluacion   = COALESCE(?, tipo_evaluacion),
-               fecha_entrega     = COALESCE(?, fecha_entrega)
+           SET ponderacion = COALESCE(?, ponderacion)
            WHERE id_actividad = ?`,
           [
-            nombre_actividad ?? null,
             ponderacion ?? null,
-            tipo_evaluacion ?? null,
-            fecha_entrega ?? null,
             req.params.id,
           ],
           (err3, r3) => {

@@ -112,6 +112,36 @@ async function cargarTiposActividad() {
     .join("");
 }
 
+// ─── Modal de confirmación ─────────────────────────────────────────────────
+function mostrarConfirm({ icono = "⚠️", titulo, mensaje, labelOk = "Confirmar", colorOk = "var(--danger)" } = {}) {
+  return new Promise((resolve) => {
+    const modal   = document.getElementById("modalConfirm");
+    const title   = document.getElementById("confirmTitle");
+    const msg     = document.getElementById("confirmMsg");
+    const icon    = document.getElementById("confirmIcon");
+    const btnOk   = document.getElementById("confirmOk");
+    const btnCan  = document.getElementById("confirmCancel");
+
+    icon.textContent    = icono;
+    title.textContent   = titulo;
+    msg.textContent     = mensaje;
+    btnOk.textContent   = labelOk;
+    btnOk.style.background = colorOk;
+    modal.style.display = "flex";
+
+    const cleanup = (result) => {
+      modal.style.display = "none";
+      btnOk.removeEventListener("click", onOk);
+      btnCan.removeEventListener("click", onCan);
+      resolve(result);
+    };
+    const onOk  = () => cleanup(true);
+    const onCan = () => cleanup(false);
+    btnOk.addEventListener("click", onOk);
+    btnCan.addEventListener("click", onCan);
+  });
+}
+
 // ─── Tipos habilitados para una unidad ────────────────────────────────────────
 // Carga del admin qué tipos puede usar el maestro. Si no hay, usa el catálogo completo.
 async function cargarTiposParaUnidad(idUnidad) {
@@ -280,9 +310,17 @@ async function toggleGrupo(idGrupo, claveMateria) {
 // ─── Fetch unidades ────────────────────────────────────────────────────────
 async function fetchUnidades(idGrupo, claveMateria) {
   if (cacheUnidades[idGrupo]) return cacheUnidades[idGrupo];
+  // Asegurar que grupo_unidad tiene los registros necesarios antes de
+  // intentar insertar actividades (evita error 500 por FK faltante)
+  try {
+    await fetch(`${API_URL}/api/grupos/${idGrupo}/unidades/auto-vincular`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${tk()}` },
+    });
+  } catch { /* si falla, continuamos igual */ }
   try {
     const res = await fetch(
-      `${BASE}/api/unidades/materia/${encodeURIComponent(claveMateria)}`,
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(claveMateria)}`,
       {
         headers: { Authorization: `Bearer ${tk()}` },
       },
@@ -319,7 +357,7 @@ async function fetchActividades(idGrupo, idUnidad) {
   const key = `${idGrupo}_${idUnidad}`;
   if (cacheActividades[key]) return cacheActividades[key];
   try {
-    const res = await fetch(`${BASE}/api/actividades`, {
+    const res = await fetch(`${API_URL}/api/actividades`, {
       headers: { Authorization: `Bearer ${tk()}` },
     });
     if (!res.ok) {
@@ -379,7 +417,7 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
           (a) => `
         <div class="act-item">
           <iconify-icon icon="mdi:lock-outline" style="color:var(--text-muted);flex-shrink:0;font-size:.9rem"></iconify-icon>
-          <span class="act-nombre">${esc(a.nombre_actividad)}</span>
+          <span class="act-nombre">${esc(a.nombre_tipo)}</span>
           <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
         </div>`,
         )
@@ -409,7 +447,7 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
               .map(
                 (a) => `
             <div class="act-item" id="act-item-${a.id_actividad}">
-              <span class="act-nombre">${esc(a.nombre_actividad)}</span>
+              <span class="act-nombre">${esc(a.nombre_tipo)}</span>
               <span class="act-pct">${parseFloat(a.ponderacion).toFixed(0)}%</span>
               <button class="act-del"
                       onclick="eliminarActividad(${idGrupo}, ${idUnidad}, ${a.id_actividad})"
@@ -516,7 +554,7 @@ async function mostrarTiposParaModal(idUnidad) {
   _actividadesAdminCache = [];
   try {
     const res = await fetch(
-      `${BASE}/api/materia-actividades/unidad/${idUnidad}`,
+      `${API_URL}/api/materia-actividades/unidad/${idUnidad}`,
       {
         headers: { Authorization: `Bearer ${tk()}` },
       },
@@ -629,7 +667,7 @@ function mostrarActividadesDeTipo(idTipo, nombreTipo) {
         (a) => `
       <div class="tipo-card" onclick="seleccionarActividadAdmin(${a.id_mat_act},'${esc(a.nombre_actividad)}',${a.id_tipo || "null"},'${esc(a.nombre_tipo || "")}')">
         <iconify-icon icon="mdi:check-circle-outline" class="tipo-card-icon"></iconify-icon>
-        <span class="tipo-card-nombre">${esc(a.nombre_actividad)}</span>
+        <span class="tipo-card-nombre">${esc(a.nombre_tipo || a.nombre_actividad)}</span>
       </div>`,
       )
       .join("")}`;
@@ -672,8 +710,6 @@ async function confirmarAgregar() {
     toast("Selecciona un tipo de actividad primero", "error");
     return;
   }
-  const nombreFinal = _modalTipoNom;
-
   if (isNaN(pct) || pct <= 0 || pct > 100) {
     toast("El porcentaje debe ser entre 1 y 100", "error");
     document.getElementById("modalPct").focus();
@@ -692,7 +728,7 @@ async function confirmarAgregar() {
   }
 
   try {
-    const res = await fetch(`${BASE}/api/actividades`, {
+    const res = await fetch(`${API_URL}/api/actividades`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -701,7 +737,7 @@ async function confirmarAgregar() {
       body: JSON.stringify({
         id_grupo: _modalGrupo,
         id_unidad: _modalUnidad,
-        nombre_actividad: nombreFinal,
+        id_tipo_actividad: _modalTipoId ?? null,
         ponderacion: pct,
       }),
     });
@@ -717,7 +753,8 @@ async function confirmarAgregar() {
       ...acts,
       {
         id_actividad: data.id_actividad,
-        nombre_actividad: nombreFinal,
+        id_tipo_actividad: _modalTipoId ?? null,
+        nombre_tipo: _modalTipoNom ?? "",
         ponderacion: pct,
         bloqueado: 0,
       },
@@ -749,10 +786,17 @@ async function eliminarActividad(idGrupo, idUnidad, idActividad) {
   const acts = getActs(idGrupo, idUnidad);
   const act = acts.find((a) => a.id_actividad === idActividad);
   if (!act) return;
-  if (!confirm(`¿Eliminar "${act.nombre_actividad}"?`)) return;
+  const nombreAct = act.nombre_tipo || "esta actividad";
+  const ok1 = await mostrarConfirm({
+    icono: "🗑️",
+    titulo: `Eliminar actividad`,
+    mensaje: `¿Estás seguro de que deseas eliminar "${nombreAct}"? Esta acción no se puede deshacer.`,
+    labelOk: "Eliminar",
+  });
+  if (!ok1) return;
 
   try {
-    const res = await fetch(`${BASE}/api/actividades/${idActividad}`, {
+    const res = await fetch(`${API_URL}/api/actividades/${idActividad}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${tk()}` },
     });
@@ -780,15 +824,17 @@ async function guardarUnidad(idGrupo, idUnidad) {
     toast("La suma debe ser 100% para guardar la unidad", "error");
     return;
   }
-  const ok = confirm(
-    "⚠️ ¿Guardar y bloquear esta unidad?\n\n" +
-      "Una vez guardada, ya no podrás agregar, eliminar ni modificar actividades.\n\n" +
-      "Esta acción no se puede deshacer desde aquí.",
-  );
+  const ok = await mostrarConfirm({
+    icono: "🔒",
+    titulo: "¿Guardar y bloquear esta unidad?",
+    mensaje: "Una vez guardada, ya no podrás agregar, eliminar ni modificar actividades. Esta acción no se puede deshacer desde aquí.",
+    labelOk: "Guardar y bloquear",
+    colorOk: "var(--primary)",
+  });
   if (!ok) return;
 
   try {
-    const res = await fetch(`${BASE}/api/actividades/bloquear-unidad`, {
+    const res = await fetch(`${API_URL}/api/actividades/bloquear-unidad`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -833,14 +879,14 @@ async function guardarConfiguracion(idGrupo) {
     );
     return;
   }
-  if (
-    !confirm(
-      "✓ Todas las unidades están guardadas.\n\n" +
-        "¿Marcar este grupo como completamente configurado?\n\n" +
-        "Indica que el grupo está listo para registrar calificaciones.",
-    )
-  )
-    return;
+  const okGrupo = await mostrarConfirm({
+    icono: "✅",
+    titulo: "¿Marcar grupo como configurado?",
+    mensaje: "Todas las unidades están guardadas. Esto indica que el grupo está listo para registrar calificaciones.",
+    labelOk: "Confirmar",
+    colorOk: "var(--success, #16a34a)",
+  });
+  if (!okGrupo) return;
 
   setGrupoGuardado(idGrupo, true);
   document.getElementById(`gfooter-${idGrupo}`).style.display = "none";
