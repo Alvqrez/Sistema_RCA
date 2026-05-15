@@ -9,7 +9,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const db = require("./src/db");
 
-app.use(cors());
+// CORS: en producción establece CORS_ORIGIN en tu .env con el dominio del frontend.
+// En desarrollo, si no se define, se permite cualquier origen.
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "*",
+  }),
+);
 app.use(express.json({ limit: "50mb" }));
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -101,7 +107,7 @@ app.post("/login", (req, res) => {
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
 
 // ADMIN
-app.use("/api/alumnos", require("./src/routes/admin/alumnos")); //
+app.use("/api/alumnos", require("./src/routes/admin/alumnos"));
 app.use("/api/maestros", require("./src/routes/admin/maestros"));
 app.use("/api/inscripciones", require("./src/routes/admin/inscripciones"));
 app.use("/api/admin", require("./src/routes/admin/admin"));
@@ -121,7 +127,7 @@ app.use(
   require("./src/routes/maestro/resultado_actividad"),
 );
 app.use("/api/bonus", require("./src/routes/maestro/bonus"));
-app.use("/api/unidades", require("./src/routes/maestro/unidades")); // ← era shared/unidades (no existe)
+app.use("/api/unidades", require("./src/routes/maestro/unidades"));
 
 // SHARED
 app.use("/api/grupos", require("./src/routes/shared/grupos"));
@@ -129,28 +135,31 @@ app.use("/api/reportes", require("./src/routes/shared/reportes"));
 app.use(
   "/api/tipo-actividades",
   require("./src/routes/shared/tipo_actividades"),
-); // ← era admin/ (no existe)
+);
 app.use(
   "/api/materia-actividades",
   require("./src/routes/shared/materia_actividades"),
-); // ← era admin/ (no existe)
+);
 app.use(
   "/api/modificacion-final",
   require("./src/routes/shared/modificacion_final"),
-); // ← era maestro/ (no existe)
+);
 
 app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.1" }),
 );
 
 // ─── INFO PÚBLICA (no requiere token) ─────────────────────────────────────────
+// NOTA: maestro.estatus fue eliminado en v14 — se cuenta todos los maestros.
 app.get("/api/info-publica", (req, res) => {
   db.query(
     `SELECT
-       (SELECT COUNT(*) FROM alumno) AS alumnos,
-       (SELECT COUNT(*) FROM maestro WHERE estatus = 'Activo') AS maestros,
-       (SELECT COUNT(*) FROM grupo  WHERE estatus = 'Activo') AS grupos,
-       (SELECT descripcion FROM periodo_escolar WHERE estatus IN ('Vigente','Activo','activo') ORDER BY fecha_inicio DESC LIMIT 1) AS periodo`,
+       (SELECT COUNT(*) FROM alumno)  AS alumnos,
+       (SELECT COUNT(*) FROM maestro) AS maestros,
+       (SELECT COUNT(*) FROM grupo   WHERE estatus = 'Activo') AS grupos,
+       (SELECT descripcion FROM periodo_escolar
+        WHERE estatus IN ('Vigente','Activo','activo')
+        ORDER BY fecha_inicio DESC LIMIT 1) AS periodo`,
     (err, rows) => {
       if (err) return res.status(500).json({ error: "Error" });
       res.json(rows[0] || {});

@@ -1,11 +1,17 @@
-// backend/seed.js — v4
-// Sincronizado con schema v12:
-//   • maestro: sin genero, tel_oficina, direccion, tipo_contrato,
-//              estatus, fecha_ingreso, grado_academico, especialidad, departamento
-//   • alumno:  sin genero, tel_casa, direccion
-//   • reticula: sin creditos
-//   • tipo_actividad: sin activo; no se pre-insertan (el admin los crea desde la UI)
-//   • materia_actividad: id_tipo → NULL (tipos no pre-existentes)
+// backend/seed.js — v5
+// Sincronizado con schema v14:
+//   • maestro:        sin genero, tel_oficina, direccion, tipo_contrato,
+//                     estatus, fecha_ingreso, grado_academico, especialidad, departamento
+//   • alumno:         sin genero, tel_casa, direccion
+//   • reticula:       sin creditos
+//   • tipo_actividad: sin activo; se pre-insertan en el schema SQL, no aquí
+//   • actividad:      sin nombre_actividad ni tipo_evaluacion;
+//                     usa id_tipo_actividad (FK) y estatus/bloqueado
+//   • grupo_unidad:   debe existir antes de insertar actividades (FK obligatoria)
+//
+// Mapeo id_tipo_actividad (insertados por el schema v14):
+//   1=Examen  2=Tarea  3=Práctica  4=Exposición  5=Proyecto
+//   6=Cuestionario  7=Investigación  8=Asistencia
 
 const bcrypt = require("bcrypt");
 const db = require("./src/db");
@@ -18,7 +24,7 @@ function q(sql, params = []) {
 
 async function seed() {
   try {
-    console.log("Iniciando seed completo v4...\n");
+    console.log("Iniciando seed completo v5...\n");
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. PERIODOS
@@ -32,7 +38,9 @@ async function seed() {
                (4,'Enero-Junio',      '2026-01-12','2026-06-19','Vigente'),
                (5,'Verano',           '2026-07-01','2026-07-31','Proximo'),
                (6,'Agosto-Diciembre', '2026-08-03','2026-12-18','Proximo')`);
-    console.log("✓ Periodos   → 6 (3×2025 concluidos, 3×2026 vigente/próximos)");
+    console.log(
+      "✓ Periodos   → 6 (3×2025 concluidos, 3×2026 vigente/próximos)",
+    );
 
     // ══════════════════════════════════════════════════════════════════════
     // 2. CARRERAS
@@ -62,15 +70,70 @@ async function seed() {
     console.log(`✓ Admin      → ${rfcAdmin} / admin123`);
 
     // ══════════════════════════════════════════════════════════════════════
-    // 4. MAESTROS — v12: sin genero, tel_oficina, direccion, tipo_contrato,
+    // 4. MAESTROS — v14: sin genero, tel_oficina, direccion, tipo_contrato,
     //               estatus, fecha_ingreso, grado_academico, especialidad, departamento
     // ══════════════════════════════════════════════════════════════════════
     const maestros = [
-      { rfc: "PELJ800101HVZ", nom: "Juan",     ap: "Pérez",     am: "López",     curp: "PELJ800101HVZRPN01", fn: "1980-01-01", ci: "juan.pl@veracruz.tecnm.mx",    cp: "juan.perez@gmail.com",    cel: "2291100001", pwd: "maestro123" },
-      { rfc: "GASM850215MVZ", nom: "María",    ap: "García",    am: "Soto",      curp: "GASM850215MVZRTN02", fn: "1985-02-15", ci: "maria.gs@veracruz.tecnm.mx",   cp: "maria.garcia@gmail.com",  cel: "2291100002", pwd: "maestro456" },
-      { rfc: "RORH790320HVZ", nom: "Roberto",  ap: "Rodríguez", am: "Hernández", curp: "RORH790320HVZRBT03", fn: "1979-03-20", ci: "roberto.rh@veracruz.tecnm.mx", cp: "roberto.rod@gmail.com",   cel: "2291100003", pwd: "maestro789" },
-      { rfc: "FUMA880510MVZ", nom: "Laura",    ap: "Fuentes",   am: "Martínez",  curp: "FUMA880510MVZRLA04", fn: "1988-05-10", ci: "laura.fm@veracruz.tecnm.mx",   cp: "laura.fuentes@gmail.com", cel: "2291100004", pwd: "maestro000" },
-      { rfc: "CAGR760112HVZ", nom: "Carlos",   ap: "Castro",    am: "García",    curp: "CAGR760112HVZRCA05", fn: "1976-01-12", ci: "carlos.cg@veracruz.tecnm.mx",  cp: "carlos.castro@gmail.com", cel: "2291100005", pwd: "maestro111" },
+      {
+        rfc: "PELJ800101HVZ",
+        nom: "Juan",
+        ap: "Pérez",
+        am: "López",
+        curp: "PELJ800101HVZRPN01",
+        fn: "1980-01-01",
+        ci: "juan.pl@veracruz.tecnm.mx",
+        cp: "juan.perez@gmail.com",
+        cel: "2291100001",
+        pwd: "maestro123",
+      },
+      {
+        rfc: "GASM850215MVZ",
+        nom: "María",
+        ap: "García",
+        am: "Soto",
+        curp: "GASM850215MVZRTN02",
+        fn: "1985-02-15",
+        ci: "maria.gs@veracruz.tecnm.mx",
+        cp: "maria.garcia@gmail.com",
+        cel: "2291100002",
+        pwd: "maestro456",
+      },
+      {
+        rfc: "RORH790320HVZ",
+        nom: "Roberto",
+        ap: "Rodríguez",
+        am: "Hernández",
+        curp: "RORH790320HVZRBT03",
+        fn: "1979-03-20",
+        ci: "roberto.rh@veracruz.tecnm.mx",
+        cp: "roberto.rod@gmail.com",
+        cel: "2291100003",
+        pwd: "maestro789",
+      },
+      {
+        rfc: "FUMA880510MVZ",
+        nom: "Laura",
+        ap: "Fuentes",
+        am: "Martínez",
+        curp: "FUMA880510MVZRLA04",
+        fn: "1988-05-10",
+        ci: "laura.fm@veracruz.tecnm.mx",
+        cp: "laura.fuentes@gmail.com",
+        cel: "2291100004",
+        pwd: "maestro000",
+      },
+      {
+        rfc: "CAGR760112HVZ",
+        nom: "Carlos",
+        ap: "Castro",
+        am: "García",
+        curp: "CAGR760112HVZRCA05",
+        fn: "1976-01-12",
+        ci: "carlos.cg@veracruz.tecnm.mx",
+        cp: "carlos.castro@gmail.com",
+        cel: "2291100005",
+        pwd: "maestro111",
+      },
     ];
     for (const m of maestros) {
       await q(
@@ -110,7 +173,7 @@ async function seed() {
     console.log("✓ Materias   → 15 materias");
 
     // ══════════════════════════════════════════════════════════════════════
-    // 6. RETÍCULA — v12: sin creditos
+    // 6. RETÍCULA — v14: sin creditos
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO reticula (clave_materia, id_carrera, semestre) VALUES
                ('FBD001','ISC',4), ('POO001','ISC',3), ('ADS001','ISC',5),
@@ -125,15 +188,15 @@ async function seed() {
     // 7. UNIDADES
     // ══════════════════════════════════════════════════════════════════════
     const unidades = [
-      [1,  "FBD001", "Modelo Entidad-Relación"],
-      [2,  "FBD001", "Modelo Relacional"],
-      [3,  "FBD001", "SQL y Consultas"],
-      [4,  "POO001", "Clases y Objetos"],
-      [5,  "POO001", "Herencia y Polimorfismo"],
-      [6,  "POO001", "Patrones de Diseño"],
-      [7,  "ADS001", "Análisis de Requerimientos"],
-      [8,  "ADS001", "Diseño de Sistemas"],
-      [9,  "RED001", "Modelos OSI y TCP/IP"],
+      [1, "FBD001", "Modelo Entidad-Relación"],
+      [2, "FBD001", "Modelo Relacional"],
+      [3, "FBD001", "SQL y Consultas"],
+      [4, "POO001", "Clases y Objetos"],
+      [5, "POO001", "Herencia y Polimorfismo"],
+      [6, "POO001", "Patrones de Diseño"],
+      [7, "ADS001", "Análisis de Requerimientos"],
+      [8, "ADS001", "Diseño de Sistemas"],
+      [9, "RED001", "Modelos OSI y TCP/IP"],
       [10, "RED001", "Capa de Red y Enrutamiento"],
       [11, "RED001", "Capa de Transporte"],
       [12, "RED001", "Seguridad en Redes"],
@@ -182,15 +245,26 @@ async function seed() {
     // 8. GRUPOS
     // ══════════════════════════════════════════════════════════════════════
     const grupos = [
-      [1,  "FBD001", M1, 4, 35], [2,  "FBD001", M2, 4, 35], [3,  "FBD001", M1, 4, 30],
-      [4,  "POO001", M2, 4, 30], [5,  "POO001", M3, 4, 30],
-      [6,  "ADS001", M1, 4, 35], [7,  "ADS001", M3, 4, 35],
-      [8,  "RED001", M3, 4, 30], [9,  "RED001", M1, 4, 30],
-      [10, "MAT001", M5, 4, 40], [11, "MAT001", M5, 4, 40], [12, "MAT001", M4, 4, 35],
-      [13, "APM001", M2, 4, 30], [14, "APM001", M3, 4, 30],
-      [15, "EST001", M5, 4, 35], [16, "EST001", M4, 4, 35],
-      [17, "ADM001", M4, 4, 40], [18, "ADM001", M4, 4, 40],
-      [19, "FIN001", M4, 4, 35], [20, "FIN001", M5, 4, 35],
+      [1, "FBD001", M1, 4, 35],
+      [2, "FBD001", M2, 4, 35],
+      [3, "FBD001", M1, 4, 30],
+      [4, "POO001", M2, 4, 30],
+      [5, "POO001", M3, 4, 30],
+      [6, "ADS001", M1, 4, 35],
+      [7, "ADS001", M3, 4, 35],
+      [8, "RED001", M3, 4, 30],
+      [9, "RED001", M1, 4, 30],
+      [10, "MAT001", M5, 4, 40],
+      [11, "MAT001", M5, 4, 40],
+      [12, "MAT001", M4, 4, 35],
+      [13, "APM001", M2, 4, 30],
+      [14, "APM001", M3, 4, 30],
+      [15, "EST001", M5, 4, 35],
+      [16, "EST001", M4, 4, 35],
+      [17, "ADM001", M4, 4, 40],
+      [18, "ADM001", M4, 4, 40],
+      [19, "FIN001", M4, 4, 35],
+      [20, "FIN001", M5, 4, 35],
     ];
     for (const [id, mat, rfc, per, lim] of grupos)
       await q(
@@ -199,39 +273,285 @@ async function seed() {
         [id, mat, rfc, per, lim],
       );
     // Grupos históricos (periodo 1 = EJ2025 concluido)
-    await q(`INSERT IGNORE INTO grupo (id_grupo, clave_materia, rfc, id_periodo, limite_alumnos, estatus)
-             VALUES (21, 'FBD001', ?, 1, 35, 'Cerrado')`, [M1]);
-    await q(`INSERT IGNORE INTO grupo (id_grupo, clave_materia, rfc, id_periodo, limite_alumnos, estatus)
-             VALUES (22, 'MAT001', ?, 1, 40, 'Cerrado')`, [M5]);
+    await q(
+      `INSERT IGNORE INTO grupo (id_grupo, clave_materia, rfc, id_periodo, limite_alumnos, estatus)
+             VALUES (21, 'FBD001', ?, 1, 35, 'Cerrado')`,
+      [M1],
+    );
+    await q(
+      `INSERT IGNORE INTO grupo (id_grupo, clave_materia, rfc, id_periodo, limite_alumnos, estatus)
+             VALUES (22, 'MAT001', ?, 1, 40, 'Cerrado')`,
+      [M5],
+    );
     console.log("✓ Grupos     → 22 grupos (20 vigentes + 2 históricos)");
 
     // ══════════════════════════════════════════════════════════════════════
-    // 9. ALUMNOS — v12: sin genero, tel_casa, direccion
+    // 9. ALUMNOS — v14: sin genero, tel_casa, direccion
     // ══════════════════════════════════════════════════════════════════════
     const alumnos = [
       // ISC
-      { nc: "26000001", car: "ISC", nom: "Carlos",    ap: "Ramírez",   am: "Vega",      curp: "RAVC030512HVZMRL01", fn: "2003-05-12", ci: "L26000001@veracruz.tecnm.mx", cp: "c.ramirez@gmail.com",    cel: "2291201001", pwd: "alumno001" },
-      { nc: "26000002", car: "ISC", nom: "Diana",     ap: "López",     am: "Cruz",      curp: "LOCD040820MVZPRA02", fn: "2004-08-20", ci: "L26000002@veracruz.tecnm.mx", cp: "diana.lopez@gmail.com",  cel: "2291201002", pwd: "alumno002" },
-      { nc: "26000003", car: "ISC", nom: "Ernesto",   ap: "Martínez",  am: "Ruiz",      curp: "MARE030115HVZRNA03", fn: "2003-01-15", ci: "L26000003@veracruz.tecnm.mx", cp: "e.mtz@gmail.com",        cel: "2291201003", pwd: "alumno003" },
-      { nc: "26000004", car: "ISC", nom: "Fernanda",  ap: "Torres",    am: "Díaz",      curp: "TODF040930MVZRZA04", fn: "2004-09-30", ci: "L26000004@veracruz.tecnm.mx", cp: "fer.torres@gmail.com",   cel: "2291201004", pwd: "alumno004" },
-      { nc: "26000005", car: "ISC", nom: "Rodrigo",   ap: "Sánchez",   am: "Luna",      curp: "SALR031201HVZNCH05", fn: "2003-12-01", ci: "L26000005@veracruz.tecnm.mx", cp: "r.sanchez@gmail.com",    cel: "2291201005", pwd: "alumno005" },
-      { nc: "26000006", car: "ISC", nom: "Alejandra", ap: "Morales",   am: "Jiménez",   curp: "MOJA040315MVZRLA06", fn: "2004-03-15", ci: "L26000006@veracruz.tecnm.mx", cp: "ale.morales@gmail.com",  cel: "2291201006", pwd: "alumno006" },
-      { nc: "26000007", car: "ISC", nom: "Brandon",   ap: "Castillo",  am: "Reyes",     curp: "CARB030628HVZRST07", fn: "2003-06-28", ci: "L26000007@veracruz.tecnm.mx", cp: "brandon.c@gmail.com",    cel: "2291201007", pwd: "alumno007" },
-      { nc: "26000008", car: "ISC", nom: "Itzel",     ap: "Flores",    am: "Espinoza",  curp: "FEEI040507MVZRLA08", fn: "2004-05-07", ci: "L26000008@veracruz.tecnm.mx", cp: "itzel.f@gmail.com",      cel: "2291201008", pwd: "alumno008" },
+      {
+        nc: "26000001",
+        car: "ISC",
+        nom: "Carlos",
+        ap: "Ramírez",
+        am: "Vega",
+        curp: "RAVC030512HVZMRL01",
+        fn: "2003-05-12",
+        ci: "L26000001@veracruz.tecnm.mx",
+        cp: "c.ramirez@gmail.com",
+        cel: "2291201001",
+        pwd: "alumno001",
+      },
+      {
+        nc: "26000002",
+        car: "ISC",
+        nom: "Diana",
+        ap: "López",
+        am: "Cruz",
+        curp: "LOCD040820MVZPRA02",
+        fn: "2004-08-20",
+        ci: "L26000002@veracruz.tecnm.mx",
+        cp: "diana.lopez@gmail.com",
+        cel: "2291201002",
+        pwd: "alumno002",
+      },
+      {
+        nc: "26000003",
+        car: "ISC",
+        nom: "Ernesto",
+        ap: "Martínez",
+        am: "Ruiz",
+        curp: "MARE030115HVZRNA03",
+        fn: "2003-01-15",
+        ci: "L26000003@veracruz.tecnm.mx",
+        cp: "e.mtz@gmail.com",
+        cel: "2291201003",
+        pwd: "alumno003",
+      },
+      {
+        nc: "26000004",
+        car: "ISC",
+        nom: "Fernanda",
+        ap: "Torres",
+        am: "Díaz",
+        curp: "TODF040930MVZRZA04",
+        fn: "2004-09-30",
+        ci: "L26000004@veracruz.tecnm.mx",
+        cp: "fer.torres@gmail.com",
+        cel: "2291201004",
+        pwd: "alumno004",
+      },
+      {
+        nc: "26000005",
+        car: "ISC",
+        nom: "Rodrigo",
+        ap: "Sánchez",
+        am: "Luna",
+        curp: "SALR031201HVZNCH05",
+        fn: "2003-12-01",
+        ci: "L26000005@veracruz.tecnm.mx",
+        cp: "r.sanchez@gmail.com",
+        cel: "2291201005",
+        pwd: "alumno005",
+      },
+      {
+        nc: "26000006",
+        car: "ISC",
+        nom: "Alejandra",
+        ap: "Morales",
+        am: "Jiménez",
+        curp: "MOJA040315MVZRLA06",
+        fn: "2004-03-15",
+        ci: "L26000006@veracruz.tecnm.mx",
+        cp: "ale.morales@gmail.com",
+        cel: "2291201006",
+        pwd: "alumno006",
+      },
+      {
+        nc: "26000007",
+        car: "ISC",
+        nom: "Brandon",
+        ap: "Castillo",
+        am: "Reyes",
+        curp: "CARB030628HVZRST07",
+        fn: "2003-06-28",
+        ci: "L26000007@veracruz.tecnm.mx",
+        cp: "brandon.c@gmail.com",
+        cel: "2291201007",
+        pwd: "alumno007",
+      },
+      {
+        nc: "26000008",
+        car: "ISC",
+        nom: "Itzel",
+        ap: "Flores",
+        am: "Espinoza",
+        curp: "FEEI040507MVZRLA08",
+        fn: "2004-05-07",
+        ci: "L26000008@veracruz.tecnm.mx",
+        cp: "itzel.f@gmail.com",
+        cel: "2291201008",
+        pwd: "alumno008",
+      },
       // IIA
-      { nc: "26000009", car: "IIA", nom: "Sofía",     ap: "Mendoza",   am: "Ríos",      curp: "MERS031205MVZRFA09", fn: "2003-12-05", ci: "L26000009@veracruz.tecnm.mx", cp: "sofia.mnd@gmail.com",    cel: "2291201009", pwd: "alumno009" },
-      { nc: "26000010", car: "IIA", nom: "Adrián",    ap: "Guzmán",    am: "Flores",    curp: "GUFA030818HVZRMN10", fn: "2003-08-18", ci: "L26000010@veracruz.tecnm.mx", cp: "adrian.gz@gmail.com",    cel: "2291201010", pwd: "alumno010" },
-      { nc: "26000011", car: "IIA", nom: "Valeria",   ap: "Castillo",  am: "Mora",      curp: "CAMV040301MVZRLA11", fn: "2004-03-01", ci: "L26000011@veracruz.tecnm.mx", cp: "vale.cast@gmail.com",    cel: "2291201011", pwd: "alumno011" },
-      { nc: "26000012", car: "IIA", nom: "Daniel",    ap: "Vargas",    am: "Peña",      curp: "VAPD031025HVZRNA12", fn: "2003-10-25", ci: "L26000012@veracruz.tecnm.mx", cp: "daniel.vg@gmail.com",    cel: "2291201012", pwd: "alumno012" },
-      { nc: "26000013", car: "IIA", nom: "Camila",    ap: "Ortega",    am: "Nava",      curp: "ONCA040614MVZRRT13", fn: "2004-06-14", ci: "L26000013@veracruz.tecnm.mx", cp: "camila.og@gmail.com",    cel: "2291201013", pwd: "alumno013" },
-      { nc: "26000014", car: "IIA", nom: "Javier",    ap: "Herrera",   am: "Campos",    curp: "HECJ031118HVZRCA14", fn: "2003-11-18", ci: "L26000014@veracruz.tecnm.mx", cp: "javier.hr@gmail.com",    cel: "2291201014", pwd: "alumno014" },
+      {
+        nc: "26000009",
+        car: "IIA",
+        nom: "Sofía",
+        ap: "Mendoza",
+        am: "Ríos",
+        curp: "MERS031205MVZRFA09",
+        fn: "2003-12-05",
+        ci: "L26000009@veracruz.tecnm.mx",
+        cp: "sofia.mnd@gmail.com",
+        cel: "2291201009",
+        pwd: "alumno009",
+      },
+      {
+        nc: "26000010",
+        car: "IIA",
+        nom: "Adrián",
+        ap: "Guzmán",
+        am: "Flores",
+        curp: "GUFA030818HVZRMN10",
+        fn: "2003-08-18",
+        ci: "L26000010@veracruz.tecnm.mx",
+        cp: "adrian.gz@gmail.com",
+        cel: "2291201010",
+        pwd: "alumno010",
+      },
+      {
+        nc: "26000011",
+        car: "IIA",
+        nom: "Valeria",
+        ap: "Castillo",
+        am: "Mora",
+        curp: "CAMV040301MVZRLA11",
+        fn: "2004-03-01",
+        ci: "L26000011@veracruz.tecnm.mx",
+        cp: "vale.cast@gmail.com",
+        cel: "2291201011",
+        pwd: "alumno011",
+      },
+      {
+        nc: "26000012",
+        car: "IIA",
+        nom: "Daniel",
+        ap: "Vargas",
+        am: "Peña",
+        curp: "VAPD031025HVZRNA12",
+        fn: "2003-10-25",
+        ci: "L26000012@veracruz.tecnm.mx",
+        cp: "daniel.vg@gmail.com",
+        cel: "2291201012",
+        pwd: "alumno012",
+      },
+      {
+        nc: "26000013",
+        car: "IIA",
+        nom: "Camila",
+        ap: "Ortega",
+        am: "Nava",
+        curp: "ONCA040614MVZRRT13",
+        fn: "2004-06-14",
+        ci: "L26000013@veracruz.tecnm.mx",
+        cp: "camila.og@gmail.com",
+        cel: "2291201013",
+        pwd: "alumno013",
+      },
+      {
+        nc: "26000014",
+        car: "IIA",
+        nom: "Javier",
+        ap: "Herrera",
+        am: "Campos",
+        curp: "HECJ031118HVZRCA14",
+        fn: "2003-11-18",
+        ci: "L26000014@veracruz.tecnm.mx",
+        cp: "javier.hr@gmail.com",
+        cel: "2291201014",
+        pwd: "alumno014",
+      },
       // IGE
-      { nc: "26000015", car: "IGE", nom: "Miguel",    ap: "Herrera",   am: "Santos",    curp: "HESM030625HVZRGH15", fn: "2003-06-25", ci: "L26000015@veracruz.tecnm.mx", cp: "miguel.hr@gmail.com",    cel: "2291201015", pwd: "alumno015" },
-      { nc: "26000016", car: "IGE", nom: "Paola",     ap: "Ramos",     am: "Vázquez",   curp: "RAVP040714MVZRMA16", fn: "2004-07-14", ci: "L26000016@veracruz.tecnm.mx", cp: "paola.rm@gmail.com",     cel: "2291201016", pwd: "alumno016" },
-      { nc: "26000017", car: "IGE", nom: "Héctor",    ap: "Vargas",    am: "Luna",      curp: "VALH031109HVZRCA17", fn: "2003-11-09", ci: "L26000017@veracruz.tecnm.mx", cp: "hector.vg@gmail.com",    cel: "2291201017", pwd: "alumno017" },
-      { nc: "26000018", car: "IGE", nom: "Mariana",   ap: "Cruz",      am: "Ibarra",    curp: "CRIM040222MVZRNA18", fn: "2004-02-22", ci: "L26000018@veracruz.tecnm.mx", cp: "mari.cruz@gmail.com",    cel: "2291201018", pwd: "alumno018" },
-      { nc: "26000019", car: "IGE", nom: "Omar",      ap: "Delgado",   am: "Suárez",    curp: "DESO031004HVZRLA19", fn: "2003-10-04", ci: "L26000019@veracruz.tecnm.mx", cp: "omar.del@gmail.com",     cel: "2291201019", pwd: "alumno019" },
-      { nc: "26000020", car: "IGE", nom: "Lucía",     ap: "Peña",      am: "Mora",      curp: "PEML040809MVZRLA20", fn: "2004-08-09", ci: "L26000020@veracruz.tecnm.mx", cp: "lucia.pn@gmail.com",     cel: "2291201020", pwd: "alumno020" },
+      {
+        nc: "26000015",
+        car: "IGE",
+        nom: "Miguel",
+        ap: "Herrera",
+        am: "Santos",
+        curp: "HESM030625HVZRGH15",
+        fn: "2003-06-25",
+        ci: "L26000015@veracruz.tecnm.mx",
+        cp: "miguel.hr@gmail.com",
+        cel: "2291201015",
+        pwd: "alumno015",
+      },
+      {
+        nc: "26000016",
+        car: "IGE",
+        nom: "Paola",
+        ap: "Ramos",
+        am: "Vázquez",
+        curp: "RAVP040714MVZRMA16",
+        fn: "2004-07-14",
+        ci: "L26000016@veracruz.tecnm.mx",
+        cp: "paola.rm@gmail.com",
+        cel: "2291201016",
+        pwd: "alumno016",
+      },
+      {
+        nc: "26000017",
+        car: "IGE",
+        nom: "Héctor",
+        ap: "Vargas",
+        am: "Luna",
+        curp: "VALH031109HVZRCA17",
+        fn: "2003-11-09",
+        ci: "L26000017@veracruz.tecnm.mx",
+        cp: "hector.vg@gmail.com",
+        cel: "2291201017",
+        pwd: "alumno017",
+      },
+      {
+        nc: "26000018",
+        car: "IGE",
+        nom: "Mariana",
+        ap: "Cruz",
+        am: "Ibarra",
+        curp: "CRIM040222MVZRNA18",
+        fn: "2004-02-22",
+        ci: "L26000018@veracruz.tecnm.mx",
+        cp: "mari.cruz@gmail.com",
+        cel: "2291201018",
+        pwd: "alumno018",
+      },
+      {
+        nc: "26000019",
+        car: "IGE",
+        nom: "Omar",
+        ap: "Delgado",
+        am: "Suárez",
+        curp: "DESO031004HVZRLA19",
+        fn: "2003-10-04",
+        ci: "L26000019@veracruz.tecnm.mx",
+        cp: "omar.del@gmail.com",
+        cel: "2291201019",
+        pwd: "alumno019",
+      },
+      {
+        nc: "26000020",
+        car: "IGE",
+        nom: "Lucía",
+        ap: "Peña",
+        am: "Mora",
+        curp: "PEML040809MVZRLA20",
+        fn: "2004-08-09",
+        ci: "L26000020@veracruz.tecnm.mx",
+        cp: "lucia.pn@gmail.com",
+        cel: "2291201020",
+        pwd: "alumno020",
+      },
     ];
     for (const a of alumnos) {
       await q(
@@ -253,28 +573,95 @@ async function seed() {
     // ══════════════════════════════════════════════════════════════════════
     const inscripciones = [
       // ISC
-      ["26000001",1],["26000001",4],["26000001",5],["26000001",8],["26000001",12],
-      ["26000002",2],["26000002",4],["26000002",5],["26000002",8],["26000002",12],
-      ["26000003",1],["26000003",4],["26000003",10],["26000003",8],["26000003",3],
-      ["26000004",2],["26000004",9],["26000004",5],["26000004",11],["26000004",3],
-      ["26000005",1],["26000005",9],["26000005",10],["26000005",11],["26000005",12],
-      ["26000006",3],["26000006",4],["26000006",5],["26000006",8],["26000006",6],
-      ["26000007",2],["26000007",9],["26000007",10],["26000007",8],["26000007",12],
-      ["26000008",1],["26000008",4],["26000008",5],["26000008",11],["26000008",3],
+      ["26000001", 1],
+      ["26000001", 4],
+      ["26000001", 5],
+      ["26000001", 8],
+      ["26000001", 12],
+      ["26000002", 2],
+      ["26000002", 4],
+      ["26000002", 5],
+      ["26000002", 8],
+      ["26000002", 12],
+      ["26000003", 1],
+      ["26000003", 4],
+      ["26000003", 10],
+      ["26000003", 8],
+      ["26000003", 3],
+      ["26000004", 2],
+      ["26000004", 9],
+      ["26000004", 5],
+      ["26000004", 11],
+      ["26000004", 3],
+      ["26000005", 1],
+      ["26000005", 9],
+      ["26000005", 10],
+      ["26000005", 11],
+      ["26000005", 12],
+      ["26000006", 3],
+      ["26000006", 4],
+      ["26000006", 5],
+      ["26000006", 8],
+      ["26000006", 6],
+      ["26000007", 2],
+      ["26000007", 9],
+      ["26000007", 10],
+      ["26000007", 8],
+      ["26000007", 12],
+      ["26000008", 1],
+      ["26000008", 4],
+      ["26000008", 5],
+      ["26000008", 11],
+      ["26000008", 3],
       // IIA
-      ["26000009",13],["26000009",14],["26000009",16],["26000009",11],
-      ["26000010",15],["26000010",14],["26000010",10],["26000010",11],
-      ["26000011",13],["26000011",14],["26000011",16],
-      ["26000012",15],["26000012",14],["26000012",10],["26000012",8],
-      ["26000013",13],["26000013",14],["26000013",16],["26000013",11],
-      ["26000014",15],["26000014",14],["26000014",16],["26000014",11],
+      ["26000009", 13],
+      ["26000009", 14],
+      ["26000009", 16],
+      ["26000009", 11],
+      ["26000010", 15],
+      ["26000010", 14],
+      ["26000010", 10],
+      ["26000010", 11],
+      ["26000011", 13],
+      ["26000011", 14],
+      ["26000011", 16],
+      ["26000012", 15],
+      ["26000012", 14],
+      ["26000012", 10],
+      ["26000012", 8],
+      ["26000013", 13],
+      ["26000013", 14],
+      ["26000013", 16],
+      ["26000013", 11],
+      ["26000014", 15],
+      ["26000014", 14],
+      ["26000014", 16],
+      ["26000014", 11],
       // IGE
-      ["26000015",18],["26000015",17],["26000015",19],["26000015",11],
-      ["26000016",20],["26000016",17],["26000016",19],["26000016",10],
-      ["26000017",18],["26000017",17],["26000017",19],["26000017",16],
-      ["26000018",20],["26000018",17],["26000018",19],["26000018",11],
-      ["26000019",18],["26000019",17],["26000019",19],["26000019",10],
-      ["26000020",20],["26000020",17],["26000020",19],["26000020",16],
+      ["26000015", 18],
+      ["26000015", 17],
+      ["26000015", 19],
+      ["26000015", 11],
+      ["26000016", 20],
+      ["26000016", 17],
+      ["26000016", 19],
+      ["26000016", 10],
+      ["26000017", 18],
+      ["26000017", 17],
+      ["26000017", 19],
+      ["26000017", 16],
+      ["26000018", 20],
+      ["26000018", 17],
+      ["26000018", 19],
+      ["26000018", 11],
+      ["26000019", 18],
+      ["26000019", 17],
+      ["26000019", 19],
+      ["26000019", 10],
+      ["26000020", 20],
+      ["26000020", 17],
+      ["26000020", 19],
+      ["26000020", 16],
     ];
     for (const [nc, ig] of inscripciones)
       await q(
@@ -285,55 +672,113 @@ async function seed() {
     // Historial recursado
     await q(`INSERT IGNORE INTO inscripcion (no_control, id_grupo, fecha_inscripcion, estatus, tipo_curso)
              VALUES ('26000001', 21, '2025-01-15', 'Reprobado', 'Ordinario')`);
-    await q(`UPDATE inscripcion SET tipo_curso='Recursado' WHERE no_control='26000001' AND id_grupo=1`);
+    await q(
+      `UPDATE inscripcion SET tipo_curso='Recursado' WHERE no_control='26000001' AND id_grupo=1`,
+    );
     console.log("✓ Inscrip.   → min 5 por grupo, sin conflictos de horario");
 
     // ══════════════════════════════════════════════════════════════════════
-    // 11. ACTIVIDADES (grupos G1-FBD y G10-MAT)
-    // Nota: tipo_actividad ya no se pre-inserta en el seed.
-    //       El admin las crea desde la UI o importa CSV.
-    //       id_tipo_actividad queda NULL en las actividades de grupos.
+    // 11. GRUPO_UNIDAD
+    // IMPORTANTE: actividad tiene FK a grupo_unidad(id_grupo, id_unidad).
+    // Estos registros deben existir ANTES de insertar cualquier actividad.
     // ══════════════════════════════════════════════════════════════════════
-    await q(`INSERT IGNORE INTO actividad
-               (id_actividad, id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, bloqueado)
-             VALUES
-               (1, 1, 1, 'Tarea ER básico',          20, 'Formativa', 1),
-               (2, 1, 1, 'Examen parcial U1',         60, 'Sumativa',  1),
-               (3, 1, 1, 'Participación U1',           20, 'Formativa', 1),
-               (4, 1, 2, 'Tarea Normalización',        30, 'Formativa', 1),
-               (5, 1, 2, 'Examen Modelo Relacional',   70, 'Sumativa',  1),
-               (6, 1, 3, 'Lab SQL Básico',             40, 'Sumativa',  0),
-               (7, 1, 3, 'Proyecto Consultas',         60, 'Sumativa',  0)`);
-
-    await q(`INSERT IGNORE INTO actividad
-               (id_actividad, id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, bloqueado)
-             VALUES
-               (8,  10, 37, 'Tarea Vectores',              25, 'Formativa', 1),
-               (9,  10, 37, 'Práctica Matrices',            25, 'Formativa', 1),
-               (10, 10, 37, 'Examen Álgebra Lineal',        50, 'Sumativa',  1),
-               (11, 10, 38, 'Tarea Límites',                30, 'Formativa', 0),
-               (12, 10, 38, 'Examen Cálculo Diferencial',   70, 'Sumativa',  0)`);
+    await q(`INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES
+               -- G1 FBD: unidades 1, 2, 3
+               (1, 1, 'original'), (1, 2, 'original'), (1, 3, 'original'),
+               -- G10 MAT: unidades 37, 38
+               (10, 37, 'original'), (10, 38, 'original'),
+               -- G17 ADM: unidades 25, 26, 27
+               (17, 25, 'original'), (17, 26, 'original'), (17, 27, 'original'),
+               -- G18 ADM: unidades 25, 26, 27
+               (18, 25, 'original'), (18, 26, 'original'), (18, 27, 'original'),
+               -- G19 FIN: unidades 28, 29, 30
+               (19, 28, 'original'), (19, 29, 'original'), (19, 30, 'original'),
+               -- G20 FIN: unidades 28, 29, 30
+               (20, 28, 'original'), (20, 29, 'original'), (20, 30, 'original')`);
+    console.log(
+      "✓ GrupoUnid  → 16 vínculos grupo-unidad para los grupos con actividades",
+    );
 
     // ══════════════════════════════════════════════════════════════════════
-    // 12. CALIFICACIONES G1-FBD (U1 y U2 cerradas, U3 pendiente)
+    // 12. ACTIVIDADES (grupos G1-FBD y G10-MAT)
+    //
+    // Schema v14 — columnas reales de `actividad`:
+    //   id_actividad, id_grupo, id_unidad, id_tipo_actividad, ponderacion,
+    //   estatus (default 'Pendiente'), bloqueado (default 0)
+    //
+    // id_tipo_actividad usa los valores pre-insertados por el schema:
+    //   1=Examen  2=Tarea  3=Práctica  4=Exposición  5=Proyecto
+    //   6=Cuestionario  7=Investigación  8=Asistencia
+    // ══════════════════════════════════════════════════════════════════════
+    await q(`INSERT IGNORE INTO actividad
+               (id_actividad, id_grupo, id_unidad, id_tipo_actividad, ponderacion, estatus, bloqueado)
+             VALUES
+               -- G1 FBD U1: Tarea 20% + Examen 60% + Asistencia 20% = 100%
+               (1,  1, 1, 2, 20, 'Calificada', 1),
+               (2,  1, 1, 1, 60, 'Calificada', 1),
+               (3,  1, 1, 8, 20, 'Calificada', 1),
+               -- G1 FBD U2: Tarea 30% + Examen 70% = 100%
+               (4,  1, 2, 2, 30, 'Calificada', 1),
+               (5,  1, 2, 1, 70, 'Calificada', 1),
+               -- G1 FBD U3: Práctica 40% + Proyecto 60% = 100%
+               (6,  1, 3, 3, 40, 'Pendiente',  0),
+               (7,  1, 3, 5, 60, 'Pendiente',  0)`);
+
+    await q(`INSERT IGNORE INTO actividad
+               (id_actividad, id_grupo, id_unidad, id_tipo_actividad, ponderacion, estatus, bloqueado)
+             VALUES
+               -- G10 MAT U37: Tarea 25% + Práctica 25% + Examen 50% = 100%
+               (8,  10, 37, 2, 25, 'Calificada', 1),
+               (9,  10, 37, 3, 25, 'Calificada', 1),
+               (10, 10, 37, 1, 50, 'Calificada', 1),
+               -- G10 MAT U38: Tarea 30% + Examen 70% = 100%
+               (11, 10, 38, 2, 30, 'Pendiente',  0),
+               (12, 10, 38, 1, 70, 'Pendiente',  0)`);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 13. CALIFICACIONES G1-FBD (U1 y U2 cerradas, U3 pendiente)
     // ══════════════════════════════════════════════════════════════════════
     const calsG1U1U2 = [
-      ["26000001",1,85],["26000001",2,72],["26000001",3,90],
-      ["26000002",1,60],["26000002",2,58],["26000002",3,70],
-      ["26000003",1,95],["26000003",2,88],["26000003",3,80],
-      ["26000004",1,75],["26000004",2,80],["26000004",3,85],
-      ["26000005",1,90],["26000005",2,92],["26000005",3,88],
-      ["26000006",1,50],["26000006",2,55],["26000006",3,60],
-      ["26000007",1,78],["26000007",2,82],["26000007",3,75],
-      ["26000008",1,88],["26000008",2,70],["26000008",3,95],
-      ["26000001",4,78],["26000001",5,81],
-      ["26000002",4,65],["26000002",5,68],
-      ["26000003",4,92],["26000003",5,95],
-      ["26000004",4,80],["26000004",5,77],
-      ["26000005",4,88],["26000005",5,90],
-      ["26000006",4,52],["26000006",5,58],
-      ["26000007",4,75],["26000007",5,79],
-      ["26000008",4,85],["26000008",5,88],
+      ["26000001", 1, 85],
+      ["26000001", 2, 72],
+      ["26000001", 3, 90],
+      ["26000002", 1, 60],
+      ["26000002", 2, 58],
+      ["26000002", 3, 70],
+      ["26000003", 1, 95],
+      ["26000003", 2, 88],
+      ["26000003", 3, 80],
+      ["26000004", 1, 75],
+      ["26000004", 2, 80],
+      ["26000004", 3, 85],
+      ["26000005", 1, 90],
+      ["26000005", 2, 92],
+      ["26000005", 3, 88],
+      ["26000006", 1, 50],
+      ["26000006", 2, 55],
+      ["26000006", 3, 60],
+      ["26000007", 1, 78],
+      ["26000007", 2, 82],
+      ["26000007", 3, 75],
+      ["26000008", 1, 88],
+      ["26000008", 2, 70],
+      ["26000008", 3, 95],
+      ["26000001", 4, 78],
+      ["26000001", 5, 81],
+      ["26000002", 4, 65],
+      ["26000002", 5, 68],
+      ["26000003", 4, 92],
+      ["26000003", 5, 95],
+      ["26000004", 4, 80],
+      ["26000004", 5, 77],
+      ["26000005", 4, 88],
+      ["26000005", 5, 90],
+      ["26000006", 4, 52],
+      ["26000006", 5, 58],
+      ["26000007", 4, 75],
+      ["26000007", 5, 79],
+      ["26000008", 4, 85],
+      ["26000008", 5, 88],
     ];
     for (const [nc, ia, cal] of calsG1U1U2)
       await q(
@@ -343,8 +788,14 @@ async function seed() {
       );
 
     const calsG1U3 = [
-      ["26000001",6,88],["26000002",6,71],["26000003",6,96],["26000004",6,78],
-      ["26000005",6,92],["26000006",6,55],["26000007",6,80],["26000008",6,85],
+      ["26000001", 6, 88],
+      ["26000002", 6, 71],
+      ["26000003", 6, 96],
+      ["26000004", 6, 78],
+      ["26000005", 6, 92],
+      ["26000006", 6, 55],
+      ["26000007", 6, 80],
+      ["26000008", 6, 85],
     ];
     for (const [nc, ia, cal] of calsG1U3)
       await q(
@@ -355,44 +806,58 @@ async function seed() {
 
     // Calificaciones de unidad G1 U1 y U2
     const cu1 = [
-      ["26000001",1,1, 85*0.2+72*0.6+90*0.2, "Aprobada"],
-      ["26000002",1,1, 60*0.2+58*0.6+70*0.2, "Reprobada"],
-      ["26000003",1,1, 95*0.2+88*0.6+80*0.2, "Aprobada"],
-      ["26000004",1,1, 75*0.2+80*0.6+85*0.2, "Aprobada"],
-      ["26000005",1,1, 90*0.2+92*0.6+88*0.2, "Aprobada"],
-      ["26000006",1,1, 50*0.2+55*0.6+60*0.2, "Reprobada"],
-      ["26000007",1,1, 78*0.2+82*0.6+75*0.2, "Aprobada"],
-      ["26000008",1,1, 88*0.2+70*0.6+95*0.2, "Aprobada"],
+      ["26000001", 1, 1, 85 * 0.2 + 72 * 0.6 + 90 * 0.2, "Aprobada"],
+      ["26000002", 1, 1, 60 * 0.2 + 58 * 0.6 + 70 * 0.2, "Reprobada"],
+      ["26000003", 1, 1, 95 * 0.2 + 88 * 0.6 + 80 * 0.2, "Aprobada"],
+      ["26000004", 1, 1, 75 * 0.2 + 80 * 0.6 + 85 * 0.2, "Aprobada"],
+      ["26000005", 1, 1, 90 * 0.2 + 92 * 0.6 + 88 * 0.2, "Aprobada"],
+      ["26000006", 1, 1, 50 * 0.2 + 55 * 0.6 + 60 * 0.2, "Reprobada"],
+      ["26000007", 1, 1, 78 * 0.2 + 82 * 0.6 + 75 * 0.2, "Aprobada"],
+      ["26000008", 1, 1, 88 * 0.2 + 70 * 0.6 + 95 * 0.2, "Aprobada"],
     ];
     const cu2 = [
-      ["26000001",2,1, 78*0.3+81*0.7, "Aprobada"],
-      ["26000002",2,1, 65*0.3+68*0.7, "Reprobada"],
-      ["26000003",2,1, 92*0.3+95*0.7, "Aprobada"],
-      ["26000004",2,1, 80*0.3+77*0.7, "Aprobada"],
-      ["26000005",2,1, 88*0.3+90*0.7, "Aprobada"],
-      ["26000006",2,1, 52*0.3+58*0.7, "Reprobada"],
-      ["26000007",2,1, 75*0.3+79*0.7, "Aprobada"],
-      ["26000008",2,1, 85*0.3+88*0.7, "Aprobada"],
+      ["26000001", 2, 1, 78 * 0.3 + 81 * 0.7, "Aprobada"],
+      ["26000002", 2, 1, 65 * 0.3 + 68 * 0.7, "Reprobada"],
+      ["26000003", 2, 1, 92 * 0.3 + 95 * 0.7, "Aprobada"],
+      ["26000004", 2, 1, 80 * 0.3 + 77 * 0.7, "Aprobada"],
+      ["26000005", 2, 1, 88 * 0.3 + 90 * 0.7, "Aprobada"],
+      ["26000006", 2, 1, 52 * 0.3 + 58 * 0.7, "Reprobada"],
+      ["26000007", 2, 1, 75 * 0.3 + 79 * 0.7, "Aprobada"],
+      ["26000008", 2, 1, 85 * 0.3 + 88 * 0.7, "Aprobada"],
     ];
     for (const [nc, idu, idg, prom, est] of [...cu1, ...cu2])
       await q(
         `INSERT IGNORE INTO calificacion_unidad
            (no_control, id_unidad, id_grupo, promedio_ponderado, calificacion_unidad_final, estatus_unidad)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [nc, idu, idg, Math.round(prom*10)/10, Math.round(prom), est],
+        [nc, idu, idg, Math.round(prom * 10) / 10, Math.round(prom), est],
       );
 
     // ══════════════════════════════════════════════════════════════════════
-    // 13. CALIFICACIONES G10-MAT (U37 cerrada, U38 pendiente)
+    // 14. CALIFICACIONES G10-MAT (U37 cerrada, U38 pendiente)
     // ══════════════════════════════════════════════════════════════════════
     const calsG10U37 = [
-      ["26000003",8,80],["26000003",9,75],["26000003",10,85],
-      ["26000005",8,90],["26000005",9,88],["26000005",10,92],
-      ["26000007",8,72],["26000007",9,78],["26000007",10,70],
-      ["26000010",8,85],["26000010",9,80],["26000010",10,88],
-      ["26000012",8,60],["26000012",9,65],["26000012",10,58],
-      ["26000016",8,78],["26000016",9,82],["26000016",10,80],
-      ["26000019",8,88],["26000019",9,90],["26000019",10,92],
+      ["26000003", 8, 80],
+      ["26000003", 9, 75],
+      ["26000003", 10, 85],
+      ["26000005", 8, 90],
+      ["26000005", 9, 88],
+      ["26000005", 10, 92],
+      ["26000007", 8, 72],
+      ["26000007", 9, 78],
+      ["26000007", 10, 70],
+      ["26000010", 8, 85],
+      ["26000010", 9, 80],
+      ["26000010", 10, 88],
+      ["26000012", 8, 60],
+      ["26000012", 9, 65],
+      ["26000012", 10, 58],
+      ["26000016", 8, 78],
+      ["26000016", 9, 82],
+      ["26000016", 10, 80],
+      ["26000019", 8, 88],
+      ["26000019", 9, 90],
+      ["26000019", 10, 92],
     ];
     for (const [nc, ia, cal] of calsG10U37)
       await q(
@@ -402,8 +867,13 @@ async function seed() {
       );
 
     const calsG10U38 = [
-      ["26000003",11,78],["26000005",11,88],["26000007",11,65],
-      ["26000010",11,82],["26000012",11,55],["26000016",11,75],["26000019",11,85],
+      ["26000003", 11, 78],
+      ["26000005", 11, 88],
+      ["26000007", 11, 65],
+      ["26000010", 11, 82],
+      ["26000012", 11, 55],
+      ["26000016", 11, 75],
+      ["26000019", 11, 85],
     ];
     for (const [nc, ia, cal] of calsG10U38)
       await q(
@@ -413,67 +883,99 @@ async function seed() {
       );
 
     const cu37 = [
-      ["26000003",37,10, 80*0.25+75*0.25+85*0.5, "Aprobada"],
-      ["26000005",37,10, 90*0.25+88*0.25+92*0.5, "Aprobada"],
-      ["26000007",37,10, 72*0.25+78*0.25+70*0.5, "Aprobada"],
-      ["26000010",37,10, 85*0.25+80*0.25+88*0.5, "Aprobada"],
-      ["26000012",37,10, 60*0.25+65*0.25+58*0.5, "Reprobada"],
-      ["26000016",37,10, 78*0.25+82*0.25+80*0.5, "Aprobada"],
-      ["26000019",37,10, 88*0.25+90*0.25+92*0.5, "Aprobada"],
+      ["26000003", 37, 10, 80 * 0.25 + 75 * 0.25 + 85 * 0.5, "Aprobada"],
+      ["26000005", 37, 10, 90 * 0.25 + 88 * 0.25 + 92 * 0.5, "Aprobada"],
+      ["26000007", 37, 10, 72 * 0.25 + 78 * 0.25 + 70 * 0.5, "Aprobada"],
+      ["26000010", 37, 10, 85 * 0.25 + 80 * 0.25 + 88 * 0.5, "Aprobada"],
+      ["26000012", 37, 10, 60 * 0.25 + 65 * 0.25 + 58 * 0.5, "Reprobada"],
+      ["26000016", 37, 10, 78 * 0.25 + 82 * 0.25 + 80 * 0.5, "Aprobada"],
+      ["26000019", 37, 10, 88 * 0.25 + 90 * 0.25 + 92 * 0.5, "Aprobada"],
     ];
     for (const [nc, idu, idg, prom, est] of cu37)
       await q(
         `INSERT IGNORE INTO calificacion_unidad
            (no_control, id_unidad, id_grupo, promedio_ponderado, calificacion_unidad_final, estatus_unidad)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [nc, idu, idg, Math.round(prom*10)/10, Math.round(prom), est],
+        [nc, idu, idg, Math.round(prom * 10) / 10, Math.round(prom), est],
       );
 
-    console.log("✓ Actividades→ G1-FBD (U1,U2 cerradas; U3 pendiente) + G10-MAT");
+    console.log(
+      "✓ Actividades→ G1-FBD (U1,U2 cerradas; U3 pendiente) + G10-MAT",
+    );
     console.log("✓ Califs     → U1,U2 validadas; U3,U38 pendientes de guardar");
 
     // ══════════════════════════════════════════════════════════════════════
-    // 14. ACTIVIDADES Y CALIFICACIONES G17/G18-ADM y G19/G20-FIN
+    // 15. ACTIVIDADES Y CALIFICACIONES G17/G18-ADM y G19/G20-FIN
     // ══════════════════════════════════════════════════════════════════════
     await q(`INSERT IGNORE INTO actividad
-               (id_actividad, id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, bloqueado)
+               (id_actividad, id_grupo, id_unidad, id_tipo_actividad, ponderacion, estatus, bloqueado)
              VALUES
-               (13,17,25,'Examen Teoría Adm',     60,'Sumativa', 1),
-               (14,17,25,'Tarea Estructuras Org',  40,'Formativa',1),
-               (15,17,26,'Examen Planeación',      70,'Sumativa', 1),
-               (16,17,26,'Caso Práctico',          30,'Formativa',1),
-               (17,17,27,'Proyecto Final Adm',     60,'Sumativa', 0),
-               (18,17,27,'Reporte Escrito',        40,'Formativa',0),
-               (19,18,25,'Examen Teoría Adm',     60,'Sumativa', 1),
-               (20,18,25,'Tarea Estructuras Org',  40,'Formativa',1),
-               (21,18,26,'Examen Planeación',      70,'Sumativa', 1),
-               (22,18,26,'Caso Práctico',          30,'Formativa',1),
-               (23,18,27,'Proyecto Final Adm',     60,'Sumativa', 0),
-               (24,18,27,'Reporte Escrito',        40,'Formativa',0)`);
+               -- G17 ADM U25: Examen 60% + Tarea 40% = 100%
+               (13, 17, 25, 1, 60, 'Calificada', 1),
+               (14, 17, 25, 2, 40, 'Calificada', 1),
+               -- G17 ADM U26: Examen 70% + Práctica 30% = 100%
+               (15, 17, 26, 1, 70, 'Calificada', 1),
+               (16, 17, 26, 3, 30, 'Calificada', 1),
+               -- G17 ADM U27: Proyecto 60% + Investigación 40% = 100%
+               (17, 17, 27, 5, 60, 'Pendiente',  0),
+               (18, 17, 27, 7, 40, 'Pendiente',  0),
+               -- G18 ADM U25: Examen 60% + Tarea 40% = 100%
+               (19, 18, 25, 1, 60, 'Calificada', 1),
+               (20, 18, 25, 2, 40, 'Calificada', 1),
+               -- G18 ADM U26: Examen 70% + Práctica 30% = 100%
+               (21, 18, 26, 1, 70, 'Calificada', 1),
+               (22, 18, 26, 3, 30, 'Calificada', 1),
+               -- G18 ADM U27: Proyecto 60% + Investigación 40% = 100%
+               (23, 18, 27, 5, 60, 'Pendiente',  0),
+               (24, 18, 27, 7, 40, 'Pendiente',  0)`);
 
     await q(`INSERT IGNORE INTO actividad
-               (id_actividad, id_grupo, id_unidad, nombre_actividad, ponderacion, tipo_evaluacion, bloqueado)
+               (id_actividad, id_grupo, id_unidad, id_tipo_actividad, ponderacion, estatus, bloqueado)
              VALUES
-               (25,19,28,'Examen Fund Financieros', 60,'Sumativa', 1),
-               (26,19,28,'Tarea Análisis',           40,'Formativa',1),
-               (27,19,29,'Examen Estados Fin',       70,'Sumativa', 1),
-               (28,19,29,'Práctica Contable',        30,'Formativa',1),
-               (29,19,30,'Examen Presupuestos',      60,'Sumativa', 0),
-               (30,19,30,'Proyecto Presupuestal',    40,'Formativa',0),
-               (31,20,28,'Examen Fund Financieros', 60,'Sumativa', 1),
-               (32,20,28,'Tarea Análisis',           40,'Formativa',1),
-               (33,20,29,'Examen Estados Fin',       70,'Sumativa', 1),
-               (34,20,29,'Práctica Contable',        30,'Formativa',1),
-               (35,20,30,'Examen Presupuestos',      60,'Sumativa', 0),
-               (36,20,30,'Proyecto Presupuestal',    40,'Formativa',0)`);
+               -- G19 FIN U28: Examen 60% + Tarea 40% = 100%
+               (25, 19, 28, 1, 60, 'Calificada', 1),
+               (26, 19, 28, 2, 40, 'Calificada', 1),
+               -- G19 FIN U29: Examen 70% + Práctica 30% = 100%
+               (27, 19, 29, 1, 70, 'Calificada', 1),
+               (28, 19, 29, 3, 30, 'Calificada', 1),
+               -- G19 FIN U30: Examen 60% + Proyecto 40% = 100%
+               (29, 19, 30, 1, 60, 'Pendiente',  0),
+               (30, 19, 30, 5, 40, 'Pendiente',  0),
+               -- G20 FIN U28: Examen 60% + Tarea 40% = 100%
+               (31, 20, 28, 1, 60, 'Calificada', 1),
+               (32, 20, 28, 2, 40, 'Calificada', 1),
+               -- G20 FIN U29: Examen 70% + Práctica 30% = 100%
+               (33, 20, 29, 1, 70, 'Calificada', 1),
+               (34, 20, 29, 3, 30, 'Calificada', 1),
+               -- G20 FIN U30: Examen 60% + Proyecto 40% = 100%
+               (35, 20, 30, 1, 60, 'Pendiente',  0),
+               (36, 20, 30, 5, 40, 'Pendiente',  0)`);
 
     const calsG17 = [
-      ["26000015",13,82],["26000015",14,88],["26000016",13,75],["26000016",14,70],
-      ["26000017",13,90],["26000017",14,85],["26000018",13,65],["26000018",14,72],
-      ["26000019",13,88],["26000019",14,92],["26000020",13,78],["26000020",14,80],
-      ["26000015",15,80],["26000015",16,85],["26000016",15,68],["26000016",16,75],
-      ["26000017",15,92],["26000017",16,88],["26000018",15,60],["26000018",16,65],
-      ["26000019",15,85],["26000019",16,90],["26000020",15,77],["26000020",16,82],
+      ["26000015", 13, 82],
+      ["26000015", 14, 88],
+      ["26000016", 13, 75],
+      ["26000016", 14, 70],
+      ["26000017", 13, 90],
+      ["26000017", 14, 85],
+      ["26000018", 13, 65],
+      ["26000018", 14, 72],
+      ["26000019", 13, 88],
+      ["26000019", 14, 92],
+      ["26000020", 13, 78],
+      ["26000020", 14, 80],
+      ["26000015", 15, 80],
+      ["26000015", 16, 85],
+      ["26000016", 15, 68],
+      ["26000016", 16, 75],
+      ["26000017", 15, 92],
+      ["26000017", 16, 88],
+      ["26000018", 15, 60],
+      ["26000018", 16, 65],
+      ["26000019", 15, 85],
+      ["26000019", 16, 90],
+      ["26000020", 15, 77],
+      ["26000020", 16, 82],
     ];
     for (const [nc, ia, cal] of calsG17)
       await q(
@@ -483,9 +985,18 @@ async function seed() {
       );
 
     const calsG18 = [
-      ["26000015",19,79],["26000015",20,84],["26000017",19,88],["26000017",20,82],
-      ["26000019",19,85],["26000019",20,90],["26000015",21,77],["26000015",22,80],
-      ["26000017",21,90],["26000017",22,86],["26000019",21,83],["26000019",22,88],
+      ["26000015", 19, 79],
+      ["26000015", 20, 84],
+      ["26000017", 19, 88],
+      ["26000017", 20, 82],
+      ["26000019", 19, 85],
+      ["26000019", 20, 90],
+      ["26000015", 21, 77],
+      ["26000015", 22, 80],
+      ["26000017", 21, 90],
+      ["26000017", 22, 86],
+      ["26000019", 21, 83],
+      ["26000019", 22, 88],
     ];
     for (const [nc, ia, cal] of calsG18)
       await q(
@@ -495,12 +1006,30 @@ async function seed() {
       );
 
     const calsG19 = [
-      ["26000015",25,84],["26000015",26,80],["26000016",25,72],["26000016",26,68],
-      ["26000017",25,91],["26000017",26,88],["26000018",25,63],["26000018",26,70],
-      ["26000019",25,87],["26000019",26,92],["26000020",25,76],["26000020",26,79],
-      ["26000015",27,82],["26000015",28,86],["26000016",27,65],["26000016",28,70],
-      ["26000017",27,93],["26000017",28,89],["26000018",27,58],["26000018",28,65],
-      ["26000019",27,88],["26000019",28,90],["26000020",27,75],["26000020",28,80],
+      ["26000015", 25, 84],
+      ["26000015", 26, 80],
+      ["26000016", 25, 72],
+      ["26000016", 26, 68],
+      ["26000017", 25, 91],
+      ["26000017", 26, 88],
+      ["26000018", 25, 63],
+      ["26000018", 26, 70],
+      ["26000019", 25, 87],
+      ["26000019", 26, 92],
+      ["26000020", 25, 76],
+      ["26000020", 26, 79],
+      ["26000015", 27, 82],
+      ["26000015", 28, 86],
+      ["26000016", 27, 65],
+      ["26000016", 28, 70],
+      ["26000017", 27, 93],
+      ["26000017", 28, 89],
+      ["26000018", 27, 58],
+      ["26000018", 28, 65],
+      ["26000019", 27, 88],
+      ["26000019", 28, 90],
+      ["26000020", 27, 75],
+      ["26000020", 28, 80],
     ];
     for (const [nc, ia, cal] of calsG19)
       await q(
@@ -510,9 +1039,18 @@ async function seed() {
       );
 
     const calsG20 = [
-      ["26000016",31,70],["26000016",32,74],["26000018",31,62],["26000018",32,68],
-      ["26000020",31,78],["26000020",32,82],["26000016",33,67],["26000016",34,72],
-      ["26000018",33,60],["26000018",34,65],["26000020",33,80],["26000020",34,78],
+      ["26000016", 31, 70],
+      ["26000016", 32, 74],
+      ["26000018", 31, 62],
+      ["26000018", 32, 68],
+      ["26000020", 31, 78],
+      ["26000020", 32, 82],
+      ["26000016", 33, 67],
+      ["26000016", 34, 72],
+      ["26000018", 33, 60],
+      ["26000018", 34, 65],
+      ["26000020", 33, 80],
+      ["26000020", 34, 78],
     ];
     for (const [nc, ia, cal] of calsG20)
       await q(
@@ -523,49 +1061,69 @@ async function seed() {
 
     const cuIGE = [
       // G17 ADM U25: 60%ex+40%tarea
-      ["26000015",25,17, 82*0.6+88*0.4,"Aprobada"], ["26000016",25,17, 75*0.6+70*0.4,"Aprobada"],
-      ["26000017",25,17, 90*0.6+85*0.4,"Aprobada"], ["26000018",25,17, 65*0.6+72*0.4,"Reprobada"],
-      ["26000019",25,17, 88*0.6+92*0.4,"Aprobada"], ["26000020",25,17, 78*0.6+80*0.4,"Aprobada"],
+      ["26000015", 25, 17, 82 * 0.6 + 88 * 0.4, "Aprobada"],
+      ["26000016", 25, 17, 75 * 0.6 + 70 * 0.4, "Aprobada"],
+      ["26000017", 25, 17, 90 * 0.6 + 85 * 0.4, "Aprobada"],
+      ["26000018", 25, 17, 65 * 0.6 + 72 * 0.4, "Reprobada"],
+      ["26000019", 25, 17, 88 * 0.6 + 92 * 0.4, "Aprobada"],
+      ["26000020", 25, 17, 78 * 0.6 + 80 * 0.4, "Aprobada"],
       // G17 ADM U26: 70%ex+30%caso
-      ["26000015",26,17, 80*0.7+85*0.3,"Aprobada"], ["26000016",26,17, 68*0.7+75*0.3,"Aprobada"],
-      ["26000017",26,17, 92*0.7+88*0.3,"Aprobada"], ["26000018",26,17, 60*0.7+65*0.3,"Reprobada"],
-      ["26000019",26,17, 85*0.7+90*0.3,"Aprobada"], ["26000020",26,17, 77*0.7+82*0.3,"Aprobada"],
+      ["26000015", 26, 17, 80 * 0.7 + 85 * 0.3, "Aprobada"],
+      ["26000016", 26, 17, 68 * 0.7 + 75 * 0.3, "Aprobada"],
+      ["26000017", 26, 17, 92 * 0.7 + 88 * 0.3, "Aprobada"],
+      ["26000018", 26, 17, 60 * 0.7 + 65 * 0.3, "Reprobada"],
+      ["26000019", 26, 17, 85 * 0.7 + 90 * 0.3, "Aprobada"],
+      ["26000020", 26, 17, 77 * 0.7 + 82 * 0.3, "Aprobada"],
       // G18 ADM U25
-      ["26000015",25,18, 79*0.6+84*0.4,"Aprobada"], ["26000017",25,18, 88*0.6+82*0.4,"Aprobada"],
-      ["26000019",25,18, 85*0.6+90*0.4,"Aprobada"],
+      ["26000015", 25, 18, 79 * 0.6 + 84 * 0.4, "Aprobada"],
+      ["26000017", 25, 18, 88 * 0.6 + 82 * 0.4, "Aprobada"],
+      ["26000019", 25, 18, 85 * 0.6 + 90 * 0.4, "Aprobada"],
       // G18 ADM U26
-      ["26000015",26,18, 77*0.7+80*0.3,"Aprobada"], ["26000017",26,18, 90*0.7+86*0.3,"Aprobada"],
-      ["26000019",26,18, 83*0.7+88*0.3,"Aprobada"],
+      ["26000015", 26, 18, 77 * 0.7 + 80 * 0.3, "Aprobada"],
+      ["26000017", 26, 18, 90 * 0.7 + 86 * 0.3, "Aprobada"],
+      ["26000019", 26, 18, 83 * 0.7 + 88 * 0.3, "Aprobada"],
       // G19 FIN U28: 60%ex+40%tarea
-      ["26000015",28,19, 84*0.6+80*0.4,"Aprobada"], ["26000016",28,19, 72*0.6+68*0.4,"Aprobada"],
-      ["26000017",28,19, 91*0.6+88*0.4,"Aprobada"], ["26000018",28,19, 63*0.6+70*0.4,"Reprobada"],
-      ["26000019",28,19, 87*0.6+92*0.4,"Aprobada"], ["26000020",28,19, 76*0.6+79*0.4,"Aprobada"],
+      ["26000015", 28, 19, 84 * 0.6 + 80 * 0.4, "Aprobada"],
+      ["26000016", 28, 19, 72 * 0.6 + 68 * 0.4, "Aprobada"],
+      ["26000017", 28, 19, 91 * 0.6 + 88 * 0.4, "Aprobada"],
+      ["26000018", 28, 19, 63 * 0.6 + 70 * 0.4, "Reprobada"],
+      ["26000019", 28, 19, 87 * 0.6 + 92 * 0.4, "Aprobada"],
+      ["26000020", 28, 19, 76 * 0.6 + 79 * 0.4, "Aprobada"],
       // G19 FIN U29: 70%ex+30%prac
-      ["26000015",29,19, 82*0.7+86*0.3,"Aprobada"], ["26000016",29,19, 65*0.7+70*0.3,"Reprobada"],
-      ["26000017",29,19, 93*0.7+89*0.3,"Aprobada"], ["26000018",29,19, 58*0.7+65*0.3,"Reprobada"],
-      ["26000019",29,19, 88*0.7+90*0.3,"Aprobada"], ["26000020",29,19, 75*0.7+80*0.3,"Aprobada"],
+      ["26000015", 29, 19, 82 * 0.7 + 86 * 0.3, "Aprobada"],
+      ["26000016", 29, 19, 65 * 0.7 + 70 * 0.3, "Reprobada"],
+      ["26000017", 29, 19, 93 * 0.7 + 89 * 0.3, "Aprobada"],
+      ["26000018", 29, 19, 58 * 0.7 + 65 * 0.3, "Reprobada"],
+      ["26000019", 29, 19, 88 * 0.7 + 90 * 0.3, "Aprobada"],
+      ["26000020", 29, 19, 75 * 0.7 + 80 * 0.3, "Aprobada"],
       // G20 FIN U28
-      ["26000016",28,20, 70*0.6+74*0.4,"Aprobada"], ["26000018",28,20, 62*0.6+68*0.4,"Reprobada"],
-      ["26000020",28,20, 78*0.6+82*0.4,"Aprobada"],
+      ["26000016", 28, 20, 70 * 0.6 + 74 * 0.4, "Aprobada"],
+      ["26000018", 28, 20, 62 * 0.6 + 68 * 0.4, "Reprobada"],
+      ["26000020", 28, 20, 78 * 0.6 + 82 * 0.4, "Aprobada"],
       // G20 FIN U29
-      ["26000016",29,20, 67*0.7+72*0.3,"Reprobada"], ["26000018",29,20, 60*0.7+65*0.3,"Reprobada"],
-      ["26000020",29,20, 80*0.7+78*0.3,"Aprobada"],
+      ["26000016", 29, 20, 67 * 0.7 + 72 * 0.3, "Reprobada"],
+      ["26000018", 29, 20, 60 * 0.7 + 65 * 0.3, "Reprobada"],
+      ["26000020", 29, 20, 80 * 0.7 + 78 * 0.3, "Aprobada"],
     ];
     for (const [nc, idu, idg, prom, est] of cuIGE)
       await q(
         `INSERT IGNORE INTO calificacion_unidad
            (no_control, id_unidad, id_grupo, promedio_ponderado, calificacion_unidad_final, estatus_unidad)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [nc, idu, idg, Math.round(prom*10)/10, Math.round(prom), est],
+        [nc, idu, idg, Math.round(prom * 10) / 10, Math.round(prom), est],
       );
 
-    console.log("✓ Califs IGE → G17,G18-ADM + G19,G20-FIN (U1,U2 validadas; U3 pendiente)");
+    console.log(
+      "✓ Califs IGE → G17,G18-ADM + G19,G20-FIN (U1,U2 validadas; U3 pendiente)",
+    );
 
     // ══════════════════════════════════════════════════════════════════════
     // RESUMEN
     // ══════════════════════════════════════════════════════════════════════
-    console.log("\n✅ Seed v4 completado.");
-    console.log("─────────────────────────────────────────────────────────────");
+    console.log("\n✅ Seed v5 completado.");
+    console.log(
+      "─────────────────────────────────────────────────────────────",
+    );
     console.log("  CREDENCIALES:");
     console.log(`  ${rfcAdmin}  / admin123`);
     console.log("  PELJ800101HVZ  / maestro123   (Juan Pérez)");
@@ -574,11 +1132,13 @@ async function seed() {
     console.log("  FUMA880510MVZ  / maestro000   (Laura Fuentes)");
     console.log("  CAGR760112HVZ  / maestro111   (Carlos Castro)");
     console.log("  26000001..26000020 / alumno001..alumno020");
-    console.log("─────────────────────────────────────────────────────────────");
+    console.log(
+      "─────────────────────────────────────────────────────────────",
+    );
     console.log("  Periodos: EJ2026=Vigente, V2026 y AD2026=Próximos");
     console.log("  FBD001 G1:  U1,U2 cerradas; U3 act.6 pendiente de guardar");
     console.log("  MAT001 G10: U37 cerrada; U38 act.11 pendiente de guardar");
-    console.log("  tipo_actividad: vacía — el admin las crea desde la UI");
+    console.log("  tipo_actividad: pre-insertada por el schema SQL (IDs 1-8)");
   } catch (err) {
     console.error("❌ Error en seed:", err.message, err);
   } finally {
