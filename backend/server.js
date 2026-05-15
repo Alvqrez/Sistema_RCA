@@ -13,10 +13,19 @@ const db = require("./src/db");
 // En desarrollo, si no se define, se permite cualquier origen.
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: function (origin, callback) {
+      const allowed = process.env.CORS_ORIGIN || "http://127.0.0.1:15500";
+      console.log("🔍 CORS Debug - Origin recibido:", origin);
+      console.log("🔍 CORS Debug - Origin permitido:", allowed);
+
+      if (!origin || origin === allowed) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS no permitido"));
+      }
+    },
   }),
 );
-app.use(express.json({ limit: "50mb" }));
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/login", (req, res) => {
