@@ -21,7 +21,6 @@
         margin: 0;
         padding: 0;
       }
-
       :root {
         --cyan: #1a386a;
         --cyan-dark: #00043e;
@@ -37,7 +36,6 @@
         --radius: 12px;
         --shadow: 0 20px 60px rgba(0, 4, 62, 0.45);
       }
-
       body {
         font-family: "Inter", sans-serif;
         background:
@@ -70,8 +68,6 @@
         overflow: hidden;
         position: relative;
       }
-
-      /* Brillo suave en esquinas */
       body::before {
         content: "";
         position: absolute;
@@ -102,7 +98,6 @@
         left: -100px;
         pointer-events: none;
       }
-
       .login-wrapper {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -115,8 +110,6 @@
         position: relative;
         z-index: 1;
       }
-
-      /* Panel izquierdo — institucional */
       .panel-left {
         background: linear-gradient(
           145deg,
@@ -130,7 +123,6 @@
         position: relative;
         overflow: hidden;
       }
-      /* ── Burbujas animadas ───────────────────────────────── */
       .bubbles {
         position: absolute;
         inset: 0;
@@ -145,7 +137,6 @@
         background: rgba(255, 255, 255, 0.1);
         animation: rise linear infinite;
       }
-
       @keyframes rise {
         0% {
           transform: translateY(0) scale(1);
@@ -162,7 +153,6 @@
           opacity: 0;
         }
       }
-
       .bubble:nth-child(1) {
         width: 28px;
         height: 28px;
@@ -233,7 +223,6 @@
         animation-duration: 12s;
         animation-delay: 1.5s;
       }
-
       .inst-logo {
         display: flex;
         align-items: center;
@@ -247,46 +236,33 @@
         height: 52px;
         border-radius: 12px;
         background: white;
-
         display: flex;
         align-items: center;
         justify-content: center;
-
         z-index: 2;
       }
-
-      /* Imagen */
       .inst-icon img {
         width: 85%;
         height: 85%;
         object-fit: contain;
       }
-
-      /* Glow */
       .inst-icon::after {
         content: "";
         position: absolute;
-
         width: 120%;
         height: 120%;
-
         top: 50%;
         left: 50%;
-
         transform: translate(-50%, -50%);
-
         background: radial-gradient(
           circle,
           rgba(255, 255, 255, 0.8) 0%,
           rgba(255, 255, 255, 0.4) 40%,
           rgba(255, 255, 255, 0) 70%
         );
-
         filter: blur(12px);
-
         z-index: -1;
       }
-
       .inst-text .inst-name {
         font-size: 0.72rem;
         font-weight: 600;
@@ -301,7 +277,6 @@
         color: var(--white);
         letter-spacing: 0.02em;
       }
-
       .panel-left-main {
         position: relative;
         z-index: 1;
@@ -323,8 +298,6 @@
         line-height: 1.6;
         max-width: 280px;
       }
-
-      /* Stats panel */
       .stats-panel {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -342,7 +315,7 @@
       .stat-box-num {
         font-size: 1.35rem;
         font-weight: 700;
-        color: #ffffff;
+        color: #fff;
         line-height: 1;
         margin-bottom: 3px;
       }
@@ -360,8 +333,6 @@
         font-size: 0.7rem;
         color: rgba(255, 255, 255, 0.35);
       }
-
-      /* Panel derecho — formulario */
       .panel-right {
         background: var(--white);
         padding: 48px 44px;
@@ -369,7 +340,6 @@
         flex-direction: column;
         justify-content: center;
       }
-
       .form-title {
         font-size: 1.5rem;
         font-weight: 700;
@@ -381,8 +351,6 @@
         color: var(--gray-500);
         margin-bottom: 28px;
       }
-
-      /* Selector de rol */
       .rol-selector {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -420,8 +388,6 @@
         color: var(--cyan);
         background: rgba(26, 56, 106, 0.07);
       }
-
-      /* Inputs */
       .input-field {
         margin-bottom: 16px;
         position: relative;
@@ -482,8 +448,6 @@
       .btn-toggle-pass:hover {
         color: var(--navy);
       }
-
-      /* Botón submit */
       .btn-submit {
         width: 100%;
         padding: 13px;
@@ -518,8 +482,6 @@
         opacity: 0.7;
         pointer-events: none;
       }
-
-      /* Mensaje de error */
       .error-msg {
         margin-top: 12px;
         padding: 10px 14px;
@@ -536,8 +498,6 @@
       .error-msg.visible {
         display: flex;
       }
-
-      /* Footer */
       .form-footer {
         margin-top: 24px;
         text-align: center;
@@ -545,7 +505,62 @@
         color: var(--gray-500);
       }
 
-      /* Responsive */
+      /* ── A-3: Modal de cambio de contraseña ────────────────────────────── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 4, 62, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      .modal-overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 36px 32px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 24px 60px rgba(0, 4, 62, 0.35);
+        transform: translateY(20px);
+        transition: transform 0.25s;
+      }
+      .modal-overlay.visible .modal-box {
+        transform: translateY(0);
+      }
+      .modal-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 6px;
+      }
+      .modal-subtitle {
+        font-size: 0.83rem;
+        color: var(--gray-500);
+        margin-bottom: 22px;
+        line-height: 1.5;
+      }
+      .modal-error {
+        padding: 9px 13px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        color: #dc2626;
+        font-size: 0.8rem;
+        margin-bottom: 12px;
+        display: none;
+      }
+      .modal-error.visible {
+        display: block;
+      }
+
       @media (max-width: 680px) {
         .login-wrapper {
           grid-template-columns: 1fr;
@@ -564,7 +579,6 @@
     <div class="login-wrapper">
       <!-- Panel izquierdo -->
       <div class="panel-left">
-        <!-- Burbujas animadas -->
         <div class="bubbles">
           <div class="bubble"></div>
           <div class="bubble"></div>
@@ -577,7 +591,6 @@
           <div class="bubble"></div>
           <div class="bubble"></div>
         </div>
-
         <div class="inst-logo">
           <div class="inst-icon">
             <img
@@ -590,14 +603,12 @@
             <div class="inst-short">TecNM · ITV</div>
           </div>
         </div>
-
         <div class="panel-left-main">
           <div class="rca-title">R<span>C</span>A</div>
           <p class="rca-subtitle">
             Sistema de Registro y Cálculo de Resultados Académicos
           </p>
         </div>
-
         <div>
           <div class="stats-panel">
             <div class="stat-box">
@@ -624,38 +635,32 @@
           Selecciona tu tipo de cuenta e inicia sesión
         </div>
 
-        <!-- Selector de rol -->
         <div class="rol-selector">
           <button
             class="rol-btn active"
             data-rol="alumno"
             onclick="seleccionarRol(this)"
           >
-            <iconify-icon icon="mdi:account-school"></iconify-icon>
-            Alumno
+            <iconify-icon icon="mdi:account-school"></iconify-icon>Alumno
           </button>
           <button
             class="rol-btn"
             data-rol="maestro"
             onclick="seleccionarRol(this)"
           >
-            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-            Docente
+            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>Docente
           </button>
           <button
             class="rol-btn"
             data-rol="administrador"
             onclick="seleccionarRol(this)"
           >
-            <iconify-icon icon="mdi:shield-account"></iconify-icon>
-            Admin
+            <iconify-icon icon="mdi:shield-account"></iconify-icon>Admin
           </button>
         </div>
 
-        <!-- Formulario -->
         <form id="loginForm" onsubmit="iniciarSesion(event)">
           <input type="hidden" id="rolActual" value="alumno" />
-
           <div class="input-field">
             <label>Usuario</label>
             <div class="input-wrap">
@@ -671,7 +676,6 @@
               />
             </div>
           </div>
-
           <div class="input-field">
             <label>Contraseña</label>
             <div class="input-wrap">
@@ -698,24 +702,81 @@
               </button>
             </div>
           </div>
-
           <button type="submit" class="btn-submit" id="btnSubmit">
-            <iconify-icon icon="mdi:login"></iconify-icon>
-            Iniciar sesión
+            <iconify-icon icon="mdi:login"></iconify-icon>Iniciar sesión
           </button>
-
           <div class="error-msg" id="errorMsg">
             <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
             <span id="errorTexto"></span>
           </div>
         </form>
+        <div class="form-footer">&nbsp; Sistema RCA v0.9</div>
+      </div>
+    </div>
 
-        <div class="form-footer">&nbsp; &nbsp; Sistema RCA v0.8</div>
+    <!-- ── A-3: Modal de cambio de contraseña en primer acceso ─────────── -->
+    <div class="modal-overlay" id="modalCambioPass">
+      <div class="modal-box">
+        <div class="modal-title">🔐 Cambia tu contraseña</div>
+        <div class="modal-subtitle">
+          Es tu primer acceso al sistema. Por seguridad debes establecer una
+          contraseña personal antes de continuar.<br />
+          <strong>Mínimo 8 caracteres.</strong>
+        </div>
+        <div class="modal-error" id="modalError"></div>
+        <div class="input-field">
+          <label>Contraseña actual (temporal)</label>
+          <div class="input-wrap">
+            <span class="input-icon"
+              ><iconify-icon icon="mdi:lock-outline"></iconify-icon
+            ></span>
+            <input
+              type="password"
+              id="passActual"
+              placeholder="Tu contraseña temporal"
+            />
+          </div>
+        </div>
+        <div class="input-field">
+          <label>Nueva contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon"
+              ><iconify-icon icon="mdi:lock-check-outline"></iconify-icon
+            ></span>
+            <input
+              type="password"
+              id="passNueva"
+              placeholder="Mínimo 8 caracteres"
+            />
+          </div>
+        </div>
+        <div class="input-field">
+          <label>Confirmar nueva contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon"
+              ><iconify-icon icon="mdi:lock-check-outline"></iconify-icon
+            ></span>
+            <input
+              type="password"
+              id="passConfirmar"
+              placeholder="Repite la nueva contraseña"
+            />
+          </div>
+        </div>
+        <button class="btn-submit" id="btnCambiar" onclick="cambiarPassword()">
+          <iconify-icon icon="mdi:shield-check"></iconify-icon>Guardar y
+          continuar
+        </button>
       </div>
     </div>
 
     <script>
       const API_URL = "http://localhost:3000";
+
+      // Token temporal guardado durante el flujo de primer acceso
+      let _tokenTemporal = null;
+      let _rolTemporal = null;
+      let _nombreTemporal = null;
 
       function seleccionarRol(btn) {
         document
@@ -723,7 +784,6 @@
           .forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById("rolActual").value = btn.dataset.rol;
-        // Limpiar campos al cambiar rol
         document.getElementById("user").value = "";
         document.getElementById("pass").value = "";
         ocultarError();
@@ -752,7 +812,6 @@
       async function iniciarSesion(e) {
         e.preventDefault();
         ocultarError();
-
         const username = document.getElementById("user").value.trim();
         const password = document.getElementById("pass").value;
         const rol = document.getElementById("rolActual").value;
@@ -775,20 +834,23 @@
           const data = await res.json();
 
           if (data.success) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("nombre", data.nombre);
-            localStorage.setItem("rol", data.rol);
+            // A-3: si es primer acceso mostrar modal de cambio de contraseña
+            if (data.primer_acceso) {
+              _tokenTemporal = data.token;
+              _rolTemporal = data.rol;
+              _nombreTemporal = data.nombre;
+              // Pre-llenar el campo de contraseña actual para UX
+              document.getElementById("passActual").value = password;
+              document
+                .getElementById("modalCambioPass")
+                .classList.add("visible");
+              btn.classList.remove("loading");
+              btn.innerHTML = `<iconify-icon icon="mdi:login"></iconify-icon> Iniciar sesión`;
+              return;
+            }
 
-            btn.innerHTML = `<iconify-icon icon="mdi:check-circle-outline"></iconify-icon> ¡Bienvenido!`;
-
-            setTimeout(() => {
-              if (data.rol === "alumno")
-                window.location.href = "../../alumno/pages/portalAlumno.html";
-              else if (data.rol === "maestro")
-                window.location.href = "../../maestro/pages/mis_grupos.html";
-              else if (data.rol === "administrador")
-                window.location.href = "../../admin/pages/admin.html";
-            }, 600);
+            // Flujo normal: guardar sesión y redirigir
+            guardarSesionYRedirigir(data.token, data.rol, data.nombre);
           } else {
             mostrarError(data.message || "Usuario o contraseña incorrectos");
             btn.classList.remove("loading");
@@ -800,6 +862,91 @@
           );
           btn.classList.remove("loading");
           btn.innerHTML = `<iconify-icon icon="mdi:login"></iconify-icon> Iniciar sesión`;
+        }
+      }
+
+      function guardarSesionYRedirigir(token, rol, nombre) {
+        // A-1: el token se guarda en localStorage pero el shim del sidebar
+        //      lo moverá a sessionStorage en la siguiente página.
+        localStorage.setItem("token", token);
+        localStorage.setItem("nombre", nombre);
+        localStorage.setItem("rol", rol);
+
+        const destino =
+          {
+            alumno: "../../alumno/pages/portalAlumno.html",
+            maestro: "../../maestro/pages/mis_grupos.html",
+            administrador: "../../admin/pages/admin.html",
+          }[rol] || "../../shared/pages/login.html";
+
+        setTimeout(() => {
+          window.location.href = destino;
+        }, 500);
+      }
+
+      // ── A-3: Cambio de contraseña en primer acceso ──────────────────────
+      async function cambiarPassword() {
+        const actual = document.getElementById("passActual").value;
+        const nueva = document.getElementById("passNueva").value;
+        const confirmar = document.getElementById("passConfirmar").value;
+        const errorEl = document.getElementById("modalError");
+        const btn = document.getElementById("btnCambiar");
+
+        errorEl.classList.remove("visible");
+
+        if (!actual || !nueva || !confirmar) {
+          errorEl.textContent = "Completa todos los campos.";
+          errorEl.classList.add("visible");
+          return;
+        }
+        if (nueva.length < 8) {
+          errorEl.textContent =
+            "La nueva contraseña debe tener al menos 8 caracteres.";
+          errorEl.classList.add("visible");
+          return;
+        }
+        if (nueva !== confirmar) {
+          errorEl.textContent = "Las contraseñas nuevas no coinciden.";
+          errorEl.classList.add("visible");
+          return;
+        }
+
+        btn.classList.add("loading");
+        btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Guardando...`;
+
+        try {
+          const res = await fetch(`${API_URL}/cambiar-password`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${_tokenTemporal}`,
+            },
+            body: JSON.stringify({
+              password_actual: actual,
+              password_nuevo: nueva,
+            }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            // Contraseña cambiada: continuar con la sesión normal
+            guardarSesionYRedirigir(
+              _tokenTemporal,
+              _rolTemporal,
+              _nombreTemporal,
+            );
+          } else {
+            errorEl.textContent =
+              data.error || "Error al cambiar la contraseña.";
+            errorEl.classList.add("visible");
+            btn.classList.remove("loading");
+            btn.innerHTML = `<iconify-icon icon="mdi:shield-check"></iconify-icon> Guardar y continuar`;
+          }
+        } catch {
+          errorEl.textContent = "No se pudo conectar con el servidor.";
+          errorEl.classList.add("visible");
+          btn.classList.remove("loading");
+          btn.innerHTML = `<iconify-icon icon="mdi:shield-check"></iconify-icon> Guardar y continuar`;
         }
       }
 
@@ -828,7 +975,6 @@
         }
       })();
 
-      // Animación del spinner
       const style = document.createElement("style");
       style.textContent = `@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`;
       document.head.appendChild(style);

@@ -1,10 +1,27 @@
 // backend/src/routes/resultado_actividad.js
+// C-2 FIX: el POST ahora verifica que el maestro autenticado sea el responsable
+//          del grupo al que pertenece la actividad. Un administrador puede operar
+//          en cualquier grupo.
 const express = require("express");
-const router = express.Router();
-const db = require("../../db");
+const router  = express.Router();
+const db      = require("../../db");
 const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
-// GET — resultados de una actividad con alumnos inscritos en el grupo (FIX 2)
+// ── Helper: verificar que el maestro autenticado imparte el grupo ──────────
+// Retorna un error 403 si el rol es 'maestro' y el RFC no coincide.
+// Para administradores no hay restricción.
+function verificarPropietarioGrupo(rfc_grupo, req, res) {
+  if (req.usuario.rol === "maestro" && req.usuario.id_referencia !== rfc_grupo) {
+    res.status(403).json({
+      error:
+        "No tienes permiso para registrar calificaciones en un grupo que no impartes.",
+    });
+    return false;
+  }
+  return true;
+}
+
+// GET — resultados de una actividad con alumnos inscritos en el grupo
 router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
   const sql = `
     SELECT
@@ -58,21 +75,26 @@ router.get(
         promedio: Math.round((results[0]?.promedio || 0) * 100) / 100,
       });
     });
-  },
+  }
 );
 
-// POST — registrar / actualizar resultado (FIX 13: verifica bloqueado)
+// POST — registrar / actualizar resultado individual
+// C-2: verifica que el maestro sea propietario del grupo antes de insertar.
 router.post("/", maestroOAdmin, (req, res) => {
-  const { no_control, id_actividad, calificacion_obtenida, estatus } = req.body;
+  const { no_control, id_actividad, calificacion_obtenida, estatus } =
+    req.body;
   const rfc = req.usuario.id_referencia;
 
   if (!no_control || !id_actividad) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
-  // Verificar si la actividad existe y si ya está bloqueada
+  // C-2: obtener grupo y su RFC propietario junto con el flag bloqueado
   db.query(
-    "SELECT bloqueado FROM actividad WHERE id_actividad = ?",
+    `SELECT a.bloqueado, g.rfc AS rfc_grupo
+     FROM actividad a
+     JOIN grupo g ON a.id_grupo = g.id_grupo
+     WHERE a.id_actividad = ?`,
     [id_actividad],
     (err, rows) => {
       if (err)
@@ -80,17 +102,18 @@ router.post("/", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
-      // FIX: null !== undefined, parseFloat(null) = NaN → must check both
+      // C-2: rechazar si el maestro no es el responsable del grupo
+      if (!verificarPropietarioGrupo(rows[0].rfc_grupo, req, res)) return;
+
       const cal =
         calificacion_obtenida === undefined || calificacion_obtenida === null
           ? null
           : parseFloat(calificacion_obtenida);
 
-      // Validar rango institucional 0–100 (sección 1.3.1)
       if (cal !== null && (isNaN(cal) || cal < 0 || cal > 100)) {
-        return res.status(400).json({
-          error: "La calificación debe estar entre 0 y 100",
-        });
+        return res
+          .status(400)
+          .json({ error: "La calificación debe estar entre 0 y 100" });
       }
       const est = estatus || (cal === null ? "NP" : "Validada");
 
@@ -101,28 +124,28 @@ router.post("/", maestroOAdmin, (req, res) => {
         calificacion_anterior = calificacion_obtenida,
         calificacion_obtenida = VALUES(calificacion_obtenida),
         estatus               = VALUES(estatus),
-        rfc       = VALUES(rfc),
+        rfc                   = VALUES(rfc),
         fecha_registro        = NOW()
     `;
       db.query(sql, [no_control, id_actividad, cal, est, rfc], (err2) => {
         if (err2)
           return res.status(500).json({ error: "Error interno del servidor" });
 
-        // FIX 13: bloquear la actividad si no estaba bloqueada ya
         if (!rows[0].bloqueado) {
           db.query(
             "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
-            [id_actividad],
+            [id_actividad]
           );
         }
 
         res.json({ success: true });
       });
-    },
+    }
   );
 });
 
-// POST — guardar múltiples resultados en una sola llamada (FIX 13)
+// POST — guardar múltiples resultados en una sola llamada (bulk)
+// C-2: misma verificación de propietario de grupo.
 router.post("/bulk", maestroOAdmin, (req, res) => {
   const { id_actividad, resultados } = req.body;
   const rfc = req.usuario.id_referencia;
@@ -131,9 +154,12 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
     return res.status(400).json({ error: "Faltan datos" });
   }
 
-  // Verificar si la actividad existe
+  // C-2: obtener grupo y RFC propietario
   db.query(
-    "SELECT bloqueado FROM actividad WHERE id_actividad = ?",
+    `SELECT a.bloqueado, g.rfc AS rfc_grupo
+     FROM actividad a
+     JOIN grupo g ON a.id_grupo = g.id_grupo
+     WHERE a.id_actividad = ?`,
     [id_actividad],
     (err, rows) => {
       if (err)
@@ -141,15 +167,17 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
+      // C-2: rechazar si el maestro no es el responsable del grupo
+      if (!verificarPropietarioGrupo(rows[0].rfc_grupo, req, res)) return;
+
       const values = resultados.map((r) => {
-        // FIX: parseFloat(null) = NaN — treat null and undefined the same way
         const cal =
           r.calificacion_obtenida === undefined ||
           r.calificacion_obtenida === null
             ? null
             : parseFloat(r.calificacion_obtenida);
-        // Clamp al rango institucional 0–100
-        const calSegura = cal === null ? null : Math.min(100, Math.max(0, cal));
+        const calSegura =
+          cal === null ? null : Math.min(100, Math.max(0, cal));
         return [
           r.no_control,
           id_actividad,
@@ -166,7 +194,7 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
         calificacion_anterior = calificacion_obtenida,
         calificacion_obtenida = VALUES(calificacion_obtenida),
         estatus               = VALUES(estatus),
-        rfc       = VALUES(rfc),
+        rfc                   = VALUES(rfc),
         fecha_registro        = NOW()
     `;
       db.query(sql, [values], (err2) => {
@@ -175,17 +203,16 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
           return res.status(500).json({ error: "Error interno del servidor" });
         }
 
-        // FIX 13: bloquear la actividad
         if (!rows[0].bloqueado) {
           db.query(
             "UPDATE actividad SET bloqueado = 1 WHERE id_actividad = ?",
-            [id_actividad],
+            [id_actividad]
           );
         }
 
         res.json({ success: true, guardados: values.length });
       });
-    },
+    }
   );
 });
 

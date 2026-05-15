@@ -1,15 +1,17 @@
 // src/routes/reportes.js
+// C-3 FIX: GET /alumno/:no_control ahora verifica que el alumno autenticado
+//          solo pueda consultar su propio expediente académico.
+//          Un maestro o administrador puede consultar cualquier alumno.
 const express = require("express");
-const router = express.Router();
-const db = require("../../db");
+const router  = express.Router();
+const db      = require("../../db");
 const { verificarToken } = require("../../middleware/auth");
 
 // GET /api/reportes/grupos — lista de grupos para el filtro
 router.get("/grupos", verificarToken, (req, res) => {
-  const rol = req.usuario.rol;
+  const rol    = req.usuario.rol;
   const id_ref = req.usuario.id_referencia;
 
-  // ── FIX: se agrega g.id_periodo al SELECT para que el filtro de periodo funcione
   let sql = `
     SELECT g.id_grupo, g.id_periodo,
            m.nombre_materia, m.clave_materia,
@@ -17,7 +19,7 @@ router.get("/grupos", verificarToken, (req, res) => {
            p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
-    JOIN maestro mae    ON g.rfc  = mae.rfc
+    JOIN maestro mae    ON g.rfc             = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
   `;
   const params = [];
@@ -37,19 +39,17 @@ router.get("/grupos", verificarToken, (req, res) => {
 router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   const { id_grupo } = req.params;
 
-  // 1) Info del grupo
   const sqlGrupo = `
     SELECT g.id_grupo, m.nombre_materia, m.clave_materia, m.no_unidades,
            CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
            p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio, g.estatus
     FROM grupo g
     JOIN materia m      ON g.clave_materia   = m.clave_materia
-    JOIN maestro mae    ON g.rfc  = mae.rfc
+    JOIN maestro mae    ON g.rfc             = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     WHERE g.id_grupo = ?
   `;
 
-  // 2) Alumnos inscritos con calificaciones de unidad y final
   const sqlAlumnos = `
     SELECT
       a.no_control,
@@ -67,17 +67,14 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
     ORDER BY a.apellido_paterno ASC
   `;
 
-  // 3) Unidades del grupo (a través de la materia)
-  // ── FIX PRINCIPAL: era u.id_materia, la columna correcta es u.clave_materia
   const sqlUnidades = `
     SELECT u.id_unidad, u.nombre_unidad
     FROM unidad u
     JOIN grupo g ON u.clave_materia = g.clave_materia
     WHERE g.id_grupo = ?
     ORDER BY u.id_unidad ASC
-`;
+  `;
 
-  // 4) Calificaciones por unidad de todos los alumnos del grupo
   const sqlUnidadCalif = `
     SELECT cu.no_control, cu.id_unidad, cu.calificacion_unidad_final, cu.estatus_unidad
     FROM calificacion_unidad cu
@@ -100,13 +97,12 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
         db.query(sqlUnidadCalif, [id_grupo], (err4, califUnidad) => {
           if (err4) return res.status(500).json({ error: "Error interno" });
 
-          // Mapear califs de unidad por alumno
           const califMap = {};
           califUnidad.forEach((c) => {
             if (!califMap[c.no_control]) califMap[c.no_control] = {};
             califMap[c.no_control][c.id_unidad] = {
               calificacion: c.calificacion_unidad_final,
-              estatus: c.estatus_unidad,
+              estatus:      c.estatus_unidad,
             };
           });
 
@@ -115,23 +111,17 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
             unidades: califMap[a.no_control] || {},
           }));
 
-          const total = alumnosConCalif.length;
-          const aprobados = alumnosConCalif.filter(
-            (a) => a.estatus_final === "Aprobado",
-          ).length;
-          const reprobados = alumnosConCalif.filter(
-            (a) => a.estatus_final === "Reprobado",
-          ).length;
+          const total      = alumnosConCalif.length;
+          const aprobados  = alumnosConCalif.filter((a) => a.estatus_final === "Aprobado").length;
+          const reprobados = alumnosConCalif.filter((a) => a.estatus_final === "Reprobado").length;
           const pendientes = total - aprobados - reprobados;
-          const conCalif = alumnosConCalif.filter(
-            (a) => a.calificacion_oficial != null,
-          );
-          const promGrupo =
+          const conCalif   = alumnosConCalif.filter((a) => a.calificacion_oficial != null);
+          const promGrupo  =
             conCalif.length > 0
               ? (
                   conCalif.reduce(
                     (s, a) => s + parseFloat(a.calificacion_oficial || 0),
-                    0,
+                    0
                   ) / conCalif.length
                 ).toFixed(1)
               : null;
@@ -140,7 +130,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
             grupo,
             unidades,
             alumnos: alumnosConCalif,
-            stats: { total, aprobados, reprobados, pendientes, promGrupo },
+            stats:   { total, aprobados, reprobados, pendientes, promGrupo },
           });
         });
       });
@@ -148,8 +138,20 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-// GET /api/reportes/alumno/:no_control — historial académico del alumno
+// GET /api/reportes/alumno/:no_control — historial académico
+// C-3 FIX: un alumno solo puede ver su propio historial.
+//           Maestros y administradores pueden ver cualquier alumno.
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
+  const { rol, id_referencia } = req.usuario;
+  const { no_control }         = req.params;
+
+  // C-3: si el usuario es alumno, solo puede consultar su propio no_control
+  if (rol === "alumno" && id_referencia !== no_control) {
+    return res.status(403).json({
+      error: "No tienes permiso para consultar el expediente de otro alumno.",
+    });
+  }
+
   const sql = `
     SELECT
       i.id_grupo, i.tipo_curso, i.estatus AS estatus_inscripcion,
@@ -160,14 +162,14 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
     FROM inscripcion i
     JOIN grupo g         ON i.id_grupo         = g.id_grupo
     JOIN materia m       ON g.clave_materia     = m.clave_materia
-    JOIN maestro mae     ON g.rfc   = mae.rfc
+    JOIN maestro mae     ON g.rfc               = mae.rfc
     LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
     LEFT JOIN calificacion_final cf
            ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
     WHERE i.no_control = ?
     ORDER BY p.fecha_inicio DESC
   `;
-  db.query(sql, [req.params.no_control], (err, rows) => {
+  db.query(sql, [no_control], (err, rows) => {
     if (err) return res.status(500).json({ error: "Error interno" });
     res.json(rows);
   });

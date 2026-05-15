@@ -3,33 +3,90 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
 require("dotenv").config();
+
+// ── C-4: validar JWT_SECRET antes de arrancar ──────────────────────────────
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === "") {
+  console.error(
+    "❌ FATAL: JWT_SECRET no está definido en .env.\n" +
+      "   Genera uno con: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"",
+  );
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const db = require("./src/db");
+const { verificarToken } = require("./src/middleware/auth");
 
-// CORS: en producción establece CORS_ORIGIN en .env con el dominio real del frontend.
-// En desarrollo, si no se define, se permite cualquier origen.
+// ── A-4: headers de seguridad HTTP ────────────────────────────────────────
 app.use(
-  cors({
-    origin: function (origin, callback) {
-      const allowed = process.env.CORS_ORIGIN || "*";
-      if (!origin || allowed === "*" || origin === allowed) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS no permitido: " + origin));
-      }
+  helmet({
+    // CSP básico: ajusta las directivas según tus CDNs reales
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "https://code.iconify.design",
+          "https://cdn.jsdelivr.net",
+          "'unsafe-inline'",
+        ],
+        styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+      },
     },
   }),
 );
 
-// Middleware para leer el body de las peticiones JSON
+// ── M-1: CORS — sin wildcard, lista explícita de orígenes ─────────────────
+const origenesPermitidos = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : [
+      "http://localhost:3000",
+      "http://localhost:5500",
+      "http://127.0.0.1:5500",
+      "http://localhost:5173",
+      "http://127.0.0.1:3000",
+    ];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Permitir peticiones sin origin (Postman, curl, mismo servidor)
+      if (!origin || origenesPermitidos.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS rechazado para el origen: ${origin}`));
+      }
+    },
+    credentials: true,
+  }),
+);
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── LOGIN ────────────────────────────────────────────────────────────────────
-app.post("/login", (req, res) => {
+// ── A-2: rate limiting en /login — máx. 5 intentos por minuto por IP ─────
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message:
+      "Demasiados intentos de inicio de sesión. Espera un minuto e intenta de nuevo.",
+  },
+  skipSuccessfulRequests: true, // no contar los logins exitosos
+});
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+app.post("/login", loginLimiter, (req, res) => {
   const { username, password, rol } = req.body;
   if (!username || !password) {
     return res
@@ -108,13 +165,66 @@ app.post("/login", (req, res) => {
           token,
           rol: userRow.rol,
           nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`,
+          // A-3: indicar si el usuario nunca ha cambiado su contraseña
+          primer_acceso: userRow.primer_acceso === 1,
         });
       });
     },
   );
 });
 
-// ─── RUTAS ────────────────────────────────────────────────────────────────────
+// ── CAMBIAR CONTRASEÑA (A-3) ──────────────────────────────────────────────
+// Requiere token válido. Verifica la contraseña actual y actualiza.
+app.post("/cambiar-password", verificarToken, async (req, res) => {
+  const { password_actual, password_nuevo } = req.body;
+  const id_usuario = req.usuario.id_usuario;
+
+  if (!password_actual || !password_nuevo) {
+    return res
+      .status(400)
+      .json({ error: "Se requieren password_actual y password_nuevo" });
+  }
+  if (password_nuevo.length < 8) {
+    return res
+      .status(400)
+      .json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
+  }
+
+  db.query(
+    "SELECT pwd FROM usuario WHERE id_usuario = ?",
+    [id_usuario],
+    async (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rows.length)
+        return res.status(404).json({ error: "Usuario no encontrado" });
+
+      const valida = await bcrypt.compare(password_actual, rows[0].pwd);
+      if (!valida)
+        return res
+          .status(401)
+          .json({ error: "La contraseña actual es incorrecta" });
+
+      const nuevoHash = await bcrypt.hash(password_nuevo, 10);
+      db.query(
+        "UPDATE usuario SET pwd = ?, primer_acceso = 0 WHERE id_usuario = ?",
+        [nuevoHash, id_usuario],
+        (err2) => {
+          if (err2)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          res.json({
+            success: true,
+            mensaje: "Contraseña actualizada correctamente",
+          });
+        },
+      );
+    },
+  );
+});
+
+// ── RUTAS ─────────────────────────────────────────────────────────────────
 
 // ADMIN
 app.use("/api/alumnos", require("./src/routes/admin/alumnos"));
@@ -156,11 +266,10 @@ app.use(
 );
 
 app.get("/", (req, res) =>
-  res.json({ mensaje: "API RCA activa", version: "1.1" }),
+  res.json({ mensaje: "API RCA activa", version: "1.2" }),
 );
 
-// ─── INFO PÚBLICA (no requiere token) ─────────────────────────────────────────
-// NOTA: maestro.estatus fue eliminado en v14 — se cuenta todos los maestros.
+// ── INFO PÚBLICA (sin token) ──────────────────────────────────────────────
 app.get("/api/info-publica", (req, res) => {
   db.query(
     `SELECT

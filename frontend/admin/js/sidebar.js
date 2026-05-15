@@ -1,20 +1,45 @@
 window.API_URL = "http://localhost:3000";
 
+// ── A-1: Shim de seguridad — redirige el token de localStorage a sessionStorage ──
+(function () {
+  const _get = Storage.prototype.getItem.bind(localStorage);
+  const _set = Storage.prototype.setItem.bind(localStorage);
+  const _remove = Storage.prototype.removeItem.bind(localStorage);
+
+  const tokenAntiguo = _get("token");
+  if (tokenAntiguo) {
+    sessionStorage.setItem("token", tokenAntiguo);
+    _remove("token");
+  }
+
+  localStorage.getItem = function (key) {
+    if (key === "token") return sessionStorage.getItem("token");
+    return _get(key);
+  };
+  localStorage.setItem = function (key, value) {
+    if (key === "token") return sessionStorage.setItem("token", value);
+    return _set(key, value);
+  };
+  localStorage.removeItem = function (key) {
+    if (key === "token") return sessionStorage.removeItem("token");
+    return _remove(key);
+  };
+})();
+
 (function () {
   const rol = localStorage.getItem("rol");
   const nombre = localStorage.getItem("nombre");
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token"); // → lee de sessionStorage gracias al shim
+
   if (!token) {
     window.location.href = "../../shared/pages/login.html";
     return;
   }
 
   const etiquetaRol =
-    {
-      alumno: "Alumno",
-      maestro: "Docente",
-      administrador: "Administrador",
-    }[rol] || rol;
+    { alumno: "Alumno", maestro: "Docente", administrador: "Administrador" }[
+      rol
+    ] || rol;
 
   const iconoRol =
     {
@@ -24,9 +49,6 @@ window.API_URL = "http://localhost:3000";
     }[rol] || "lucide:user";
 
   const linksPorRol = {
-    // ─────────────────────────────────────────────────────────────────────
-    //  ALUMNO
-    // ─────────────────────────────────────────────────────────────────────
     alumno: [
       {
         href: "../../alumno/pages/portalAlumno.html",
@@ -40,10 +62,6 @@ window.API_URL = "http://localhost:3000";
       },
     ],
 
-    // ─────────────────────────────────────────────────────────────────────
-    //  MAESTRO
-    //  Flujo natural: ver grupos → configurar → capturar calificaciones
-    // ─────────────────────────────────────────────────────────────────────
     maestro: [
       {
         href: "../../maestro/pages/mis_grupos.html",
@@ -51,8 +69,6 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:layout-dashboard",
       },
       {
-        // antes "Alumnos" sólo tenía "Buscar alumnos" — se mantiene pero
-        // el nombre del grupo ahora aclara que es para consulta, no gestión
         texto: "Directorio",
         icono: "lucide:users",
         hijos: [
@@ -64,8 +80,6 @@ window.API_URL = "http://localhost:3000";
         ],
       },
       {
-        // antes "Clases" — genérico; ahora "Mis Grupos" alinea con la
-        // página de inicio y el modelo mental del docente
         texto: "Mis Grupos",
         icono: "lucide:book-open",
         hijos: [
@@ -76,12 +90,12 @@ window.API_URL = "http://localhost:3000";
           },
           {
             href: "../../maestro/pages/gruposMaestro.html",
-            texto: "Peso por unidad", // antes "Ponderacion de unidades"
+            texto: "Peso por unidad",
             icono: "lucide:scale",
           },
           {
             href: "../../maestro/pages/asistencia.html",
-            texto: "Registrar asistencia", // verbo más claro
+            texto: "Registrar asistencia",
             icono: "lucide:calendar-check",
           },
           {
@@ -92,8 +106,6 @@ window.API_URL = "http://localhost:3000";
         ],
       },
       {
-        // Calificaciones promovida a sección visible (antes era sub-menú
-        // con un solo elemento y estaba escondida)
         texto: "Calificaciones",
         icono: "mdi:file-document-edit-outline",
         hijos: [
@@ -120,6 +132,7 @@ window.API_URL = "http://localhost:3000";
         icono: "lucide:settings-2",
       },
     ],
+
     administrador: [
       {
         href: "../../admin/pages/admin.html",
@@ -213,7 +226,6 @@ window.API_URL = "http://localhost:3000";
     if (link.separador) {
       return `<div class="nav-group-label">${link.separador}</div>`;
     }
-    // Extraer solo el nombre de archivo para comparar con paginaActual
     const getFilename = (href) =>
       href ? href.split("/").pop().split("?")[0].split("#")[0] : "";
 
@@ -253,9 +265,6 @@ window.API_URL = "http://localhost:3000";
     aside.classList.add("collapsed");
     document.body.classList.add("sidebar-collapsed");
   }
-
-  // Obtener el título h1 de la página para mostrarlo en el sidebar colapsado
-  const tituloPagina = document.querySelector("h1")?.textContent?.trim() || "";
 
   aside.innerHTML = `
     <div class="sidebar-accent-bar"></div>
@@ -322,13 +331,11 @@ function soloPermitido(...roles) {
 }
 
 function cerrarSesion() {
-  const keysAConservar = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k === "tema") keysAConservar.push([k, localStorage.getItem(k)]);
-  }
+  // A-1: limpiar sessionStorage (donde vive el token gracias al shim)
+  sessionStorage.clear();
+  const tema = localStorage.getItem("tema");
   localStorage.clear();
-  keysAConservar.forEach(([k, v]) => localStorage.setItem(k, v));
+  if (tema) localStorage.setItem("tema", tema);
   window.location.href = "../../shared/pages/login.html";
 }
 
@@ -366,5 +373,3 @@ function toggleCard(btn) {
   const collapsed = card.classList.toggle("collapsed");
   btn.title = collapsed ? "Expandir" : "Contraer";
 }
-
-// All collapsible cards start OPEN — user can collapse individually

@@ -1,4 +1,5 @@
-// src/routes/admin/maestros.js — v12
+// src/routes/admin/maestros.js — v12-sec
+// C-1 FIX: eliminado u.pwd del SELECT de GET /  para no exponer hashes de contraseña.
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
@@ -6,16 +7,19 @@ const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
 // GET — todos los maestros
+// C-1: la consulta original incluía u.pwd (hash bcrypt), lo que exponía
+//      las contraseñas hasheadas a cualquier usuario autenticado. Eliminado.
 router.get("/", verificarToken, (req, res) => {
   db.query(
     `SELECT m.rfc, m.nombre, m.apellido_paterno, m.apellido_materno,
             m.curp, m.fecha_nacimiento,
             m.correo_institucional, m.correo_personal, m.tel_celular,
-            u.username, u.pwd
+            u.username
      FROM maestro m
      LEFT JOIN usuario u ON u.id_referencia = m.rfc AND u.rol = 'maestro'`,
     (err, results) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
       res.json(results);
     },
   );
@@ -30,8 +34,10 @@ router.get("/:id", verificarToken, (req, res) => {
      FROM maestro WHERE rfc = ?`,
     [req.params.id],
     (err, results) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!results.length) return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!results.length)
+        return res.status(404).json({ error: "Maestro no encontrado" });
       res.json(results[0]);
     },
   );
@@ -50,17 +56,30 @@ router.post("/csv", soloAdmin, async (req, res) => {
     const { rfc, nombre, apellido_paterno, correo_institucional, username } = m;
     const passwordRaw = m.password || m.pwd || "";
 
-    if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !username || !passwordRaw) {
-      errores.push({ rfc: rfc || "?", motivo: "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)" });
+    if (
+      !rfc ||
+      !nombre ||
+      !apellido_paterno ||
+      !correo_institucional ||
+      !username ||
+      !passwordRaw
+    ) {
+      errores.push({
+        rfc: rfc || "?",
+        motivo:
+          "Faltan campos requeridos (rfc, nombre, apellido_paterno, correo_institucional, username, password)",
+      });
       continue;
     }
 
     try {
-      const hash = passwordRaw.startsWith("$2b$") || passwordRaw.startsWith("$2a$")
-        ? passwordRaw
-        : await bcrypt.hash(passwordRaw.trim(), 10);
+      const hash =
+        passwordRaw.startsWith("$2b$") || passwordRaw.startsWith("$2a$")
+          ? passwordRaw
+          : await bcrypt.hash(passwordRaw.trim(), 10);
 
-      const s = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : null);
+      const s = (v) =>
+        v != null && String(v).trim() !== "" ? String(v).trim() : null;
 
       await new Promise((ok, fail) =>
         db.query(
@@ -86,12 +105,17 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
       await new Promise((ok, fail) =>
         db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo)
-           SELECT ?, ?, 'maestro', ?, 1
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, activo, primer_acceso)
+           SELECT ?, ?, 'maestro', ?, 1, 1
            WHERE NOT EXISTS (
              SELECT 1 FROM usuario WHERE id_referencia = ? AND rol = 'maestro'
            )`,
-          [username.trim(), hash, rfc.trim().toUpperCase(), rfc.trim().toUpperCase()],
+          [
+            username.trim(),
+            hash,
+            rfc.trim().toUpperCase(),
+            rfc.trim().toUpperCase(),
+          ],
           (err) => (err ? fail(err) : ok()),
         ),
       );
@@ -102,19 +126,36 @@ router.post("/csv", soloAdmin, async (req, res) => {
     }
   }
 
-  res.json({ success: true, insertados, errores, mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.` });
+  res.json({
+    success: true,
+    insertados,
+    errores,
+    mensaje: `${insertados} maestro(s) importados. ${errores.length} con errores.`,
+  });
 });
 
 // POST — registrar maestro individual
 router.post("/", soloAdmin, async (req, res) => {
   const {
-    rfc, nombre, apellido_paterno, apellido_materno,
-    curp, fecha_nacimiento,
-    correo_institucional, correo_personal, tel_celular,
+    rfc,
+    nombre,
+    apellido_paterno,
+    apellido_materno,
+    curp,
+    fecha_nacimiento,
+    correo_institucional,
+    correo_personal,
+    tel_celular,
     password,
   } = req.body;
 
-  if (!rfc || !nombre || !apellido_paterno || !correo_institucional || !password)
+  if (
+    !rfc ||
+    !nombre ||
+    !apellido_paterno ||
+    !correo_institucional ||
+    !password
+  )
     return res.status(400).json({ error: "Faltan campos requeridos" });
 
   try {
@@ -128,9 +169,15 @@ router.post("/", soloAdmin, async (req, res) => {
           correo_institucional, correo_personal, tel_celular)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        rfcClean, nombre, apellido_paterno, apellido_materno ?? null,
-        curp?.trim().toUpperCase() || null, fecha_nacimiento ?? null,
-        correo_institucional, correo_personal ?? null, tel_celular ?? null,
+        rfcClean,
+        nombre,
+        apellido_paterno,
+        apellido_materno ?? null,
+        curp?.trim().toUpperCase() || null,
+        fecha_nacimiento ?? null,
+        correo_institucional,
+        correo_personal ?? null,
+        tel_celular ?? null,
       ],
       (err) => {
         if (err) {
@@ -139,15 +186,20 @@ router.post("/", soloAdmin, async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
         db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia) VALUES (?, ?, 'maestro', ?)`,
+          `INSERT INTO usuario (username, pwd, rol, id_referencia, primer_acceso)
+           VALUES (?, ?, 'maestro', ?, 1)`,
           [rfcClean, hash, rfcClean],
           (err2) => {
             if (err2) {
               if (err2.code === "ER_DUP_ENTRY")
                 return res.status(409).json({ error: "El username ya existe" });
-              return res.status(500).json({ error: "Error interno del servidor" });
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
             }
-            res.status(201).json({ success: true, mensaje: "Maestro registrado" });
+            res
+              .status(201)
+              .json({ success: true, mensaje: "Maestro registrado" });
           },
         );
       },
@@ -160,9 +212,14 @@ router.post("/", soloAdmin, async (req, res) => {
 // PUT — editar maestro
 router.put("/:id", soloAdmin, (req, res) => {
   const {
-    nombre, apellido_paterno, apellido_materno,
-    curp, fecha_nacimiento,
-    correo_institucional, correo_personal, tel_celular,
+    nombre,
+    apellido_paterno,
+    apellido_materno,
+    curp,
+    fecha_nacimiento,
+    correo_institucional,
+    correo_personal,
+    tel_celular,
   } = req.body;
 
   if (!nombre || !apellido_paterno || !correo_institucional)
@@ -175,14 +232,21 @@ router.put("/:id", soloAdmin, (req, res) => {
          correo_institucional = ?, correo_personal = ?, tel_celular = ?
      WHERE rfc = ?`,
     [
-      nombre, apellido_paterno, apellido_materno ?? null,
-      curp ?? null, fecha_nacimiento ?? null,
-      correo_institucional, correo_personal ?? null, tel_celular ?? null,
+      nombre,
+      apellido_paterno,
+      apellido_materno ?? null,
+      curp ?? null,
+      fecha_nacimiento ?? null,
+      correo_institucional,
+      correo_personal ?? null,
+      tel_celular ?? null,
       req.params.id,
     ],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!result.affectedRows) return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows)
+        return res.status(404).json({ error: "Maestro no encontrado" });
       res.json({ success: true, mensaje: "Maestro actualizado" });
     },
   );
@@ -194,8 +258,10 @@ router.delete("/:id", soloAdmin, (req, res) => {
     "DELETE FROM maestro WHERE rfc = ?",
     [req.params.id],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      if (!result.affectedRows) return res.status(404).json({ error: "Maestro no encontrado" });
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!result.affectedRows)
+        return res.status(404).json({ error: "Maestro no encontrado" });
       res.json({ success: true, mensaje: "Maestro eliminado" });
     },
   );
