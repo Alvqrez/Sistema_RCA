@@ -567,18 +567,45 @@ function cerrarModalUnidades() { document.getElementById("modalUnidades").classL
 function renderModalUnidades() {
   const lista = document.getElementById("modalUnidadesLista"); if (!lista) return;
   lista.innerHTML = _mUnidades.map((u, idx) => {
-    const esCustom  = String(u.id_unidad).includes("_");
-    const estado    = estadoUnidadParaModal(_mGrupoId, u.id_unidad);
-    const bloqueada = estado === "bloqueada";
+    const estado     = estadoUnidadParaModal(_mGrupoId, u.id_unidad);
+    const bloqueada  = estado === "bloqueada";
     const sinGuardar = estado === "sin_guardar";
 
-    // Estado de la unidad siguiente (para botón fusionar)
-    const siguienteEstado = idx < _mUnidades.length - 1
-      ? estadoUnidadParaModal(_mGrupoId, _mUnidades[idx + 1].id_unidad)
-      : null;
-    const fusionBloqueada = siguienteEstado === "bloqueada" || siguienteEstado === "sin_guardar" || bloqueada || sinGuardar;
+    // ── Restricción 1 nivel ────────────────────────────────────────────────
+    // Una unidad ya modificada (fusión o división) no puede volver a operarse.
+    // Solo puede revertirse al estado anterior.
+    const esCustom      = !!u.tipo_layout;  // true si es resultado de fusión o división
+    const esDivision    = u.tipo_layout === "division_a" || u.tipo_layout === "division_b";
+    const esFusion      = u.tipo_layout === "fusion";
 
-    // Badge de estado
+    // La unidad siguiente también puede estar operada
+    const siguiente          = idx < _mUnidades.length - 1 ? _mUnidades[idx + 1] : null;
+    const siguienteEstado    = siguiente ? estadoUnidadParaModal(_mGrupoId, siguiente.id_unidad) : null;
+    const siguienteEsCustom  = !!(siguiente?.tipo_layout);
+
+    // canDividir: original + libre (sin actividades sin guardar ni bloqueada)
+    const canDividir  = !esCustom && !bloqueada && !sinGuardar;
+
+    // canFusionar: ambas deben ser originales + libres + haber siguiente
+    const canFusionar = siguiente &&
+                        !esCustom && !siguienteEsCustom &&
+                        !bloqueada && !sinGuardar &&
+                        siguienteEstado !== "bloqueada" && siguienteEstado !== "sin_guardar";
+
+    // canRevertir: es custom + sin actividades configuradas
+    const canRevertir = esCustom && !bloqueada && !sinGuardar;
+
+    // Badge de estado de la unidad
+    const badgeLayout = esDivision
+      ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#6D28D9;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+           <iconify-icon icon="lucide:scissors" style="font-size:.65rem"></iconify-icon> Dividida
+         </span>`
+      : esFusion
+        ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#DCFCE7;color:#16A34A;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+             <iconify-icon icon="lucide:link" style="font-size:.65rem"></iconify-icon> Fusionada
+           </span>`
+        : "";
+
     const badgeEstado = bloqueada
       ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--success-light);color:var(--success);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
            <iconify-icon icon="lucide:lock" style="font-size:.65rem"></iconify-icon> Guardada
@@ -589,49 +616,53 @@ function renderModalUnidades() {
            </span>`
         : "";
 
-    // Motivo de bloqueo de botones
-    const motivoDividir = bloqueada
-      ? "Esta unidad ya está guardada"
-      : sinGuardar
-        ? "Guarda las actividades antes de dividir"
-        : "";
-    const motivoFusionar = fusionBloqueada
-      ? (bloqueada || siguienteEstado === "bloqueada")
-          ? "No se puede fusionar una unidad guardada"
-          : "Guarda las actividades antes de fusionar"
-      : "";
-
-    const canDividir  = !bloqueada && !sinGuardar;
-    const canFusionar = !fusionBloqueada && idx < _mUnidades.length - 1;
+    // Motivos de bloqueo (para tooltip)
+    const motivoDividir  = esCustom ? "Ya fue modificada — reviértela primero" : bloqueada ? "Unidad guardada" : sinGuardar ? "Guarda las actividades primero" : "";
+    const motivoFusionar = !siguiente ? "" : esCustom || siguienteEsCustom ? "Solo se pueden fusionar unidades originales" : bloqueada || siguienteEstado === "bloqueada" ? "No se puede fusionar una unidad guardada" : sinGuardar || siguienteEstado === "sin_guardar" ? "Guarda las actividades primero" : "";
 
     return `
       <div class="rubro-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div style="display:flex;align-items:center;gap:10px">
           <iconify-icon icon="lucide:grip-vertical" style="color:var(--text-muted);flex-shrink:0"></iconify-icon>
-          <span style="font-size:.75rem;color:var(--text-muted);flex-shrink:0;min-width:22px">U${u.numero_unidad}</span>
+          <span style="font-size:.75rem;color:var(--text-muted);flex-shrink:0;min-width:28px">U${u.numero_unidad}</span>
           <input type="text" value="${u.nombre_unidad}" onchange="_mUnidades[${idx}].nombre_unidad=this.value"
                  ${bloqueada ? "disabled" : ""}
                  style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg-app);color:var(--text-main);font-size:.85rem;font-family:inherit;${bloqueada ? "opacity:.6;cursor:not-allowed" : ""}"/>
+          ${badgeLayout}
           ${badgeEstado}
-          ${esCustom && !bloqueada ? `<button onclick="eliminarUnidadModal(${idx})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:1rem;padding:4px;border-radius:6px;flex-shrink:0"><iconify-icon icon="lucide:x"></iconify-icon></button>` : ""}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button onclick="${canDividir ? `dividirUnidad(${idx})` : ""}"
-                  ${canDividir ? "" : "disabled"}
-                  title="${motivoDividir}"
-                  class="btn btn-sm"
-                  style="background:${canDividir ? "var(--primary-light)" : "var(--bg-app)"};color:${canDividir ? "var(--primary)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canDividir ? "pointer" : "not-allowed"};opacity:${canDividir ? "1" : ".5"}">
-            <iconify-icon icon="lucide:scissors"></iconify-icon> Dividir en dos
-          </button>
-          ${idx < _mUnidades.length - 1 ? `
-          <button onclick="${canFusionar ? `fusionarUnidades(${idx})` : ""}"
-                  ${canFusionar ? "" : "disabled"}
-                  title="${motivoFusionar}"
-                  class="btn btn-sm"
-                  style="background:${canFusionar ? "var(--success-light)" : "var(--bg-app)"};color:${canFusionar ? "var(--success)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canFusionar ? "pointer" : "not-allowed"};opacity:${canFusionar ? "1" : ".5"}">
-            <iconify-icon icon="lucide:link"></iconify-icon> Fusionar con siguiente
-          </button>` : ""}
-          ${!canDividir && motivoDividir ? `<span style="font-size:.72rem;color:var(--text-muted);font-style:italic">${motivoDividir}</span>` : ""}
+          ${esCustom ? `
+            ${canRevertir ? `
+              <button onclick="eliminarUnidadModal(${idx})"
+                      class="btn btn-sm"
+                      style="background:var(--danger-light,#FEE2E2);color:var(--danger);border:none;font-size:.78rem">
+                <iconify-icon icon="lucide:rotate-ccw"></iconify-icon> Revertir
+              </button>
+              <span style="font-size:.72rem;color:var(--text-muted)">Vuelve a las unidades originales</span>
+            ` : `
+              <span style="font-size:.72rem;color:var(--text-muted);font-style:italic">
+                ${bloqueada ? "Unidad guardada — no se puede revertir" : "Elimina las actividades para poder revertir"}
+              </span>
+            `}
+          ` : `
+            <button onclick="${canDividir ? `dividirUnidad(${idx})` : ""}"
+                    ${canDividir ? "" : "disabled"}
+                    title="${motivoDividir}"
+                    class="btn btn-sm"
+                    style="background:${canDividir ? "var(--primary-light)" : "var(--bg-app)"};color:${canDividir ? "var(--primary)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canDividir ? "pointer" : "not-allowed"};opacity:${canDividir ? "1" : ".5"}">
+              <iconify-icon icon="lucide:scissors"></iconify-icon> Dividir en dos
+            </button>
+            ${idx < _mUnidades.length - 1 ? `
+            <button onclick="${canFusionar ? `fusionarUnidades(${idx})` : ""}"
+                    ${canFusionar ? "" : "disabled"}
+                    title="${motivoFusionar}"
+                    class="btn btn-sm"
+                    style="background:${canFusionar ? "var(--success-light)" : "var(--bg-app)"};color:${canFusionar ? "var(--success)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canFusionar ? "pointer" : "not-allowed"};opacity:${canFusionar ? "1" : ".5"}">
+              <iconify-icon icon="lucide:link"></iconify-icon> Fusionar con siguiente
+            </button>` : ""}
+            ${motivoDividir && !canDividir ? `<span style="font-size:.72rem;color:var(--text-muted);font-style:italic">${motivoDividir}</span>` : ""}
+          `}
         </div>
       </div>`;
   }).join("");
@@ -713,18 +744,20 @@ async function restaurarUnidadesOriginal() {
   const haySinGuardar = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "sin_guardar");
   if (hayBloqueadas) { showToast("No se puede restaurar: hay unidades ya guardadas", "error"); return; }
   if (haySinGuardar) { showToast("Guarda o elimina las actividades pendientes antes de restaurar", "error"); return; }
-  if (!confirm("¿Restaurar las unidades originales? Se perderán todas las divisiones y fusiones.")) return;
+  const okRestore = await mostrarConfirm({
+    icono: "lucide:rotate-ccw",
+    colorIcono: "var(--warning)",
+    titulo: "Restaurar unidades originales",
+    mensaje: "Se perderán todas las divisiones y fusiones realizadas en este grupo. Esta acción no se puede deshacer.",
+    labelOk: "Restaurar",
+    colorOk: "var(--warning)",
+  });
+  if (!okRestore) return;
 
-  // Revertir todas las unidades custom (divisiones y fusiones)
-  const custom = _mUnidades.filter(u => u.tipo_layout);
-  for (const u of custom) {
-    try {
-      await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/revertir-unidad`, {
-        method: "POST",
-        body: JSON.stringify({ id_unidad_real: u.id_unidad })
-      });
-    } catch(e) { showToast(`Error al revertir ${u.nombre_unidad}: ${e.message}`, "error"); return; }
-  }
+  // Reset completo en una sola llamada al backend
+  try {
+    await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/reset-unidades`, { method: "POST" });
+  } catch(e) { showToast(e.message, "error"); return; }
 
   // Recargar desde BD
   const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);

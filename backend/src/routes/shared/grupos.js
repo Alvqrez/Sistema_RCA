@@ -94,8 +94,7 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
   const sql = `
     SELECT
         gu.id_unidad, u.nombre_unidad, u.estatus,
-        gu.ponderacion, u.clave_materia,
-        gu.agrupacion_id, gu.tipo_config
+        u.clave_materia, gu.tipo_config
     FROM grupo_unidad gu
     JOIN unidad u ON gu.id_unidad = u.id_unidad
     WHERE gu.id_grupo = ?
@@ -103,13 +102,12 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
 `;
   db.query(sql, [req.params.id], (err, results) => {
     if (err) {
-      // Fallback: las columnas agrupacion_id / tipo_config pueden no existir
+      // Fallback: columnas pueden no existir en versiones anteriores
       // si el ALTER TABLE de corrección 4 aún no se ha aplicado en la BD.
       const sqlBase = `
         SELECT
             gu.id_unidad, u.nombre_unidad, u.estatus,
-            gu.ponderacion, u.clave_materia,
-            NULL AS agrupacion_id, 'original' AS tipo_config
+            u.clave_materia, 'original' AS tipo_config
         FROM grupo_unidad gu
         JOIN unidad u ON gu.id_unidad = u.id_unidad
         WHERE gu.id_grupo = ?
@@ -291,7 +289,7 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
               pendientes = unidadesFiltradas.length;
               unidadesFiltradas.forEach((u) => {
                 db.query(
-                  "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, ponderacion) VALUES (?, ?, 0)",
+                  "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad) VALUES (?, ?)",
                   [idGrupo, u.id_unidad],
                   (err3, result) => {
                     if (!err3 && result.affectedRows > 0) vinculadas++;
@@ -314,48 +312,6 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
   );
 });
 
-// POST — asignar unidad a grupo con ponderación
-router.post("/:id/unidades", maestroOAdmin, (req, res) => {
-  const { id_unidad, ponderacion } = req.body;
-  if (!id_unidad || ponderacion === undefined) {
-    return res
-      .status(400)
-      .json({ error: "id_unidad y ponderacion son requeridos" });
-  }
-  if (ponderacion < 0 || ponderacion > 100) {
-    return res
-      .status(400)
-      .json({ error: "La ponderación debe estar entre 0 y 100" });
-  }
-  const sqlSuma = `
-    SELECT COALESCE(SUM(ponderacion), 0) AS total
-    FROM grupo_unidad
-    WHERE id_grupo = ? AND id_unidad != ?
-  `;
-  db.query(sqlSuma, [req.params.id, id_unidad], (err, result) => {
-    if (err)
-      return res.status(500).json({ error: "Error interno del servidor" });
-    const totalActual = parseFloat(result[0].total);
-    if (totalActual + parseFloat(ponderacion) > 100) {
-      return res.status(400).json({
-        error: `La suma supera 100%. Ya tienes ${totalActual}% asignado.`,
-      });
-    }
-    db.query(
-      `INSERT INTO grupo_unidad (id_grupo, id_unidad, ponderacion)
-       VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE ponderacion = VALUES(ponderacion)`,
-      [req.params.id, id_unidad, ponderacion],
-      (err2) => {
-        if (err2)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        res
-          .status(201)
-          .json({ success: true, mensaje: "Unidad asignada al grupo" });
-      },
-    );
-  });
-});
 
 // PUT — editar grupo
 router.put("/:id", soloAdmin, (req, res) => {
@@ -407,35 +363,6 @@ router.delete("/:id", soloAdmin, (req, res) => {
   );
 });
 
-router.put("/:id/unidades/agrupacion", maestroOAdmin, (req, res) => {
-  const { unidades } = req.body;
-  // unidades = [{ id_unidad, agrupacion_id, tipo_config }]
-  if (!Array.isArray(unidades) || !unidades.length) {
-    return res.status(400).json({ error: "Se requiere array de unidades" });
-  }
-
-  const updates = unidades.map(
-    (u) =>
-      new Promise((resolve, reject) => {
-        db.query(
-          `UPDATE grupo_unidad
-             SET agrupacion_id = ?, tipo_config = ?
-             WHERE id_grupo = ? AND id_unidad = ?`,
-          [
-            u.agrupacion_id ?? null,
-            u.tipo_config ?? "original",
-            req.params.id,
-            u.id_unidad,
-          ],
-          (err) => (err ? reject(err) : resolve()),
-        );
-      }),
-  );
-
-  Promise.all(updates)
-    .then(() => res.json({ success: true }))
-    .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
-});
 
 
 // ─── Helpers de promesa ───────────────────────────────────────────────────────
@@ -602,7 +529,7 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
     return res.status(400).json({ error: "Faltan campos requeridos (id_unidad_real)" });
 
   try {
-    // 1. Buscar el registro en layout
+    // 1. Buscar el registro en layout para la unidad enviada
     const [layout] = await qp(
       "SELECT * FROM grupo_unidad_layout WHERE id_grupo = ? AND id_unidad_real = ?",
       [id_grupo, id_unidad_real]
@@ -610,18 +537,27 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
     if (!layout)
       return res.status(404).json({ error: "No se encontró registro de división/fusión para esta unidad" });
 
-    // 2. Verificar que la unidad a revertir no tiene actividades
+    // 2. Buscar TODAS las unidades del mismo origen (para divisiones: la hermana)
+    //    Una división crea dos filas con el mismo ids_origen — ambas deben revertirse juntas
+    const hermanas = await qp(
+      "SELECT * FROM grupo_unidad_layout WHERE id_grupo = ? AND ids_origen = ?",
+      [id_grupo, layout.ids_origen]
+    );
+    const todasLasIds = hermanas.map(h => h.id_unidad_real);
+
+    // 3. Verificar que ninguna tiene actividades
+    const placeholders = todasLasIds.map(() => "?").join(",");
     const [{ total }] = await qp(
-      "SELECT COUNT(*) AS total FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
-      [id_grupo, id_unidad_real]
+      `SELECT COUNT(*) AS total FROM actividad WHERE id_grupo = ? AND id_unidad IN (${placeholders})`,
+      [id_grupo, ...todasLasIds]
     );
     if (total > 0)
-      return res.status(409).json({ error: "No se puede revertir: la unidad ya tiene actividades configuradas. Elimínalas primero." });
+      return res.status(409).json({ error: "No se puede revertir: hay actividades configuradas. Elimínalas primero." });
 
-    // 3. Obtener IDs origen
+    // 4. Obtener IDs origen (originales a restaurar)
     const idsOrigen = layout.ids_origen.split(",").map(Number);
 
-    // 4. Re-vincular las unidades originales al grupo
+    // 5. Re-vincular las unidades originales al grupo
     for (const id_orig of idsOrigen) {
       await qp(
         "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES (?, ?, 'original')",
@@ -629,29 +565,29 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
       );
     }
 
-    // 5. Eliminar la unidad custom del layout y del grupo
-    await qp(
-      "DELETE FROM grupo_unidad_layout WHERE id_grupo = ? AND id_unidad_real = ?",
-      [id_grupo, id_unidad_real]
-    );
-    await qp(
-      "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
-      [id_grupo, id_unidad_real]
-    );
-
-    // 6. Eliminar la unidad custom de `unidad` si no la usa ningún otro grupo
-    const [{ usos }] = await qp(
-      "SELECT COUNT(*) AS usos FROM grupo_unidad WHERE id_unidad = ?",
-      [id_unidad_real]
-    );
-    if (usos === 0) {
-      await qp("DELETE FROM unidad WHERE id_unidad = ?", [id_unidad_real]);
+    // 6. Eliminar TODAS las unidades hermanas del layout y del grupo
+    for (const id_hermana of todasLasIds) {
+      await qp(
+        "DELETE FROM grupo_unidad_layout WHERE id_grupo = ? AND id_unidad_real = ?",
+        [id_grupo, id_hermana]
+      );
+      await qp(
+        "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
+        [id_grupo, id_hermana]
+      );
+      // Eliminar de unidad si ya no la usa ningún grupo
+      const [{ usos }] = await qp(
+        "SELECT COUNT(*) AS usos FROM grupo_unidad WHERE id_unidad = ?",
+        [id_hermana]
+      );
+      if (usos === 0) await qp("DELETE FROM unidad WHERE id_unidad = ?", [id_hermana]);
     }
 
     res.json({
       success: true,
       ids_restaurados: idsOrigen,
-      mensaje: `Unidad revertida. Restauradas: ${idsOrigen.join(", ")}`
+      hermanas_revertidas: todasLasIds,
+      mensaje: `Revertidas ${todasLasIds.length} unidad(es). Restauradas: ${idsOrigen.join(", ")}`
     });
   } catch (err) {
     console.error("Error revertir-unidad:", err);
@@ -692,6 +628,71 @@ router.get("/:id/layout-unidades", verificarToken, async (req, res) => {
     );
     res.json(unidades);
   } catch (err) {
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+
+// POST /:id/reset-unidades
+// Elimina TODAS las divisiones y fusiones del grupo de una sola vez,
+// restaurando las unidades originales de la materia.
+router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
+  const id_grupo = parseInt(req.params.id);
+  try {
+    // 1. Verificar que ninguna unidad custom tiene actividades
+    const custom = await qp(
+      "SELECT id_unidad_real FROM grupo_unidad_layout WHERE id_grupo = ?",
+      [id_grupo]
+    );
+    if (custom.length) {
+      const ids = custom.map(r => r.id_unidad_real);
+      const placeholders = ids.map(() => "?").join(",");
+      const [{ total }] = await qp(
+        `SELECT COUNT(*) AS total FROM actividad WHERE id_grupo = ? AND id_unidad IN (${placeholders})`,
+        [id_grupo, ...ids]
+      );
+      if (total > 0)
+        return res.status(409).json({ error: "No se puede restaurar: hay unidades con actividades configuradas. Elimínalas primero." });
+    }
+
+    // 2. Obtener clave_materia del grupo
+    const [grupo] = await qp("SELECT clave_materia FROM grupo WHERE id_grupo = ?", [id_grupo]);
+    if (!grupo) return res.status(404).json({ error: "Grupo no encontrado" });
+
+    // 3. Eliminar todas las unidades custom de grupo_unidad para este grupo
+    if (custom.length) {
+      const ids = custom.map(r => r.id_unidad_real);
+      const placeholders = ids.map(() => "?").join(",");
+      await qp(
+        `DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad IN (${placeholders})`,
+        [id_grupo, ...ids]
+      );
+      // 4. Eliminar de grupo_unidad_layout
+      await qp("DELETE FROM grupo_unidad_layout WHERE id_grupo = ?", [id_grupo]);
+      // 5. Eliminar las filas de unidad que ya no usa ningún grupo
+      for (const id of ids) {
+        const [{ usos }] = await qp(
+          "SELECT COUNT(*) AS usos FROM grupo_unidad WHERE id_unidad = ?", [id]
+        );
+        if (usos === 0) await qp("DELETE FROM unidad WHERE id_unidad = ?", [id]);
+      }
+    }
+
+    // 6. Re-vincular todas las unidades originales de la materia
+    const unidades = await qp(
+      "SELECT id_unidad FROM unidad WHERE clave_materia = ?",
+      [grupo.clave_materia]
+    );
+    for (const u of unidades) {
+      await qp(
+        "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES (?, ?, 'original')",
+        [id_grupo, u.id_unidad]
+      );
+    }
+
+    res.json({ success: true, mensaje: "Unidades restauradas al original", restauradas: unidades.length });
+  } catch (err) {
+    console.error("Error reset-unidades:", err);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });

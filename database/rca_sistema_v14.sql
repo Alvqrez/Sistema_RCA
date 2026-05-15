@@ -289,11 +289,9 @@ CREATE TABLE `materia_actividad` (
 
 
 CREATE TABLE `grupo_unidad` (
-  `id_grupo`      INT UNSIGNED NOT NULL,
-  `id_unidad`     INT UNSIGNED NOT NULL,
-  `ponderacion`   DECIMAL(5,2) NOT NULL DEFAULT 0,
-  `agrupacion_id` TINYINT UNSIGNED NULL DEFAULT NULL,
-  `tipo_config`   ENUM('original','fusionada','dividida') NOT NULL DEFAULT 'original',
+  `id_grupo`    INT UNSIGNED NOT NULL,
+  `id_unidad`   INT UNSIGNED NOT NULL,
+  `tipo_config` ENUM('original','fusionada','dividida') NOT NULL DEFAULT 'original',
   PRIMARY KEY (`id_grupo`, `id_unidad`),
   INDEX `fk_GU_Unidad` (`id_unidad`),
   CONSTRAINT `fk_GU_Grupo`
@@ -301,7 +299,7 @@ CREATE TABLE `grupo_unidad` (
   CONSTRAINT `fk_GU_Unidad`
     FOREIGN KEY (`id_unidad`) REFERENCES `unidad` (`id_unidad`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB
-  COMMENT='Peso de cada unidad dentro de un grupo específico';
+  COMMENT='Vincula grupos con sus unidades efectivas, considerando divisiones y fusiones.';
 
 
 
