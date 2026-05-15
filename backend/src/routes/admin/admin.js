@@ -9,7 +9,7 @@ const { soloAdmin, verificarToken } = require("../../middleware/auth");
 router.get("/stats", soloAdmin, (req, res) => {
   const queries = {
     alumnos: "SELECT COUNT(*) AS total FROM alumno",
-    maestros: "SELECT COUNT(*) AS total FROM maestro WHERE estatus = 'Activo'",
+    maestros: "SELECT COUNT(*) AS total FROM maestro",
     grupos_activos:
       "SELECT COUNT(*) AS total FROM grupo WHERE estatus = 'Activo'",
     materias: "SELECT COUNT(*) AS total FROM materia",

@@ -9,23 +9,24 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const db = require("./src/db");
 
-// CORS: en producción establece CORS_ORIGIN en tu .env con el dominio del frontend.
+// CORS: en producción establece CORS_ORIGIN en .env con el dominio real del frontend.
 // En desarrollo, si no se define, se permite cualquier origen.
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowed = process.env.CORS_ORIGIN || "http://127.0.0.1:15500";
-      console.log("🔍 CORS Debug - Origin recibido:", origin);
-      console.log("🔍 CORS Debug - Origin permitido:", allowed);
-
-      if (!origin || origin === allowed) {
+      const allowed = process.env.CORS_ORIGIN || "*";
+      if (!origin || allowed === "*" || origin === allowed) {
         callback(null, true);
       } else {
-        callback(new Error("CORS no permitido"));
+        callback(new Error("CORS no permitido: " + origin));
       }
     },
   }),
 );
+
+// Middleware para leer el body de las peticiones JSON
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 app.post("/login", (req, res) => {

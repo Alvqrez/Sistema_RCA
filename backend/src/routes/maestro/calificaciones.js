@@ -238,15 +238,15 @@ router.get(
     const sql = `
     SELECT
       act.id_actividad,
-      act.nombre_actividad,
+      COALESCE(ta.nombre, 'Actividad') AS nombre_actividad,
       act.ponderacion,
-      act.tipo_evaluacion,
       COALESCE(ra.calificacion_obtenida, 0)                    AS calificacion,
       ra.estatus,
       ROUND(
         COALESCE(ra.calificacion_obtenida, 0) * (act.ponderacion / 100), 2
       )                                                          AS aporte_ponderado
     FROM actividad act
+    LEFT JOIN tipo_actividad ta ON ta.id_tipo = act.id_tipo_actividad
     LEFT JOIN resultado_actividad ra
       ON ra.id_actividad = act.id_actividad AND ra.no_control = ?
     WHERE act.id_grupo = ? AND act.id_unidad = ?
