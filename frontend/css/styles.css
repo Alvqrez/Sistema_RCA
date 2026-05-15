@@ -482,14 +482,16 @@ span {
   box-shadow:
     0 1px 3px 0 rgb(0 0 0 / 0.1),
     0 1px 2px -1px rgb(0 0 0 / 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow:
-    0 20px 25px -5px rgb(0 0 0 / 0.1),
-    0 8px 10px -6px rgb(0 0 0 / 0.1);
+    0 8px 20px -4px rgb(0 0 0 / 0.1),
+    0 4px 8px -4px rgb(0 0 0 / 0.08);
 }
 
 /* ── TABLA ────────────────────────────────────────────────────────── */
@@ -5258,7 +5260,12 @@ body {
 .sidebar-accent-bar,
 .dark-mode .sidebar-accent-bar {
   height: 3px !important;
-  background: linear-gradient(90deg, #ffffff 0%, #a8c4e8 55%, #ffffff 100%) !important;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #a8c4e8 55%,
+    #ffffff 100%
+  ) !important;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
   flex-shrink: 0;
 }
@@ -5421,12 +5428,16 @@ body {
 }
 
 /* Scrollbar del nav */
-.sidebar nav::-webkit-scrollbar { width: 3px; }
+.sidebar nav::-webkit-scrollbar {
+  width: 3px;
+}
 .sidebar nav::-webkit-scrollbar-thumb {
   background: #0f2248;
   border-radius: 99px;
 }
-.sidebar nav::-webkit-scrollbar-thumb:hover { background: #1a386a; }
+.sidebar nav::-webkit-scrollbar-thumb:hover {
+  background: #1a386a;
+}
 
 /* Logout */
 .logout-btn,
@@ -5466,13 +5477,19 @@ body {
 }
 
 /* Dark mode page bg */
-.dark-mode body  { background: #07111f !important; }
-.dark-mode .content { background: #07111f !important; }
+.dark-mode body {
+  background: #07111f !important;
+}
+.dark-mode .content {
+  background: #07111f !important;
+}
 .dark-mode .card {
   background: #0f2040 !important;
   border-color: #1a2e4a !important;
 }
-.dark-mode .card:hover { border-color: #1e4080 !important; }
+.dark-mode .card:hover {
+  border-color: #1e4080 !important;
+}
 
 /* card-filter-bar en dark */
 .dark-mode .card-filter-bar {
@@ -5485,7 +5502,6 @@ body {
   border-color: #1a2e4a;
   color: #d8e8ff;
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MEJORAS DE NAVEGACIÓN Y DISEÑO — RCA v7
