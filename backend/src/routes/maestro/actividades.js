@@ -1,145 +1,145 @@
 // src/routes/actividades.js
+// N-1 FIX: POST, PUT, DELETE y /bloquear-unidad ahora verifican que el maestro
+//          autenticado sea el responsable del grupo antes de modificar datos.
+//          Los administradores pueden operar en cualquier grupo.
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
-// GET — actividades filtradas por rol (incluye nombre_unidad y numero_unidad)
+// ── Helper: verificar propietario del grupo ───────────────────────────────
+function verificarPropietarioGrupo(id_grupo, req, res, callback) {
+  if (req.usuario.rol !== "maestro") return callback(true);
+  db.query(
+    "SELECT rfc FROM grupo WHERE id_grupo = ?",
+    [id_grupo],
+    (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rows.length)
+        return res.status(404).json({ error: "Grupo no encontrado" });
+      if (rows[0].rfc !== req.usuario.id_referencia)
+        return res.status(403).json({
+          error:
+            "No tienes permiso para modificar actividades de un grupo que no impartes.",
+        });
+      callback(true);
+    },
+  );
+}
+
+// GET — actividades filtradas por rol
 router.get("/", verificarToken, (req, res) => {
   const { id_referencia, rol } = req.usuario;
-
-  const camposSql = `
-        a.*,
-        u.nombre_unidad,
-        u.clave_materia,
-        ta.nombre AS nombre_tipo
-    `;
+  const camposSql = `a.*, u.nombre_unidad, u.clave_materia, ta.nombre AS nombre_tipo`;
 
   if (rol === "maestro") {
-    const sql = `
-            SELECT ${camposSql}
-            FROM actividad a
-            JOIN grupo  g ON a.id_grupo  = g.id_grupo
-            LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
-            LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
-            WHERE g.rfc = ?
-            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
-        `;
-    db.query(sql, [id_referencia], (err, r) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      res.json(r);
-    });
+    db.query(
+      `SELECT ${camposSql}
+       FROM actividad a
+       JOIN grupo g ON a.id_grupo = g.id_grupo
+       LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+       LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
+       WHERE g.rfc = ?
+       ORDER BY a.id_grupo, a.id_unidad, a.id_actividad`,
+      [id_referencia],
+      (err, r) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        res.json(r);
+      },
+    );
   } else {
-    const sql = `
-            SELECT ${camposSql}
-            FROM actividad a
-            LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
-            LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
-            ORDER BY a.id_grupo, a.id_unidad, a.id_actividad
-        `;
-    db.query(sql, (err, r) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      res.json(r);
-    });
+    db.query(
+      `SELECT ${camposSql}
+       FROM actividad a
+       LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+       LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
+       ORDER BY a.id_grupo, a.id_unidad, a.id_actividad`,
+      (err, r) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        res.json(r);
+      },
+    );
   }
 });
 
-// POST — crear actividad con validación de suma de ponderaciones
+// POST — crear actividad
+// N-1: verifica propietario del grupo antes de insertar.
 router.post("/", maestroOAdmin, (req, res) => {
-  const {
-    id_grupo,
-    id_unidad,
-    ponderacion,
-    id_tipo_actividad,
-  } = req.body;
+  const { id_grupo, id_unidad, ponderacion, id_tipo_actividad } = req.body;
 
   if (
     !id_grupo ||
     !id_unidad ||
     ponderacion === undefined ||
     ponderacion === ""
-  ) {
+  )
     return res.status(400).json({ error: "Faltan campos requeridos" });
-  }
-
-
 
   const pond = parseFloat(ponderacion);
-  if (isNaN(pond) || pond <= 0 || pond > 100) {
+  if (isNaN(pond) || pond <= 0 || pond > 100)
     return res
       .status(400)
       .json({ error: "La ponderación debe ser un valor entre 1 y 100" });
-  }
 
-  // Verificar que la unidad pertenece a la materia del grupo
+  verificarPropietarioGrupo(id_grupo, req, res, () => {
     const sqlVerifica = `
-      SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad,
-             u.nombre_unidad
-      FROM grupo g
-      CROSS JOIN unidad u
-      WHERE g.id_grupo = ? AND u.id_unidad = ?
-    `;
+      SELECT g.clave_materia AS clave_grupo, u.clave_materia AS clave_unidad, u.nombre_unidad
+      FROM grupo g CROSS JOIN unidad u
+      WHERE g.id_grupo = ? AND u.id_unidad = ?`;
     db.query(sqlVerifica, [id_grupo, id_unidad], (errV, rowsV) => {
       if (errV)
         return res.status(500).json({ error: "Error interno del servidor" });
-      if (rowsV.length === 0) {
+      if (!rowsV.length)
         return res
           .status(400)
           .json({ error: "Grupo o unidad no encontrados en la base de datos" });
-      }
-      if (rowsV[0].clave_grupo !== rowsV[0].clave_unidad) {
+      if (rowsV[0].clave_grupo !== rowsV[0].clave_unidad)
         return res.status(400).json({
           error: `La unidad "${rowsV[0].nombre_unidad}" pertenece a otra materia. Selecciona una unidad de la materia correcta.`,
         });
-      }
 
-      // Verificar que la suma no supere 100%
-      const sqlSuma = `
-        SELECT COALESCE(SUM(ponderacion), 0) AS total
-        FROM actividad
-        WHERE id_grupo = ? AND id_unidad = ?
-      `;
-      db.query(sqlSuma, [id_grupo, id_unidad], (err, result) => {
-        if (err)
-          return res.status(500).json({ error: "Error interno del servidor" });
-
-        const totalActual = parseFloat(result[0].total);
-        if (totalActual + pond > 100) {
-          return res.status(400).json({
-            error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad. Disponible: ${Math.round((100 - totalActual) * 100) / 100}%`,
-            total_actual: totalActual,
-            disponible: Math.round((100 - totalActual) * 100) / 100,
-          });
-        }
-
-        db.query(
-          `INSERT INTO actividad (id_grupo, id_unidad, id_tipo_actividad, ponderacion)
-           VALUES (?, ?, ?, ?)`,
-          [
-            id_grupo,
-            id_unidad,
-            id_tipo_actividad ?? null,
-            pond,
-          ],
-          (err2, result2) => {
-            if (err2)
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
-            res.status(201).json({
-              success: true,
-              id_actividad: result2.insertId,
-              total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+      db.query(
+        "SELECT COALESCE(SUM(ponderacion), 0) AS total FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
+        [id_grupo, id_unidad],
+        (err, result) => {
+          if (err)
+            return res
+              .status(500)
+              .json({ error: "Error interno del servidor" });
+          const totalActual = parseFloat(result[0].total);
+          if (totalActual + pond > 100)
+            return res.status(400).json({
+              error: `La suma de ponderaciones superaría el 100%. Actualmente tienes ${totalActual}% asignado en esta unidad. Disponible: ${Math.round((100 - totalActual) * 100) / 100}%`,
+              total_actual: totalActual,
+              disponible: Math.round((100 - totalActual) * 100) / 100,
             });
-          },
-        );
-      });
+
+          db.query(
+            "INSERT INTO actividad (id_grupo, id_unidad, id_tipo_actividad, ponderacion) VALUES (?, ?, ?, ?)",
+            [id_grupo, id_unidad, id_tipo_actividad ?? null, pond],
+            (err2, result2) => {
+              if (err2)
+                return res
+                  .status(500)
+                  .json({ error: "Error interno del servidor" });
+              res.status(201).json({
+                success: true,
+                id_actividad: result2.insertId,
+                total_ponderacion: Math.round((totalActual + pond) * 100) / 100,
+              });
+            },
+          );
+        },
+      );
     });
+  });
 });
 
-// PUT — editar actividad
+// PUT — editar ponderación de actividad
+// N-1: obtiene id_grupo de la actividad y verifica propietario.
 router.put("/:id", maestroOAdmin, (req, res) => {
   const { ponderacion } = req.body;
 
@@ -149,151 +149,148 @@ router.put("/:id", maestroOAdmin, (req, res) => {
     (err, rows) => {
       if (err)
         return res.status(500).json({ error: "Error interno del servidor" });
-      if (rows.length === 0)
+      if (!rows.length)
         return res.status(404).json({ error: "Actividad no encontrada" });
-
-      if (rows[0].bloqueado) {
+      if (rows[0].bloqueado)
         return res.status(409).json({
           error:
             "Esta actividad está bloqueada porque ya tiene calificaciones registradas. No se puede modificar su ponderación.",
         });
-      }
 
-      if (ponderacion !== undefined) {
-        const pond = parseFloat(ponderacion);
-        const sqlSuma = `
-          SELECT COALESCE(SUM(ponderacion), 0) AS total
-          FROM actividad
-          WHERE id_grupo = ? AND id_unidad = ? AND id_actividad != ?
-        `;
-        db.query(
-          sqlSuma,
-          [rows[0].id_grupo, rows[0].id_unidad, req.params.id],
-          (err2, res2) => {
-            if (err2)
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
-            const totalOtros = parseFloat(res2[0].total);
-            if (totalOtros + pond > 100) {
-              return res.status(400).json({
-                error: `La suma de ponderaciones superaría el 100%. Otras actividades ya suman ${totalOtros}%.`,
-              });
-            }
-            ejecutarUpdate();
-          },
-        );
-      } else {
-        ejecutarUpdate();
-      }
+      verificarPropietarioGrupo(rows[0].id_grupo, req, res, () => {
+        if (ponderacion !== undefined) {
+          const pond = parseFloat(ponderacion);
+          db.query(
+            "SELECT COALESCE(SUM(ponderacion), 0) AS total FROM actividad WHERE id_grupo = ? AND id_unidad = ? AND id_actividad != ?",
+            [rows[0].id_grupo, rows[0].id_unidad, req.params.id],
+            (err2, res2) => {
+              if (err2)
+                return res
+                  .status(500)
+                  .json({ error: "Error interno del servidor" });
+              const totalOtros = parseFloat(res2[0].total);
+              if (totalOtros + pond > 100)
+                return res.status(400).json({
+                  error: `La suma de ponderaciones superaría el 100%. Otras actividades ya suman ${totalOtros}%.`,
+                });
+              ejecutarUpdate();
+            },
+          );
+        } else {
+          ejecutarUpdate();
+        }
 
-      function ejecutarUpdate() {
-        db.query(
-          `UPDATE actividad
-           SET ponderacion = COALESCE(?, ponderacion)
-           WHERE id_actividad = ?`,
-          [
-            ponderacion ?? null,
-            req.params.id,
-          ],
-          (err3, r3) => {
-            if (err3)
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
-            if (r3.affectedRows === 0)
-              return res.status(404).json({ error: "No encontrada" });
-            res.json({ success: true });
-          },
-        );
-      }
+        function ejecutarUpdate() {
+          db.query(
+            "UPDATE actividad SET ponderacion = COALESCE(?, ponderacion) WHERE id_actividad = ?",
+            [ponderacion ?? null, req.params.id],
+            (err3, r3) => {
+              if (err3)
+                return res
+                  .status(500)
+                  .json({ error: "Error interno del servidor" });
+              if (r3.affectedRows === 0)
+                return res.status(404).json({ error: "No encontrada" });
+              res.json({ success: true });
+            },
+          );
+        }
+      });
     },
   );
 });
 
 // DELETE — eliminar actividad
-// FIX BUG 7: no permitir eliminar actividades con calificaciones ya registradas
+// N-1: verifica propietario del grupo y ausencia de calificaciones.
 router.delete("/:id", maestroOAdmin, (req, res) => {
-  // Verificar si hay resultados registrados para esta actividad
   db.query(
-    "SELECT COUNT(*) AS total FROM resultado_actividad WHERE id_actividad = ?",
+    "SELECT id_grupo FROM actividad WHERE id_actividad = ?",
     [req.params.id],
-    (errC, rowsC) => {
-      if (errC)
+    (errG, rowsG) => {
+      if (errG)
         return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rowsG.length)
+        return res.status(404).json({ error: "No encontrada" });
 
-      if (rowsC[0].total > 0) {
-        return res.status(409).json({
-          error: `No se puede eliminar esta actividad porque ya tiene ${rowsC[0].total} calificación(es) registrada(s). Anúlala o cancela los resultados primero.`,
-        });
-      }
+      verificarPropietarioGrupo(rowsG[0].id_grupo, req, res, () => {
+        db.query(
+          "SELECT COUNT(*) AS total FROM resultado_actividad WHERE id_actividad = ?",
+          [req.params.id],
+          (errC, rowsC) => {
+            if (errC)
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
+            if (rowsC[0].total > 0)
+              return res.status(409).json({
+                error: `No se puede eliminar esta actividad porque ya tiene ${rowsC[0].total} calificación(es) registrada(s). Anúlala o cancela los resultados primero.`,
+              });
 
-      db.query(
-        "DELETE FROM actividad WHERE id_actividad = ?",
-        [req.params.id],
-        (err, r) => {
-          if (err)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
-          if (r.affectedRows === 0)
-            return res.status(404).json({ error: "No encontrada" });
-          res.json({ success: true });
-        },
-      );
+            db.query(
+              "DELETE FROM actividad WHERE id_actividad = ?",
+              [req.params.id],
+              (err, r) => {
+                if (err)
+                  return res
+                    .status(500)
+                    .json({ error: "Error interno del servidor" });
+                if (r.affectedRows === 0)
+                  return res.status(404).json({ error: "No encontrada" });
+                res.json({ success: true });
+              },
+            );
+          },
+        );
+      });
     },
   );
 });
 
-// POST /bloquear-unidad — Bloquea (guarda definitivamente) todas las actividades de un grupo-unidad
-// Una vez bloqueadas, no se pueden agregar ni eliminar actividades en esa unidad
+// POST /bloquear-unidad
+// N-1: verifica propietario antes de bloquear.
 router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad } = req.body;
-
-  if (!id_grupo || !id_unidad) {
+  if (!id_grupo || !id_unidad)
     return res.status(400).json({ error: "Se requiere id_grupo e id_unidad" });
-  }
 
-  // Verificar que la suma sea exactamente 100% antes de bloquear
-  db.query(
-    "SELECT COALESCE(SUM(ponderacion), 0) AS total, COUNT(*) AS cantidad FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
-    [id_grupo, id_unidad],
-    (errC, rowsC) => {
-      if (errC)
-        return res.status(500).json({ error: "Error interno del servidor" });
+  verificarPropietarioGrupo(id_grupo, req, res, () => {
+    db.query(
+      "SELECT COALESCE(SUM(ponderacion), 0) AS total, COUNT(*) AS cantidad FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
+      [id_grupo, id_unidad],
+      (errC, rowsC) => {
+        if (errC)
+          return res.status(500).json({ error: "Error interno del servidor" });
 
-      const total = parseFloat(rowsC[0].total);
-      const cantidad = parseInt(rowsC[0].cantidad);
+        const total = parseFloat(rowsC[0].total);
+        const cantidad = parseInt(rowsC[0].cantidad);
 
-      if (cantidad === 0) {
-        return res
-          .status(400)
-          .json({ error: "La unidad no tiene actividades configuradas." });
-      }
-      if (Math.round(total) !== 100) {
-        return res.status(400).json({
-          error: `La suma de ponderaciones debe ser exactamente 100%. Actualmente: ${total.toFixed(0)}%.`,
-        });
-      }
-
-      // Bloquear todas las actividades de este grupo-unidad
-      db.query(
-        "UPDATE actividad SET bloqueado = 1 WHERE id_grupo = ? AND id_unidad = ?",
-        [id_grupo, id_unidad],
-        (errU, result) => {
-          if (errU)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
-          res.json({
-            success: true,
-            mensaje: "Unidad guardada y bloqueada correctamente.",
-            actividades_bloqueadas: result.affectedRows,
+        if (cantidad === 0)
+          return res
+            .status(400)
+            .json({ error: "La unidad no tiene actividades configuradas." });
+        if (Math.round(total) !== 100)
+          return res.status(400).json({
+            error: `La suma de ponderaciones debe ser exactamente 100%. Actualmente: ${total.toFixed(0)}%.`,
           });
-        },
-      );
-    },
-  );
+
+        db.query(
+          "UPDATE actividad SET bloqueado = 1 WHERE id_grupo = ? AND id_unidad = ?",
+          [id_grupo, id_unidad],
+          (errU, result) => {
+            if (errU)
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
+            res.json({
+              success: true,
+              mensaje: "Unidad guardada y bloqueada correctamente.",
+              actividades_bloqueadas: result.affectedRows,
+            });
+          },
+        );
+      },
+    );
+  });
 });
 
 module.exports = router;
