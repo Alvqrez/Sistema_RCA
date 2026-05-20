@@ -220,7 +220,10 @@ async function cargarGrupo() {
 
   // Show paso 3
   const paso3 = document.getElementById("cardPaso3");
-  if (paso3) { paso3.style.display = "block"; paso3.classList.add("open"); }
+  if (paso3) {
+    paso3.style.display = "block";
+    paso3.classList.add("open");
+  }
 
   // Mark paso 1 as done
   const _n1 = document.getElementById("numPaso1");
@@ -240,8 +243,11 @@ async function verificarConfigGrupo(id_grupo) {
     });
     if (res.ok) {
       const todas = await res.json();
-      const delGrupo = todas.filter(a => parseInt(a.id_grupo) === parseInt(id_grupo));
-      const tieneConfig = delGrupo.some(a => a.bloqueado);
+      const delGrupo = todas.filter(
+        (a) => parseInt(a.id_grupo) === parseInt(id_grupo),
+      );
+      // Configurado = el grupo tiene al menos una actividad definida (independiente de si hay calificaciones)
+      const tieneConfig = delGrupo.length > 0;
       if (tieneConfig) {
         actualizarEstadoBadge(true);
         if (hint) hint.style.display = "none"; // grupo configurado, ocultar hint
@@ -294,7 +300,10 @@ function resetVista() {
   const _hint = document.getElementById("hintConfigEval");
   if (_hint) _hint.style.display = "none";
   const n = document.getElementById("numPaso1");
-  if (n) { n.classList.remove("done"); n.textContent = "1"; }
+  if (n) {
+    n.classList.remove("done");
+    n.textContent = "1";
+  }
 }
 
 async function cargarUnidadesGrupo() {
@@ -345,7 +354,8 @@ async function cargarUnidadesGrupo() {
       .join("");
   } else {
     // captura_calificaciones.html usa su propio renderUnitTabs interceptado
-    if (typeof renderUnitTabs === "function") renderUnitTabs(estado.unidadesGrupo);
+    if (typeof renderUnitTabs === "function")
+      renderUnitTabs(estado.unidadesGrupo);
   }
 
   // Update "número de unidades" field
@@ -388,9 +398,21 @@ async function seleccionarUnidadTab(id_unidad) {
     console.error("Error cargando actividades:", e);
     estado.actividades = [];
   }
-  try { await cargarResultadosExistentes(); } catch (e) { console.error(e); }
-  try { await cargarBonusUnidad(); } catch (e) { console.error(e); }
-  try { await cargarGradesDirectos(); } catch (e) { console.error(e); }
+  try {
+    await cargarResultadosExistentes();
+  } catch (e) {
+    console.error(e);
+  }
+  try {
+    await cargarBonusUnidad();
+  } catch (e) {
+    console.error(e);
+  }
+  try {
+    await cargarGradesDirectos();
+  } catch (e) {
+    console.error(e);
+  }
 
   // Restaurar valores de examen/asistencia
   estado.alumnos.forEach((al) => {
@@ -414,7 +436,11 @@ async function seleccionarUnidadTab(id_unidad) {
   actualizarEstadoBadge(true);
   actualizarSelectCSVActividad();
 
-  try { await verificarEstadoUnidad(); } catch (e) { console.error(e); }
+  try {
+    await verificarEstadoUnidad();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 async function verificarEstadoUnidad() {
@@ -489,9 +515,11 @@ function limpiarUnidad() {
     .querySelectorAll(".unit-tab")
     .forEach((t) => t.classList.remove("active"));
   const _rb = document.getElementById("rubrosBar");
-  if (_rb) _rb.innerHTML = `<span style="font-size:0.78rem;color:var(--text-muted)">Selecciona una unidad</span>`;
+  if (_rb)
+    _rb.innerHTML = `<span style="font-size:0.78rem;color:var(--text-muted)">Selecciona una unidad</span>`;
   const _gtw = document.getElementById("gradeTableWrap");
-  if (_gtw) _gtw.innerHTML = `<div class="empty-wrap"><iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon><p>Selecciona una unidad para comenzar</p></div>`;
+  if (_gtw)
+    _gtw.innerHTML = `<div class="empty-wrap"><iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon><p>Selecciona una unidad para comenzar</p></div>`;
   const _ac2 = document.getElementById("accionesCaptura");
   if (_ac2) _ac2.style.display = "none";
   actualizarEstadoBadge(false);
@@ -502,7 +530,10 @@ async function cargarActividades() {
     const res = await fetch(`${API_URL}/api/actividades`, {
       headers: { Authorization: `Bearer ${token()}` },
     });
-    if (!res.ok) { estado.actividades = []; return; }
+    if (!res.ok) {
+      estado.actividades = [];
+      return;
+    }
     const todas = await res.json();
     estado.actividades = todas.filter(
       (a) =>
@@ -610,7 +641,7 @@ function renderRubrosBar() {
   // Mostrar las actividades reales del maestro como chips
   if (estado.actividades.length) {
     estado.actividades.forEach((a) => {
-      html += `<span class="rchip rchip-act">${a.nombre_tipo || a.nombre_actividad || 'Actividad'} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
+      html += `<span class="rchip rchip-act">${a.nombre_tipo || a.nombre_actividad || "Actividad"} ${parseFloat(a.ponderacion).toFixed(0)}%</span>`;
     });
   } else {
     html += `<span style="font-size:.78rem;color:var(--text-muted)">Sin actividades configuradas</span>`;
@@ -656,7 +687,7 @@ function renderTablaCalificaciones() {
 
   estado.actividades.forEach((a) => {
     thead += `<th style="min-width:100px">
-      <span style="color:#2563eb">${a.nombre_tipo || a.nombre_actividad || 'Actividad'}</span>
+      <span style="color:#2563eb">${a.nombre_tipo || a.nombre_actividad || "Actividad"}</span>
       <small>${parseFloat(a.ponderacion).toFixed(0)}%</small>
     </th>`;
   });
@@ -755,8 +786,14 @@ function clampCal(val) {
 function onCalInput(inp) {
   let val = parseFloat(inp.value);
   if (!isNaN(val)) {
-    if (val > 100) { val = 100; inp.value = 100; }
-    if (val < 0)   { val = 0;   inp.value = 0;   }
+    if (val > 100) {
+      val = 100;
+      inp.value = 100;
+    }
+    if (val < 0) {
+      val = 0;
+      inp.value = 0;
+    }
   }
   _cambiosPendientes = true;
 
@@ -914,7 +951,7 @@ function abrirModalActividades(no_control) {
         ? `<iconify-icon icon="mdi:lock-outline" style="font-size:.7rem;color:var(--warning,#f59e0b);margin-left:4px"></iconify-icon>`
         : "";
       return `<tr>
-      <td style="font-weight:500">${a.nombre_tipo || a.nombre_actividad || 'Actividad'}${lock}</td>
+      <td style="font-weight:500">${a.nombre_tipo || a.nombre_actividad || "Actividad"}${lock}</td>
       <td><span style="font-size:0.78rem;color:var(--text-muted)">${a.ponderacion}%</span></td>
       <td>
         <input class="grade-input modal-act-input" type="number" min="0" max="100"
@@ -1182,8 +1219,10 @@ async function _ejecutarGuardado() {
     mostrarToast(`${total} calificaciones guardadas`, "success");
     _cambiosPendientes = false;
     // Limpiar marcas _pendiente ahora que están en BD
-    Object.values(estado.resultados).forEach(acts =>
-      Object.values(acts).forEach(r => { delete r._pendiente; })
+    Object.values(estado.resultados).forEach((acts) =>
+      Object.values(acts).forEach((r) => {
+        delete r._pendiente;
+      }),
     );
   }
   await cargarResultadosExistentes();
@@ -1421,7 +1460,7 @@ function actualizarSelectCSVActividad() {
   if (!sel) return;
   sel.innerHTML = `<option value="">— Selecciona actividad —</option>`;
   estado.actividades.forEach((a) => {
-    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_tipo || a.nombre_actividad || 'Actividad'} (${a.ponderacion}%)</option>`;
+    sel.innerHTML += `<option value="${a.id_actividad}">${a.nombre_tipo || a.nombre_actividad || "Actividad"} (${a.ponderacion}%)</option>`;
   });
 }
 function manejarArchivoCSV(e) {

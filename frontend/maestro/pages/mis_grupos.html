@@ -387,21 +387,22 @@
 
           const activos = grupos.filter((g) => g.estatus === "Activo").length;
 
-          // Consultar actividades bloqueadas
-          let actividadesBloqueadas = [];
+          // Consultar todas las actividades del maestro
+          let todasActividades = [];
           try {
             const rActs = await fetch(`${API_URL}/api/actividades`, {
               headers: { Authorization: `Bearer ${tkn()}` },
             });
-            if (rActs.ok) actividadesBloqueadas = await rActs.json();
+            if (rActs.ok) todasActividades = await rActs.json();
           } catch (_) {}
 
-          // Unidades con al menos 1 actividad bloqueada, por grupo
-          const unidadesBloqueadasPorGrupo = {};
-          for (const a of actividadesBloqueadas.filter((a) => a.bloqueado)) {
-            if (!unidadesBloqueadasPorGrupo[a.id_grupo])
-              unidadesBloqueadasPorGrupo[a.id_grupo] = new Set();
-            unidadesBloqueadasPorGrupo[a.id_grupo].add(a.id_unidad);
+          // Unidades con al menos 1 actividad DEFINIDA, por grupo
+          // (configurado = el maestro ya creó actividades, no necesita haber guardado calificaciones)
+          const unidadesConActPorGrupo = {};
+          for (const a of todasActividades) {
+            if (!unidadesConActPorGrupo[a.id_grupo])
+              unidadesConActPorGrupo[a.id_grupo] = new Set();
+            unidadesConActPorGrupo[a.id_grupo].add(a.id_unidad);
           }
 
           // Consultar unidades EFECTIVAS de cada grupo via layout-unidades
@@ -428,14 +429,14 @@
             }),
           );
 
-          // Configurado = todas las unidades efectivas del grupo están bloqueadas
+          // Configurado = todas las unidades efectivas del grupo tienen al menos 1 actividad definida
           const gruposConActividad = new Set(
             grupos
               .filter((g) => {
                 const totalUnidades = unidadesTotalesPorGrupo[g.id_grupo] || 0;
-                const bloqueadas = unidadesBloqueadasPorGrupo[g.id_grupo];
-                if (totalUnidades === 0 || !bloqueadas) return false;
-                return bloqueadas.size === totalUnidades;
+                const conActs = unidadesConActPorGrupo[g.id_grupo];
+                if (totalUnidades === 0 || !conActs) return false;
+                return conActs.size >= totalUnidades;
               })
               .map((g) => g.id_grupo),
           );
