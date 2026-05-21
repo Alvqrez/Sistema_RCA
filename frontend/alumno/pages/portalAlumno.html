@@ -101,7 +101,6 @@
           <div style="position: relative">
             <button
               id="btnNotifAlumno"
-              
               style="
                 position: relative;
                 display: flex;
@@ -225,7 +224,8 @@
                     text-decoration: none;
                     font-weight: 600;
                   "
-                  id="verTodasAlumno">Ver todas →</a
+                  id="verTodasAlumno"
+                  >Ver todas →</a
                 >
               </div>
             </div>
@@ -235,18 +235,24 @@
           <div class="card-title">
             <iconify-icon icon="mdi:book-open-outline"></iconify-icon>
             Materias que cursa actualmente
-            <span
-              class="badge-unidad"
-              id="periodoActualBadge"
-              style="margin-left: auto"
-            ></span>
-            <button
-              class="card-toggle-btn"
-              onclick="toggleCard(this)"
-              title="Contraer"
+            <div
+              style="
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
             >
-              <iconify-icon icon="lucide:chevron-down"></iconify-icon>
-            </button>
+              <span class="badge-unidad" id="periodoActualBadge"></span>
+              <button
+                class="card-toggle-btn"
+                onclick="toggleCard(this)"
+                title="Contraer"
+                style="margin-left: 0"
+              >
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+              </button>
+            </div>
           </div>
           <div class="card-body" style="padding: 0">
             <div id="gridMaterias" class="materias-grid"></div>
@@ -344,28 +350,35 @@
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const tk = localStorage.getItem("token");
-        const noControl = tk ? JSON.parse(atob(tk.split(".")[1])).id_referencia : null;
+        const noControl = tk
+          ? JSON.parse(atob(tk.split(".")[1])).id_referencia
+          : null;
 
         RCANotif.init({
-          btnId:      "btnNotifAlumno",
-          dropId:     "notifDropAlumno",
-          countId:    "notifCountAlumno",
-          badgeId:    "notifDropBadgeAlumno",
-          listId:     "notifDropListAlumno",
+          btnId: "btnNotifAlumno",
+          dropId: "notifDropAlumno",
+          countId: "notifCountAlumno",
+          badgeId: "notifDropBadgeAlumno",
+          listId: "notifDropListAlumno",
           verTodasId: "verTodasAlumno",
           autoAlertasFn: async () => {
             const heads = { Authorization: `Bearer ${tk}` };
             const notifs = [];
             try {
-              const rp = await fetch(`${API_URL}/api/periodos`, { headers: heads });
+              const rp = await fetch(`${API_URL}/api/periodos`, {
+                headers: heads,
+              });
               const periodos = await rp.json();
-              const activo = periodos.find(p => p.estatus === "Vigente");
+              const activo = periodos.find((p) => p.estatus === "Vigente");
               if (activo?.fecha_fin) {
-                const dias = Math.ceil((new Date(activo.fecha_fin) - new Date()) / 86400000);
+                const dias = Math.ceil(
+                  (new Date(activo.fecha_fin) - new Date()) / 86400000,
+                );
                 if (dias > 0 && dias <= 14)
                   notifs.push({
                     _id: "auto_alum_cierre",
-                    tipo: "warning", icono: "lucide:clock",
+                    tipo: "warning",
+                    icono: "lucide:clock",
                     titulo: "Fin de periodo próximo",
                     texto: `El periodo escolar cierra en ${dias} día${dias !== 1 ? "s" : ""}.`,
                     url: null,
@@ -374,26 +387,34 @@
             } catch {}
             try {
               if (noControl) {
-                const ri = await fetch(`${API_URL}/api/inscripciones/alumno/${noControl}`, { headers: heads });
+                const ri = await fetch(
+                  `${API_URL}/api/inscripciones/alumno/${noControl}`,
+                  { headers: heads },
+                );
                 const inscs = await ri.json();
                 const reprobadas = (inscs || []).filter(
-                  i => i.estatus_final === "Reprobado"
+                  (i) => i.estatus_final === "Reprobado",
                 );
                 if (reprobadas.length)
                   notifs.push({
                     _id: "auto_alum_repr",
-                    tipo: "danger", icono: "lucide:alert-triangle",
+                    tipo: "danger",
+                    icono: "lucide:alert-triangle",
                     titulo: "Materia(s) reprobada(s)",
                     texto: `Tienes ${reprobadas.length} materia${reprobadas.length > 1 ? "s" : ""} reprobada${reprobadas.length > 1 ? "s" : ""}. Consulta con tu coordinador.`,
                     url: null,
                   });
-                const cursando = (inscs || []).filter(i => i.estatus === "Cursando");
+                const cursando = (inscs || []).filter(
+                  (i) => i.estatus === "Cursando",
+                );
                 if (!cursando.length && inscs.length === 0)
                   notifs.push({
                     _id: "auto_alum_sin_insc",
-                    tipo: "info", icono: "lucide:info",
+                    tipo: "info",
+                    icono: "lucide:info",
                     titulo: "Sin inscripciones",
-                    texto: "No tienes materias inscritas en el periodo actual. Acude a servicios escolares.",
+                    texto:
+                      "No tienes materias inscritas en el periodo actual. Acude a servicios escolares.",
                     url: null,
                   });
               }

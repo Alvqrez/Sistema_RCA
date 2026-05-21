@@ -68,7 +68,14 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
             m.nombre_materia, m.clave_materia,
             CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
             p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio,
-            cf.calificacion_oficial, cf.estatus_final
+            cf.calificacion_oficial, cf.estatus_final,
+            (
+              SELECT ROUND(AVG(cu.calificacion_unidad_final), 1)
+              FROM calificacion_unidad cu
+              WHERE cu.no_control = i.no_control
+                AND cu.id_grupo   = i.id_grupo
+                AND cu.calificacion_unidad_final IS NOT NULL
+            ) AS promedio_provisional
      FROM inscripcion i
      JOIN grupo g    ON i.id_grupo       = g.id_grupo
      JOIN materia m  ON g.clave_materia  = m.clave_materia

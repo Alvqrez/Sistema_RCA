@@ -142,7 +142,16 @@ function renderMateriasCursando() {
 
   grid.innerHTML = cursando
     .map((i) => {
-      const cal = i.calificacion_oficial;
+      // Usar calificacion_oficial si existe; si no, promedio_provisional de unidades
+      const calOficial = i.calificacion_oficial;
+      const calProv = i.promedio_provisional;
+      const cal =
+        calOficial !== null && calOficial !== undefined ? calOficial : calProv;
+      const esProvisional =
+        (calOficial === null || calOficial === undefined) &&
+        cal !== null &&
+        cal !== undefined;
+
       const hasCal = cal !== null && cal !== undefined;
       const pct = hasCal ? Math.min(100, Math.max(0, parseFloat(cal))) : 0;
       const isAprobado = hasCal && parseFloat(cal) >= 70;
@@ -151,7 +160,9 @@ function renderMateriasCursando() {
         : isAprobado
           ? "var(--success)"
           : "var(--danger)";
-      const calLabel = hasCal ? parseFloat(cal).toFixed(1) : "—";
+      const calLabel = hasCal
+        ? (esProvisional ? "~" : "") + parseFloat(cal).toFixed(1)
+        : "—";
       const calColor = !hasCal
         ? "var(--text-muted)"
         : isAprobado
@@ -171,8 +182,10 @@ function renderMateriasCursando() {
       <!-- barra de progreso de calificación -->
       <div style="margin-top:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:0.72rem;font-weight:600;color:var(--text-muted)">CALIFICACIÓN ACTUAL</span>
-          <span style="font-size:0.82rem;font-weight:700;color:${calColor}">${calLabel}</span>
+          <span style="font-size:0.72rem;font-weight:600;color:var(--text-muted)">
+            CALIFICACIÓN ACTUAL${esProvisional ? " <span style='font-weight:400;font-style:italic'>(provisional)</span>" : ""}
+          </span>
+          <span style="font-size:0.82rem;font-weight:700;color:${calColor}" title="${esProvisional ? "Promedio de unidades — la calificación final aún no ha sido registrada" : "Calificación oficial"}">${calLabel}</span>
         </div>
         <div style="height:5px;background:var(--border);border-radius:99px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.5s ease"></div>
