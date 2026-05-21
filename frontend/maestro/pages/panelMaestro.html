@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Panel Docente — RCA</title>
+    <script>
+      if (localStorage.getItem("tema") === "oscuro")
+        document.documentElement.classList.add("dark-mode");
+    </script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link
+      rel="icon"
+      type="image/png"
+      href="../../assets/images/icons/rca-icon.png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../css/styles.css" />
+    <style>
+      /* ── Hero ───────────────────────────────────────────────────── */
+      .hero-panel {
+        background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero-panel::before {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .hero-panel::after {
+        content: "";
+        position: absolute;
+        right: 60px;
+        bottom: -60px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .hero-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+        z-index: 1;
+      }
+      .hero-text {
+        flex: 1;
+        z-index: 1;
+      }
+      .hero-text h1 {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .hero-text p {
+        margin: 0;
+        font-size: 0.88rem;
+        opacity: 0.85;
+      }
+      .hero-date {
+        font-size: 0.78rem;
+        opacity: 0.7;
+        margin-top: 6px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        z-index: 1;
+      }
+      .hero-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s;
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+      }
+      .hero-btn-primary {
+        background: #fff;
+        color: var(--primary);
+      }
+      .hero-btn-primary:hover {
+        background: #f0f0ff;
+      }
+      .hero-btn-outline {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
+      }
+      .hero-btn-outline:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      /* ── Quick links grid ───────────────────────────────────────── */
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .quick-tile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card-bg);
+        text-decoration: none;
+        color: var(--text-main);
+        transition:
+          box-shadow 0.18s,
+          border-color 0.18s,
+          transform 0.15s;
+        cursor: pointer;
+      }
+      .quick-tile:hover {
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+        transform: translateY(-1px);
+      }
+      .quick-tile-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+      }
+      .quick-tile-icon.purple {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
+      }
+      .quick-tile-icon.green {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+      }
+      .quick-tile-icon.amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+      }
+      .quick-tile-icon.rose {
+        background: rgba(244, 63, 94, 0.12);
+        color: #e11d48;
+      }
+      .quick-tile-icon.teal {
+        background: rgba(20, 184, 166, 0.12);
+        color: #0d9488;
+      }
+      .quick-tile-body h4 {
+        margin: 0 0 2px;
+        font-size: 0.87rem;
+        font-weight: 600;
+      }
+      .quick-tile-body p {
+        margin: 0;
+        font-size: 0.74rem;
+        color: var(--text-muted);
+        line-height: 1.3;
+      }
+
+      /* ── Section header ─────────────────────────────────────────── */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .section-header h2 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin: 0;
+      }
+
+      /* ── Grupo mini-card (grupos list en panel) ─────────────────── */
+      .grupo-mini-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .grupo-mini-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card-bg);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .grupo-mini-row:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow);
+      }
+      .grupo-mini-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .grupo-mini-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .grupo-mini-info strong {
+        font-size: 0.88rem;
+        font-weight: 600;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .grupo-mini-info span {
+        font-size: 0.74rem;
+        color: var(--text-muted);
+      }
+      .grupo-mini-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      /* ── Pending task row ───────────────────────────────────────── */
+      .pending-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: var(--bg-app);
+        border: 1px solid var(--border);
+        margin-bottom: 8px;
+        font-size: 0.84rem;
+      }
+      .pending-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-warn {
+        background: var(--warning, #f59e0b);
+      }
+      .dot-ok {
+        background: var(--success, #10b981);
+      }
+      .dot-info {
+        background: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar"></aside>
+      <main class="content">
+        <!-- ── HERO ─────────────────────────────────────────────────── -->
+        <div class="hero-panel">
+          <div class="hero-avatar">
+            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
+          </div>
+          <div class="hero-text">
+            <h1 id="heroNombre">¡Bienvenido, Docente!</h1>
+            <p id="heroPeriodo">Cargando información del periodo activo…</p>
+            <p class="hero-date" id="heroFecha"></p>
+          </div>
+          <div class="hero-actions">
+            <a
+              href="captura_calificaciones.html"
+              class="hero-btn hero-btn-primary"
+            >
+              <iconify-icon icon="lucide:pencil"></iconify-icon> Capturar
+              calificaciones
+            </a>
+            <a href="gruposMaestro.html" class="hero-btn hero-btn-outline">
+              <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+              Configurar evaluación
+            </a>
+          </div>
+        </div>
+
+        <!-- ── STATS ─────────────────────────────────────────────────── -->
+        <div class="stats-row" style="margin-bottom: 24px">
+          <div class="stat-card">
+            <iconify-icon icon="lucide:library"></iconify-icon>
+            <div>
+              <p id="statGrupos">—</p>
+              <span>Grupos activos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success">
+            <iconify-icon icon="lucide:users"></iconify-icon>
+            <div>
+              <p id="statAlumnos">—</p>
+              <span>Alumnos inscritos</span>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <iconify-icon icon="lucide:check-circle-2"></iconify-icon>
+            <div>
+              <p id="statConfigurados">—</p>
+              <span>Grupos configurados</span>
+            </div>
+          </div>
+          <div class="stat-card" style="--sc-color: var(--warning, #f59e0b)">
+            <iconify-icon
+              icon="lucide:alert-circle"
+              style="color: var(--warning, #f59e0b)"
+            ></iconify-icon>
+            <div>
+              <p id="statPendientes" style="color: var(--warning, #f59e0b)">
+                —
+              </p>
+              <span>Sin configurar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TWO COLUMNS ───────────────────────────────────────────── -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+          "
+        >
+          <!-- Accesos rápidos -->
+          <div class="card" style="padding: 20px">
+            <div class="section-header">
+              <h2>Accesos rápidos</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <a href="mis_grupos.html" class="quick-link">
+                <iconify-icon icon="lucide:library"></iconify-icon>
+                <div>
+                  <strong>Mis grupos</strong>
+                  <p>Ver grupos, alumnos y configuraciones</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="gruposMaestro.html" class="quick-link">
+                <iconify-icon icon="lucide:scale"></iconify-icon>
+                <div>
+                  <strong>Configurar evaluación</strong>
+                  <p>Distribución del peso por unidad en el grupo</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="captura_calificaciones.html" class="quick-link">
+                <iconify-icon icon="lucide:clipboard-pen"></iconify-icon>
+                <div>
+                  <strong>Capturar calificaciones</strong>
+                  <p>Registrar y editar resultados de alumnos</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="../../shared/pages/reportes.html" class="quick-link">
+                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+                <div>
+                  <strong>Reportes</strong>
+                  <p>Promedios, avances y resultados del grupo</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Herramientas -->
+          <div class="card" style="padding: 20px">
+            <div class="section-header">
+              <h2>Herramientas</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <a href="alumnosMaestro.html" class="quick-link">
+                <iconify-icon icon="lucide:search"></iconify-icon>
+                <div>
+                  <strong>Buscar alumnos</strong>
+                  <p>Consultar alumnos y su historial</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="../../shared/pages/estadisticas.html" class="quick-link">
+                <iconify-icon icon="lucide:bar-chart-3"></iconify-icon>
+                <div>
+                  <strong>Estadísticas</strong>
+                  <p>Indicadores y métricas académicas</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+              <a href="utilerias_maestro.html" class="quick-link">
+                <iconify-icon icon="lucide:settings-2"></iconify-icon>
+                <div>
+                  <strong>Utilerías</strong>
+                  <p>Configuración y herramientas del sistema</p>
+                </div>
+                <iconify-icon
+                  icon="lucide:chevron-right"
+                  class="ql-arrow"
+                ></iconify-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── MIS GRUPOS ACTIVOS ─────────────────────────────────────── -->
+        <div class="card" style="padding: 20px; margin-bottom: 24px">
+          <div class="section-header">
+            <h2>Mis grupos activos</h2>
+            <a
+              href="mis_grupos.html"
+              style="
+                font-size: 0.82rem;
+                color: var(--primary);
+                text-decoration: none;
+                font-weight: 600;
+              "
+              >Ver todos →</a
+            >
+          </div>
+          <div id="gruposListPanel">
+            <div
+              style="
+                text-align: center;
+                padding: 32px;
+                color: var(--text-muted);
+              "
+            >
+              <iconify-icon
+                icon="lucide:loader-2"
+                style="font-size: 1.8rem; display: block; margin: 0 auto 8px"
+              ></iconify-icon>
+              <p style="font-size: 0.85rem">Cargando grupos…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PENDIENTES / ALERTAS ───────────────────────────────────── -->
+        <div class="card" style="padding: 20px">
+          <div class="section-header">
+            <h2>Estado de configuración</h2>
+          </div>
+          <div id="alertasPanel">
+            <div
+              style="
+                text-align: center;
+                padding: 24px;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+              "
+            >
+              <iconify-icon icon="lucide:loader-2"></iconify-icon> Cargando…
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="../../shared/js/sidebar.js"></script>
+    <script>
+      const tkn = () => localStorage.getItem("token");
+
+      function parsearToken(t) {
+        try {
+          return JSON.parse(atob(t.split(".")[1]));
+        } catch {
+          return null;
+        }
+      }
+
+      // ── Fecha en el hero ──────────────────────────────────────────────
+      (function () {
+        const nombre = localStorage.getItem("nombre") || "Docente";
+        const hora = new Date().getHours();
+        const saludo =
+          hora < 12
+            ? "¡Buenos días"
+            : hora < 18
+              ? "¡Buenas tardes"
+              : "¡Buenas noches";
+        document.getElementById("heroNombre").textContent =
+          `${saludo}, ${nombre}!`;
+        const hoy = new Date();
+        document.getElementById("heroFecha").textContent =
+          hoy.toLocaleDateString("es-MX", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+      })();
+
+      async function cargarPanel() {
+        soloPermitido("maestro", "administrador");
+        const payload = parsearToken(tkn());
+        let grupos = [];
+        try {
+          const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
+            headers: { Authorization: `Bearer ${tkn()}` },
+          });
+          if (r.ok) grupos = await r.json();
+        } catch (_) {}
+
+        if (!Array.isArray(grupos) || !grupos.length) {
+          try {
+            const r2 = await fetch(`${API_URL}/api/grupos`, {
+              headers: { Authorization: `Bearer ${tkn()}` },
+            });
+            const todos = await r2.json();
+            grupos = payload?.id_referencia
+              ? todos.filter(
+                  (g) => String(g.rfc) === String(payload.id_referencia),
+                )
+              : todos;
+          } catch (_) {}
+        }
+
+        grupos = grupos.filter((g) => g.estatus === "Activo" || !g.estatus);
+
+        // Stats básicos
+        document.getElementById("statGrupos").textContent = grupos.length;
+
+        // Periodo del hero
+        const periodo =
+          grupos[0]?.descripcion_periodo || grupos[0]?.periodo || "";
+        if (periodo)
+          document.getElementById("heroPeriodo").textContent =
+            `Periodo activo: ${periodo}`;
+
+        // Cargar actividades para saber qué grupos tienen config
+        let actividades = [];
+        try {
+          const rA = await fetch(`${API_URL}/api/actividades`, {
+            headers: { Authorization: `Bearer ${tkn()}` },
+          });
+          if (rA.ok) actividades = await rA.json();
+        } catch (_) {}
+
+        const gruposConActs = new Set(
+          actividades.map((a) => String(a.id_grupo)),
+        );
+        const configurados = grupos.filter((g) =>
+          gruposConActs.has(String(g.id_grupo)),
+        ).length;
+        const pendientes = grupos.length - configurados;
+        document.getElementById("statConfigurados").textContent = configurados;
+        document.getElementById("statPendientes").textContent = pendientes;
+
+        // Contar alumnos totales (desde reportes por grupo)
+        let totalAlumnos = 0;
+        const datosGrupos = await Promise.all(
+          grupos.map(async (g) => {
+            try {
+              const r = await fetch(
+                `${API_URL}/api/reportes/grupo/${g.id_grupo}`,
+                {
+                  headers: { Authorization: `Bearer ${tkn()}` },
+                },
+              );
+              if (r.ok) {
+                const d = await r.json();
+                totalAlumnos += (d.alumnos || []).length;
+                return { grupo: g, reporte: d };
+              }
+            } catch (_) {}
+            return { grupo: g, reporte: null };
+          }),
+        );
+
+        document.getElementById("statAlumnos").textContent = totalAlumnos;
+
+        // Render grupos en panel
+        const listEl = document.getElementById("gruposListPanel");
+        if (!grupos.length) {
+          listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:.85rem">
+            <iconify-icon icon="lucide:inbox" style="font-size:1.8rem;display:block;margin:0 auto 8px"></iconify-icon>
+            Sin grupos asignados actualmente.
+          </div>`;
+        } else {
+          listEl.innerHTML = `<div class="grupo-mini-list">${datosGrupos
+            .slice(0, 6)
+            .map(({ grupo: g, reporte: d }) => {
+              const tieneConfig = gruposConActs.has(String(g.id_grupo));
+              const alumnos = d?.alumnos?.length ?? 0;
+              const cfg = tieneConfig
+                ? `<span class="badge badge-success" style="font-size:.7rem">Configurado</span>`
+                : `<span class="badge badge-warning" style="font-size:.7rem">Sin config</span>`;
+              return `<div class="grupo-mini-row">
+                <div class="grupo-mini-icon"><iconify-icon icon="lucide:book-open"></iconify-icon></div>
+                <div class="grupo-mini-info">
+                  <strong>${g.nombre_materia || "—"}</strong>
+                  <span>Grupo #${g.id_grupo} · ${g.descripcion_periodo || ""} · ${alumnos} alumnos</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${cfg}
+                  <div class="grupo-mini-actions">
+                    <a href="captura_calificaciones.html?grupo=${g.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none" title="Calificar">
+                      <iconify-icon icon="lucide:pencil"></iconify-icon>
+                    </a>
+                    <a href="gruposMaestro.html?grupo=${g.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none" title="Configurar">
+                      <iconify-icon icon="lucide:settings"></iconify-icon>
+                    </a>
+                  </div>
+                </div>
+              </div>`;
+            })
+            .join("")}</div>`;
+        }
+
+        // Alertas de configuración
+        const alertasEl = document.getElementById("alertasPanel");
+        if (!grupos.length) {
+          alertasEl.innerHTML = `<p style="color:var(--text-muted);font-size:.85rem;text-align:center">Sin grupos asignados.</p>`;
+        } else {
+          const rows = grupos
+            .map((g) => {
+              const tieneConfig = gruposConActs.has(String(g.id_grupo));
+              const dotClass = tieneConfig ? "dot-ok" : "dot-warn";
+              const msg = tieneConfig
+                ? "Evaluación configurada"
+                : "Sin actividades definidas — ve a Configurar evaluación";
+              return `<div class="pending-row">
+              <span class="pending-dot ${dotClass}"></span>
+              <div style="flex:1">
+                <strong style="font-size:.85rem">${g.nombre_materia || "—"}</strong>
+                <span style="font-size:.78rem;color:var(--text-muted);margin-left:8px">Grupo #${g.id_grupo}</span>
+              </div>
+              <span style="font-size:.78rem;color:var(--text-muted)">${msg}</span>
+              ${
+                !tieneConfig
+                  ? `<a href="gruposMaestro.html?grupo=${g.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none;font-size:.75rem">
+                <iconify-icon icon="lucide:arrow-right"></iconify-icon> Configurar
+              </a>`
+                  : ""
+              }
+            </div>`;
+            })
+            .join("");
+          alertasEl.innerHTML = rows;
+        }
+      }
+
+      cargarPanel();
+    </script>
+  </body>
+</html>

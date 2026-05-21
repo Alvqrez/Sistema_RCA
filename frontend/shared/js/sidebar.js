@@ -69,36 +69,35 @@ window.API_URL = "http://localhost:3000";
 
     maestro: [
       {
-        href: "../../maestro/pages/mis_grupos.html",
+        href: "../../maestro/pages/panelMaestro.html",
         texto: "Inicio",
         icono: "lucide:layout-dashboard",
       },
       {
-        texto: "Directorio",
-        icono: "lucide:users",
+        texto: "Catálogo",
+        icono: "lucide:folder-open",
         hijos: [
           {
             href: "../../maestro/pages/alumnosMaestro.html",
-            texto: "Buscar alumnos",
-            icono: "lucide:search",
+            texto: "Mis alumnos",
+            icono: "lucide:users",
+          },
+          {
+            href: "../../maestro/pages/mis_grupos.html",
+            texto: "Mis grupos",
+            icono: "lucide:library",
           },
         ],
       },
       {
-        texto: "Mis Grupos",
-        icono: "lucide:book-open",
+        texto: "Asignar y calificar",
+        icono: "mdi:file-document-edit-outline",
         hijos: [
           {
             href: "../../maestro/pages/gruposMaestro.html",
-            texto: "Configurar unidad",
+            texto: "Configurar evaluación",
             icono: "lucide:sliders-horizontal",
           },
-        ],
-      },
-      {
-        texto: "Calificaciones",
-        icono: "mdi:file-document-edit-outline",
-        hijos: [
           {
             href: "../../maestro/pages/captura_calificaciones.html",
             texto: "Capturar calificaciones",
@@ -107,19 +106,25 @@ window.API_URL = "http://localhost:3000";
         ],
       },
       {
-        href: "../../shared/pages/reportes.html",
-        texto: "Reportes",
-        icono: "lucide:bar-chart-2",
-      },
-      {
-        href: "../../shared/pages/estadisticas.html",
-        texto: "Estadísticas",
-        icono: "lucide:chart-bar",
-      },
-      {
-        href: "../../maestro/pages/utilerias_maestro.html",
         texto: "Utilerías",
         icono: "lucide:settings-2",
+        hijos: [
+          {
+            href: "../../maestro/pages/utilerias_maestro.html",
+            texto: "Utilerías",
+            icono: "lucide:settings",
+          },
+          {
+            href: "../../shared/pages/estadisticas.html",
+            texto: "Estadísticas",
+            icono: "lucide:bar-chart-2",
+          },
+          {
+            href: "../../shared/pages/reportes.html",
+            texto: "Reportes",
+            icono: "lucide:clipboard-list",
+          },
+        ],
       },
     ],
 
@@ -312,7 +317,7 @@ function soloPermitido(...roles) {
   const rol = localStorage.getItem("rol");
   if (!roles.includes(rol)) {
     const inicio = {
-      maestro: "../../maestro/pages/mis_grupos.html",
+      maestro: "../../maestro/pages/panelMaestro.html",
       alumno: "../../alumno/pages/portalAlumno.html",
       administrador: "../../admin/pages/admin.html",
     };

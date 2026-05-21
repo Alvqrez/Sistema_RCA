@@ -116,6 +116,39 @@
           </div>
         </div>
 
+        <!-- Aviso duplicados -->
+        <div
+          style="
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-left: 4px solid var(--warning, #f59e0b);
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.83rem;
+            color: var(--text-main);
+          "
+        >
+          <iconify-icon
+            icon="lucide:info"
+            style="
+              color: var(--warning, #f59e0b);
+              font-size: 1rem;
+              flex-shrink: 0;
+              margin-top: 1px;
+            "
+          ></iconify-icon>
+          <span
+            >Puede que algunos alumnos aparezcan
+            <strong>más de una vez</strong> si están inscritos en más de uno de
+            sus grupos. Se recomienda <strong>filtrar por grupo</strong> para
+            evitar confusiones.</span
+          >
+        </div>
+
         <!-- Filtros -->
         <div
           class="card card-collapsible"
@@ -176,7 +209,75 @@
           <p>Cargando alumnos…</p>
         </div>
 
+        <!-- Vista toggle -->
+        <div
+          style="display: flex; justify-content: flex-end; margin-bottom: 12px"
+        >
+          <div
+            style="
+              display: flex;
+              gap: 6px;
+              background: var(--bg-app);
+              border: 1px solid var(--border);
+              border-radius: 8px;
+              padding: 4px;
+            "
+          >
+            <button
+              id="btnVistaCards"
+              onclick="setVistaAlumnos('cards')"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s;
+                background: var(--primary);
+                color: white;
+              "
+            >
+              <iconify-icon icon="lucide:layout-grid"></iconify-icon> Cards
+            </button>
+            <button
+              id="btnVistaLista"
+              onclick="setVistaAlumnos('lista')"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s;
+                background: transparent;
+                color: var(--text-muted);
+              "
+            >
+              <iconify-icon icon="lucide:list"></iconify-icon> Lista
+            </button>
+          </div>
+        </div>
+
         <div id="gridAlumnos" class="grid-alumnos" style="display: none"></div>
+
+        <div
+          id="listaAlumnos"
+          style="
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+          "
+        ></div>
 
         <div
           id="emptyState"
@@ -199,18 +300,35 @@
     <script src="../../shared/js/sidebar.js"></script>
     <script>
       const tkn = () => localStorage.getItem("token");
+      let todosAlumnos = [];
+      let _vistaAlumnos = localStorage.getItem("vista_alumnos") || "cards";
 
-      let todosAlumnos = []; // { no_control, nombre, grupo, id_grupo, materia, estatus_final }
+      function setVistaAlumnos(v) {
+        _vistaAlumnos = v;
+        localStorage.setItem("vista_alumnos", v);
+        const isCards = v === "cards";
+        document.getElementById("gridAlumnos").style.display = isCards
+          ? "grid"
+          : "none";
+        document.getElementById("listaAlumnos").style.display = isCards
+          ? "none"
+          : "block";
+        const btnC = document.getElementById("btnVistaCards");
+        const btnL = document.getElementById("btnVistaLista");
+        btnC.style.background = isCards ? "var(--primary)" : "transparent";
+        btnC.style.color = isCards ? "white" : "var(--text-muted)";
+        btnL.style.background = !isCards ? "var(--primary)" : "transparent";
+        btnL.style.color = !isCards ? "white" : "var(--text-muted)";
+      }
 
-      // ── Init ─────────────────────────────────────────────────────────
       (async function init() {
         soloPermitido("maestro", "administrador");
+        setVistaAlumnos(_vistaAlumnos);
         await cargarAlumnos();
       })();
 
       async function cargarAlumnos() {
         try {
-          // 1. Get teacher's groups
           let grupos = [];
           try {
             const r = await fetch(`${API_URL}/api/grupos/mis-grupos`, {
@@ -235,7 +353,6 @@
 
           grupos = grupos.filter((g) => g.estatus === "Activo" || !g.estatus);
 
-          // 2. For each group, get enrolled students + their final grade
           todosAlumnos = [];
           const sel = document.getElementById("filtroGrupo");
 
@@ -244,11 +361,49 @@
             try {
               const r = await fetch(
                 `${API_URL}/api/reportes/grupo/${g.id_grupo}`,
-                { headers: { Authorization: `Bearer ${tkn()}` } },
+                {
+                  headers: { Authorization: `Bearer ${tkn()}` },
+                },
               );
               if (!r.ok) continue;
               const data = await r.json();
               (data.alumnos || []).forEach((a) => {
+                // Calcular promedio provisional de unidades cuando no hay calificacion_oficial
+                const unidades = Object.values(a.unidades || {});
+                const conCalif = unidades.filter(
+                  (u) =>
+                    u.calificacion !== null && u.calificacion !== undefined,
+                );
+                const promProv =
+                  conCalif.length > 0
+                    ? conCalif.reduce(
+                        (s, u) => s + parseFloat(u.calificacion),
+                        0,
+                      ) / conCalif.length
+                    : null;
+
+                const calOficial = a.calificacion_oficial;
+                const calFinal =
+                  calOficial !== null && calOficial !== undefined
+                    ? calOficial
+                    : promProv;
+                const esProvisional =
+                  (calOficial === null || calOficial === undefined) &&
+                  calFinal !== null;
+
+                // Estatus dinámico: usar el de BD si existe, o deducirlo del promedio provisional
+                let estatusFinal = a.estatus_final;
+                if (!estatusFinal || estatusFinal === "Pendiente") {
+                  if (calFinal !== null && calFinal !== undefined) {
+                    estatusFinal =
+                      parseFloat(calFinal) >= 70
+                        ? "Aprobado provisional"
+                        : "Reprobado provisional";
+                  } else {
+                    estatusFinal = "Pendiente";
+                  }
+                }
+
                 todosAlumnos.push({
                   no_control: a.no_control,
                   nombre: a.nombre_completo,
@@ -256,8 +411,9 @@
                   materia: g.nombre_materia,
                   periodo: g.descripcion_periodo || "",
                   estatus_inscripcion: a.estatus_inscripcion,
-                  estatus_final: a.estatus_final || "Pendiente",
-                  calificacion: a.calificacion_oficial,
+                  estatus_final: estatusFinal,
+                  calificacion: calFinal,
+                  esProvisional,
                 });
               });
             } catch (_) {}
@@ -265,7 +421,6 @@
 
           document.getElementById("loadingState").style.display = "none";
 
-          // Stats
           document.getElementById("statTotal").textContent =
             todosAlumnos.length;
           document.getElementById("statAprobados").textContent =
@@ -280,7 +435,6 @@
         }
       }
 
-      // ── Filtrar ───────────────────────────────────────────────────────
       function filtrar() {
         const q = document
           .getElementById("filtroBusqueda")
@@ -295,73 +449,160 @@
             a.nombre.toLowerCase().includes(q) ||
             a.no_control.toLowerCase().includes(q);
           const matchG = !grupo || String(a.id_grupo) === grupo;
-          const matchE = !estatus || a.estatus_final === estatus;
+          const matchE =
+            !estatus ||
+            a.estatus_final.startsWith(estatus.replace(" provisional", ""));
           return matchQ && matchG && matchE;
         });
 
         renderAlumnos(resultado);
       }
 
-      // ── Render ────────────────────────────────────────────────────────
       function renderAlumnos(lista) {
         const grid = document.getElementById("gridAlumnos");
+        const listaEl = document.getElementById("listaAlumnos");
         const empty = document.getElementById("emptyState");
 
         if (!lista.length) {
           grid.style.display = "none";
+          listaEl.style.display = "none";
           empty.style.display = "block";
           return;
         }
         empty.style.display = "none";
-        grid.style.display = "grid";
 
-        grid.innerHTML = lista
-          .map((a) => {
-            const ini =
-              (a.nombre.split(",")[1]?.trim()?.[0] ?? "") +
-              (a.nombre.split(",")[0]?.trim()?.[0] ?? "");
+        const COLORS = [
+          "#3b82f6",
+          "#8b5cf6",
+          "#ec4899",
+          "#f59e0b",
+          "#10b981",
+          "#ef4444",
+          "#6366f1",
+          "#14b8a6",
+        ];
 
-            const estatusBadge =
-              a.estatus_final === "Aprobado"
-                ? `<span class="badge badge-success">Aprobado</span>`
+        const buildCard = (a, idx) => {
+          const ini =
+            (a.nombre.split(",")[1]?.trim()?.[0] ?? "") +
+            (a.nombre.split(",")[0]?.trim()?.[0] ?? "");
+          const color = COLORS[idx % COLORS.length];
+          const badgeClass =
+            a.estatus_final === "Aprobado"
+              ? "badge-success"
+              : a.estatus_final.startsWith("Aprobado")
+                ? "badge-success"
                 : a.estatus_final === "Reprobado"
-                  ? `<span class="badge badge-danger">Reprobado</span>`
-                  : `<span class="badge badge-warning">Pendiente</span>`;
-
-            const calText =
-              a.calificacion != null
-                ? `<strong style="font-size:1.1rem;color:${a.calificacion >= 70 ? "var(--success)" : "var(--danger)"}">${a.calificacion}</strong>`
-                : `<span style="color:var(--text-muted)">—</span>`;
-
-            return `
-            <div class="alumno-card">
-              <div class="alumno-avatar">${ini.toUpperCase() || "?"}</div>
-              <div class="alumno-info">
-                <p class="alumno-nombre">${a.nombre}</p>
-                <div class="alumno-meta">
-                  <span><iconify-icon icon="lucide:hash"></iconify-icon> ${a.no_control}</span>
-                  <span><iconify-icon icon="lucide:book-open"></iconify-icon> ${a.materia}</span>
-                </div>
-                <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
-                  ${estatusBadge}
-                  <span style="font-size:0.78rem;color:var(--text-muted)">Cal. final: ${calText}</span>
-                </div>
+                  ? "badge-danger"
+                  : a.estatus_final.startsWith("Reprobado")
+                    ? "badge-danger"
+                    : "badge-warning";
+          const calNum =
+            a.calificacion !== null && a.calificacion !== undefined
+              ? parseFloat(a.calificacion)
+              : null;
+          const calColor =
+            calNum === null
+              ? "var(--text-muted)"
+              : calNum >= 70
+                ? "var(--success)"
+                : "var(--danger)";
+          const calStr =
+            calNum !== null
+              ? `${a.esProvisional ? "~" : ""}${calNum.toFixed(1)}`
+              : "—";
+          const calLabel = a.esProvisional
+            ? `${calStr} <span style="font-size:.7rem;opacity:.75">(prov.)</span>`
+            : calStr;
+          return `<div class="alumno-card">
+            <div class="alumno-avatar" style="background:${color}20;color:${color}">${ini.toUpperCase() || "?"}</div>
+            <div class="alumno-info">
+              <p class="alumno-nombre">${a.nombre}</p>
+              <div class="alumno-meta">
+                <span><iconify-icon icon="lucide:hash"></iconify-icon> ${a.no_control}</span>
+                <span><iconify-icon icon="lucide:book-open"></iconify-icon> ${a.materia}</span>
+                ${a.periodo ? `<span><iconify-icon icon="lucide:calendar"></iconify-icon> ${a.periodo}</span>` : ""}
               </div>
-              <div class="alumno-actions">
-                <a href="captura_calificaciones.html?grupo=${a.id_grupo}"
-                   class="btn btn-primary btn-sm" style="text-decoration:none"
-                   title="Capturar calificaciones de este grupo">
-                  <iconify-icon icon="lucide:pencil"></iconify-icon>
-                </a>
-                <a href="../../shared/pages/reportes.html?grupo=${a.id_grupo}"
-                   class="btn btn-outline btn-sm" style="text-decoration:none"
-                   title="Ver reporte del grupo">
-                  <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
-                </a>
+              <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
+                <span class="badge ${badgeClass}" style="font-size:.72rem">${a.estatus_final}</span>
+                <span style="font-size:0.78rem;color:var(--text-muted)">Cal.: <strong style="color:${calColor}">${calStr}</strong>${a.esProvisional ? ' <span style="font-size:.7rem;color:var(--text-muted)">(prov.)</span>' : ""}</span>
               </div>
-            </div>`;
-          })
-          .join("");
+            </div>
+            <div class="alumno-actions">
+              <a href="captura_calificaciones.html?grupo=${a.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none" title="Capturar calificaciones">
+                <iconify-icon icon="lucide:pencil"></iconify-icon>
+              </a>
+              <a href="../../shared/pages/reportes.html?grupo=${a.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none" title="Ver reporte">
+                <iconify-icon icon="lucide:bar-chart-2"></iconify-icon>
+              </a>
+            </div>
+          </div>`;
+        };
+
+        const buildRow = (a, i, total) => {
+          const ini =
+            (a.nombre.split(",")[1]?.trim()?.[0] ?? "") +
+            (a.nombre.split(",")[0]?.trim()?.[0] ?? "");
+          const COLORS = [
+            "#3b82f6",
+            "#8b5cf6",
+            "#ec4899",
+            "#f59e0b",
+            "#10b981",
+            "#ef4444",
+          ];
+          const color = COLORS[i % COLORS.length];
+          const badgeClass =
+            a.estatus_final === "Aprobado" ||
+            a.estatus_final.startsWith("Aprobado")
+              ? "badge-success"
+              : a.estatus_final === "Reprobado" ||
+                  a.estatus_final.startsWith("Reprobado")
+                ? "badge-danger"
+                : "badge-warning";
+          const calNum =
+            a.calificacion !== null && a.calificacion !== undefined
+              ? parseFloat(a.calificacion)
+              : null;
+          const calColor =
+            calNum === null
+              ? "var(--text-muted)"
+              : calNum >= 70
+                ? "var(--success)"
+                : "var(--danger)";
+          const calStr =
+            calNum !== null
+              ? `${a.esProvisional ? "~" : ""}${calNum.toFixed(1)}`
+              : "—";
+          const isLast = i === total - 1;
+          return `<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;padding:11px 18px;align-items:center;${!isLast ? "border-bottom:1px solid var(--border)" : ""}">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0">
+              <div style="width:34px;height:34px;border-radius:50%;background:${color}20;color:${color};font-size:.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${ini.toUpperCase() || "?"}</div>
+              <div style="min-width:0">
+                <div style="font-size:.87rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nombre}</div>
+                <div style="font-size:.73rem;color:var(--text-muted)">${a.no_control} · ${a.materia}</div>
+              </div>
+            </div>
+            <span class="badge ${badgeClass}" style="font-size:.7rem;white-space:nowrap">${a.estatus_final}</span>
+            <span style="font-size:.87rem;font-weight:700;color:${calColor};min-width:40px;text-align:right">${calStr}${a.esProvisional ? '<span style="font-size:.65rem;color:var(--text-muted)"> prov.</span>' : ""}</span>
+            <div style="display:flex;gap:5px">
+              <a href="captura_calificaciones.html?grupo=${a.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none;padding:5px 8px"><iconify-icon icon="lucide:pencil"></iconify-icon></a>
+              <a href="../../shared/pages/reportes.html?grupo=${a.id_grupo}" class="btn btn-outline btn-sm" style="text-decoration:none;padding:5px 8px"><iconify-icon icon="lucide:bar-chart-2"></iconify-icon></a>
+            </div>
+          </div>`;
+        };
+
+        if (_vistaAlumnos === "lista") {
+          grid.style.display = "none";
+          listaEl.style.display = "block";
+          listaEl.innerHTML = lista
+            .map((a, i) => buildRow(a, i, lista.length))
+            .join("");
+        } else {
+          listaEl.style.display = "none";
+          grid.style.display = "grid";
+          grid.innerHTML = lista.map((a, i) => buildCard(a, i)).join("");
+        }
       }
     </script>
   </body>
