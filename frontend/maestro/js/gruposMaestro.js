@@ -5,41 +5,73 @@
 const tk = () => localStorage.getItem("token");
 
 // ── Estado global ──────────────────────────────────────────────────────────
-let misGrupos        = [];
-let unidadesPorGrupo = {};          // { id_grupo: [unidad, …] }
+let misGrupos = [];
+let unidadesPorGrupo = {}; // { id_grupo: [unidad, …] }
 let actividadesPorGrupoUnidad = {}; // { "id_grupo_id_unidad": [actividad, …] }
-let tiposActividad   = [];          // catálogo del admin
+let tiposActividad = []; // catálogo del admin
 // unidades custom (dividir/fusionar) siguen en localStorage solo como layout
 // Sin localStorage — las unidades efectivas vienen de la BD via layout-unidades
 const getUnidadesEfectivas = (g) => unidadesPorGrupo[g] || [];
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 function auFetch(url, opts = {}) {
-  return fetch(url, { ...opts, headers: { "Content-Type": "application/json", Authorization: `Bearer ${tk()}`, ...(opts.headers || {}) } })
-    .then(async r => { if (r.status === 401) { location.href = "../../shared/pages/login.html"; throw new Error("401"); } const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; });
+  return fetch(url, {
+    ...opts,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tk()}`,
+      ...(opts.headers || {}),
+    },
+  }).then(async (r) => {
+    if (r.status === 401) {
+      location.href = "../../shared/pages/login.html";
+      throw new Error("401");
+    }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    return d;
+  });
 }
 
 function showToast(msg, type = "info") {
-  const c = document.getElementById("toast-container"); if (!c) return;
-  const t = document.createElement("div"); t.className = `toast toast-${type}`; t.textContent = msg;
-  c.appendChild(t); setTimeout(() => t.remove(), 3500);
+  const c = document.getElementById("toast-container");
+  if (!c) return;
+  const t = document.createElement("div");
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
 }
 
-function mostrarConfirm({ icono = "lucide:alert-circle", titulo, mensaje, labelOk = "Confirmar", colorOk = "var(--danger)", colorIcono = "var(--danger)" } = {}) {
-  return new Promise(resolve => {
+function mostrarConfirm({
+  icono = "lucide:alert-circle",
+  titulo,
+  mensaje,
+  labelOk = "Confirmar",
+  colorOk = "var(--danger)",
+  colorIcono = "var(--danger)",
+} = {}) {
+  return new Promise((resolve) => {
     const modal = document.getElementById("modalConfirm");
-    document.getElementById("confirmIcon").innerHTML  = `<iconify-icon icon="${icono}" style="font-size:1.4rem;color:${colorIcono}"></iconify-icon>`;
+    document.getElementById("confirmIcon").innerHTML =
+      `<iconify-icon icon="${icono}" style="font-size:1.4rem;color:${colorIcono}"></iconify-icon>`;
     document.getElementById("confirmTitle").textContent = titulo;
-    document.getElementById("confirmMsg").textContent   = mensaje;
-    const btnOk  = document.getElementById("confirmOk");
+    document.getElementById("confirmMsg").textContent = mensaje;
+    const btnOk = document.getElementById("confirmOk");
     const btnCan = document.getElementById("confirmCancel");
-    btnOk.textContent        = labelOk;
-    btnOk.style.background   = colorOk;
-    modal.style.display      = "flex";
-    const cleanup = r => { modal.style.display = "none"; btnOk.removeEventListener("click", onOk); btnCan.removeEventListener("click", onCan); resolve(r); };
-    const onOk  = () => cleanup(true);
+    btnOk.textContent = labelOk;
+    btnOk.style.background = colorOk;
+    modal.style.display = "flex";
+    const cleanup = (r) => {
+      modal.style.display = "none";
+      btnOk.removeEventListener("click", onOk);
+      btnCan.removeEventListener("click", onCan);
+      resolve(r);
+    };
+    const onOk = () => cleanup(true);
     const onCan = () => cleanup(false);
-    btnOk.addEventListener("click", onOk); btnCan.addEventListener("click", onCan);
+    btnOk.addEventListener("click", onOk);
+    btnCan.addEventListener("click", onCan);
   });
 }
 
@@ -50,60 +82,99 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function cargarTipos() {
-  try { tiposActividad = await auFetch(`${API_URL}/api/tipo-actividades`); } catch { tiposActividad = []; }
+  try {
+    tiposActividad = await auFetch(`${API_URL}/api/tipo-actividades`);
+  } catch {
+    tiposActividad = [];
+  }
 }
 
 // ── Cargar grupos ──────────────────────────────────────────────────────────
 async function cargarGrupos() {
   const loader = document.getElementById("loadingState");
-  const lista  = document.getElementById("listaGrupos");
-  const empty  = document.getElementById("emptyState");
+  const lista = document.getElementById("listaGrupos");
+  const empty = document.getElementById("emptyState");
 
   try {
     let grupos = [];
-    try { grupos = await auFetch(`${API_URL}/api/grupos/mis-grupos`); } catch (_) {
+    try {
+      grupos = await auFetch(`${API_URL}/api/grupos/mis-grupos`);
+    } catch (_) {
       try {
         const todos = await auFetch(`${API_URL}/api/grupos`);
         const payload = JSON.parse(atob(tk().split(".")[1]));
-        grupos = todos.filter(g => String(g.rfc) === String(payload.id_referencia));
-      } catch { grupos = []; }
+        grupos = todos.filter(
+          (g) => String(g.rfc) === String(payload.id_referencia),
+        );
+      } catch {
+        grupos = [];
+      }
     }
     misGrupos = Array.isArray(grupos) ? grupos : [];
 
     if (loader) loader.style.display = "none";
-    if (!misGrupos.length) { if (empty) empty.style.display = "block"; actualizarStats(); return; }
+    if (!misGrupos.length) {
+      if (empty) empty.style.display = "block";
+      actualizarStats();
+      return;
+    }
     if (lista) lista.style.display = "block";
 
     // Cargar unidades y actividades en paralelo
-    await Promise.all(misGrupos.map(async g => {
-      unidadesPorGrupo[g.id_grupo] = await cargarUnidades(g);
-      await cargarActividades(g.id_grupo);
-    }));
+    await Promise.all(
+      misGrupos.map(async (g) => {
+        unidadesPorGrupo[g.id_grupo] = await cargarUnidades(g);
+        await cargarActividades(g.id_grupo);
+      }),
+    );
 
     actualizarStats();
-    if (lista) { lista.innerHTML = ""; misGrupos.forEach(g => lista.appendChild(buildGrupoCard(g))); }
+    if (lista) {
+      lista.innerHTML = "";
+      misGrupos.forEach((g) => lista.appendChild(buildGrupoCard(g)));
+      // Auto-abrir el grupo indicado en la URL (?grupo=ID)
+      const gParam = new URLSearchParams(window.location.search).get("grupo");
+      if (gParam) {
+        const card = document.getElementById(`grupo-card-${gParam}`);
+        if (card && !card.classList.contains("open"))
+          card.classList.add("open");
+        card?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
   } catch (e) {
     console.error(e);
-    if (loader) loader.innerHTML = `<p style="color:var(--danger)">Error al conectar. <button onclick="location.reload()">Reintentar</button></p>`;
+    if (loader)
+      loader.innerHTML = `<p style="color:var(--danger)">Error al conectar. <button onclick="location.reload()">Reintentar</button></p>`;
   }
 }
 
 async function cargarUnidades(grupo) {
   try {
     // Auto-vincular para asegurar grupo_unidad si no existe aún
-    await fetch(`${API_URL}/api/grupos/${grupo.id_grupo}/unidades/auto-vincular`, { method: "POST", headers: { Authorization: `Bearer ${tk()}` } });
+    await fetch(
+      `${API_URL}/api/grupos/${grupo.id_grupo}/unidades/auto-vincular`,
+      { method: "POST", headers: { Authorization: `Bearer ${tk()}` } },
+    );
   } catch {}
   try {
     // Usar layout-unidades: devuelve unidades efectivas respetando divisiones/fusiones
-    const uns = await auFetch(`${API_URL}/api/grupos/${grupo.id_grupo}/layout-unidades`);
+    const uns = await auFetch(
+      `${API_URL}/api/grupos/${grupo.id_grupo}/layout-unidades`,
+    );
     if (Array.isArray(uns) && uns.length) {
       // Obtener todas las unidades originales de la materia para calcular posición real
       let todasOriginales = [];
-      try { todasOriginales = await auFetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`); } catch {}
+      try {
+        todasOriginales = await auFetch(
+          `${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+        );
+      } catch {}
       const posicionOriginal = {}; // { id_unidad: posicion_1_based }
-      todasOriginales.forEach((u, i) => { posicionOriginal[u.id_unidad] = i + 1; });
+      todasOriginales.forEach((u, i) => {
+        posicionOriginal[u.id_unidad] = i + 1;
+      });
 
-      return uns.map(u => {
+      return uns.map((u) => {
         // Para unidades originales: posición directa
         // Para fusiones/divisiones: posición del id de origen más pequeño
         let numero;
@@ -114,30 +185,49 @@ async function cargarUnidades(grupo) {
           if (u.tipo_layout === "division_a") numero = `${numero}a`;
           else if (u.tipo_layout === "division_b") numero = `${numero}b`;
         } else {
-          numero = posicionOriginal[u.id_unidad] ?? (u.id_orden_base);
+          numero = posicionOriginal[u.id_unidad] ?? u.id_orden_base;
         }
-        return { ...u, numero_unidad: numero, _origen: u.ids_origen || String(u.id_unidad) };
+        return {
+          ...u,
+          numero_unidad: numero,
+          _origen: u.ids_origen || String(u.id_unidad),
+        };
       });
     }
   } catch {}
   // Fallback: unidades originales de la materia
   try {
-    const uns = await auFetch(`${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`);
-    return Array.isArray(uns) ? uns.map((u, i) => ({ ...u, numero_unidad: i + 1, _origen: String(u.id_unidad) })) : [];
-  } catch { return []; }
+    const uns = await auFetch(
+      `${API_URL}/api/unidades/materia/${encodeURIComponent(grupo.clave_materia)}`,
+    );
+    return Array.isArray(uns)
+      ? uns.map((u, i) => ({
+          ...u,
+          numero_unidad: i + 1,
+          _origen: String(u.id_unidad),
+        }))
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 async function cargarActividades(id_grupo) {
   try {
     const todas = await auFetch(`${API_URL}/api/actividades`);
-    const delGrupo = todas.filter(a => String(a.id_grupo) === String(id_grupo));
+    const delGrupo = todas.filter(
+      (a) => String(a.id_grupo) === String(id_grupo),
+    );
     actividadesPorGrupoUnidad[id_grupo] = {};
-    delGrupo.forEach(a => {
+    delGrupo.forEach((a) => {
       const k = String(a.id_unidad);
-      if (!actividadesPorGrupoUnidad[id_grupo][k]) actividadesPorGrupoUnidad[id_grupo][k] = [];
+      if (!actividadesPorGrupoUnidad[id_grupo][k])
+        actividadesPorGrupoUnidad[id_grupo][k] = [];
       actividadesPorGrupoUnidad[id_grupo][k].push(a);
     });
-  } catch { actividadesPorGrupoUnidad[id_grupo] = {}; }
+  } catch {
+    actividadesPorGrupoUnidad[id_grupo] = {};
+  }
 }
 
 function getActsUnidad(id_grupo, id_unidad) {
@@ -145,28 +235,30 @@ function getActsUnidad(id_grupo, id_unidad) {
 }
 
 // ── Stats ──────────────────────────────────────────────────────────────────
+function estaConfigurado(id_grupo) {
+  const uns = getUnidadesEfectivas(id_grupo);
+  return (
+    uns.length > 0 &&
+    uns.every((u) => getActsUnidad(id_grupo, u.id_unidad).length > 0)
+  );
+}
+
 function actualizarStats() {
   const total = misGrupos.length;
-  const configurados = misGrupos.filter(g => {
-    const uns = getUnidadesEfectivas(g.id_grupo);
-    return uns.length > 0 && uns.every(u => {
-      const acts = getActsUnidad(g.id_grupo, u.id_unidad);
-      return acts.length > 0 && acts.every(a => a.bloqueado);
-    });
-  }).length;
-  const el = id => document.getElementById(id);
-  if (el("statGrupos"))       el("statGrupos").textContent       = total;
+  const configurados = misGrupos.filter((g) =>
+    estaConfigurado(g.id_grupo),
+  ).length;
+  const el = (id) => document.getElementById(id);
+  if (el("statGrupos")) el("statGrupos").textContent = total;
   if (el("statConfigurados")) el("statConfigurados").textContent = configurados;
-  if (el("statPendientes"))   el("statPendientes").textContent   = total - configurados;
+  if (el("statPendientes"))
+    el("statPendientes").textContent = total - configurados;
 }
 
 // ── Build tarjeta de grupo ─────────────────────────────────────────────────
 function buildGrupoCard(grupo) {
-  const uns       = getUnidadesEfectivas(grupo.id_grupo);
-  const configurado = uns.length > 0 && uns.every(u => {
-    const acts = getActsUnidad(grupo.id_grupo, u.id_unidad);
-    return acts.length > 0 && acts.every(a => a.bloqueado);
-  });
+  const uns = getUnidadesEfectivas(grupo.id_grupo);
+  const configurado = estaConfigurado(grupo.id_grupo);
 
   const badge = configurado
     ? `<span class="cfg-badge cfg-badge-ok"><iconify-icon icon="lucide:lock" style="font-size:.7rem"></iconify-icon> Configurado</span>`
@@ -214,7 +306,9 @@ function buildGrupoBody(grupo) {
       </button>
     </div>`;
 
-  unidades.forEach(u => { html += buildUnidadConfig(grupo.id_grupo, u); });
+  unidades.forEach((u) => {
+    html += buildUnidadConfig(grupo.id_grupo, u);
+  });
 
   html += `
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
@@ -227,10 +321,10 @@ function buildGrupoBody(grupo) {
 
 function buildUnidadConfig(id_grupo, unidad) {
   const blockId = `uc-${id_grupo}-${unidad.id_unidad}`;
-  const acts    = getActsUnidad(id_grupo, unidad.id_unidad);
-  const suma    = acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
-  const sumaOk  = Math.abs(suma - 100) < 0.01;
-  const bloqueada = acts.length > 0 && acts.every(a => a.bloqueado);
+  const acts = getActsUnidad(id_grupo, unidad.id_unidad);
+  const suma = acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
+  const sumaOk = Math.abs(suma - 100) < 0.01;
+  const bloqueada = acts.length > 0 && acts.every((a) => a.bloqueado);
 
   const sumaBadge = bloqueada
     ? `<span class="cfg-badge cfg-badge-ok" style="font-size:.7rem">✓ 100%</span>`
@@ -246,20 +340,28 @@ function buildUnidadConfig(id_grupo, unidad) {
     : "";
 
   const actsList = acts.length
-    ? acts.map(a => buildActRow(id_grupo, unidad.id_unidad, a, bloqueada)).join("")
+    ? acts
+        .map((a) => buildActRow(id_grupo, unidad.id_unidad, a, bloqueada))
+        .join("")
     : `<div style="font-size:.83rem;color:var(--text-muted);padding:10px 0">Sin actividades. Agrega al menos una para completar el 100%.</div>`;
 
-  const agregarBtn = bloqueada ? "" : `
+  const agregarBtn = bloqueada
+    ? ""
+    : `
     <button class="btn-agregar-act" onclick="abrirModalAgregarAct(${id_grupo},'${unidad.id_unidad}')">
       <iconify-icon icon="lucide:plus-circle"></iconify-icon> Agregar actividad
     </button>`;
 
-  const guardarBtn = bloqueada ? "" : `
+  const guardarBtn = bloqueada
+    ? ""
+    : `
     <button class="btn btn-primary btn-sm" onclick="guardarUnidad(${id_grupo},'${unidad.id_unidad}')" ${sumaOk ? "" : "disabled"}>
       <iconify-icon icon="lucide:lock"></iconify-icon> Guardar unidad
     </button>`;
 
-  const sumaLabel = bloqueada ? "" : `
+  const sumaLabel = bloqueada
+    ? ""
+    : `
     <div class="suma-row">
       <span style="font-size:.8rem;color:var(--text-muted)">Total asignado: <strong>${suma.toFixed(0)}%</strong></span>
       <span style="font-size:.8rem;color:var(--text-muted)">Disponible: <strong>${Math.max(0, 100 - suma).toFixed(0)}%</strong></span>
@@ -319,17 +421,33 @@ function buildActRow(id_grupo, id_unidad, act, bloqueada) {
 
 // ── Actualizar suma en tiempo real ─────────────────────────────────────────
 function actualizarSuma(id_grupo, id_unidad) {
-  const inputs = document.querySelectorAll(`.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`);
+  const inputs = document.querySelectorAll(
+    `.rubro-pct-input[data-grupo="${id_grupo}"][data-unidad="${id_unidad}"]`,
+  );
   let suma = 0;
-  inputs.forEach(inp => { let v = parseFloat(inp.value); if (isNaN(v) || v < 0) v = 0; if (v > 100) { v = 100; inp.value = 100; } suma += v; });
+  inputs.forEach((inp) => {
+    let v = parseFloat(inp.value);
+    if (isNaN(v) || v < 0) v = 0;
+    if (v > 100) {
+      v = 100;
+      inp.value = 100;
+    }
+    suma += v;
+  });
   const blockId = `uc-${id_grupo}-${id_unidad}`;
-  const block   = document.getElementById(blockId);
+  const block = document.getElementById(blockId);
   if (!block) return;
   const badge = block.querySelector(".cfg-badge");
   const sumaOk = Math.abs(suma - 100) < 0.01;
-  if (badge) { badge.className = `cfg-badge ${sumaOk ? "cfg-badge-ok" : "cfg-badge-pending"}`; badge.style.fontSize = ".7rem"; badge.textContent = `${suma.toFixed(0)}% / 100%`; if (sumaOk) badge.textContent = "✓ 100%"; }
+  if (badge) {
+    badge.className = `cfg-badge ${sumaOk ? "cfg-badge-ok" : "cfg-badge-pending"}`;
+    badge.style.fontSize = ".7rem";
+    badge.textContent = `${suma.toFixed(0)}% / 100%`;
+    if (sumaOk) badge.textContent = "✓ 100%";
+  }
   const sumaRow = block.querySelector(".suma-row");
-  if (sumaRow) sumaRow.innerHTML = `<span style="font-size:.8rem;color:var(--text-muted)">Total asignado: <strong>${suma.toFixed(0)}%</strong></span><span style="font-size:.8rem;color:var(--text-muted)">Disponible: <strong>${Math.max(0, 100 - suma).toFixed(0)}%</strong></span>`;
+  if (sumaRow)
+    sumaRow.innerHTML = `<span style="font-size:.8rem;color:var(--text-muted)">Total asignado: <strong>${suma.toFixed(0)}%</strong></span><span style="font-size:.8rem;color:var(--text-muted)">Disponible: <strong>${Math.max(0, 100 - suma).toFixed(0)}%</strong></span>`;
   const btnGuardar = block.querySelector(".btn.btn-primary.btn-sm");
   if (btnGuardar) btnGuardar.disabled = !sumaOk;
 }
@@ -337,67 +455,94 @@ function actualizarSuma(id_grupo, id_unidad) {
 // ── Editar ponderación (PUT) ───────────────────────────────────────────────
 async function editarPonderacion(id_actividad, valor, id_grupo, id_unidad) {
   try {
-    await auFetch(`${API_URL}/api/actividades/${id_actividad}`, { method: "PUT", body: JSON.stringify({ ponderacion: parseFloat(valor) }) });
+    await auFetch(`${API_URL}/api/actividades/${id_actividad}`, {
+      method: "PUT",
+      body: JSON.stringify({ ponderacion: parseFloat(valor) }),
+    });
     // Actualizar caché local
     const acts = getActsUnidad(id_grupo, id_unidad);
-    const act  = acts.find(a => a.id_actividad === id_actividad);
+    const act = acts.find((a) => a.id_actividad === id_actividad);
     if (act) act.ponderacion = parseFloat(valor);
-  } catch (e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 // ── Eliminar actividad ─────────────────────────────────────────────────────
 async function eliminarActividad(id_actividad, id_grupo, id_unidad) {
-  const acts   = getActsUnidad(id_grupo, id_unidad);
-  const act    = acts.find(a => a.id_actividad === id_actividad);
+  const acts = getActsUnidad(id_grupo, id_unidad);
+  const act = acts.find((a) => a.id_actividad === id_actividad);
   const nombre = act?.nombre_tipo || "esta actividad";
-  const ok = await mostrarConfirm({ icono: "lucide:trash-2", colorIcono: "var(--danger)", titulo: "Eliminar actividad", mensaje: `¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`, labelOk: "Eliminar", colorOk: "var(--danger)" });
+  const ok = await mostrarConfirm({
+    icono: "lucide:trash-2",
+    colorIcono: "var(--danger)",
+    titulo: "Eliminar actividad",
+    mensaje: `¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`,
+    labelOk: "Eliminar",
+    colorOk: "var(--danger)",
+  });
   if (!ok) return;
   try {
-    await auFetch(`${API_URL}/api/actividades/${id_actividad}`, { method: "DELETE" });
-    actividadesPorGrupoUnidad[id_grupo][String(id_unidad)] = acts.filter(a => a.id_actividad !== id_actividad);
+    await auFetch(`${API_URL}/api/actividades/${id_actividad}`, {
+      method: "DELETE",
+    });
+    actividadesPorGrupoUnidad[id_grupo][String(id_unidad)] = acts.filter(
+      (a) => a.id_actividad !== id_actividad,
+    );
     rerenderUnidad(id_grupo, id_unidad);
     actualizarStats();
     showToast("Actividad eliminada", "info");
-  } catch (e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 // ── Modal Agregar Actividad ────────────────────────────────────────────────
-let _modalGrupo  = null;
+let _modalGrupo = null;
 let _modalUnidad = null;
 let _tipoSeleccionado = null;
 
 function abrirModalAgregarAct(id_grupo, id_unidad) {
-  _modalGrupo  = id_grupo;
+  _modalGrupo = id_grupo;
   _modalUnidad = id_unidad;
   _tipoSeleccionado = null;
 
   const acts = getActsUnidad(id_grupo, id_unidad);
-  const usados = new Set(acts.map(a => a.id_tipo_actividad));
-  const disponible = 100 - acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
+  const usados = new Set(acts.map((a) => a.id_tipo_actividad));
+  const disponible =
+    100 - acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
 
   const grid = document.getElementById("tiposGrid");
   if (!tiposActividad.length) {
-    grid.innerHTML = `<p style="color:var(--text-muted);font-size:.85rem;grid-column:1/-1">
+    grid.innerHTML = `<p style="color:var(--text-muted);font-size:.85rem;padding:8px 0">
       El administrador aún no ha cargado tipos de actividad. Pídele que los agregue desde Catálogos.
     </p>`;
   } else {
-    grid.innerHTML = tiposActividad.map(t => {
-      const yaUsado = usados.has(t.id_tipo);
-      return `
-        <div class="tipo-card ${yaUsado ? "tipo-card-usada" : ""}"
+    grid.innerHTML = tiposActividad
+      .map((t) => {
+        const yaUsado = usados.has(t.id_tipo);
+        return `
+        <div class="tipo-list-row ${yaUsado ? "tipo-list-row-usada" : ""}"
              id="tipo-card-${t.id_tipo}"
-             onclick="${yaUsado ? "" : `seleccionarTipoAct(${t.id_tipo},'${t.nombre.replace(/'/g,"\\'")}','${(t.descripcion||"").replace(/'/g,"\\'").replace(/\n/g," ")}')` }"
+             onclick="${yaUsado ? "" : `seleccionarTipoAct(${t.id_tipo},'${t.nombre.replace(/'/g, "\\'")}','${(t.descripcion || "").replace(/'/g, "\\'").replace(/\n/g, " ")}')`}"
              title="${yaUsado ? "Ya está en esta unidad" : t.nombre}">
-          <iconify-icon icon="lucide:tag" class="tipo-card-icon"></iconify-icon>
-          <span class="tipo-card-nombre">${t.nombre}</span>
-          ${yaUsado ? `<span style="font-size:.65rem;color:var(--text-muted)">Ya agregada</span>` : ""}
+          <iconify-icon icon="lucide:tag" style="font-size:.9rem;flex-shrink:0;color:var(--primary)"></iconify-icon>
+          <span style="flex:1;font-size:.88rem;font-weight:500">${t.nombre}</span>
+          ${
+            yaUsado
+              ? `<span style="font-size:.72rem;color:var(--text-muted);font-style:italic">Ya agregada</span>`
+              : `<iconify-icon icon="lucide:circle" class="tipo-radio-icon" style="font-size:.9rem;color:var(--border)"></iconify-icon>`
+          }
         </div>`;
-    }).join("");
+      })
+      .join("");
   }
 
-  document.getElementById("actPct").value = disponible > 0 ? Math.min(disponible, 100) : "";
+  document.getElementById("actPct").value =
+    disponible > 0 ? Math.min(disponible, 100) : "";
   document.getElementById("tipoSelLabel").textContent = "Selecciona un tipo";
-  document.getElementById("pctDisponible").textContent = `Disponible en esta unidad: ${disponible.toFixed(0)}%`;
+  document.getElementById("pctDisponible").textContent =
+    `Disponible en esta unidad: ${disponible.toFixed(0)}%`;
   document.getElementById("btnAgregarAct").disabled = true;
   document.getElementById("descActBox").style.display = "none";
   document.getElementById("modalAgregarAct").style.display = "flex";
@@ -405,16 +550,32 @@ function abrirModalAgregarAct(id_grupo, id_unidad) {
 
 function seleccionarTipoAct(id_tipo, nombre, descripcion) {
   _tipoSeleccionado = { id_tipo, nombre };
-  document.querySelectorAll(".tipo-card").forEach(c => c.classList.remove("tipo-card-sel"));
-  const card = document.getElementById(`tipo-card-${id_tipo}`);
-  if (card) card.classList.add("tipo-card-sel");
+  // Deselect all rows
+  document.querySelectorAll(".tipo-list-row").forEach((r) => {
+    r.classList.remove("tipo-list-row-sel");
+    const icon = r.querySelector(".tipo-radio-icon");
+    if (icon) {
+      icon.setAttribute("icon", "lucide:circle");
+      icon.style.color = "var(--border)";
+    }
+  });
+  // Select this row
+  const row = document.getElementById(`tipo-card-${id_tipo}`);
+  if (row) {
+    row.classList.add("tipo-list-row-sel");
+    const icon = row.querySelector(".tipo-radio-icon");
+    if (icon) {
+      icon.setAttribute("icon", "lucide:check-circle-2");
+      icon.style.color = "var(--primary)";
+    }
+  }
   document.getElementById("tipoSelLabel").textContent = nombre;
   document.getElementById("btnAgregarAct").disabled = false;
   // Mostrar descripción
   const box = document.getElementById("descActBox");
   if (descripcion && descripcion.trim()) {
     document.getElementById("descActTitulo").textContent = nombre;
-    document.getElementById("descActTexto").textContent  = descripcion;
+    document.getElementById("descActTexto").textContent = descripcion;
     box.style.display = "block";
   } else {
     box.style.display = "none";
@@ -428,77 +589,153 @@ function cerrarModalAgregarAct() {
 }
 
 async function confirmarAgregarAct() {
-  if (!_tipoSeleccionado) { showToast("Selecciona un tipo de actividad", "error"); return; }
+  if (!_tipoSeleccionado) {
+    showToast("Selecciona un tipo de actividad", "error");
+    return;
+  }
   const pct = parseFloat(document.getElementById("actPct").value);
-  if (isNaN(pct) || pct <= 0 || pct > 100) { showToast("El porcentaje debe ser entre 1 y 100", "error"); return; }
+  if (isNaN(pct) || pct <= 0 || pct > 100) {
+    showToast("El porcentaje debe ser entre 1 y 100", "error");
+    return;
+  }
   const acts = getActsUnidad(_modalGrupo, _modalUnidad);
-  if (acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0) + pct > 100) {
-    showToast(`Solo quedan ${(100 - acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0)).toFixed(0)}% disponibles`, "error"); return;
+  if (
+    acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0) + pct >
+    100
+  ) {
+    showToast(
+      `Solo quedan ${(100 - acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0)).toFixed(0)}% disponibles`,
+      "error",
+    );
+    return;
   }
   try {
-    const data = await auFetch(`${API_URL}/api/actividades`, { method: "POST", body: JSON.stringify({ id_grupo: _modalGrupo, id_unidad: _modalUnidad, id_tipo_actividad: _tipoSeleccionado.id_tipo, ponderacion: pct }) });
-    const nuevaAct = { id_actividad: data.id_actividad, id_grupo: _modalGrupo, id_unidad: _modalUnidad, id_tipo_actividad: _tipoSeleccionado.id_tipo, nombre_tipo: _tipoSeleccionado.nombre, ponderacion: pct, bloqueado: 0 };
-    if (!actividadesPorGrupoUnidad[_modalGrupo]) actividadesPorGrupoUnidad[_modalGrupo] = {};
-    if (!actividadesPorGrupoUnidad[_modalGrupo][String(_modalUnidad)]) actividadesPorGrupoUnidad[_modalGrupo][String(_modalUnidad)] = [];
+    const data = await auFetch(`${API_URL}/api/actividades`, {
+      method: "POST",
+      body: JSON.stringify({
+        id_grupo: _modalGrupo,
+        id_unidad: _modalUnidad,
+        id_tipo_actividad: _tipoSeleccionado.id_tipo,
+        ponderacion: pct,
+      }),
+    });
+    const nuevaAct = {
+      id_actividad: data.id_actividad,
+      id_grupo: _modalGrupo,
+      id_unidad: _modalUnidad,
+      id_tipo_actividad: _tipoSeleccionado.id_tipo,
+      nombre_tipo: _tipoSeleccionado.nombre,
+      ponderacion: pct,
+      bloqueado: 0,
+    };
+    if (!actividadesPorGrupoUnidad[_modalGrupo])
+      actividadesPorGrupoUnidad[_modalGrupo] = {};
+    if (!actividadesPorGrupoUnidad[_modalGrupo][String(_modalUnidad)])
+      actividadesPorGrupoUnidad[_modalGrupo][String(_modalUnidad)] = [];
     actividadesPorGrupoUnidad[_modalGrupo][String(_modalUnidad)].push(nuevaAct);
-    const idGr = _modalGrupo, idUn = _modalUnidad;
+    const idGr = _modalGrupo,
+      idUn = _modalUnidad;
     cerrarModalAgregarAct();
     rerenderUnidad(idGr, idUn);
     actualizarStats();
     showToast("Actividad agregada", "success");
-  } catch (e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 // ── Guardar unidad (bloquear) ──────────────────────────────────────────────
 async function guardarUnidad(id_grupo, id_unidad) {
-  const ok = await mostrarConfirm({ icono: "lucide:lock", colorIcono: "var(--primary)", titulo: "Guardar unidad", mensaje: "Al guardar, las actividades de esta unidad quedarán bloqueadas. No se podrán agregar, eliminar ni modificar.", labelOk: "Guardar y bloquear", colorOk: "var(--primary)" });
+  const ok = await mostrarConfirm({
+    icono: "lucide:lock",
+    colorIcono: "var(--primary)",
+    titulo: "Guardar unidad",
+    mensaje:
+      "Al guardar, las actividades de esta unidad quedarán bloqueadas. No se podrán agregar, eliminar ni modificar.",
+    labelOk: "Guardar y bloquear",
+    colorOk: "var(--primary)",
+  });
   if (!ok) return;
   try {
-    await auFetch(`${API_URL}/api/actividades/bloquear-unidad`, { method: "POST", body: JSON.stringify({ id_grupo, id_unidad }) });
+    await auFetch(`${API_URL}/api/actividades/bloquear-unidad`, {
+      method: "POST",
+      body: JSON.stringify({ id_grupo, id_unidad }),
+    });
     const acts = getActsUnidad(id_grupo, id_unidad);
-    acts.forEach(a => { a.bloqueado = 1; });
+    acts.forEach((a) => {
+      a.bloqueado = 1;
+    });
     rerenderUnidad(id_grupo, id_unidad);
     actualizarBadgeGrupo(id_grupo);
     actualizarStats();
     showToast("Unidad guardada y bloqueada", "success");
-  } catch (e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 async function guardarTodasUnidades(id_grupo) {
-  const ok = await mostrarConfirm({ icono: "lucide:save-all", colorIcono: "var(--primary)", titulo: "Guardar todas las unidades", mensaje: "Se bloquearán todas las unidades que ya tienen el 100% configurado. Esta acción no se puede deshacer.", labelOk: "Guardar todas", colorOk: "var(--primary)" });
+  const ok = await mostrarConfirm({
+    icono: "lucide:save-all",
+    colorIcono: "var(--primary)",
+    titulo: "Guardar todas las unidades",
+    mensaje:
+      "Se bloquearán todas las unidades que ya tienen el 100% configurado. Esta acción no se puede deshacer.",
+    labelOk: "Guardar todas",
+    colorOk: "var(--primary)",
+  });
   if (!ok) return;
   const unidades = getUnidadesEfectivas(id_grupo);
-  let guardadas = 0, errores = 0;
+  let guardadas = 0,
+    errores = 0;
   for (const u of unidades) {
     const acts = getActsUnidad(id_grupo, u.id_unidad);
-    if (acts.every(a => a.bloqueado)) continue; // ya bloqueada
+    if (acts.every((a) => a.bloqueado)) continue; // ya bloqueada
     const suma = acts.reduce((s, a) => s + parseFloat(a.ponderacion || 0), 0);
-    if (Math.abs(suma - 100) > 0.01) { errores++; continue; }
+    if (Math.abs(suma - 100) > 0.01) {
+      errores++;
+      continue;
+    }
     try {
-      await auFetch(`${API_URL}/api/actividades/bloquear-unidad`, { method: "POST", body: JSON.stringify({ id_grupo, id_unidad: u.id_unidad }) });
-      acts.forEach(a => { a.bloqueado = 1; });
+      await auFetch(`${API_URL}/api/actividades/bloquear-unidad`, {
+        method: "POST",
+        body: JSON.stringify({ id_grupo, id_unidad: u.id_unidad }),
+      });
+      acts.forEach((a) => {
+        a.bloqueado = 1;
+      });
       rerenderUnidad(id_grupo, u.id_unidad);
       guardadas++;
-    } catch { errores++; }
+    } catch {
+      errores++;
+    }
   }
   actualizarBadgeGrupo(id_grupo);
   actualizarStats();
-  if (errores === 0) showToast(`${guardadas} unidad${guardadas !== 1 ? "es" : ""} guardada${guardadas !== 1 ? "s" : ""}`, "success");
-  else showToast(`${guardadas} guardadas, ${errores} con error (suma ≠ 100%)`, "error");
+  if (errores === 0)
+    showToast(
+      `${guardadas} unidad${guardadas !== 1 ? "es" : ""} guardada${guardadas !== 1 ? "s" : ""}`,
+      "success",
+    );
+  else
+    showToast(
+      `${guardadas} guardadas, ${errores} con error (suma ≠ 100%)`,
+      "error",
+    );
 }
 
 // ── Re-render parcial ──────────────────────────────────────────────────────
 function rerenderUnidad(id_grupo, id_unidad) {
   const unidades = getUnidadesEfectivas(id_grupo);
-  const u = unidades.find(x => String(x.id_unidad) === String(id_unidad));
+  const u = unidades.find((x) => String(x.id_unidad) === String(id_unidad));
   if (!u) return;
-  const blockId  = `uc-${id_grupo}-${id_unidad}`;
-  const block    = document.getElementById(blockId);
+  const blockId = `uc-${id_grupo}-${id_unidad}`;
+  const block = document.getElementById(blockId);
   if (!block) return;
-  const wasOpen  = block.classList.contains("open");
-  const newHtml  = buildUnidadConfig(id_grupo, u);
-  const tmp      = document.createElement("div");
-  tmp.innerHTML  = newHtml;
+  const wasOpen = block.classList.contains("open");
+  const newHtml = buildUnidadConfig(id_grupo, u);
+  const tmp = document.createElement("div");
+  tmp.innerHTML = newHtml;
   const newBlock = tmp.firstElementChild;
   if (wasOpen) newBlock.classList.add("open");
   block.replaceWith(newBlock);
@@ -506,7 +743,7 @@ function rerenderUnidad(id_grupo, id_unidad) {
 
 async function rerenderGrupoBody(id_grupo) {
   const bodyEl = document.getElementById(`body-${id_grupo}`);
-  const grupo  = misGrupos.find(g => g.id_grupo === id_grupo);
+  const grupo = misGrupos.find((g) => g.id_grupo === id_grupo);
   if (!bodyEl || !grupo) return;
   bodyEl.innerHTML = buildGrupoBody(grupo);
 }
@@ -517,7 +754,7 @@ function actualizarBadgeGrupo(id_grupo) {
   const badge = card.querySelector(".grupo-info .cfg-badge");
   if (!badge) return;
   const uns = getUnidadesEfectivas(id_grupo);
-  const ok  = uns.length > 0 && uns.every(u => { const acts = getActsUnidad(id_grupo, u.id_unidad); return acts.length > 0 && acts.every(a => a.bloqueado); });
+  const ok = estaConfigurado(id_grupo);
   badge.className = `cfg-badge ${ok ? "cfg-badge-ok" : "cfg-badge-pending"}`;
   badge.innerHTML = ok
     ? `<iconify-icon icon="lucide:lock" style="font-size:.7rem"></iconify-icon> Configurado`
@@ -525,102 +762,137 @@ function actualizarBadgeGrupo(id_grupo) {
 }
 
 // ── Toggle helpers ─────────────────────────────────────────────────────────
-function toggleGrupoCard(id_grupo)  { document.getElementById(`grupo-card-${id_grupo}`)?.classList.toggle("open"); }
-function toggleUnidadBlock(blockId) { document.getElementById(blockId)?.classList.toggle("open"); }
+function toggleGrupoCard(id_grupo) {
+  document.getElementById(`grupo-card-${id_grupo}`)?.classList.toggle("open");
+}
+function toggleUnidadBlock(blockId) {
+  document.getElementById(blockId)?.classList.toggle("open");
+}
 
 // ── Modal gestionar unidades (dividir / fusionar) ─────────────────────────
-let _mGrupoId   = null;
-let _mUnidades  = [];
-
+let _mGrupoId = null;
+let _mUnidades = [];
 
 // ── Estado de unidad para modal gestionar ─────────────────────────────────
 // Retorna: "bloqueada" | "sin_guardar" | "libre"
 function estadoUnidadParaModal(id_grupo, id_unidad) {
   // id_unidad puede ser compuesto ("1_2") — revisamos todos los ids reales
   const idsReales = String(id_unidad).includes("_")
-    ? String(id_unidad).replace(/_[ab]$/, "").split("_").filter(x => x && !isNaN(x))
+    ? String(id_unidad)
+        .replace(/_[ab]$/, "")
+        .split("_")
+        .filter((x) => x && !isNaN(x))
     : [String(id_unidad)];
 
   for (const rid of idsReales) {
     const acts = getActsUnidad(id_grupo, rid);
-    if (acts.length > 0 && acts.every(a => a.bloqueado)) return "bloqueada";
-    if (acts.length > 0 && acts.some(a => !a.bloqueado))  return "sin_guardar";
+    if (acts.length > 0 && acts.every((a) => a.bloqueado)) return "bloqueada";
+    if (acts.length > 0 && acts.some((a) => !a.bloqueado)) return "sin_guardar";
   }
   return "libre"; // sin actividades — se puede operar
 }
 
 function abrirModalUnidades(id_grupo) {
-  _mGrupoId  = id_grupo;
+  _mGrupoId = id_grupo;
   const base = getUnidadesEfectivas(id_grupo);
   _mUnidades = base.map((u, i) => ({
-    id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad,
+    id_unidad: u.id_unidad,
+    nombre_unidad: u.nombre_unidad,
     numero_unidad: u.numero_unidad ?? i + 1,
     _origen: u._origen || String(u.id_unidad),
-    tipo_layout: u.tipo_layout || null
+    tipo_layout: u.tipo_layout || null,
   }));
   renderModalUnidades();
   document.getElementById("modalUnidades").classList.add("visible");
 }
 
-function cerrarModalUnidades() { document.getElementById("modalUnidades").classList.remove("visible"); _mGrupoId = null; _mUnidades = []; }
+function cerrarModalUnidades() {
+  document.getElementById("modalUnidades").classList.remove("visible");
+  _mGrupoId = null;
+  _mUnidades = [];
+}
 
 function renderModalUnidades() {
-  const lista = document.getElementById("modalUnidadesLista"); if (!lista) return;
-  lista.innerHTML = _mUnidades.map((u, idx) => {
-    const estado     = estadoUnidadParaModal(_mGrupoId, u.id_unidad);
-    const bloqueada  = estado === "bloqueada";
-    const sinGuardar = estado === "sin_guardar";
+  const lista = document.getElementById("modalUnidadesLista");
+  if (!lista) return;
+  lista.innerHTML = _mUnidades
+    .map((u, idx) => {
+      const estado = estadoUnidadParaModal(_mGrupoId, u.id_unidad);
+      const bloqueada = estado === "bloqueada";
+      const sinGuardar = estado === "sin_guardar";
 
-    // ── Restricción 1 nivel ────────────────────────────────────────────────
-    // Una unidad ya modificada (fusión o división) no puede volver a operarse.
-    // Solo puede revertirse al estado anterior.
-    const esCustom      = !!u.tipo_layout;  // true si es resultado de fusión o división
-    const esDivision    = u.tipo_layout === "division_a" || u.tipo_layout === "division_b";
-    const esFusion      = u.tipo_layout === "fusion";
+      // ── Restricción 1 nivel ────────────────────────────────────────────────
+      // Una unidad ya modificada (fusión o división) no puede volver a operarse.
+      // Solo puede revertirse al estado anterior.
+      const esCustom = !!u.tipo_layout; // true si es resultado de fusión o división
+      const esDivision =
+        u.tipo_layout === "division_a" || u.tipo_layout === "division_b";
+      const esFusion = u.tipo_layout === "fusion";
 
-    // La unidad siguiente también puede estar operada
-    const siguiente          = idx < _mUnidades.length - 1 ? _mUnidades[idx + 1] : null;
-    const siguienteEstado    = siguiente ? estadoUnidadParaModal(_mGrupoId, siguiente.id_unidad) : null;
-    const siguienteEsCustom  = !!(siguiente?.tipo_layout);
+      // La unidad siguiente también puede estar operada
+      const siguiente =
+        idx < _mUnidades.length - 1 ? _mUnidades[idx + 1] : null;
+      const siguienteEstado = siguiente
+        ? estadoUnidadParaModal(_mGrupoId, siguiente.id_unidad)
+        : null;
+      const siguienteEsCustom = !!siguiente?.tipo_layout;
 
-    // canDividir: original + libre (sin actividades sin guardar ni bloqueada)
-    const canDividir  = !esCustom && !bloqueada && !sinGuardar;
+      // canDividir: original + libre (sin actividades sin guardar ni bloqueada)
+      const canDividir = !esCustom && !bloqueada && !sinGuardar;
 
-    // canFusionar: ambas deben ser originales + libres + haber siguiente
-    const canFusionar = siguiente &&
-                        !esCustom && !siguienteEsCustom &&
-                        !bloqueada && !sinGuardar &&
-                        siguienteEstado !== "bloqueada" && siguienteEstado !== "sin_guardar";
+      // canFusionar: ambas deben ser originales + libres + haber siguiente
+      const canFusionar =
+        siguiente &&
+        !esCustom &&
+        !siguienteEsCustom &&
+        !bloqueada &&
+        !sinGuardar &&
+        siguienteEstado !== "bloqueada" &&
+        siguienteEstado !== "sin_guardar";
 
-    // canRevertir: es custom + sin actividades configuradas
-    const canRevertir = esCustom && !bloqueada && !sinGuardar;
+      // canRevertir: es custom + sin actividades configuradas
+      const canRevertir = esCustom && !bloqueada && !sinGuardar;
 
-    // Badge de estado de la unidad
-    const badgeLayout = esDivision
-      ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#6D28D9;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+      // Badge de estado de la unidad
+      const badgeLayout = esDivision
+        ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#6D28D9;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
            <iconify-icon icon="lucide:scissors" style="font-size:.65rem"></iconify-icon> Dividida
          </span>`
-      : esFusion
-        ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#DCFCE7;color:#16A34A;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+        : esFusion
+          ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:#DCFCE7;color:#16A34A;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
              <iconify-icon icon="lucide:link" style="font-size:.65rem"></iconify-icon> Fusionada
            </span>`
-        : "";
+          : "";
 
-    const badgeEstado = bloqueada
-      ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--success-light);color:var(--success);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+      const badgeEstado = bloqueada
+        ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--success-light);color:var(--success);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
            <iconify-icon icon="lucide:lock" style="font-size:.65rem"></iconify-icon> Guardada
          </span>`
-      : sinGuardar
-        ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--warning-light);color:var(--warning);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
+        : sinGuardar
+          ? `<span style="font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--warning-light);color:var(--warning);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px">
              <iconify-icon icon="lucide:alert-circle" style="font-size:.65rem"></iconify-icon> Sin guardar
            </span>`
-        : "";
+          : "";
 
-    // Motivos de bloqueo (para tooltip)
-    const motivoDividir  = esCustom ? "Ya fue modificada — reviértela primero" : bloqueada ? "Unidad guardada" : sinGuardar ? "Guarda las actividades primero" : "";
-    const motivoFusionar = !siguiente ? "" : esCustom || siguienteEsCustom ? "Solo se pueden fusionar unidades originales" : bloqueada || siguienteEstado === "bloqueada" ? "No se puede fusionar una unidad guardada" : sinGuardar || siguienteEstado === "sin_guardar" ? "Guarda las actividades primero" : "";
+      // Motivos de bloqueo (para tooltip)
+      const motivoDividir = esCustom
+        ? "Ya fue modificada — reviértela primero"
+        : bloqueada
+          ? "Unidad guardada"
+          : sinGuardar
+            ? "Guarda las actividades primero"
+            : "";
+      const motivoFusionar = !siguiente
+        ? ""
+        : esCustom || siguienteEsCustom
+          ? "Solo se pueden fusionar unidades originales"
+          : bloqueada || siguienteEstado === "bloqueada"
+            ? "No se puede fusionar una unidad guardada"
+            : sinGuardar || siguienteEstado === "sin_guardar"
+              ? "Guarda las actividades primero"
+              : "";
 
-    return `
+      return `
       <div class="rubro-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div style="display:flex;align-items:center;gap:10px">
           <iconify-icon icon="lucide:grip-vertical" style="color:var(--text-muted);flex-shrink:0"></iconify-icon>
@@ -632,20 +904,27 @@ function renderModalUnidades() {
           ${badgeEstado}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          ${esCustom ? `
-            ${canRevertir ? `
+          ${
+            esCustom
+              ? `
+            ${
+              canRevertir
+                ? `
               <button onclick="eliminarUnidadModal(${idx})"
                       class="btn btn-sm"
                       style="background:var(--danger-light,#FEE2E2);color:var(--danger);border:none;font-size:.78rem">
                 <iconify-icon icon="lucide:rotate-ccw"></iconify-icon> Revertir
               </button>
               <span style="font-size:.72rem;color:var(--text-muted)">Vuelve a las unidades originales</span>
-            ` : `
+            `
+                : `
               <span style="font-size:.72rem;color:var(--text-muted);font-style:italic">
                 ${bloqueada ? "Unidad guardada — no se puede revertir" : "Elimina las actividades para poder revertir"}
               </span>
-            `}
-          ` : `
+            `
+            }
+          `
+              : `
             <button onclick="${canDividir ? `dividirUnidad(${idx})` : ""}"
                     ${canDividir ? "" : "disabled"}
                     title="${motivoDividir}"
@@ -653,19 +932,25 @@ function renderModalUnidades() {
                     style="background:${canDividir ? "var(--primary-light)" : "var(--bg-app)"};color:${canDividir ? "var(--primary)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canDividir ? "pointer" : "not-allowed"};opacity:${canDividir ? "1" : ".5"}">
               <iconify-icon icon="lucide:scissors"></iconify-icon> Dividir en dos
             </button>
-            ${idx < _mUnidades.length - 1 ? `
+            ${
+              idx < _mUnidades.length - 1
+                ? `
             <button onclick="${canFusionar ? `fusionarUnidades(${idx})` : ""}"
                     ${canFusionar ? "" : "disabled"}
                     title="${motivoFusionar}"
                     class="btn btn-sm"
                     style="background:${canFusionar ? "var(--success-light)" : "var(--bg-app)"};color:${canFusionar ? "var(--success)" : "var(--text-muted)"};border:none;font-size:.78rem;cursor:${canFusionar ? "pointer" : "not-allowed"};opacity:${canFusionar ? "1" : ".5"}">
               <iconify-icon icon="lucide:link"></iconify-icon> Fusionar con siguiente
-            </button>` : ""}
+            </button>`
+                : ""
+            }
             ${motivoDividir && !canDividir ? `<span style="font-size:.72rem;color:var(--text-muted);font-style:italic">${motivoDividir}</span>` : ""}
-          `}
+          `
+          }
         </div>
       </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 async function dividirUnidad(idx) {
@@ -673,49 +958,81 @@ async function dividirUnidad(idx) {
   const nombre_a = `${u.nombre_unidad} — Parte A`;
   const nombre_b = `${u.nombre_unidad} — Parte B`;
   try {
-    const data = await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/dividir-unidad`, {
-      method: "POST",
-      body: JSON.stringify({ id_unidad: u.id_unidad, nombre_a, nombre_b })
-    });
+    const data = await auFetch(
+      `${API_URL}/api/grupos/${_mGrupoId}/dividir-unidad`,
+      {
+        method: "POST",
+        body: JSON.stringify({ id_unidad: u.id_unidad, nombre_a, nombre_b }),
+      },
+    );
     // Reemplazar en _mUnidades con los IDs reales devueltos por el backend
-    _mUnidades.splice(idx, 1,
-      { id_unidad: data.id_a, nombre_unidad: data.nombre_a, numero_unidad: `${u.numero_unidad}a`, _origen: String(u.id_unidad), tipo_layout: "division_a" },
-      { id_unidad: data.id_b, nombre_unidad: data.nombre_b, numero_unidad: `${u.numero_unidad}b`, _origen: String(u.id_unidad), tipo_layout: "division_b" }
+    _mUnidades.splice(
+      idx,
+      1,
+      {
+        id_unidad: data.id_a,
+        nombre_unidad: data.nombre_a,
+        numero_unidad: `${u.numero_unidad}a`,
+        _origen: String(u.id_unidad),
+        tipo_layout: "division_a",
+      },
+      {
+        id_unidad: data.id_b,
+        nombre_unidad: data.nombre_b,
+        numero_unidad: `${u.numero_unidad}b`,
+        _origen: String(u.id_unidad),
+        tipo_layout: "division_b",
+      },
     );
     // Recargar unidades del grupo desde BD
-    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    const grupo = misGrupos.find((g) => g.id_grupo === _mGrupoId);
     if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
     renderModalUnidades();
-    showToast(`Unidad dividida en "${data.nombre_a}" y "${data.nombre_b}"`, "success");
-  } catch(e) { showToast(e.message, "error"); }
+    showToast(
+      `Unidad dividida en "${data.nombre_a}" y "${data.nombre_b}"`,
+      "success",
+    );
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 async function fusionarUnidades(idx) {
-  const a = _mUnidades[idx], b = _mUnidades[idx + 1];
+  const a = _mUnidades[idx],
+    b = _mUnidades[idx + 1];
   const nombre_fusion = `${a.nombre_unidad} + ${b.nombre_unidad}`;
   try {
-    const data = await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/fusionar-unidades`, {
-      method: "POST",
-      body: JSON.stringify({ id_unidad_a: a.id_unidad, id_unidad_b: b.id_unidad, nombre_fusion })
-    });
+    const data = await auFetch(
+      `${API_URL}/api/grupos/${_mGrupoId}/fusionar-unidades`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          id_unidad_a: a.id_unidad,
+          id_unidad_b: b.id_unidad,
+          nombre_fusion,
+        }),
+      },
+    );
     // numero_unidad = el menor de los dos (la fusión ocupa la posición de la unidad menor)
     const numMenor = Math.min(
       parseInt(a.numero_unidad) || 999,
-      parseInt(b.numero_unidad) || 999
+      parseInt(b.numero_unidad) || 999,
     );
     _mUnidades.splice(idx, 2, {
       id_unidad: data.id_fusion,
       nombre_unidad: data.nombre_fusion,
       numero_unidad: numMenor,
       _origen: `${a.id_unidad},${b.id_unidad}`,
-      tipo_layout: "fusion"
+      tipo_layout: "fusion",
     });
     // Recargar unidades del grupo desde BD
-    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    const grupo = misGrupos.find((g) => g.id_grupo === _mGrupoId);
     if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
     renderModalUnidades();
     showToast(`Unidades fusionadas en "${data.nombre_fusion}"`, "success");
-  } catch(e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 async function eliminarUnidadModal(idx) {
@@ -723,32 +1040,50 @@ async function eliminarUnidadModal(idx) {
   try {
     await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/revertir-unidad`, {
       method: "POST",
-      body: JSON.stringify({ id_unidad_real: u.id_unidad })
+      body: JSON.stringify({ id_unidad_real: u.id_unidad }),
     });
     // Recargar unidades desde BD
-    const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+    const grupo = misGrupos.find((g) => g.id_grupo === _mGrupoId);
     if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
     // Reconstruir _mUnidades desde la BD
     _mUnidades = unidadesPorGrupo[_mGrupoId].map((u2, i) => ({
-      id_unidad: u2.id_unidad, nombre_unidad: u2.nombre_unidad,
-      numero_unidad: u2.numero_unidad ?? i + 1, _origen: u2._origen || String(u2.id_unidad),
-      tipo_layout: u2.tipo_layout || null
+      id_unidad: u2.id_unidad,
+      nombre_unidad: u2.nombre_unidad,
+      numero_unidad: u2.numero_unidad ?? i + 1,
+      _origen: u2._origen || String(u2.id_unidad),
+      tipo_layout: u2.tipo_layout || null,
     }));
     renderModalUnidades();
     showToast("División/fusión revertida", "info");
-  } catch(e) { showToast(e.message, "error"); }
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 async function restaurarUnidadesOriginal() {
-  const hayBloqueadas = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "bloqueada");
-  const haySinGuardar = _mUnidades.some(u => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "sin_guardar");
-  if (hayBloqueadas) { showToast("No se puede restaurar: hay unidades ya guardadas", "error"); return; }
-  if (haySinGuardar) { showToast("Guarda o elimina las actividades pendientes antes de restaurar", "error"); return; }
+  const hayBloqueadas = _mUnidades.some(
+    (u) => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "bloqueada",
+  );
+  const haySinGuardar = _mUnidades.some(
+    (u) => estadoUnidadParaModal(_mGrupoId, u.id_unidad) === "sin_guardar",
+  );
+  if (hayBloqueadas) {
+    showToast("No se puede restaurar: hay unidades ya guardadas", "error");
+    return;
+  }
+  if (haySinGuardar) {
+    showToast(
+      "Guarda o elimina las actividades pendientes antes de restaurar",
+      "error",
+    );
+    return;
+  }
   const okRestore = await mostrarConfirm({
     icono: "lucide:rotate-ccw",
     colorIcono: "var(--warning)",
     titulo: "Restaurar unidades originales",
-    mensaje: "Se perderán todas las divisiones y fusiones realizadas en este grupo. Esta acción no se puede deshacer.",
+    mensaje:
+      "Se perderán todas las divisiones y fusiones realizadas en este grupo. Esta acción no se puede deshacer.",
     labelOk: "Restaurar",
     colorOk: "var(--warning)",
   });
@@ -756,16 +1091,23 @@ async function restaurarUnidadesOriginal() {
 
   // Reset completo en una sola llamada al backend
   try {
-    await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/reset-unidades`, { method: "POST" });
-  } catch(e) { showToast(e.message, "error"); return; }
+    await auFetch(`${API_URL}/api/grupos/${_mGrupoId}/reset-unidades`, {
+      method: "POST",
+    });
+  } catch (e) {
+    showToast(e.message, "error");
+    return;
+  }
 
   // Recargar desde BD
-  const grupo = misGrupos.find(g => g.id_grupo === _mGrupoId);
+  const grupo = misGrupos.find((g) => g.id_grupo === _mGrupoId);
   if (grupo) unidadesPorGrupo[_mGrupoId] = await cargarUnidades(grupo);
   _mUnidades = unidadesPorGrupo[_mGrupoId].map((u, i) => ({
-    id_unidad: u.id_unidad, nombre_unidad: u.nombre_unidad,
-    numero_unidad: u.numero_unidad ?? i + 1, _origen: u._origen || String(u.id_unidad),
-    tipo_layout: u.tipo_layout || null
+    id_unidad: u.id_unidad,
+    nombre_unidad: u.nombre_unidad,
+    numero_unidad: u.numero_unidad ?? i + 1,
+    _origen: u._origen || String(u.id_unidad),
+    tipo_layout: u.tipo_layout || null,
   }));
   renderModalUnidades();
   showToast("Unidades restablecidas al original", "info");
