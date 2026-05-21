@@ -697,4 +697,37 @@ router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
   }
 });
 
+
+// PATCH /:id/cerrar — el maestro cierra su propio grupo (Activo → Cerrado)
+// Solo el maestro propietario o un admin puede cerrarlo
+router.patch("/:id/cerrar", maestroOAdmin, (req, res) => {
+  const id_grupo = req.params.id;
+  const { rol, id_referencia } = req.usuario;
+
+  // Verificar que el grupo existe y pertenece al maestro
+  db.query(
+    "SELECT rfc, estatus FROM grupo WHERE id_grupo = ?",
+    [id_grupo],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rows.length) return res.status(404).json({ error: "Grupo no encontrado" });
+
+      const grupo = rows[0];
+      if (rol === "maestro" && grupo.rfc !== id_referencia)
+        return res.status(403).json({ error: "No tienes permiso para cerrar este grupo" });
+      if (grupo.estatus === "Cerrado")
+        return res.status(400).json({ error: "El grupo ya está cerrado" });
+
+      db.query(
+        "UPDATE grupo SET estatus = 'Cerrado' WHERE id_grupo = ?",
+        [id_grupo],
+        (err2, result) => {
+          if (err2) return res.status(500).json({ error: "Error interno del servidor" });
+          res.json({ success: true, mensaje: "Grupo cerrado. Ya no se pueden realizar modificaciones." });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;

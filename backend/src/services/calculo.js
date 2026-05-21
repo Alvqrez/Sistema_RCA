@@ -106,13 +106,10 @@ async function cerrarUnidad(no_control, id_unidad, id_grupo, overrides = {}) {
  */
 async function calcularCalificacionFinal(no_control, id_grupo) {
   return new Promise((resolve, reject) => {
+    // Promedio simple de unidades (todas pesan igual según reglas institucionales)
     const sql = `
-      SELECT
-        cu.calificacion_unidad_final,
-        COALESCE(gu.ponderacion, 0) AS ponderacion
+      SELECT cu.calificacion_unidad_final
       FROM calificacion_unidad cu
-      LEFT JOIN grupo_unidad gu
-          ON gu.id_grupo = cu.id_grupo AND gu.id_unidad = cu.id_unidad
       WHERE cu.no_control = ? AND cu.id_grupo = ?
     `;
     db.query(sql, [no_control, id_grupo], (err, results) => {
@@ -120,28 +117,11 @@ async function calcularCalificacionFinal(no_control, id_grupo) {
       if (results.length === 0)
         return resolve({ promedio: 0, estatus: "Pendiente" });
 
-      const sumaPonderaciones = results.reduce(
-        (acc, r) => acc + parseFloat(r.ponderacion),
+      const suma = results.reduce(
+        (acc, r) => acc + parseFloat(r.calificacion_unidad_final ?? 0),
         0,
       );
-      let promedio;
-
-      if (sumaPonderaciones > 0.01) {
-        promedio = results.reduce(
-          (acc, r) =>
-            acc +
-            parseFloat(r.calificacion_unidad_final ?? 0) *
-              (parseFloat(r.ponderacion) / 100),
-          0,
-        );
-      } else {
-        // Fallback: promedio simple si no se definieron ponderaciones
-        const suma = results.reduce(
-          (acc, r) => acc + parseFloat(r.calificacion_unidad_final ?? 0),
-          0,
-        );
-        promedio = suma / results.length;
-      }
+      let promedio = suma / results.length;
 
       // FIX BUG 1+2: Orden correcto según reglas TecNM:
       //   1) promedio aritmético de unidades

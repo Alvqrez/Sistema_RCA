@@ -110,12 +110,10 @@
         border-left: 3px solid var(--primary);
         padding-left: 11px;
       }
-      .alumno-item.guardado::after {
-        content: "✓";
-        position: absolute;
-        right: 12px;
-        font-size: 0.72rem;
+      .alumno-item.guardado .ai-prom::before {
+        content: "✓ ";
         color: #16a34a;
+        font-size: 0.68rem;
         font-weight: 700;
       }
       .ai-status {
@@ -1134,6 +1132,18 @@
                     modificación.
                   </p>
                 </div>
+                <div id="btnCerrarGrupoWrap" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div>
+                      <p style="margin:0; font-size:.88rem; font-weight:600; color:var(--text-main);">Cierre definitivo del grupo</p>
+                      <p style="margin:4px 0 0; font-size:.78rem; color:var(--text-muted);">Una vez cerrado, no se podrán realizar más modificaciones.</p>
+                    </div>
+                    <button id="btnCerrarGrupo" class="btn" style="background:#dc2626;color:#fff;gap:6px;" onclick="cerrarGrupo()">
+                      <iconify-icon icon="mdi:lock-outline"></iconify-icon>
+                      Cerrar grupo
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <!-- /finalContent -->
@@ -1226,33 +1236,7 @@
               "
             />
           </div>
-          <div>
-            <label
-              style="
-                font-size: 0.85rem;
-                font-weight: 600;
-                display: block;
-                margin-bottom: 4px;
-              "
-            >
-              Justificación <span style="color: #dc2626">*</span>
-            </label>
-            <textarea
-              id="bonusFinalJustificacion"
-              rows="3"
-              placeholder="Motivo del bonus (obligatorio)..."
-              style="
-                width: 100%;
-                padding: 8px 10px;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                background: var(--card-bg);
-                color: var(--text-main);
-                resize: vertical;
-                font-family: inherit;
-              "
-            ></textarea>
-          </div>
+
           <div style="display: flex; gap: 8px; justify-content: flex-end">
             <button class="btn btn-outline" onclick="cerrarModalBonusFinal()">
               Cancelar
@@ -1407,117 +1391,6 @@
               Aplicar Modificación
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Justificación Bonus Unidad -->
-    <div
-      id="modalJustBonus"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      "
-    >
-      <div
-        style="
-          background: var(--card-bg);
-          border-radius: 14px;
-          width: min(440px, 100%);
-          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-        "
-      >
-        <div
-          style="
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid var(--border);
-          "
-        >
-          <iconify-icon
-            icon="lucide:star"
-            style="color: var(--warning, #f59e0b); font-size: 1.2rem"
-          ></iconify-icon>
-          <h3 style="margin: 0; font-size: 0.98rem; font-weight: 700">
-            Justificación de bonus
-          </h3>
-          <button
-            onclick="cerrarModalJustBonus()"
-            style="
-              margin-left: auto;
-              width: 28px;
-              height: 28px;
-              border-radius: 7px;
-              border: none;
-              background: var(--bg-app);
-              cursor: pointer;
-              color: var(--text-muted);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
-            <iconify-icon icon="mdi:close"></iconify-icon>
-          </button>
-        </div>
-        <div style="padding: 18px 20px; display: grid; gap: 12px">
-          <p style="margin: 0; font-size: 0.87rem; color: var(--text-muted)">
-            El alumno <strong id="justBonusNombre"></strong> tiene
-            <strong id="justBonusPts"></strong> pts de bonus. Ingresa la
-            justificación obligatoria:
-          </p>
-          <div style="display: grid; gap: 4px">
-            <label
-              style="
-                font-size: 0.76rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                color: var(--text-muted);
-              "
-            >
-              Justificación <span style="color: var(--danger)">*</span>
-            </label>
-            <textarea
-              id="justBonusInput"
-              rows="3"
-              placeholder="Ej. Desempeño sobresaliente en proyecto de unidad..."
-              style="
-                padding: 9px 12px;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                background: var(--card-bg);
-                color: var(--text-main);
-                font-size: 0.88rem;
-                font-family: inherit;
-                resize: vertical;
-              "
-            ></textarea>
-          </div>
-        </div>
-        <div
-          style="
-            padding: 12px 20px 18px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            border-top: 1px solid var(--border);
-          "
-        >
-          <button class="btn btn-outline" onclick="cerrarModalJustBonus()">
-            Cancelar
-          </button>
-          <button class="btn btn-primary" onclick="confirmarJustBonus()">
-            <iconify-icon icon="lucide:check"></iconify-icon> Confirmar
-          </button>
         </div>
       </div>
     </div>
@@ -1760,7 +1633,9 @@
           const idxOrig = estado.alumnos.findIndex(
             (a) => a.no_control === al.no_control,
           );
-          const prom = calcularCalFinal(al.no_control);
+          const prom = (typeof calcularCalDesdeResultados === 'function'
+            ? calcularCalDesdeResultados(al.no_control)
+            : calcularCalFinal(al.no_control));
           const promStr = prom !== null ? Math.round(prom) : "—";
           const dotClass =
             prom === null
@@ -1799,7 +1674,9 @@
 
         const navStats = document.getElementById("navStats");
         const ok = estado.alumnos.filter((a) => {
-          const p = calcularCalFinal(a.no_control);
+          const p = (typeof calcularCalDesdeResultados === 'function'
+            ? calcularCalDesdeResultados(a.no_control)
+            : calcularCalFinal(a.no_control));
           return p !== null && p >= 70;
         }).length;
         navStats.textContent = `${ok}/${estado.alumnos.length} ✓`;
@@ -1970,12 +1847,7 @@
                 ${unidadCerrada ? "disabled" : ""}
                 oninput="onBonusInput('${al.no_control}',this.value);_actualizarPromRing('${al.no_control}')" />
               <span style="font-size:.8rem;color:var(--text-muted)">pts</span>
-              <input class="bonus-just-input bonus-just-input-side" type="text"
-                data-no_control="${al.no_control}"
-                value="${(bon.justificacion ?? "").replace(/"/g, "&quot;")}"
-                placeholder="Justificación del bonus *"
-                ${unidadCerrada ? "disabled" : ""}
-                oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
+
             </div>
 
             <!-- Acciones -->
@@ -2096,16 +1968,22 @@
       function actualizarStats() {
         const total = estado.alumnos.length;
         const apr = estado.alumnos.filter((a) => {
-          const p = calcularCalFinal(a.no_control);
+          const p = (typeof calcularCalDesdeResultados === 'function'
+            ? calcularCalDesdeResultados(a.no_control)
+            : calcularCalFinal(a.no_control));
           return p !== null && p >= 70;
         }).length;
         const rep = estado.alumnos.filter((a) => {
-          const p = calcularCalFinal(a.no_control);
+          const p = (typeof calcularCalDesdeResultados === 'function'
+            ? calcularCalDesdeResultados(a.no_control)
+            : calcularCalFinal(a.no_control));
           return p !== null && p < 70;
         }).length;
         const pen = total - apr - rep;
         const proms = estado.alumnos
-          .map((a) => calcularCalFinal(a.no_control))
+          .map((a) => (typeof calcularCalDesdeResultados === 'function'
+            ? calcularCalDesdeResultados(a.no_control)
+            : calcularCalFinal(a.no_control)))
           .filter((p) => p !== null);
         const prom = proms.length
           ? (proms.reduce((s, v) => s + v, 0) / proms.length).toFixed(1)
@@ -2154,6 +2032,14 @@
         });
         // seleccionarUnidadTab es la función real de formulario.js
         await seleccionarUnidadTab(id_unidad);
+        // Marcar como guardados los alumnos que ya tienen calificación en BD
+        _guardados.clear();
+        for (const al of (estado.alumnos || [])) {
+          const tieneResultado = estado.actividades.some(
+            (a) => estado.resultados[al.no_control]?.[a.id_actividad]?.cal != null
+          );
+          if (tieneResultado) _guardados.add(al.no_control);
+        }
       };
 
       // ── Interceptar guardarCalificaciones para marcar guardado ─────────
@@ -2183,20 +2069,25 @@
       function switchFinalTab(tab) {
         // Bloquear bonus/mod si no hay finales guardadas
         if ((tab === "bonus" || tab === "mod") && !_finalesGuardadas) {
-          const lockMsg =
-            tab === "bonus"
-              ? "Primero guarda las calificaciones finales (pestaña Calificaciones)."
-              : "Primero guarda las calificaciones finales (pestaña Calificaciones).";
-          mostrarToast(lockMsg, "error");
+          mostrarToast("Primero guarda las calificaciones finales.", "error");
+          // Mostrar mensaje locked dentro del panel
+          ["bonus", "mod"].forEach((t) => {
+            const locked = document.getElementById(`fpanel-${t}-locked`);
+            if (locked) locked.style.display = t === tab ? "block" : "none";
+          });
           return;
         }
-        // Activar tab visual
+        // Activar tab visual — ocultar mensajes locked antes de mostrar el panel
         ["cal", "bonus", "mod"].forEach((t) => {
           document
             .getElementById(`ftab-${t}`)
             ?.classList.toggle("active", t === tab);
           const panel = document.getElementById(`fpanel-${t}`);
           if (panel) panel.style.display = t === tab ? "block" : "none";
+          if (t === tab) {
+            const locked = document.getElementById(`fpanel-${t}-locked`);
+            if (locked) locked.style.display = "none";
+          }
         });
       }
 
@@ -2211,6 +2102,47 @@
           const locked = document.getElementById(`fpanel-${t}-locked`);
           if (locked) locked.style.display = "none";
         });
+        // Mostrar botón de cierre de grupo
+        const wrapCierre = document.getElementById("btnCerrarGrupoWrap");
+        if (wrapCierre) wrapCierre.style.display = "block";
+      }
+
+
+      function _aplicarBloqueoGrupoCerrado() {
+        // Banner de aviso
+        const banner = document.getElementById("hintConfigEval");
+        if (banner) {
+          banner.style.display = "flex";
+          banner.style.background = "rgba(220,38,38,.08)";
+          banner.style.borderColor = "#dc2626";
+          banner.querySelector("span") && (banner.querySelector("span").textContent =
+            "Este grupo está cerrado. No se pueden realizar modificaciones.");
+          const btnIr = banner.querySelector("button.btn-primary, a.btn-primary");
+          if (btnIr) btnIr.style.display = "none";
+          const btnOlv = banner.querySelector("button:not(.btn-primary)");
+          if (btnOlv) btnOlv.style.display = "none";
+        }
+        // Bloquear pills de unidad
+        document.querySelectorAll(".unit-pill").forEach(p => {
+          p.style.pointerEvents = "none";
+          p.style.opacity = "0.5";
+        });
+        // Deshabilitar botones de captura
+        ["btnGuardarCals", "btnGuardarCerrar"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.disabled = true;
+        });
+        // Ocultar botón de cierre (ya está cerrado)
+        const wrapCierre = document.getElementById("btnCerrarGrupoWrap");
+        if (wrapCierre) wrapCierre.style.display = "none";
+        // Mostrar badge en el strip
+        const strip = document.getElementById("statsStrip");
+        if (strip) {
+          const badge = document.createElement("span");
+          badge.style.cssText = "margin-left:auto;background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;";
+          badge.textContent = "GRUPO CERRADO";
+          strip.appendChild(badge);
+        }
       }
 
       function olvidarHintConfig() {
@@ -2283,12 +2215,35 @@
             ?.classList.remove("unlocked", "active");
           const panel = document.getElementById(`fpanel-${t}`);
           if (panel) panel.style.display = "none";
-          const locked = document.getElementById(`fpanel-${t}-locked`);
-          if (locked) locked.style.display = "";
+          // No mostrar el mensaje locked aún — se decide tras verificar BD
         });
         // Volver al tab de Calificaciones
         document.getElementById("ftab-cal")?.classList.add("active");
         document.getElementById("fpanel-cal").style.display = "block";
+
+        // Si ya existen calificaciones finales guardadas en BD, desbloquear tabs y cargar contenido
+        if (estado.grupoId) {
+          try {
+            const rFinal = await fetch(
+              `${API_URL}/api/reportes/grupo/${estado.grupoId}`,
+              { headers: { Authorization: `Bearer ${token()}` } }
+            );
+            if (rFinal.ok) {
+              const dataFinal = await rFinal.json();
+              const hayFinal = (dataFinal.alumnos || []).some(
+                (a) => a.calificacion_oficial != null
+              );
+              if (hayFinal) {
+                _desbloquearTabsFinales();
+                // Renderizar contenido de bonus y modificación para que estén listos
+                if (typeof renderBonusFinalTabla === "function")
+                  await renderBonusFinalTabla().catch(() => {});
+                if (typeof renderModificacionFinalTabla === "function")
+                  await renderModificacionFinalTabla().catch(() => {});
+              }
+            }
+          } catch (_) {}
+        }
       };
 
       // Intercept guardarCalificacionesFinal para desbloquear tabs

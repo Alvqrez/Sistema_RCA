@@ -313,6 +313,8 @@
         document.getElementById("listaAlumnos").style.display = isCards
           ? "none"
           : "block";
+        // Re-renderizar si ya hay datos cargados
+        if (typeof filtrar === "function" && todosAlumnos.length) filtrar();
         const btnC = document.getElementById("btnVistaCards");
         const btnL = document.getElementById("btnVistaLista");
         btnC.style.background = isCards ? "var(--primary)" : "transparent";
@@ -424,7 +426,7 @@
           document.getElementById("statTotal").textContent =
             todosAlumnos.length;
           document.getElementById("statAprobados").textContent =
-            todosAlumnos.filter((a) => a.estatus_final === "Aprobado").length;
+            todosAlumnos.filter((a) => (a.estatus_final || "").startsWith("Aprobado")).length;
           document.getElementById("statGrupos").textContent = grupos.length;
 
           filtrar();
@@ -451,7 +453,7 @@
           const matchG = !grupo || String(a.id_grupo) === grupo;
           const matchE =
             !estatus ||
-            a.estatus_final.startsWith(estatus.replace(" provisional", ""));
+            (a.estatus_final || "").startsWith(estatus.replace(" provisional", ""));
           return matchQ && matchG && matchE;
         });
 
@@ -487,16 +489,13 @@
             (a.nombre.split(",")[1]?.trim()?.[0] ?? "") +
             (a.nombre.split(",")[0]?.trim()?.[0] ?? "");
           const color = COLORS[idx % COLORS.length];
+          const ef = a.estatus_final || "Pendiente";
           const badgeClass =
-            a.estatus_final === "Aprobado"
+            ef === "Aprobado" || ef.startsWith("Aprobado")
               ? "badge-success"
-              : a.estatus_final.startsWith("Aprobado")
-                ? "badge-success"
-                : a.estatus_final === "Reprobado"
-                  ? "badge-danger"
-                  : a.estatus_final.startsWith("Reprobado")
-                    ? "badge-danger"
-                    : "badge-warning";
+              : ef === "Reprobado" || ef.startsWith("Reprobado")
+                ? "badge-danger"
+                : "badge-warning";
           const calNum =
             a.calificacion !== null && a.calificacion !== undefined
               ? parseFloat(a.calificacion)
@@ -524,7 +523,7 @@
                 ${a.periodo ? `<span><iconify-icon icon="lucide:calendar"></iconify-icon> ${a.periodo}</span>` : ""}
               </div>
               <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
-                <span class="badge ${badgeClass}" style="font-size:.72rem">${a.estatus_final}</span>
+                <span class="badge ${badgeClass}" style="font-size:.72rem">${ef}</span>
                 <span style="font-size:0.78rem;color:var(--text-muted)">Cal.: <strong style="color:${calColor}">${calStr}</strong>${a.esProvisional ? ' <span style="font-size:.7rem;color:var(--text-muted)">(prov.)</span>' : ""}</span>
               </div>
             </div>
@@ -552,12 +551,11 @@
             "#ef4444",
           ];
           const color = COLORS[i % COLORS.length];
+          const ef2 = a.estatus_final || "Pendiente";
           const badgeClass =
-            a.estatus_final === "Aprobado" ||
-            a.estatus_final.startsWith("Aprobado")
+            ef2 === "Aprobado" || ef2.startsWith("Aprobado")
               ? "badge-success"
-              : a.estatus_final === "Reprobado" ||
-                  a.estatus_final.startsWith("Reprobado")
+              : ef2 === "Reprobado" || ef2.startsWith("Reprobado")
                 ? "badge-danger"
                 : "badge-warning";
           const calNum =
@@ -583,7 +581,7 @@
                 <div style="font-size:.73rem;color:var(--text-muted)">${a.no_control} · ${a.materia}</div>
               </div>
             </div>
-            <span class="badge ${badgeClass}" style="font-size:.7rem;white-space:nowrap">${a.estatus_final}</span>
+            <span class="badge ${badgeClass}" style="font-size:.7rem;white-space:nowrap">${ef2}</span>
             <span style="font-size:.87rem;font-weight:700;color:${calColor};min-width:40px;text-align:right">${calStr}${a.esProvisional ? '<span style="font-size:.65rem;color:var(--text-muted)"> prov.</span>' : ""}</span>
             <div style="display:flex;gap:5px">
               <a href="captura_calificaciones.html?grupo=${a.id_grupo}" class="btn btn-primary btn-sm" style="text-decoration:none;padding:5px 8px"><iconify-icon icon="lucide:pencil"></iconify-icon></a>

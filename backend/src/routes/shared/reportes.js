@@ -36,106 +36,197 @@ router.get("/grupos", verificarToken, (req, res) => {
 });
 
 // GET /api/reportes/grupo/:id_grupo — reporte completo de un grupo
-router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+// Calcula dinámicamente desde resultado_actividad para reflejar estado real,
+// incluyendo bonus de unidad y bonus final.
+router.get("/grupo/:id_grupo", verificarToken, async (req, res) => {
   const { id_grupo } = req.params;
 
-  const sqlGrupo = `
-    SELECT g.id_grupo, m.nombre_materia, m.clave_materia, m.no_unidades,
-           CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
-           p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio, g.estatus
-    FROM grupo g
-    JOIN materia m      ON g.clave_materia   = m.clave_materia
-    JOIN maestro mae    ON g.rfc             = mae.rfc
-    LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
-    WHERE g.id_grupo = ?
-  `;
+  function q(sql, params) {
+    return new Promise((resolve, reject) =>
+      db.query(sql, params, (err, r) => (err ? reject(err) : resolve(r)))
+    );
+  }
 
-  const sqlAlumnos = `
-    SELECT
-      a.no_control,
-      CONCAT(a.apellido_paterno,' ',COALESCE(a.apellido_materno,''),', ',a.nombre) AS nombre_completo,
-      i.estatus AS estatus_inscripcion,
-      i.tipo_curso,
-      cf.promedio_unidades,
-      cf.calificacion_oficial,
-      cf.estatus_final
-    FROM inscripcion i
-    JOIN alumno a ON i.no_control = a.no_control
-    LEFT JOIN calificacion_final cf
-           ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
-    WHERE i.id_grupo = ?
-    ORDER BY a.apellido_paterno ASC
-  `;
+  try {
+    // Info del grupo
+    const grupoRows = await q(`
+      SELECT g.id_grupo, g.estatus, m.nombre_materia, m.clave_materia, m.no_unidades,
+             CONCAT(mae.nombre,' ',mae.apellido_paterno) AS nombre_maestro,
+             p.descripcion AS periodo, YEAR(p.fecha_inicio) AS anio
+      FROM grupo g
+      JOIN materia m      ON g.clave_materia = m.clave_materia
+      JOIN maestro mae    ON g.rfc           = mae.rfc
+      LEFT JOIN periodo_escolar p ON g.id_periodo = p.id_periodo
+      WHERE g.id_grupo = ?`, [id_grupo]);
 
-  const sqlUnidades = `
-    SELECT u.id_unidad, u.nombre_unidad
-    FROM unidad u
-    JOIN grupo g ON u.clave_materia = g.clave_materia
-    WHERE g.id_grupo = ?
-    ORDER BY u.id_unidad ASC
-  `;
-
-  const sqlUnidadCalif = `
-    SELECT cu.no_control, cu.id_unidad, cu.calificacion_unidad_final, cu.estatus_unidad
-    FROM calificacion_unidad cu
-    WHERE cu.id_grupo = ?
-  `;
-
-  db.query(sqlGrupo, [id_grupo], (err, grupoRows) => {
-    if (err) return res.status(500).json({ error: "Error interno" });
-    if (!grupoRows.length)
-      return res.status(404).json({ error: "Grupo no encontrado" });
-
+    if (!grupoRows.length) return res.status(404).json({ error: "Grupo no encontrado" });
     const grupo = grupoRows[0];
 
-    db.query(sqlAlumnos, [id_grupo], (err2, alumnos) => {
-      if (err2) return res.status(500).json({ error: "Error interno" });
+    // Unidades de la materia (respetando layout del grupo si existe)
+    let unidades = await q(`
+      SELECT u.id_unidad, u.nombre_unidad
+      FROM unidad u
+      JOIN grupo g ON u.clave_materia = g.clave_materia
+      WHERE g.id_grupo = ?
+      ORDER BY u.id_unidad ASC`, [id_grupo]);
 
-      db.query(sqlUnidades, [id_grupo], (err3, unidades) => {
-        if (err3) return res.status(500).json({ error: "Error interno" });
+    // Alumnos inscritos + calificación final de BD
+    const alumnos = await q(`
+      SELECT a.no_control,
+             CONCAT(a.apellido_paterno,' ',COALESCE(a.apellido_materno,''),', ',a.nombre) AS nombre_completo,
+             i.estatus AS estatus_inscripcion, i.tipo_curso,
+             cf.promedio_unidades, cf.calificacion_oficial, cf.estatus_final
+      FROM inscripcion i
+      JOIN alumno a ON i.no_control = a.no_control
+      LEFT JOIN calificacion_final cf ON cf.no_control = i.no_control AND cf.id_grupo = i.id_grupo
+      WHERE i.id_grupo = ?
+      ORDER BY a.apellido_paterno ASC`, [id_grupo]);
 
-        db.query(sqlUnidadCalif, [id_grupo], (err4, califUnidad) => {
-          if (err4) return res.status(500).json({ error: "Error interno" });
+    // Actividades del grupo con su ponderación
+    const actividades = await q(`
+      SELECT a.id_actividad, a.id_unidad, a.ponderacion
+      FROM actividad a
+      WHERE a.id_grupo = ?`, [id_grupo]);
 
-          const califMap = {};
-          califUnidad.forEach((c) => {
-            if (!califMap[c.no_control]) califMap[c.no_control] = {};
-            califMap[c.no_control][c.id_unidad] = {
-              calificacion: c.calificacion_unidad_final,
-              estatus:      c.estatus_unidad,
-            };
-          });
+    // Resultados de actividades de todos los alumnos del grupo
+    const resultados = await q(`
+      SELECT ra.no_control, ra.id_actividad, ra.calificacion_obtenida, ra.estatus
+      FROM resultado_actividad ra
+      JOIN actividad a ON ra.id_actividad = a.id_actividad
+      WHERE a.id_grupo = ?`, [id_grupo]);
 
-          const alumnosConCalif = alumnos.map((a) => ({
-            ...a,
-            unidades: califMap[a.no_control] || {},
-          }));
+    // Bonus de unidad activos
+    const bonusUnidad = await q(`
+      SELECT no_control, id_unidad, puntos_otorgados
+      FROM bonusunidad
+      WHERE id_grupo = ? AND estatus = 'Activo'`, [id_grupo]);
 
-          const total      = alumnosConCalif.length;
-          const aprobados  = alumnosConCalif.filter((a) => a.estatus_final === "Aprobado").length;
-          const reprobados = alumnosConCalif.filter((a) => a.estatus_final === "Reprobado").length;
-          const pendientes = total - aprobados - reprobados;
-          const conCalif   = alumnosConCalif.filter((a) => a.calificacion_oficial != null);
-          const promGrupo  =
-            conCalif.length > 0
-              ? (
-                  conCalif.reduce(
-                    (s, a) => s + parseFloat(a.calificacion_oficial || 0),
-                    0
-                  ) / conCalif.length
-                ).toFixed(1)
-              : null;
+    // Bonus final activos
+    const bonusFinal = await q(`
+      SELECT no_control, puntos_otorgados
+      FROM bonusfinal
+      WHERE id_grupo = ? AND estatus = 'Activo'`, [id_grupo]);
 
-          res.json({
-            grupo,
-            unidades,
-            alumnos: alumnosConCalif,
-            stats:   { total, aprobados, reprobados, pendientes, promGrupo },
-          });
-        });
-      });
+    // Indexar resultados por alumno → actividad
+    const resMap = {};
+    resultados.forEach((r) => {
+      if (!resMap[r.no_control]) resMap[r.no_control] = {};
+      resMap[r.no_control][r.id_actividad] = r;
     });
-  });
+
+    // Indexar bonus unidad por alumno → unidad
+    const bonusUMap = {};
+    bonusUnidad.forEach((b) => {
+      if (!bonusUMap[b.no_control]) bonusUMap[b.no_control] = {};
+      bonusUMap[b.no_control][b.id_unidad] = parseFloat(b.puntos_otorgados);
+    });
+
+    // Indexar bonus final por alumno
+    const bonusFMap = {};
+    bonusFinal.forEach((b) => { bonusFMap[b.no_control] = parseFloat(b.puntos_otorgados); });
+
+    // Agrupar actividades por unidad
+    const actsPorUnidad = {};
+    actividades.forEach((a) => {
+      if (!actsPorUnidad[a.id_unidad]) actsPorUnidad[a.id_unidad] = [];
+      actsPorUnidad[a.id_unidad].push(a);
+    });
+
+    // Calcular calificación dinámica por alumno
+    const alumnosConCalif = alumnos.map((al) => {
+      const nc = al.no_control;
+      const unidadesCalc = {};
+
+      let sumaUnidades = 0;
+      let countUnidades = 0;
+
+      unidades.forEach((u) => {
+        const acts = actsPorUnidad[u.id_unidad] || [];
+        if (!acts.length) return;
+
+        const sumaPond = acts.reduce((s, a) => s + parseFloat(a.ponderacion), 0);
+        let totalPonderado = 0;
+        let hayAlgo = false;
+
+        acts.forEach((a) => {
+          const r = resMap[nc]?.[a.id_actividad];
+          if (!r) return;
+          hayAlgo = true;
+          const cal = r.estatus === "NP" ? 0 : parseFloat(r.calificacion_obtenida ?? 0);
+          totalPonderado += cal * (parseFloat(a.ponderacion) / 100);
+        });
+
+        if (!hayAlgo) return;
+
+        // Normalizar si ponderaciones no suman 100
+        const promBase = Math.abs(sumaPond - 100) > 0.5
+          ? (totalPonderado / sumaPond) * 100
+          : totalPonderado;
+
+        const bonus = bonusUMap[nc]?.[u.id_unidad] || 0;
+        const calFinalUnidad = Math.min(100, Math.round((promBase + bonus) * 100) / 100);
+        const estatus = calFinalUnidad >= 70 ? "Aprobada" : "Reprobada";
+
+        unidadesCalc[u.id_unidad] = {
+          calificacion: calFinalUnidad,
+          calificacion_unidad_final: calFinalUnidad,
+          estatus,
+        };
+
+        sumaUnidades += calFinalUnidad;
+        countUnidades++;
+      });
+
+      // Promedio de unidades calculado dinámicamente
+      const promDinamico = countUnidades > 0 ? sumaUnidades / countUnidades : null;
+
+      // Bonus final
+      const bFinal = bonusFMap[nc] || 0;
+      let calOficialDinamica = null;
+      let estatusFinalDinamico = null;
+
+      if (promDinamico !== null) {
+        const conBonus = Math.min(100, promDinamico + bFinal);
+        const redondeado = Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
+        calOficialDinamica = redondeado;
+        estatusFinalDinamico = redondeado >= 70 ? "Aprobado" : "Reprobado";
+      }
+
+      // Usar calificación de BD si existe y es más reciente (modificación manual),
+      // de lo contrario usar el cálculo dinámico
+      const calOficialFinal = al.calificacion_oficial != null
+        ? parseFloat(al.calificacion_oficial)
+        : calOficialDinamica;
+      const promFinal = al.promedio_unidades != null
+        ? parseFloat(al.promedio_unidades)
+        : promDinamico;
+      const estatusFinal = al.estatus_final || estatusFinalDinamico;
+
+      return {
+        ...al,
+        promedio_unidades: promFinal,
+        calificacion_oficial: calOficialFinal,
+        estatus_final: estatusFinal,
+        unidades: unidadesCalc,
+      };
+    });
+
+    const total      = alumnosConCalif.length;
+    const aprobados  = alumnosConCalif.filter((a) => a.estatus_final === "Aprobado").length;
+    const reprobados = alumnosConCalif.filter((a) => a.estatus_final === "Reprobado").length;
+    const pendientes = total - aprobados - reprobados;
+    const conCalif   = alumnosConCalif.filter((a) => a.calificacion_oficial != null);
+    const promGrupo  = conCalif.length > 0
+      ? (conCalif.reduce((s, a) => s + parseFloat(a.calificacion_oficial), 0) / conCalif.length).toFixed(1)
+      : null;
+
+    res.json({ grupo, unidades, alumnos: alumnosConCalif,
+               stats: { total, aprobados, reprobados, pendientes, promGrupo } });
+
+  } catch (err) {
+    console.error("Error en reporte grupo:", err);
+    res.status(500).json({ error: "Error interno" });
+  }
 });
 
 // GET /api/reportes/alumno/:no_control — historial académico

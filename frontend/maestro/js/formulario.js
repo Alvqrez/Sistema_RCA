@@ -11,7 +11,7 @@ let estado = {
   rubrosState: {}, // (legacy)
   unidadCerrada: false, // true cuando la unidad fue cerrada y no se puede modificar
 };
-let bonusState = {}; // no_control → { puntos, justificacion }
+let bonusState = {}; // no_control → { puntos }
 let _modalNo_control = null;
 let _cambiosPendientes = false; // true cuando hay datos sin guardar // alumno activo en modal de actividades
 
@@ -34,7 +34,7 @@ function setRubroEstado(no_control, key, val) {
 }
 
 function getBonus(no_control) {
-  return bonusState[no_control] ?? { puntos: "", justificacion: "" };
+  return bonusState[no_control] ?? { puntos: "" };
 }
 
 function buildRubros(id_grupo, id_unidad) {
@@ -613,10 +613,7 @@ async function cargarBonusUnidad() {
     if (Array.isArray(bonuses)) {
       bonuses.forEach((b) => {
         if (b.id_unidad === estado.unidadId && b.estatus !== "Cancelado") {
-          bonusState[b.no_control] = {
-            puntos: b.puntos_otorgados,
-            justificacion: b.justificacion,
-          };
+          bonusState[b.no_control] = { puntos: b.puntos_otorgados };
         }
       });
     }
@@ -736,13 +733,6 @@ function renderTablaCalificaciones() {
         value="${b.puntos ?? ""}" placeholder="pts"
         style="width:56px;margin-bottom:4px"
         oninput="onBonusInput('${al.no_control}',this.value)" />
-      <input class="bonus-just-input"
-        type="text"
-        data-no_control="${al.no_control}"
-        value="${(b.justificacion ?? "").replace(/"/g, "&quot;")}"
-        placeholder="Justificación *"
-        style="width:100%;font-size:.72rem"
-        oninput="if(!bonusState['${al.no_control}'])bonusState['${al.no_control}']={};bonusState['${al.no_control}'].justificacion=this.value" />
     </td>`;
 
     // Cal. Final — se calcula después de insertar el HTML (ver recalcularFila al final)
@@ -830,6 +820,36 @@ function calcularPromedioActividades(no_control) {
   return Math.round(normalized * 10) / 10;
 }
 
+// Calcula el promedio de un alumno leyendo estado.resultados (sin DOM).
+// Se usa en renderListaAlumnos para mostrar el promedio de todos los alumnos,
+// no solo el que está activo en pantalla.
+function calcularCalDesdeResultados(no_control) {
+  if (!estado.actividades.length) return null;
+  const sumaPond = estado.actividades.reduce(
+    (s, a) => s + parseFloat(a.ponderacion), 0
+  );
+  if (sumaPond <= 0) return null;
+
+  let total = 0;
+  let haySomething = false;
+  for (const a of estado.actividades) {
+    const r = estado.resultados[no_control]?.[a.id_actividad];
+    if (r == null) continue;
+    const val = r.estatus === 'NP' ? 0 : parseFloat(r.cal ?? '');
+    if (isNaN(val)) continue;
+    haySomething = true;
+    total += val * (parseFloat(a.ponderacion) / 100);
+  }
+  if (!haySomething) return null;
+
+  const normalizado = Math.abs(sumaPond - 100) > 0.5
+    ? (total / sumaPond) * 100
+    : total;
+  const bonus = parseFloat(getBonus(no_control).puntos) || 0;
+  const conBonus = Math.min(100, normalizado + bonus);
+  return Math.floor(conBonus) + (conBonus % 1 >= 0.5 ? 1 : 0);
+}
+
 function calcularCalFinal(no_control) {
   const base = calcularBaseScore(no_control);
   if (base === null) return null;
@@ -911,7 +931,7 @@ function onRubroInput(no_control, key, val) {
 
 function onBonusInput(no_control, val) {
   if (!bonusState[no_control])
-    bonusState[no_control] = { puntos: "", justificacion: "" };
+    bonusState[no_control] = { puntos: "" };
   bonusState[no_control].puntos = val;
   recalcularFila(no_control);
   _cambiosPendientes = true;
@@ -1322,56 +1342,12 @@ async function _ejecutarCierre() {
 }
 
 async function guardarBonusUnidad() {
-  // Recopilar alumnos que tienen bonus pero sin justificación
-  const pendientesJust = [];
-  for (const al of estado.alumnos) {
-    const b = bonusState[al.no_control];
-    const pts = parseFloat(b?.puntos);
-    if (!pts || pts <= 0) continue;
-    const justEl = document.querySelector(
-      `.bonus-just-input[data-no_control="${al.no_control}"]`,
-    );
-    const just = justEl?.value?.trim() || b?.justificacion || "";
-    if (!just) pendientesJust.push(al);
-  }
-
-  // Si hay alumnos sin justificación, pedir una a una con el modal
-  if (pendientesJust.length) {
-    try {
-      for (const al of pendientesJust) {
-        const just = await pedirJustificacionBonus(
-          al.nombre,
-          bonusState[al.no_control]?.puntos,
-        );
-        if (!bonusState[al.no_control]) bonusState[al.no_control] = {};
-        bonusState[al.no_control].justificacion = just;
-        // Actualizar también el input visible en la tabla
-        const inp = document.querySelector(
-          `.bonus-just-input[data-no_control="${al.no_control}"]`,
-        );
-        if (inp) inp.value = just;
-      }
-    } catch {
-      // El usuario canceló el modal — no guardar
-      mostrarToast("Bonus cancelado (se requiere justificación)", "info");
-      return;
-    }
-  }
-
   let saved = 0,
     errs = 0;
   for (const al of estado.alumnos) {
     const b = bonusState[al.no_control];
     const pts = parseFloat(b?.puntos);
     if (!pts || pts <= 0) continue;
-    const justEl = document.querySelector(
-      `.bonus-just-input[data-no_control="${al.no_control}"]`,
-    );
-    const just = justEl?.value?.trim() || b?.justificacion || "";
-    if (!just) {
-      errs++;
-      continue;
-    }
     try {
       const res = await fetch(`${API_URL}/api/bonus/unidad`, {
         method: "POST",
@@ -1384,7 +1360,6 @@ async function guardarBonusUnidad() {
           id_unidad: estado.unidadId,
           id_grupo: estado.grupoId,
           puntos_otorgados: pts,
-          justificacion: just,
         }),
       });
       const d = await res.json();
@@ -1735,9 +1710,9 @@ async function renderBonusFinalTabla() {
   const wrap = document.getElementById("tablaBonusFinalWrap");
   if (!wrap || !estado.grupoId) return;
 
-  // Cargar calificaciones finales y bonuses existentes en paralelo
-  const [resCF, resBF] = await Promise.all([
-    fetch(`${API_URL}/api/calificaciones/grupo/${estado.grupoId}`, {
+  // Cargar bonuses y reporte (que incluye promedio_unidades y calificacion_oficial)
+  const [resReporte, resBF] = await Promise.all([
+    fetch(`${API_URL}/api/reportes/grupo/${estado.grupoId}`, {
       headers: { Authorization: `Bearer ${token()}` },
     }),
     fetch(`${API_URL}/api/bonus/final/grupo/${estado.grupoId}`, {
@@ -1745,12 +1720,9 @@ async function renderBonusFinalTabla() {
     }),
   ]);
 
-  const calFinales = resCF.ok ? await resCF.json() : [];
+  const reporte = resReporte.ok ? await resReporte.json() : { alumnos: [] };
   const bonuses = resBF.ok ? await resBF.json() : [];
 
-  // Agrupar: una fila por alumno (la calificación final viene de calificacion_final, no de calificacion_unidad)
-  // Reusamos el endpoint /calificaciones/grupo que devuelve calificacion_unidad; necesitamos el final
-  // Hacemos fetch de /calificaciones/final por alumno — más simple: usamos tablaFinalWrap filas
   const filasFinal = [
     ...document.querySelectorAll("#tablaFinalWrap tr[data-no_control]"),
   ];
@@ -1762,15 +1734,21 @@ async function renderBonusFinalTabla() {
 
   // Mapa de bonuses existentes por no_control
   const bonusMap = {};
-  bonuses.forEach((b) => {
-    bonusMap[b.no_control] = b;
+  bonuses.forEach((b) => { bonusMap[b.no_control] = b; });
+
+  // Mapa de promedio_unidades (base sin bonus) por no_control
+  const promedioBaseMap = {};
+  (reporte.alumnos || []).forEach((a) => {
+    promedioBaseMap[a.no_control] = {
+      promedio_unidades: a.promedio_unidades,
+      calificacion_oficial: a.calificacion_oficial,
+    };
   });
 
-  // Construir cache de calificaciones
+  // Construir cache
   filasFinal.forEach((f) => {
     _cfCache[f.dataset.no_control] = {
-      nombre_alumno:
-        f.querySelector("td:first-child")?.textContent || f.dataset.no_control,
+      nombre_alumno: f.querySelector("td:first-child")?.textContent || f.dataset.no_control,
       calificacion_oficial: parseFloat(f.dataset.final ?? 0),
     };
   });
@@ -1779,38 +1757,55 @@ async function renderBonusFinalTabla() {
     <table class="final-table" style="width:100%;">
       <thead><tr>
         <th>Alumno</th>
-        <th style="text-align:center;">Cal. Final</th>
+        <th style="text-align:center;">Sin bonus</th>
         <th style="text-align:center;">Bonus</th>
+        <th style="text-align:center;">Con bonus</th>
         <th style="text-align:center;">Acción</th>
       </tr></thead><tbody>`;
 
   filasFinal.forEach((f) => {
     const mat = f.dataset.no_control;
-    const cal = parseFloat(f.dataset.final ?? 0);
+    const calOficial = parseFloat(f.dataset.final ?? 0);
     const nom = f.querySelector("td:first-child")?.textContent || mat;
     const bon = bonusMap[mat];
+    const base = promedioBaseMap[mat];
+
+    // Antes del bonus: promedio_unidades de BD; fallback al calOficial si no hay bonus
+    const sinBonus = base?.promedio_unidades != null
+      ? parseFloat(base.promedio_unidades)
+      : bon ? (calOficial - parseFloat(bon.puntos_otorgados)) : calOficial;
+
+    // Con bonus: calificacion_oficial de BD (ya incluye bonus y redondeo)
+    const conBonus = base?.calificacion_oficial != null
+      ? parseFloat(base.calificacion_oficial)
+      : calOficial;
+
+    const colorBase = sinBonus >= 70 ? "var(--success)" : "var(--danger)";
+    const colorFinal = conBonus >= 70 ? "var(--success)" : "var(--danger)";
+
     html += `<tr>
       <td>${nom}</td>
-      <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
+      <td style="text-align:center; font-weight:600; color:${colorBase};">${sinBonus.toFixed(2)}</td>
       <td style="text-align:center;">
-        ${bon ? `<span style="color:#7c3aed; font-weight:600;">+${parseFloat(bon.puntos_otorgados).toFixed(2)} pts</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
+        ${bon
+          ? `<span style="color:#7c3aed; font-weight:600;">+${parseFloat(bon.puntos_otorgados).toFixed(2)} pts</span>`
+          : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
       </td>
+      <td style="text-align:center; font-weight:700; color:${colorFinal};">${conBonus.toFixed(2)}</td>
       <td style="text-align:center;">
         <div style="display:flex;gap:6px;justify-content:center">
           <button class="btn btn-sm" style="background:#7c3aed;color:#fff;padding:4px 10px;font-size:.78rem"
-                  onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${cal})">
+                  onclick="abrirModalBonusFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${sinBonus})">
             <iconify-icon icon="mdi:star-plus-outline"></iconify-icon>
             ${bon ? "Editar" : "Asignar"}
           </button>
-          ${
-            bon
-              ? `<button class="btn btn-sm" title="Eliminar bonus"
-                  style="background:var(--danger,#ef4444);color:#fff;padding:4px 8px;font-size:.78rem"
-                  onclick="revertirBonusFinal('${mat}')">
-            <iconify-icon icon="mdi:undo-variant"></iconify-icon>
-          </button>`
-              : ""
-          }
+          ${bon
+            ? `<button class="btn btn-sm" title="Eliminar bonus"
+                style="background:var(--danger,#ef4444);color:#fff;padding:4px 8px;font-size:.78rem"
+                onclick="revertirBonusFinal('${mat}')">
+              <iconify-icon icon="mdi:undo-variant"></iconify-icon>
+            </button>`
+            : ""}
         </div>
       </td>
     </tr>`;
@@ -1830,7 +1825,6 @@ function abrirModalBonusFinal(no_control, nombre, calActual) {
   document.getElementById("bonusFinalPuntos").max = maxBonus;
   document.getElementById("bonusFinalPuntos").placeholder =
     `Máx: ${maxBonus} pts`;
-  document.getElementById("bonusFinalJustificacion").value = "";
   document.getElementById("modalBonusFinal").style.display = "flex";
 }
 
@@ -1843,10 +1837,6 @@ async function guardarBonusFinal() {
   const inputPuntos = document.getElementById("bonusFinalPuntos");
   const puntos = parseFloat(inputPuntos.value);
   const maxBonus = parseFloat(inputPuntos.max) || 100;
-  const justificacion = document
-    .getElementById("bonusFinalJustificacion")
-    .value.trim();
-
   if (!puntos || puntos <= 0)
     return mostrarToast("Ingresa puntos válidos", "error");
   if (puntos > maxBonus)
@@ -1854,9 +1844,6 @@ async function guardarBonusFinal() {
       `El máximo de puntos disponible es ${maxBonus}`,
       "error",
     );
-  if (!justificacion)
-    return mostrarToast("La justificación es obligatoria", "error");
-
   try {
     const res = await fetch(`${API_URL}/api/bonus/final`, {
       method: "POST",
@@ -1868,7 +1855,6 @@ async function guardarBonusFinal() {
         no_control,
         id_grupo: estado.grupoId,
         puntos_otorgados: puntos,
-        justificacion,
       }),
     });
     const d = await res.json();
@@ -1903,54 +1889,68 @@ async function renderModificacionFinalTabla() {
     return;
   }
 
-  // Cargar modificaciones existentes del grupo
-  const resModif = await fetch(
-    `${API_URL}/api/modificacion-final/grupo/${estado.grupoId}`,
-    { headers: { Authorization: `Bearer ${token()}` } },
-  ).catch(() => null);
+  // Cargar modificaciones y reporte (calificacion_oficial ya incluye bonus) en paralelo
+  const [resModif, resReporte] = await Promise.all([
+    fetch(`${API_URL}/api/modificacion-final/grupo/${estado.grupoId}`,
+      { headers: { Authorization: `Bearer ${token()}` } }).catch(() => null),
+    fetch(`${API_URL}/api/reportes/grupo/${estado.grupoId}`,
+      { headers: { Authorization: `Bearer ${token()}` } }).catch(() => null),
+  ]);
+
   const modifs = resModif && resModif.ok ? await resModif.json() : [];
+  const reporte = resReporte && resReporte.ok ? await resReporte.json() : { alumnos: [] };
+
   const modifMap = {};
-  modifs.forEach((m) => {
-    modifMap[m.no_control] = m;
+  modifs.forEach((m) => { modifMap[m.no_control] = m; });
+
+  // calificacion_oficial desde BD (incluye bonus + redondeo)
+  const calOficialMap = {};
+  (reporte.alumnos || []).forEach((a) => {
+    calOficialMap[a.no_control] = a.calificacion_oficial;
   });
 
   let html = `
     <table class="final-table" style="width:100%;">
       <thead><tr>
         <th>Alumno</th>
-        <th style="text-align:center;">Cal. Actual</th>
+        <th style="text-align:center;">Cal. con bonus</th>
         <th style="text-align:center;">Modificada</th>
         <th style="text-align:center;">Acción</th>
       </tr></thead><tbody>`;
 
   filasFinal.forEach((f) => {
     const mat = f.dataset.no_control;
-    const cal = parseFloat(f.dataset.final ?? 0);
     const nom = f.querySelector("td:first-child")?.textContent || mat;
     const mod = modifMap[mat];
+    // Usar calificacion_oficial de BD (ya incluye bonus) como base real
+    const calBase = calOficialMap[mat] != null
+      ? parseFloat(calOficialMap[mat])
+      : parseFloat(f.dataset.final ?? 0);
+    const colorBase = calBase >= 70 ? "var(--success)" : "var(--danger)";
+
     html += `<tr>
       <td>${nom}</td>
-      <td style="text-align:center; font-weight:700;">${cal.toFixed(2)}</td>
+      <td style="text-align:center; font-weight:700; color:${colorBase};">${calBase.toFixed(2)}</td>
       <td style="text-align:center;">
-        ${mod ? `<span style="color:#dc2626; font-weight:600;">${parseFloat(mod.calif_modificada).toFixed(2)}</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
+        ${mod
+          ? `<span style="color:#dc2626; font-weight:600;">${parseFloat(mod.calif_modificada).toFixed(2)}</span>`
+          : `<span style="color:var(--text-muted); font-size:0.8rem;">—</span>`}
       </td>
       <td style="text-align:center;">
         <div style="display:flex;gap:6px;justify-content:center">
           <button class="btn btn-sm" style="background:#dc2626;color:#fff;padding:4px 10px;font-size:.78rem"
-                  onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${cal})">
+                  onclick="abrirModalModificacionFinal('${mat}', '${nom.replace(/\'/g, "\\'")}', ${calBase})">
             <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
             ${mod ? "Editar" : "Modificar"}
           </button>
-          ${
-            mod
-              ? `<button class="btn btn-sm" title="Revertir modificación"
-                  style="background:var(--text-muted,#6b7280);color:#fff;padding:4px 8px;font-size:.78rem"
-                  onclick="revertirModificacionFinal('${mat}')">
-            <iconify-icon icon="mdi:undo-variant"></iconify-icon>
-            Revertir
-          </button>`
-              : ""
-          }
+          ${mod
+            ? `<button class="btn btn-sm" title="Revertir modificación"
+                style="background:var(--text-muted,#6b7280);color:#fff;padding:4px 8px;font-size:.78rem"
+                onclick="revertirModificacionFinal('${mat}')">
+              <iconify-icon icon="mdi:undo-variant"></iconify-icon>
+              Revertir
+            </button>`
+            : ""}
         </div>
       </td>
     </tr>`;
@@ -2155,4 +2155,31 @@ function mostrarToast(msg, tipo = "success") {
   t.className = `rca-toast rca-toast-${tipo} visible`;
   clearTimeout(t._x);
   t._x = setTimeout(() => t.classList.remove("visible"), 3800);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CIERRE DE GRUPO
+// ══════════════════════════════════════════════════════════════════════
+
+async function cerrarGrupo() {
+  if (!estado.grupoId) return;
+  mostrarConfirm(
+    "Cerrar grupo definitivamente",
+    "Esta acción bloqueará todas las modificaciones del grupo.\n\n¿Confirmas el cierre?",
+    async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/grupos/${estado.grupoId}/cerrar`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const d = await res.json();
+        if (!res.ok) return mostrarToast(d.error || "Error al cerrar grupo", "error");
+        mostrarToast("Grupo cerrado. No se pueden realizar más modificaciones.", "success");
+        // Recargar la página para reflejar el nuevo estado
+        setTimeout(() => location.reload(), 1200);
+      } catch {
+        mostrarToast("Error de conexión", "error");
+      }
+    }
+  );
 }

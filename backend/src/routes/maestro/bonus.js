@@ -74,20 +74,11 @@ router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
 // POST — asignar bonus de unidad
 // M-4: verifica propietario del grupo antes de continuar.
 router.post("/unidad", maestroOAdmin, (req, res) => {
-  const { no_control, id_unidad, id_grupo, puntos_otorgados, justificacion } =
-    req.body;
+  const { no_control, id_unidad, id_grupo, puntos_otorgados } = req.body;
   const rfc = req.usuario.id_referencia;
 
-  if (
-    !no_control ||
-    !id_unidad ||
-    !id_grupo ||
-    puntos_otorgados === undefined ||
-    !justificacion
-  ) {
-    return res
-      .status(400)
-      .json({ error: "Faltan campos requeridos (incluida la justificación)" });
+  if (!no_control || !id_unidad || !id_grupo || puntos_otorgados === undefined) {
+    return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
   const puntos = parseFloat(puntos_otorgados);
@@ -132,15 +123,14 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
 
             db.query(
               `INSERT INTO bonusunidad
-                 (no_control, id_unidad, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
-               VALUES (?, ?, ?, ?, ?, ?, CURDATE())
+                 (no_control, id_unidad, id_grupo, rfc, puntos_otorgados, fecha_asignacion)
+               VALUES (?, ?, ?, ?, ?, CURDATE())
                ON DUPLICATE KEY UPDATE
                  puntos_otorgados   = VALUES(puntos_otorgados),
-                 justificacion      = VALUES(justificacion),
                  rfc                = VALUES(rfc),
                  fecha_modificacion = CURDATE(),
                  estatus            = 'Activo'`,
-              [no_control, id_unidad, id_grupo, rfc, puntosEfectivos, justificacion],
+              [no_control, id_unidad, id_grupo, rfc, puntosEfectivos],
               (err3) => {
                 if (err3)
                   return res
@@ -218,18 +208,11 @@ router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
 // POST — asignar bonus final
 // M-4: verifica propietario del grupo antes de continuar.
 router.post("/final", maestroOAdmin, (req, res) => {
-  const { no_control, id_grupo, puntos_otorgados, justificacion } = req.body;
+  const { no_control, id_grupo, puntos_otorgados } = req.body;
   const rfc = req.usuario.id_referencia;
 
-  if (
-    !no_control ||
-    !id_grupo ||
-    puntos_otorgados === undefined ||
-    !justificacion
-  ) {
-    return res
-      .status(400)
-      .json({ error: "Faltan campos requeridos (incluida la justificación)" });
+  if (!no_control || !id_grupo || puntos_otorgados === undefined) {
+    return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
   const puntos = parseFloat(puntos_otorgados);
@@ -265,15 +248,14 @@ router.post("/final", maestroOAdmin, (req, res) => {
 
         db.query(
           `INSERT INTO bonusfinal
-             (no_control, id_grupo, rfc, puntos_otorgados, justificacion, fecha_asignacion)
-           VALUES (?, ?, ?, ?, ?, CURDATE())
+             (no_control, id_grupo, rfc, puntos_otorgados, fecha_asignacion)
+           VALUES (?, ?, ?, ?, CURDATE())
            ON DUPLICATE KEY UPDATE
              puntos_otorgados   = VALUES(puntos_otorgados),
-             justificacion      = VALUES(justificacion),
              rfc                = VALUES(rfc),
              fecha_modificacion = CURDATE(),
              estatus            = 'Activo'`,
-          [no_control, id_grupo, rfc, puntosEfectivos, justificacion],
+          [no_control, id_grupo, rfc, puntosEfectivos],
           (err2) => {
             if (err2)
               return res
