@@ -19,106 +19,6 @@
     />
     <link rel="stylesheet" href="../../css/styles.css" />
     <style>
-      /* ── Hero ───────────────────────────────────────────────────── */
-      .hero-panel {
-        background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
-        border-radius: 16px;
-        padding: 28px 32px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
-      }
-      .hero-panel::before {
-        content: "";
-        position: absolute;
-        right: -40px;
-        top: -40px;
-        width: 220px;
-        height: 220px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.08);
-      }
-      .hero-panel::after {
-        content: "";
-        position: absolute;
-        right: 60px;
-        bottom: -60px;
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-      }
-      .hero-avatar {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        flex-shrink: 0;
-        z-index: 1;
-      }
-      .hero-text {
-        flex: 1;
-        z-index: 1;
-      }
-      .hero-text h1 {
-        margin: 0 0 4px;
-        font-size: 1.4rem;
-        font-weight: 700;
-      }
-      .hero-text p {
-        margin: 0;
-        font-size: 0.88rem;
-        opacity: 0.85;
-      }
-      .hero-date {
-        font-size: 0.78rem;
-        opacity: 0.7;
-        margin-top: 6px;
-      }
-      .hero-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        z-index: 1;
-      }
-      .hero-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.84rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.15s;
-        font-family: inherit;
-        cursor: pointer;
-        border: none;
-      }
-      .hero-btn-primary {
-        background: #fff;
-        color: var(--primary);
-      }
-      .hero-btn-primary:hover {
-        background: #f0f0ff;
-      }
-      .hero-btn-outline {
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-        border: 1.5px solid rgba(255, 255, 255, 0.4);
-      }
-      .hero-btn-outline:hover {
-        background: rgba(255, 255, 255, 0.25);
-      }
-
       /* ── Quick links grid ───────────────────────────────────────── */
       .quick-grid {
         display: grid;
@@ -296,28 +196,12 @@
     <div class="layout">
       <aside class="sidebar"></aside>
       <main class="content">
-        <!-- ── HERO ─────────────────────────────────────────────────── -->
-        <div class="hero-panel">
-          <div class="hero-avatar">
-            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>
-          </div>
-          <div class="hero-text">
-            <h1 id="heroNombre">¡Bienvenido, Docente!</h1>
-            <p id="heroPeriodo">Cargando información del periodo activo…</p>
-            <p class="hero-date" id="heroFecha"></p>
-          </div>
-          <div class="hero-actions">
-            <a
-              href="captura_calificaciones.html"
-              class="hero-btn hero-btn-primary"
-            >
-              <iconify-icon icon="lucide:pencil"></iconify-icon> Capturar
-              calificaciones
-            </a>
-            <a href="gruposMaestro.html" class="hero-btn hero-btn-outline">
-              <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
-              Configurar evaluación
-            </a>
+        <div class="page-header-v2">
+          <div>
+            <h1>Panel del Maestro</h1>
+            <p class="page-subtitle">
+              Resumen de tus grupos, actividades y configuraciones
+            </p>
           </div>
         </div>
 
@@ -528,28 +412,6 @@
         }
       }
 
-      // ── Fecha en el hero ──────────────────────────────────────────────
-      (function () {
-        const nombre = localStorage.getItem("nombre") || "Docente";
-        const hora = new Date().getHours();
-        const saludo =
-          hora < 12
-            ? "¡Buenos días"
-            : hora < 18
-              ? "¡Buenas tardes"
-              : "¡Buenas noches";
-        document.getElementById("heroNombre").textContent =
-          `${saludo}, ${nombre}!`;
-        const hoy = new Date();
-        document.getElementById("heroFecha").textContent =
-          hoy.toLocaleDateString("es-MX", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          });
-      })();
-
       async function cargarPanel() {
         soloPermitido("maestro", "administrador");
         const payload = parsearToken(tkn());
@@ -580,14 +442,9 @@
         // Stats básicos
         document.getElementById("statGrupos").textContent = grupos.length;
 
-        // Periodo del hero
-        const periodo =
-          grupos[0]?.descripcion_periodo || grupos[0]?.periodo || "";
-        if (periodo)
-          document.getElementById("heroPeriodo").textContent =
-            `Periodo activo: ${periodo}`;
+        // Periodo del hero (ya no existe el elemento, pero guardamos el valor por si se usa)
 
-        // Cargar actividades para saber qué grupos tienen config
+        // Cargar actividades y layout de unidades para determinar grupos correctamente configurados
         let actividades = [];
         try {
           const rA = await fetch(`${API_URL}/api/actividades`, {
@@ -596,12 +453,47 @@
           if (rA.ok) actividades = await rA.json();
         } catch (_) {}
 
-        const gruposConActs = new Set(
-          actividades.map((a) => String(a.id_grupo)),
+        // Agrupar actividades por grupo → unidad
+        const unidadesConActPorGrupo = {};
+        for (const a of actividades) {
+          const gk = String(a.id_grupo);
+          if (!unidadesConActPorGrupo[gk])
+            unidadesConActPorGrupo[gk] = new Set();
+          unidadesConActPorGrupo[gk].add(String(a.id_unidad));
+        }
+
+        // Obtener total de unidades efectivas por grupo
+        const unidadesTotalesPorGrupo = {};
+        await Promise.all(
+          grupos.map(async (g) => {
+            try {
+              const r = await fetch(
+                `${API_URL}/api/grupos/${g.id_grupo}/layout-unidades`,
+                {
+                  headers: { Authorization: `Bearer ${tkn()}` },
+                },
+              );
+              if (r.ok) {
+                const uns = await r.json();
+                unidadesTotalesPorGrupo[g.id_grupo] = uns.length;
+              } else {
+                unidadesTotalesPorGrupo[g.id_grupo] = 0;
+              }
+            } catch (_) {
+              unidadesTotalesPorGrupo[g.id_grupo] = 0;
+            }
+          }),
         );
-        const configurados = grupos.filter((g) =>
-          gruposConActs.has(String(g.id_grupo)),
-        ).length;
+
+        // Configurado = todas las unidades efectivas tienen al menos 1 actividad
+        function estaConfiguradoGrupo(g) {
+          const total = unidadesTotalesPorGrupo[g.id_grupo] || 0;
+          const conActs = unidadesConActPorGrupo[String(g.id_grupo)];
+          if (total === 0 || !conActs) return false;
+          return conActs.size >= total;
+        }
+
+        const configurados = grupos.filter(estaConfiguradoGrupo).length;
         const pendientes = grupos.length - configurados;
         document.getElementById("statConfigurados").textContent = configurados;
         document.getElementById("statPendientes").textContent = pendientes;
@@ -640,7 +532,7 @@
           listEl.innerHTML = `<div class="grupo-mini-list">${datosGrupos
             .slice(0, 6)
             .map(({ grupo: g, reporte: d }) => {
-              const tieneConfig = gruposConActs.has(String(g.id_grupo));
+              const tieneConfig = estaConfiguradoGrupo(g);
               const alumnos = d?.alumnos?.length ?? 0;
               const cfg = tieneConfig
                 ? `<span class="badge badge-success" style="font-size:.7rem">Configurado</span>`
@@ -674,7 +566,7 @@
         } else {
           const rows = grupos
             .map((g) => {
-              const tieneConfig = gruposConActs.has(String(g.id_grupo));
+              const tieneConfig = estaConfiguradoGrupo(g);
               const dotClass = tieneConfig ? "dot-ok" : "dot-warn";
               const msg = tieneConfig
                 ? "Evaluación configurada"
