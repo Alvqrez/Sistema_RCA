@@ -5,64 +5,50 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
-const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
+const { verificarToken, maestroOAdmin, verificarPropietarioGrupo } = require("../../middleware/auth");
 
-// ── Helper: verificar propietario del grupo ───────────────────────────────
-function verificarPropietarioGrupo(id_grupo, req, res, callback) {
-  if (req.usuario.rol !== "maestro") return callback(true);
-  db.query(
-    "SELECT rfc FROM grupo WHERE id_grupo = ?",
-    [id_grupo],
-    (err, rows) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!rows.length)
-        return res.status(404).json({ error: "Grupo no encontrado" });
-      if (rows[0].rfc !== req.usuario.id_referencia)
-        return res.status(403).json({
-          error:
-            "No tienes permiso para modificar actividades de un grupo que no impartes.",
-        });
-      callback(true);
-    },
-  );
-}
-
-// GET — actividades filtradas por rol
+// GET — actividades filtradas por rol y opcionalmente por id_grupo e id_unidad
 router.get("/", verificarToken, (req, res) => {
   const { id_referencia, rol } = req.usuario;
+  const { id_grupo, id_unidad } = req.query;
   const camposSql = `a.*, u.nombre_unidad, u.clave_materia, ta.nombre AS nombre_tipo`;
 
+  const conditions = [];
+  const params = [];
+
   if (rol === "maestro") {
-    db.query(
-      `SELECT ${camposSql}
-       FROM actividad a
-       JOIN grupo g ON a.id_grupo = g.id_grupo
-       LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
-       LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
-       WHERE g.rfc = ?
-       ORDER BY a.id_grupo, a.id_unidad, a.id_actividad`,
-      [id_referencia],
-      (err, r) => {
-        if (err)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        res.json(r);
-      },
-    );
-  } else {
-    db.query(
-      `SELECT ${camposSql}
-       FROM actividad a
-       LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
-       LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
-       ORDER BY a.id_grupo, a.id_unidad, a.id_actividad`,
-      (err, r) => {
-        if (err)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        res.json(r);
-      },
-    );
+    conditions.push("g.rfc = ?");
+    params.push(id_referencia);
   }
+  if (id_grupo) {
+    conditions.push("a.id_grupo = ?");
+    params.push(id_grupo);
+  }
+  if (id_unidad) {
+    conditions.push("a.id_unidad = ?");
+    params.push(id_unidad);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const join = rol === "maestro" || !id_grupo
+    ? "JOIN grupo g ON a.id_grupo = g.id_grupo"
+    : "";
+
+  db.query(
+    `SELECT ${camposSql}
+     FROM actividad a
+     ${join}
+     LEFT JOIN unidad u ON a.id_unidad = u.id_unidad
+     LEFT JOIN tipo_actividad ta ON a.id_tipo_actividad = ta.id_tipo
+     ${where}
+     ORDER BY a.id_grupo, a.id_unidad, a.id_actividad`,
+    params,
+    (err, r) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      res.json(r);
+    },
+  );
 });
 
 // POST — crear actividad

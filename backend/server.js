@@ -82,7 +82,15 @@ const loginLimiter = rateLimit({
     message:
       "Demasiados intentos de inicio de sesión. Espera un minuto e intenta de nuevo.",
   },
-  skipSuccessfulRequests: true, // no contar los logins exitosos
+  skipSuccessfulRequests: true,
+});
+
+const cambiarPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Demasiados intentos. Espera 15 minutos." },
 });
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
@@ -175,7 +183,7 @@ app.post("/login", loginLimiter, (req, res) => {
 
 // ── CAMBIAR CONTRASEÑA (A-3) ──────────────────────────────────────────────
 // Requiere token válido. Verifica la contraseña actual y actualiza.
-app.post("/cambiar-password", verificarToken, async (req, res) => {
+app.post("/cambiar-password", cambiarPasswordLimiter, verificarToken, async (req, res) => {
   const { password_actual, password_nuevo } = req.body;
   const id_usuario = req.usuario.id_usuario;
 

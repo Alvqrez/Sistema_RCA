@@ -1,5 +1,3 @@
-window.API_URL = "http://localhost:3000";
-
 // ── A-1: Shim de seguridad — redirige el token de localStorage a sessionStorage ──
 // sessionStorage se borra automáticamente al cerrar la pestaña o el navegador,
 // reduciendo la ventana de ataque frente a scripts maliciosos persistentes.

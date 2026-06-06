@@ -116,44 +116,62 @@ router.post("/", soloAdmin, async (req, res) => {
 
     const hash = await bcrypt.hash(passwordPlana, 10);
 
-    db.query(
-      `INSERT INTO alumno
-         (no_control, nombre, apellido_paterno, apellido_materno, id_carrera,
-          correo_institucional, curp, fecha_nacimiento, tel_celular, correo_personal)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        no_control, nombre, apellido_paterno, apellido_materno ?? null, id_carrera,
-        correo_institucional, curp?.trim().toUpperCase() || null, fecha_nacimiento,
-        tel_celular || null, correo_personal || null,
-      ],
-      (err) => {
-        if (err) {
-          if (err.code === "ER_DUP_ENTRY") {
-            if (err.message.includes("PRIMARY"))
-              return res.status(409).json({ error: "El número de control ya está registrado." });
-            if (err.message.toLowerCase().includes("curp"))
-              return res.status(409).json({ error: "El CURP ya está registrado en otro alumno." });
-            return res.status(409).json({ error: "Ya existe un alumno con esos datos." });
-          }
-          if (err.code === "ER_NO_REFERENCED_ROW_2")
-            return res.status(400).json({ error: "La carrera seleccionada no existe." });
-          return res.status(500).json({ error: "Error al registrar alumno: " + err.message });
-        }
+    db.getConnection((connErr, conn) => {
+      if (connErr) return res.status(500).json({ error: "Error interno del servidor" });
 
-        db.query(
-          "INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?, ?, 'alumno', ?, 1)",
-          [no_control, hash, no_control],
-          (err2) => {
-            if (err2) {
-              if (err2.code === "ER_DUP_ENTRY")
-                return res.status(409).json({ error: "El usuario ya existe." });
-              return res.status(500).json({ error: "Error interno del servidor" });
+      conn.beginTransaction((txErr) => {
+        if (txErr) { conn.release(); return res.status(500).json({ error: "Error interno del servidor" }); }
+
+        conn.query(
+          `INSERT INTO alumno
+             (no_control, nombre, apellido_paterno, apellido_materno, id_carrera,
+              correo_institucional, curp, fecha_nacimiento, tel_celular, correo_personal)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            no_control, nombre, apellido_paterno, apellido_materno ?? null, id_carrera,
+            correo_institucional, curp?.trim().toUpperCase() || null, fecha_nacimiento,
+            tel_celular || null, correo_personal || null,
+          ],
+          (err) => {
+            if (err) {
+              return conn.rollback(() => {
+                conn.release();
+                if (err.code === "ER_DUP_ENTRY") {
+                  if (err.message.includes("PRIMARY"))
+                    return res.status(409).json({ error: "El número de control ya está registrado." });
+                  if (err.message.toLowerCase().includes("curp"))
+                    return res.status(409).json({ error: "El CURP ya está registrado en otro alumno." });
+                  return res.status(409).json({ error: "Ya existe un alumno con esos datos." });
+                }
+                if (err.code === "ER_NO_REFERENCED_ROW_2")
+                  return res.status(400).json({ error: "La carrera seleccionada no existe." });
+                return res.status(500).json({ error: "Error al registrar alumno: " + err.message });
+              });
             }
-            res.status(201).json({ success: true, mensaje: "Alumno registrado correctamente", no_control, correo_institucional });
+
+            conn.query(
+              "INSERT INTO usuario (username, pwd, rol, id_referencia, activo) VALUES (?, ?, 'alumno', ?, 1)",
+              [no_control, hash, no_control],
+              (err2) => {
+                if (err2) {
+                  return conn.rollback(() => {
+                    conn.release();
+                    if (err2.code === "ER_DUP_ENTRY")
+                      return res.status(409).json({ error: "El usuario ya existe." });
+                    return res.status(500).json({ error: "Error interno del servidor" });
+                  });
+                }
+                conn.commit((commitErr) => {
+                  conn.release();
+                  if (commitErr) return res.status(500).json({ error: "Error interno del servidor" });
+                  res.status(201).json({ success: true, mensaje: "Alumno registrado correctamente", no_control, correo_institucional });
+                });
+              },
+            );
           },
         );
-      },
-    );
+      });
+    });
   } catch (err) {
     res.status(500).json({ error: "Error interno del servidor" });
   }

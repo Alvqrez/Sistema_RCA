@@ -379,10 +379,7 @@ function renderGrupos() {
            data-id="${g.id_grupo}">
         <div class="gc-id">Grupo #${g.id_grupo}</div>
         <div class="gc-maestro">${g.nombre_maestro || "—"}</div>
-        <div class="gc-info">
-          ${g.horario ? `<span><iconify-icon icon="lucide:clock"></iconify-icon>${g.horario}</span>` : ""}
-          ${g.aula ? `<span><iconify-icon icon="lucide:map-pin"></iconify-icon>${g.aula}</span>` : ""}
-        </div>
+        <div class="gc-info"></div>
         <div class="gc-cap">
           <div class="cap-bar"><div class="cap-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
           <span style="white-space:nowrap;font-size:0.72rem">
@@ -595,7 +592,7 @@ function poblarResumen() {
   document.getElementById("rs-materia").textContent =
     materiaSel?.nombre_materia || "—";
   document.getElementById("rs-grupo").textContent =
-    `#${grupoSel?.id_grupo} — ${grupoSel?.horario || ""}`;
+    `#${grupoSel?.id_grupo}`;
   document.getElementById("rs-maestro").textContent =
     grupoSel?.nombre_maestro || "—";
   document.getElementById("rs-count").textContent = alumnosSel.size;

@@ -1,5 +1,6 @@
 // src/middleware/auth.js
 const jwt = require("jsonwebtoken");
+const db  = require("../db");
 
 function verificarToken(req, res, next) {
 
@@ -53,4 +54,25 @@ function maestroOAdmin(req, res, next) {
     });
 }
 
-module.exports = { verificarToken, soloMaestro, soloAdmin, maestroOAdmin };
+// Verifica que el maestro autenticado sea el propietario del grupo.
+// Los administradores pasan directamente.
+function verificarPropietarioGrupo(id_grupo, req, res, callback) {
+  if (req.usuario.rol !== "maestro") return callback(true);
+  db.query(
+    "SELECT rfc FROM grupo WHERE id_grupo = ?",
+    [id_grupo],
+    (err, rows) => {
+      if (err)
+        return res.status(500).json({ error: "Error interno del servidor" });
+      if (!rows.length)
+        return res.status(404).json({ error: "Grupo no encontrado" });
+      if (rows[0].rfc !== req.usuario.id_referencia)
+        return res
+          .status(403)
+          .json({ error: "No tienes permiso para modificar este grupo" });
+      callback(true);
+    }
+  );
+}
+
+module.exports = { verificarToken, soloMaestro, soloAdmin, maestroOAdmin, verificarPropietarioGrupo };

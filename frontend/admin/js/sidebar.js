@@ -93,16 +93,6 @@ window.API_URL = "http://localhost:3000";
             texto: "Peso por unidad",
             icono: "lucide:scale",
           },
-          {
-            href: "../../maestro/pages/asistencia.html",
-            texto: "Registrar asistencia",
-            icono: "lucide:calendar-check",
-          },
-          {
-            href: "../../maestro/pages/lista_asistencia.html",
-            texto: "Historial de asistencia",
-            icono: "lucide:calendar-clock",
-          },
         ],
       },
       {

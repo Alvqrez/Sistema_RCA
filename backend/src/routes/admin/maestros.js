@@ -162,48 +162,56 @@ router.post("/", soloAdmin, async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const rfcClean = rfc.trim().toUpperCase();
 
-    db.query(
-      `INSERT INTO maestro
-         (rfc, nombre, apellido_paterno, apellido_materno,
-          curp, fecha_nacimiento,
-          correo_institucional, correo_personal, tel_celular)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        rfcClean,
-        nombre,
-        apellido_paterno,
-        apellido_materno ?? null,
-        curp?.trim().toUpperCase() || null,
-        fecha_nacimiento ?? null,
-        correo_institucional,
-        correo_personal ?? null,
-        tel_celular ?? null,
-      ],
-      (err) => {
-        if (err) {
-          if (err.code === "ER_DUP_ENTRY")
-            return res.status(409).json({ error: "El RFC ya está registrado" });
-          return res.status(500).json({ error: err.message });
-        }
-        db.query(
-          `INSERT INTO usuario (username, pwd, rol, id_referencia, primer_acceso)
-           VALUES (?, ?, 'maestro', ?, 1)`,
-          [rfcClean, hash, rfcClean],
-          (err2) => {
-            if (err2) {
-              if (err2.code === "ER_DUP_ENTRY")
-                return res.status(409).json({ error: "El username ya existe" });
-              return res
-                .status(500)
-                .json({ error: "Error interno del servidor" });
+    db.getConnection((connErr, conn) => {
+      if (connErr) return res.status(500).json({ error: "Error interno del servidor" });
+
+      conn.beginTransaction((txErr) => {
+        if (txErr) { conn.release(); return res.status(500).json({ error: "Error interno del servidor" }); }
+
+        conn.query(
+          `INSERT INTO maestro
+             (rfc, nombre, apellido_paterno, apellido_materno,
+              curp, fecha_nacimiento,
+              correo_institucional, correo_personal, tel_celular)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            rfcClean, nombre, apellido_paterno, apellido_materno ?? null,
+            curp?.trim().toUpperCase() || null, fecha_nacimiento ?? null,
+            correo_institucional, correo_personal ?? null, tel_celular ?? null,
+          ],
+          (err) => {
+            if (err) {
+              return conn.rollback(() => {
+                conn.release();
+                if (err.code === "ER_DUP_ENTRY")
+                  return res.status(409).json({ error: "El RFC ya está registrado" });
+                return res.status(500).json({ error: err.message });
+              });
             }
-            res
-              .status(201)
-              .json({ success: true, mensaje: "Maestro registrado" });
+            conn.query(
+              `INSERT INTO usuario (username, pwd, rol, id_referencia, primer_acceso)
+               VALUES (?, ?, 'maestro', ?, 1)`,
+              [rfcClean, hash, rfcClean],
+              (err2) => {
+                if (err2) {
+                  return conn.rollback(() => {
+                    conn.release();
+                    if (err2.code === "ER_DUP_ENTRY")
+                      return res.status(409).json({ error: "El username ya existe" });
+                    return res.status(500).json({ error: "Error interno del servidor" });
+                  });
+                }
+                conn.commit((commitErr) => {
+                  conn.release();
+                  if (commitErr) return res.status(500).json({ error: "Error interno del servidor" });
+                  res.status(201).json({ success: true, mensaje: "Maestro registrado" });
+                });
+              },
+            );
           },
         );
-      },
-    );
+      });
+    });
   } catch {
     res.status(500).json({ error: "Error interno del servidor" });
   }

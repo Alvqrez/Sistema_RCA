@@ -5,34 +5,9 @@
 const express = require("express");
 const router  = express.Router();
 const db      = require("../../db");
-const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
+const { verificarToken, maestroOAdmin, verificarPropietarioGrupo } = require("../../middleware/auth");
 
 const MAX_CALIFICACION = 100;
-
-// ── Helper: verificar propietario del grupo ────────────────────────────────
-function verificarPropietarioGrupo(id_grupo, req, res, callback) {
-  if (req.usuario.rol !== "maestro") {
-    // administrador: sin restricción
-    return callback(true);
-  }
-  db.query(
-    "SELECT rfc FROM grupo WHERE id_grupo = ?",
-    [id_grupo],
-    (err, rows) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!rows.length)
-        return res.status(404).json({ error: "Grupo no encontrado" });
-      if (rows[0].rfc !== req.usuario.id_referencia) {
-        return res.status(403).json({
-          error:
-            "No tienes permiso para asignar bonus en un grupo que no impartes.",
-        });
-      }
-      callback(true);
-    }
-  );
-}
 
 // ─── BONUS UNIDAD ──────────────────────────────────────────────────────────
 

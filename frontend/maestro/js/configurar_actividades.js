@@ -213,14 +213,13 @@ async function cargarGrupos() {
       return;
     }
 
-    // Pre-cargar datos para stats y detectar grupos configurados desde la BD
-    let configuradas = 0,
-      pendientes = 0;
+    // Pre-cargar datos para stats — todos los grupos en paralelo
+    let configuradas = 0, pendientes = 0;
     const gruposConfigurados = new Set();
-    for (const g of grupos) {
+    await Promise.all(grupos.map(async (g) => {
       const uns = await fetchUnidades(g.id_grupo, g.clave_materia);
       let todasBloqueadas = uns.length > 0;
-      for (const u of uns) {
+      await Promise.all(uns.map(async (u) => {
         const acts = await fetchActividades(g.id_grupo, u.id_unidad);
         if (esUnidadGuardada(acts)) {
           configuradas++;
@@ -228,9 +227,9 @@ async function cargarGrupos() {
           pendientes++;
           todasBloqueadas = false;
         }
-      }
+      }));
       if (todasBloqueadas && uns.length > 0) gruposConfigurados.add(g.id_grupo);
-    }
+    }));
     actualizarStats(grupos.length, configuradas, pendientes);
     contenedor.innerHTML = grupos.map((g) => renderGrupoCard(g, gruposConfigurados)).join("");
     // Render resumen de ponderaciones
@@ -277,7 +276,7 @@ function renderGrupoCard(g, gruposConfigurados = new Set()) {
               : ""
           }
         </div>
-        <div class="grupo-meta">Grupo #${g.id_grupo} &middot; ${esc(periodo)} &middot; ${esc(g.horario || "Sin horario")}</div>
+        <div class="grupo-meta">Grupo #${g.id_grupo} &middot; ${esc(periodo)}</div>
       </div>
       <iconify-icon icon="lucide:chevron-down" id="chev-g-${g.id_grupo}"
         style="font-size:1.2rem;color:var(--text-muted);transition:transform .2s"></iconify-icon>
@@ -353,7 +352,7 @@ async function renderUnidades(idGrupo, claveMateria) {
     return;
   }
 
-  for (const u of unidades) await fetchActividades(idGrupo, u.id_unidad);
+  await Promise.all(unidades.map((u) => fetchActividades(idGrupo, u.id_unidad)));
 
   wrap.innerHTML = unidades
     .map((u, i) => renderUnidadAccordion(idGrupo, u, i + 1))
@@ -365,19 +364,15 @@ async function fetchActividades(idGrupo, idUnidad) {
   const key = `${idGrupo}_${idUnidad}`;
   if (cacheActividades[key]) return cacheActividades[key];
   try {
-    const res = await fetch(`${API_URL}/api/actividades`, {
-      headers: { Authorization: `Bearer ${tk()}` },
-    });
+    const res = await fetch(
+      `${API_URL}/api/actividades?id_grupo=${idGrupo}&id_unidad=${idUnidad}`,
+      { headers: { Authorization: `Bearer ${tk()}` } },
+    );
     if (!res.ok) {
       cacheActividades[key] = [];
       return [];
     }
-    const todas = await res.json();
-    cacheActividades[key] = todas.filter(
-      (a) =>
-        String(a.id_grupo) === String(idGrupo) &&
-        String(a.id_unidad) === String(idUnidad),
-    );
+    cacheActividades[key] = await res.json();
     return cacheActividades[key];
   } catch {
     cacheActividades[key] = [];

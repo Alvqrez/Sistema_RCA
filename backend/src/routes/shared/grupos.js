@@ -8,9 +8,11 @@ const {
   maestroOAdmin,
 } = require("../../middleware/auth");
 
-// GET — todos los grupos
+// GET — grupos filtrados por rol
 router.get("/", verificarToken, (req, res) => {
-  const query = `
+  const { rol, id_referencia } = req.usuario;
+
+  let query = `
     SELECT
       g.id_grupo, g.clave_materia, m.nombre_materia,
       g.rfc,
@@ -22,9 +24,20 @@ router.get("/", verificarToken, (req, res) => {
     JOIN materia  m   ON g.clave_materia   = m.clave_materia
     JOIN maestro  mae ON g.rfc  = mae.rfc
     LEFT JOIN periodo_escolar pe ON g.id_periodo = pe.id_periodo
-    ORDER BY g.id_grupo DESC
   `;
-  db.query(query, (err, results) => {
+  const params = [];
+
+  if (rol === "maestro") {
+    query += " WHERE g.rfc = ?";
+    params.push(id_referencia);
+  } else if (rol === "alumno") {
+    query += " JOIN inscripcion i ON i.id_grupo = g.id_grupo WHERE i.no_control = ?";
+    params.push(id_referencia);
+  }
+
+  query += " ORDER BY g.id_grupo DESC";
+
+  db.query(query, params, (err, results) => {
     if (err)
       return res.status(500).json({ error: "Error interno del servidor" });
     res.json(results);

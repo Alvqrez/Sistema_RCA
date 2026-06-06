@@ -11,7 +11,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const calculo = require("../../services/calculo");
-const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
+const { verificarToken, maestroOAdmin, verificarPropietarioGrupo } = require("../../middleware/auth");
 
 const CALIFICACION_APROBATORIA = 70;
 
@@ -29,26 +29,6 @@ function alumnoSoloPropios(no_control, req, res) {
     return false;
   }
   return true;
-}
-
-// Ownership guard: maestro solo opera en sus grupos
-function verificarPropietarioGrupo(id_grupo, req, res, callback) {
-  if (req.usuario.rol !== "maestro") return callback(true);
-  db.query(
-    "SELECT rfc FROM grupo WHERE id_grupo = ?",
-    [id_grupo],
-    (err, rows) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!rows.length)
-        return res.status(404).json({ error: "Grupo no encontrado" });
-      if (rows[0].rfc !== req.usuario.id_referencia)
-        return res.status(403).json({
-          error: "No tienes permiso para operar en un grupo que no impartes.",
-        });
-      callback(true);
-    },
-  );
 }
 
 // ── GET — todas las calificaciones de unidad ─────────────────────────────

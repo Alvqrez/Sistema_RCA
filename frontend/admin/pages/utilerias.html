@@ -878,6 +878,7 @@
     </div>
 
     <div id="toast-container"></div>
+    <script src="../../shared/js/config.js"></script>
     <script src="../../shared/js/sidebar.js"></script>
 
     <script>
@@ -1638,16 +1639,6 @@
         success: { bg: "var(--success-light)", icon: "var(--success)" },
       };
 
-      async function eliminarNotif(id) {
-        if (!confirm("¿Desactivar esta notificación? Dejará de aparecer para los usuarios.")) return;
-        const tkn = localStorage.getItem("token");
-        const r = await fetch(`${API_URL}/api/notificaciones/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${tkn}` }
-        });
-        if (r.ok) { toast("Notificación desactivada", "success"); cargarAdmins(); }
-        else toast("Error al desactivar", "error");
-      }
 
     </script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
