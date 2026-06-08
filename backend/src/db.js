@@ -1,7 +1,8 @@
 // src/db.js — Pool de conexiones
 // M-3: eliminados fallbacks inseguros a "root" / "".
 //      Si las variables de entorno no están definidas el proceso falla al arrancar.
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 const mysql = require("mysql2");
 
 if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
