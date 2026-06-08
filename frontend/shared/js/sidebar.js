@@ -267,8 +267,8 @@
     <div class="sidebar-logo">
       <div class="sidebar-avatar"><iconify-icon icon="${iconoRol}"></iconify-icon></div>
       <p class="sidebar-bienvenida">¡Bienvenido!</p>
-      <span class="sidebar-nombre">${nombre || "Usuario"}</span>
-      <span class="sidebar-rol-badge rol-${rol}">${etiquetaRol}</span>
+      <span class="sidebar-nombre">${esc(nombre) || "Usuario"}</span>
+      <span class="sidebar-rol-badge rol-${esc(rol)}">${esc(etiquetaRol)}</span>
     </div>
     <nav>${links.map(buildLink).join("")}</nav>
     <button class="theme-icon-btn" id="themeBtnSidebar" onclick="toggleTheme()"
@@ -356,7 +356,7 @@ function showToast(msg, tipo = "success") {
     error: "lucide:x-circle",
     info: "lucide:info",
   };
-  t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${msg}`;
+  t.innerHTML = `<iconify-icon icon="${icons[tipo] || icons.info}"></iconify-icon>${esc(msg)}`;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3200);
 }

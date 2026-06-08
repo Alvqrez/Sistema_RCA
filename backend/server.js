@@ -294,4 +294,11 @@ app.get("/api/info-publica", (req, res) => {
   );
 });
 
+// Error handler global — captura excepciones no manejadas sin exponer detalles al cliente
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: "Error interno del servidor" });
+});
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

@@ -282,12 +282,19 @@ router.post("/csv", soloAdmin, async (req, res) => {
 
 // ─── DELETE eliminar alumno ───────────────────────────────────────────────────
 router.delete("/:no_control", soloAdmin, (req, res) => {
+  const { no_control } = req.params;
   db.query(
     "DELETE FROM alumno WHERE no_control = ?",
-    [req.params.no_control],
+    [no_control],
     (err, result) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
+      if (err) {
+        if (err.code === "ER_ROW_IS_REFERENCED_2")
+          return res.status(409).json({ error: "No se puede eliminar: el alumno tiene inscripciones o calificaciones registradas." });
+        return res.status(500).json({ error: "Error interno del servidor" });
+      }
       if (!result.affectedRows) return res.status(404).json({ error: "Alumno no encontrado" });
+      // Eliminar usuario asociado
+      db.query("DELETE FROM usuario WHERE id_referencia = ? AND rol = 'alumno'", [no_control]);
       res.json({ success: true, mensaje: "Alumno eliminado" });
     },
   );

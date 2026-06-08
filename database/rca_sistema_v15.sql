@@ -355,7 +355,7 @@ CREATE TABLE `config_evaluacion_unidad` (
   `pct_actividades` DECIMAL(5,2) NOT NULL DEFAULT 60.00,
   `pct_examen`      DECIMAL(5,2) NOT NULL DEFAULT 30.00,
   `pct_asistencia`  DECIMAL(5,2) NOT NULL DEFAULT 10.00,
-  `nota`            VARCHAR(255) NULL DEFAULT NULL,
+  `nota`            TEXT         NULL DEFAULT NULL,
   `fecha_config`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_grupo`, `id_unidad`),
   CONSTRAINT `fk_CEU_Grupo`
@@ -415,8 +415,9 @@ CREATE TABLE `calificacion_unidad` (
   `calificacion_unidad_final` DECIMAL(5,2) NULL DEFAULT NULL,
   `estatus_unidad`            ENUM('Pendiente','Aprobada','Reprobada') NOT NULL DEFAULT 'Pendiente',
   PRIMARY KEY (`no_control`, `id_unidad`, `id_grupo`),
-  INDEX `fk_CU_Unidad` (`id_unidad`),
-  INDEX `fk_CU_Grupo`  (`id_grupo`),
+  INDEX `fk_CU_Unidad`       (`id_unidad`),
+  INDEX `fk_CU_Grupo`        (`id_grupo`),
+  INDEX `idx_CU_nc_grupo`    (`no_control`, `id_grupo`),
   CONSTRAINT `fk_CU_Alumno`
     FOREIGN KEY (`no_control`) REFERENCES `alumno`  (`no_control`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_CU_Unidad`

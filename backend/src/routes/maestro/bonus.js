@@ -30,6 +30,10 @@ router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
+  const { rol, id_referencia } = req.usuario;
+  if (rol === "alumno" && id_referencia !== req.params.no_control) {
+    return res.status(403).json({ error: "No puedes consultar el bonus de otro alumno." });
+  }
   const sql = `
     SELECT bu.*, u.nombre_unidad,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro
@@ -166,6 +170,10 @@ router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
+  const { rol, id_referencia } = req.usuario;
+  if (rol === "alumno" && id_referencia !== req.params.no_control) {
+    return res.status(403).json({ error: "No puedes consultar el bonus de otro alumno." });
+  }
   const sql = `
     SELECT bf.*,
            CONCAT(mae.nombre, ' ', mae.apellido_paterno) AS nombre_maestro

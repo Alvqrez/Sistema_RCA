@@ -54,6 +54,10 @@ router.get(
   verificarToken,
   (req, res) => {
     const { no_control, id_grupo, id_unidad } = req.params;
+    const { rol, id_referencia } = req.usuario;
+    if (rol === "alumno" && id_referencia !== no_control) {
+      return res.status(403).json({ error: "No puedes consultar datos de otro alumno." });
+    }
     const sql = `
     SELECT
       COALESCE(

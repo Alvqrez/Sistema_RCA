@@ -39,6 +39,10 @@ router.get("/grupos", verificarToken, (req, res) => {
 // Calcula dinámicamente desde resultado_actividad para reflejar estado real,
 // incluyendo bonus de unidad y bonus final.
 router.get("/grupo/:id_grupo", verificarToken, async (req, res) => {
+  const { rol } = req.usuario;
+  if (rol === "alumno") {
+    return res.status(403).json({ error: "Acceso no autorizado." });
+  }
   const { id_grupo } = req.params;
 
   function q(sql, params) {
@@ -62,12 +66,12 @@ router.get("/grupo/:id_grupo", verificarToken, async (req, res) => {
     if (!grupoRows.length) return res.status(404).json({ error: "Grupo no encontrado" });
     const grupo = grupoRows[0];
 
-    // Unidades de la materia (respetando layout del grupo si existe)
+    // Unidades reales del grupo (respeta divisiones y fusiones del maestro)
     let unidades = await q(`
       SELECT u.id_unidad, u.nombre_unidad
-      FROM unidad u
-      JOIN grupo g ON u.clave_materia = g.clave_materia
-      WHERE g.id_grupo = ?
+      FROM grupo_unidad gu
+      JOIN unidad u ON gu.id_unidad = u.id_unidad
+      WHERE gu.id_grupo = ?
       ORDER BY u.id_unidad ASC`, [id_grupo]);
 
     // Alumnos inscritos + calificación final de BD

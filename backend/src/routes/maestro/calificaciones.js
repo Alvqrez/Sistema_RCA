@@ -87,8 +87,8 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
   );
 });
 
-// GET — calificaciones de todos los alumnos de un grupo
-router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+// GET — calificaciones de todos los alumnos de un grupo (solo maestro propietario o admin)
+router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT cu.no_control, CONCAT(a.nombre,' ',a.apellido_paterno) AS nombre_alumno,
             cu.id_unidad, u.nombre_unidad, cu.id_grupo,

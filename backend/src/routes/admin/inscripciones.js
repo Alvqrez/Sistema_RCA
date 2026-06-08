@@ -95,8 +95,8 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
   );
 });
 
-// GET — alumnos inscritos en un grupo
-router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+// GET — alumnos inscritos en un grupo (maestro propietario o admin)
+router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT i.no_control, i.fecha_inscripcion, i.estatus, i.tipo_curso,
             a.nombre, a.apellido_paterno, a.apellido_materno,

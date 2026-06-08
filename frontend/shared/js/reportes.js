@@ -99,17 +99,17 @@ function renderGruposGrid(grupos) {
       (g) => `
     <tr class="grupo-list-row" onclick="cargarReporte(${g.id_grupo})" id="grow-${g.id_grupo}">
       <td>
-        <div class="grl-materia">${g.nombre_materia}</div>
-        <div class="grl-clave">${g.clave_materia ?? ""} · Grupo #${g.id_grupo}</div>
+        <div class="grl-materia">${esc(g.nombre_materia)}</div>
+        <div class="grl-clave">${esc(g.clave_materia ?? "")} · Grupo #${g.id_grupo}</div>
       </td>
       <td>
-        <div class="grl-maestro"><iconify-icon icon="lucide:user" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${g.nombre_maestro ?? "—"}</div>
+        <div class="grl-maestro"><iconify-icon icon="lucide:user" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${esc(g.nombre_maestro ?? "—")}</div>
       </td>
       <td>
-        <div class="grl-periodo"><iconify-icon icon="lucide:calendar" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${g.periodo ?? "—"} ${g.anio ?? ""}</div>
+        <div class="grl-periodo"><iconify-icon icon="lucide:calendar" style="font-size:0.8rem;margin-right:4px"></iconify-icon>${esc(g.periodo ?? "—")} ${esc(g.anio ?? "")}</div>
       </td>
       <td style="text-align:center">
-        <span class="badge ${estatusColor[g.estatus] ?? "badge-info"}">${g.estatus ?? "—"}</span>
+        <span class="badge ${estatusColor[g.estatus] ?? "badge-info"}">${esc(g.estatus ?? "—")}</span>
       </td>
       <td style="text-align:right">
         <iconify-icon icon="lucide:chevron-right" class="grl-arrow"></iconify-icon>
@@ -177,7 +177,7 @@ function renderTablaReporte(alumnos, unidades) {
   thead.innerHTML = `<tr>
     <th>Alumno</th>
     <th>No. Control</th>
-    ${uns.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad}<br><small style="font-weight:400;color:var(--text-muted)">${u.nombre_unidad}</small></th>`).join("")}
+    ${uns.map((u) => `<th style="text-align:center">Unidad ${u.numero_unidad}<br><small style="font-weight:400;color:var(--text-muted)">${esc(u.nombre_unidad)}</small></th>`).join("")}
     <th style="text-align:center">Promedio</th>
     <th style="text-align:center">Cal. oficial</th>
     <th style="text-align:center">Estado</th>
@@ -224,8 +224,8 @@ function renderTablaReporte(alumnos, unidades) {
 
       return `<tr>
         <td><div class="avatar-cell">
-          <div class="avatar">${iniciales}</div>
-          <span style="font-size:0.875rem">${a.nombre_completo}</span>
+          <div class="avatar">${esc(iniciales)}</div>
+          <span style="font-size:0.875rem">${esc(a.nombre_completo)}</span>
         </div></td>
         <td><code>${a.no_control}</code></td>
         ${calUnidades}

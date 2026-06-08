@@ -6,6 +6,7 @@ const {
   verificarToken,
   soloAdmin,
   maestroOAdmin,
+  verificarPropietarioGrupo,
 } = require("../../middleware/auth");
 
 // GET — grupos filtrados por rol
@@ -395,6 +396,9 @@ router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
   if (!id_grupo || !id_unidad || !nombre_a || !nombre_b)
     return res.status(400).json({ error: "Faltan campos requeridos (id_unidad, nombre_a, nombre_b)" });
 
+  await new Promise((resolve) => verificarPropietarioGrupo(id_grupo, req, res, resolve));
+  if (res.headersSent) return;
+
   try {
     // 1. Verificar que la unidad pertenece al grupo y no tiene actividades
     const [gu] = await qp(
@@ -467,6 +471,9 @@ router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
 
   if (!id_grupo || !id_unidad_a || !id_unidad_b || !nombre_fusion)
     return res.status(400).json({ error: "Faltan campos requeridos (id_unidad_a, id_unidad_b, nombre_fusion)" });
+
+  await new Promise((resolve) => verificarPropietarioGrupo(id_grupo, req, res, resolve));
+  if (res.headersSent) return;
   if (id_unidad_a === id_unidad_b)
     return res.status(400).json({ error: "No se puede fusionar una unidad consigo misma" });
 
@@ -540,6 +547,9 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
 
   if (!id_grupo || !id_unidad_real)
     return res.status(400).json({ error: "Faltan campos requeridos (id_unidad_real)" });
+
+  await new Promise((resolve) => verificarPropietarioGrupo(id_grupo, req, res, resolve));
+  if (res.headersSent) return;
 
   try {
     // 1. Buscar el registro en layout para la unidad enviada
@@ -651,6 +661,8 @@ router.get("/:id/layout-unidades", verificarToken, async (req, res) => {
 // restaurando las unidades originales de la materia.
 router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
   const id_grupo = parseInt(req.params.id);
+  await new Promise((resolve) => verificarPropietarioGrupo(id_grupo, req, res, resolve));
+  if (res.headersSent) return;
   try {
     // 1. Verificar que ninguna unidad custom tiene actividades
     const custom = await qp(
