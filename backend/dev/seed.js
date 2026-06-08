@@ -14,7 +14,7 @@
 //   6=Cuestionario  7=Investigación  8=Asistencia
 
 const bcrypt = require("bcrypt");
-const db = require("./src/db");
+const db = require("../src/db");
 
 function q(sql, params = []) {
   return new Promise((res, rej) =>
