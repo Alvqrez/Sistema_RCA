@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../../db");
-const { verificarToken, soloAdmin } = require("../../middleware/auth");
+const { verificarToken, soloAdmin, maestroOAdmin } = require("../../middleware/auth");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 async function generarNumeroControl() {
@@ -39,7 +39,7 @@ function generarPasswordDesdeFecha(fechaStr) {
 }
 
 // ─── GET todos los alumnos ────────────────────────────────────────────────────
-router.get("/", verificarToken, (req, res) => {
+router.get("/", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
             curp, fecha_nacimiento,

@@ -277,6 +277,11 @@ app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.2" }),
 );
 
+// ── NOTIFICACIONES (stub — retorna arreglo vacío para que el frontend no reciba 404) ──
+app.get("/api/notificaciones", verificarToken, (req, res) => {
+  res.json([]);
+});
+
 // ── INFO PÚBLICA (sin token) ──────────────────────────────────────────────
 app.get("/api/info-publica", (req, res) => {
   db.query(

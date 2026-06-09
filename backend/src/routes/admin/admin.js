@@ -328,7 +328,7 @@ router.get("/backup", soloAdmin, (req, res) => {
     calificaciones_final: "SELECT * FROM calificacion_final",
     bonus_unidad: "SELECT * FROM bonusunidad",
     bonus_final: "SELECT * FROM bonusfinal",
-    modificaciones_final: "SELECT * FROM modificacion_final",
+    modificaciones_final: "SELECT * FROM modificacionfinal",
   };
 
   const keys = Object.keys(tablas);
@@ -387,7 +387,7 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
     { clave: "calificaciones_final", tabla: "calificacion_final" },
     { clave: "bonus_unidad", tabla: "bonusunidad" },
     { clave: "bonus_final", tabla: "bonusfinal" },
-    { clave: "modificaciones_final", tabla: "modificacion_final" },
+    { clave: "modificaciones_final", tabla: "modificacionfinal" },
   ];
 
   const q = (sql, params = []) =>

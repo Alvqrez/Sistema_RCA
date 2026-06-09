@@ -4,12 +4,12 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../../db");
-const { verificarToken, soloAdmin } = require("../../middleware/auth");
+const { verificarToken, soloAdmin, maestroOAdmin } = require("../../middleware/auth");
 
 // GET — todos los maestros
 // C-1: la consulta original incluía u.pwd (hash bcrypt), lo que exponía
 //      las contraseñas hasheadas a cualquier usuario autenticado. Eliminado.
-router.get("/", verificarToken, (req, res) => {
+router.get("/", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT m.rfc, m.nombre, m.apellido_paterno, m.apellido_materno,
             m.curp, m.fecha_nacimiento,
