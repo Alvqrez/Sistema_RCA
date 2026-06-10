@@ -960,6 +960,14 @@
         }
       }
 
+      // Confirmar cambio de contraseña con Enter dentro del modal
+      document.getElementById('modalCambioPass').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          cambiarPassword();
+        }
+      });
+
       // Cargar stats del panel izquierdo
       (async function cargarStats() {
         try {
