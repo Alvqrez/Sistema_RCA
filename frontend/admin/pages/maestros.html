@@ -255,6 +255,10 @@
     <script src="../../shared/js/exportUtils.js"></script>
     <script src="../../admin/js/maestros.js"></script>
     <script>
+      document.getElementById('modalMaestro').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardarMaestro(); }
+      });
+
       function cerrarModalEliminarMaestro() {
         document.getElementById("modalEliminarMaestro").classList.remove("visible");
       }

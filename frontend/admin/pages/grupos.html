@@ -559,6 +559,13 @@
           : "Contraer";
       }
 
+      document.getElementById('modalNuevoGrupo').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardarNuevoGrupo(); }
+      });
+      document.getElementById('modalEditGrupo').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardarEdicionGrupo(); }
+      });
+
       function descargarEjemploCSVGrupos() {
         const encabezado = "clave_materia,rfc,id_periodo,limite_alumnos\n";
         const blob = new Blob([encabezado], { type: "text/csv;charset=utf-8;" });

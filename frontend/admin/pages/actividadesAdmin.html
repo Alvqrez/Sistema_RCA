@@ -200,5 +200,10 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="../../shared/js/exportUtils.js"></script>
     <script src="../../admin/js/actividadesAdmin.js"></script>
+    <script>
+      document.getElementById('modalActividad').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+      });
+    </script>
   </body>
 </html>

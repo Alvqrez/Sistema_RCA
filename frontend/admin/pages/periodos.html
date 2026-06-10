@@ -315,6 +315,15 @@
       const tk = () => localStorage.getItem("token");
       let editandoId = null;
 
+      document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('modalNuevo').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); crearPeriodo(); }
+        });
+        document.getElementById('modalEstatus').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); guardarEstatus(); }
+        });
+      });
+
       /* Rangos fijos por descripcion */
       const RANGOS = {
         "Enero-Junio":    { mesI: "01", mesF: "06", lblI: "enero",  lblF: "junio",    diaI: 6,  diaF: 30 },

@@ -309,6 +309,10 @@
       let todasCarreras = [];
       let csvCarrerasData = [];
 
+      document.getElementById('modalCarrera').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+      });
+
       (async () => {
         await cargar();
       })();

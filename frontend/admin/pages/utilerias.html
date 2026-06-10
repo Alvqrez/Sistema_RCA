@@ -884,6 +884,10 @@
     <script>
       const tk = () => localStorage.getItem("token");
 
+      document.getElementById('modalAdmin').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardarAdmin(); }
+      });
+
       // ── Toast ────────────────────────────────────────────────────────
       function toast(msg, tipo = "success") {
         const c = document.getElementById("toast-container");

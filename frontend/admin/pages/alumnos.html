@@ -635,6 +635,10 @@
         document.getElementById("eliminarAlumnoError").style.display = "none";
       }
 
+      document.getElementById('modalAlumno').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); guardarAlumno(); }
+      });
+
       function descargarEjemploCSVAlumnos() {
         const cols = ["no_control","nombre","apellido_paterno","apellido_materno","id_carrera","fecha_nacimiento","curp","correo_institucional","password"];
         const wb = XLSX.utils.book_new();
