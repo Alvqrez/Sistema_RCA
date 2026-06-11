@@ -1,34 +1,3 @@
--- ============================================================
---  Sistema de Registro y Cálculo de Resultados Académicos
---  Esquema — versión 12
---  Instituto Tecnológico de Veracruz
---
---  CAMBIOS RESPECTO A v11
---  ─────────────────────────────────────────────────────────
---  maestro        → eliminados: tel_oficina, direccion,
---                   tipo_contrato, estatus, genero,
---                   fecha_ingreso, grado_academico,
---                   especialidad, departamento
---
---  alumno         → eliminados: genero, tel_casa, direccion
---
---  materia        → eliminados: horas_teoricas, horas_practicas
---                   (antes eran ALTER TABLE al final del v11)
---
---  reticula       → eliminado: creditos
---
---  tipo_actividad → eliminado: activo
---                   (el catálogo es global, todas están activas)
---
---  notificacion   → tabla eliminada por completo
---
---  LIMPIEZA GENERAL
---  ─────────────────────────────────────────────────────────
---  Se eliminaron los parches sueltos al final del archivo
---  (ALTER TABLE, UPDATE, SELECT) integrándolos directamente
---  en sus CREATE TABLE correspondientes.
--- ============================================================
-
 SET SQL_SAFE_UPDATES = 0;
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS,     UNIQUE_CHECKS=0;
@@ -66,10 +35,6 @@ CREATE TABLE `administrador` (
   COMMENT='Usuario con acceso administrativo al sistema. RFC es PK y username.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
--- v14: eliminados tel_oficina, direccion, tipo_contrato, estatus,
---      genero, fecha_ingreso, grado_academico, especialidad, departamento
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `maestro` (
   `rfc`                  VARCHAR(13)   NOT NULL  COMMENT 'RFC — Identificador único y username del docente',
   `nombre`               VARCHAR(80)   NOT NULL,
@@ -100,9 +65,6 @@ CREATE TABLE `carrera` (
   COMMENT='Programa académico ofrecido por la institución';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
--- v14: eliminados genero, tel_casa, direccion
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `alumno` (
   `no_control`           VARCHAR(8)    NOT NULL,
   `id_carrera`           VARCHAR(10)   NOT NULL  COMMENT 'FK → Carrera',
@@ -125,10 +87,6 @@ CREATE TABLE `alumno` (
   COLLATE utf8mb4_spanish_ci
   COMMENT='Estudiante inscrito en la institución';
 
-
--- ─────────────────────────────────────────────────────────────────────────────
---  3NF — anio eliminado: se obtiene con YEAR(fecha_inicio)
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `periodo_escolar` (
   `id_periodo`   INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   `descripcion`  VARCHAR(60)   NOT NULL  COMMENT 'Ej. Enero-Junio 2025',
@@ -143,9 +101,6 @@ CREATE TABLE `periodo_escolar` (
   COMMENT='Ciclo académico semestral con estatus automático por fecha';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
--- v14: eliminados horas_teoricas, horas_practicas
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `materia` (
   `clave_materia`  VARCHAR(15)      NOT NULL,
   `nombre_materia` VARCHAR(100)     NOT NULL,
@@ -173,10 +128,6 @@ CREATE TABLE `usuario` (
   COLLATE utf8mb4_spanish_ci
   COMMENT='Autenticación y control de acceso';
 
-
--- ─────────────────────────────────────────────────────────────────────────────
--- v14: eliminado campo activo — el catálogo es global, todas visibles
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `tipo_actividad` (
   `id_tipo`     INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `nombre`      VARCHAR(80)  NOT NULL,
@@ -193,9 +144,6 @@ CREATE TABLE `tipo_actividad` (
 --  TABLAS CON DEPENDENCIAS
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- ─────────────────────────────────────────────────────────────────────────────
--- v14: eliminado campo creditos
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `reticula` (
   `clave_materia` VARCHAR(15)      NOT NULL,
   `id_carrera`    VARCHAR(10)      NOT NULL,
@@ -345,10 +293,6 @@ CREATE TABLE `actividad` (
   COLLATE utf8mb4_spanish_ci
   COMMENT='Elemento evaluable definido por el Maestro para un grupo-unidad';
 
-
--- ─────────────────────────────────────────────────────────────────────────────
---  3NF — cal_examen eliminado: ya existe en resultado_actividad
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `config_evaluacion_unidad` (
   `id_grupo`        INT UNSIGNED NOT NULL,
   `id_unidad`       INT UNSIGNED NOT NULL,
@@ -496,10 +440,6 @@ CREATE TABLE `bonusfinal` (
   COLLATE utf8mb4_spanish_ci
   COMMENT='Puntos adicionales a nivel materia';
 
-
--- ─────────────────────────────────────────────────────────────────────────────
---  PK auto-incremental — permite múltiples modificaciones por alumno-grupo
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE `modificacionfinal` (
   `id_modificacion`    INT UNSIGNED NOT NULL AUTO_INCREMENT
     COMMENT 'PK — permite múltiples modificaciones por alumno-grupo',
@@ -526,9 +466,6 @@ CREATE TABLE `modificacionfinal` (
   COMMENT='Historial de ajustes manuales del docente sobre la calificación final';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
---  DATOS INICIALES
--- ─────────────────────────────────────────────────────────────────────────────
 
 INSERT INTO `tipo_actividad` (`nombre`, `descripcion`) VALUES
   ('Examen',        'Evaluación escrita o en línea'),
