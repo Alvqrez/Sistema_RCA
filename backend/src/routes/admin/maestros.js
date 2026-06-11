@@ -25,8 +25,8 @@ router.get("/", maestroOAdmin, (req, res) => {
   );
 });
 
-// GET — un maestro por RFC
-router.get("/:id", verificarToken, (req, res) => {
+// GET — un maestro por RFC (solo maestros y admin; alumnos no deben ver datos personales de docentes)
+router.get("/:id", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT rfc, nombre, apellido_paterno, apellido_materno,
             curp, fecha_nacimiento,

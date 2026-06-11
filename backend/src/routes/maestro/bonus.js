@@ -137,17 +137,20 @@ router.delete(
   "/unidad/:no_control/:id_unidad/:id_grupo",
   maestroOAdmin,
   (req, res) => {
-    db.query(
-      "UPDATE bonusunidad SET estatus = 'Cancelado' WHERE no_control = ? AND id_unidad = ? AND id_grupo = ?",
-      [req.params.no_control, req.params.id_unidad, req.params.id_grupo],
-      (err, r) => {
-        if (err)
-          return res.status(500).json({ error: "Error interno del servidor" });
-        if (r.affectedRows === 0)
-          return res.status(404).json({ error: "Bonus no encontrado" });
-        res.json({ success: true, mensaje: "Bonus cancelado" });
-      }
-    );
+    const { id_grupo } = req.params;
+    verificarPropietarioGrupo(id_grupo, req, res, () => {
+      db.query(
+        "UPDATE bonusunidad SET estatus = 'Cancelado' WHERE no_control = ? AND id_unidad = ? AND id_grupo = ?",
+        [req.params.no_control, req.params.id_unidad, id_grupo],
+        (err, r) => {
+          if (err)
+            return res.status(500).json({ error: "Error interno del servidor" });
+          if (r.affectedRows === 0)
+            return res.status(404).json({ error: "Bonus no encontrado" });
+          res.json({ success: true, mensaje: "Bonus cancelado" });
+        }
+      );
+    });
   }
 );
 
@@ -285,6 +288,8 @@ router.delete(
     const { no_control, id_grupo } = req.params;
     const calculo = require("../../services/calculo");
 
+    // Guard: maestro solo puede eliminar bonuses de sus propios grupos
+    verificarPropietarioGrupo(id_grupo, req, res, () => {
     db.query(
       "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
       [no_control, id_grupo],
@@ -306,6 +311,7 @@ router.delete(
         });
       }
     );
+    }); // fin verificarPropietarioGrupo
   }
 );
 

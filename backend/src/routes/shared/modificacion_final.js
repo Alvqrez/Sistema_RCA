@@ -128,6 +128,8 @@ router.delete("/:no_control/:id_grupo", maestroOAdmin, async (req, res) => {
   const { no_control, id_grupo } = req.params;
   const calculo = require("../../services/calculo");
 
+  // Guard: maestro solo puede revertir modificaciones de sus propios grupos
+  verificarPropietarioGrupo(id_grupo, req, res, () => {
   db.query(
     "DELETE FROM modificacionfinal WHERE no_control = ? AND id_grupo = ?",
     [no_control, id_grupo],
@@ -149,6 +151,7 @@ router.delete("/:no_control/:id_grupo", maestroOAdmin, async (req, res) => {
       });
     }
   );
+  }); // fin verificarPropietarioGrupo
 });
 
 module.exports = router;

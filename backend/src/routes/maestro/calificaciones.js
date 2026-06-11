@@ -87,8 +87,26 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
   );
 });
 
-// GET — calificaciones de todos los alumnos de un grupo (solo maestro propietario o admin)
+// GET — calificaciones de todos los alumnos de un grupo (maestro propietario o admin)
 router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
+  // Guard: maestro solo puede ver calificaciones de sus propios grupos
+  if (req.usuario.rol === "maestro") {
+    db.query(
+      "SELECT rfc FROM grupo WHERE id_grupo = ?",
+      [req.params.id_grupo],
+      (errG, rowsG) => {
+        if (errG) return res.status(500).json({ error: "Error interno del servidor" });
+        if (!rowsG.length) return res.status(404).json({ error: "Grupo no encontrado" });
+        if (rowsG[0].rfc !== req.usuario.id_referencia)
+          return res.status(403).json({ error: "No tienes permiso para ver las calificaciones de este grupo." });
+        consultarCalificaciones();
+      }
+    );
+  } else {
+    consultarCalificaciones();
+  }
+
+  function consultarCalificaciones() {
   db.query(
     `SELECT cu.no_control, CONCAT(a.nombre,' ',a.apellido_paterno) AS nombre_alumno,
             cu.id_unidad, u.nombre_unidad, cu.id_grupo,
@@ -105,6 +123,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
       res.json(results);
     },
   );
+  }
 });
 
 // POST — registrar calificación de unidad manualmente
@@ -333,8 +352,8 @@ router.post("/guardar-directos", maestroOAdmin, (req, res) => {
   });
 });
 
-// GET — obtener calificaciones directas de todos los alumnos de una unidad
-router.get("/directos/:id_grupo/:id_unidad", verificarToken, (req, res) => {
+// GET — obtener calificaciones directas de todos los alumnos de una unidad (solo maestros/admin)
+router.get("/directos/:id_grupo/:id_unidad", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad } = req.params;
   db.query(
     "SELECT nota FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",

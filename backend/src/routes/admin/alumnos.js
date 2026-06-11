@@ -53,7 +53,7 @@ router.get("/", maestroOAdmin, (req, res) => {
 });
 
 // ─── GET siguiente no_control (antes de /:no_control) ────────────────────────
-router.get("/siguiente-control", verificarToken, async (req, res) => {
+router.get("/siguiente-control", soloAdmin, async (req, res) => {
   try {
     const no_control = await generarNumeroControl();
     res.json({ no_control, correo_institucional: generarCorreo(no_control) });
@@ -63,7 +63,7 @@ router.get("/siguiente-control", verificarToken, async (req, res) => {
 });
 
 // ─── GET alumnos de un grupo ──────────────────────────────────────────────────
-router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
+router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT a.no_control, a.nombre, a.apellido_paterno, a.apellido_materno,
             a.correo_institucional, a.id_carrera
@@ -80,7 +80,12 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
 });
 
 // ─── GET un alumno por no_control ─────────────────────────────────────────────
+// Guard IDOR: alumno solo puede ver su propio perfil.
 router.get("/:no_control", verificarToken, (req, res) => {
+  const { rol, id_referencia } = req.usuario;
+  if (rol === "alumno" && id_referencia !== req.params.no_control) {
+    return res.status(403).json({ error: "No tienes permiso para consultar el perfil de otro alumno." });
+  }
   db.query(
     `SELECT no_control, nombre, apellido_paterno, apellido_materno,
             correo_institucional, id_carrera, curp, fecha_nacimiento,
@@ -145,7 +150,7 @@ router.post("/", soloAdmin, async (req, res) => {
                 }
                 if (err.code === "ER_NO_REFERENCED_ROW_2")
                   return res.status(400).json({ error: "La carrera seleccionada no existe." });
-                return res.status(500).json({ error: "Error al registrar alumno: " + err.message });
+                return res.status(500).json({ error: "Error interno del servidor" });
               });
             }
 

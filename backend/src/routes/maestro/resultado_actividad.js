@@ -21,8 +21,8 @@ function verificarPropietarioGrupo(rfc_grupo, req, res) {
   return true;
 }
 
-// GET — resultados de una actividad con alumnos inscritos en el grupo
-router.get("/actividad/:id_actividad", verificarToken, (req, res) => {
+// GET — resultados de una actividad con alumnos inscritos en el grupo (solo maestros/admin)
+router.get("/actividad/:id_actividad", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT
       a.no_control,
