@@ -1,14 +1,10 @@
-// src/routes/admin/maestros.js — v12-sec
-// C-1 FIX: eliminado u.pwd del SELECT de GET /  para no exponer hashes de contraseña.
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../../db");
 const { verificarToken, soloAdmin, maestroOAdmin } = require("../../middleware/auth");
 
-// GET — todos los maestros
-// C-1: la consulta original incluía u.pwd (hash bcrypt), lo que exponía
-//      las contraseñas hasheadas a cualquier usuario autenticado. Eliminado.
+// ─── GET todos los maestros ───────────────────────────────────────────────────
 router.get("/", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT m.rfc, m.nombre, m.apellido_paterno, m.apellido_materno,
@@ -25,7 +21,7 @@ router.get("/", maestroOAdmin, (req, res) => {
   );
 });
 
-// GET — un maestro por RFC (solo maestros y admin; alumnos no deben ver datos personales de docentes)
+// ─── GET un maestro por RFC ───────────────────────────────────────────────────
 router.get("/:id", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT rfc, nombre, apellido_paterno, apellido_materno,
@@ -43,7 +39,7 @@ router.get("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
-// POST CSV — importar maestros
+// ─── POST CSV — importar maestros ─────────────────────────────────────────────
 router.post("/csv", soloAdmin, async (req, res) => {
   const { maestros } = req.body;
   if (!Array.isArray(maestros) || !maestros.length)

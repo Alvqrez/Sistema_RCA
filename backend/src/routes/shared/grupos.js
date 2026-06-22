@@ -1,4 +1,3 @@
-// backend/src/routes/grupos.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
@@ -9,7 +8,7 @@ const {
   verificarPropietarioGrupo,
 } = require("../../middleware/auth");
 
-// GET — grupos filtrados por rol
+// ─── GET grupos filtrados por rol ─────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
 
@@ -45,10 +44,7 @@ router.get("/", verificarToken, (req, res) => {
   });
 });
 
-// ─── IMPORTANTE: rutas estáticas ANTES que /:id ──────────────────────────────
-
-// GET — grupos del maestro autenticado (para formulario y mis_grupos)
-// DEBE estar antes de /:id o Express lo captura como id="mis-grupos"
+// ─── GET mis grupos (maestro autenticado) ─────────────────────────────────
 router.get("/mis-grupos", verificarToken, (req, res) => {
   if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
     return res.status(403).json({ error: "Solo para maestros" });
@@ -76,9 +72,7 @@ router.get("/mis-grupos", verificarToken, (req, res) => {
   });
 });
 
-// ─── Rutas dinámicas con :id ──────────────────────────────────────────────────
-
-// GET — un grupo por id
+// ─── GET un grupo por id ──────────────────────────────────────────────────
 router.get("/:id", verificarToken, (req, res) => {
   const query = `
     SELECT
@@ -103,7 +97,7 @@ router.get("/:id", verificarToken, (req, res) => {
   });
 });
 
-// GET — unidades de un grupo con su ponderación
+// ─── GET unidades de un grupo ─────────────────────────────────────────────
 router.get("/:id/unidades", verificarToken, (req, res) => {
   const sql = `
     SELECT
@@ -116,8 +110,6 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
 `;
   db.query(sql, [req.params.id], (err, results) => {
     if (err) {
-      // Fallback: columnas pueden no existir en versiones anteriores
-      // si el ALTER TABLE de corrección 4 aún no se ha aplicado en la BD.
       const sqlBase = `
         SELECT
             gu.id_unidad, u.nombre_unidad, u.estatus,
@@ -138,13 +130,12 @@ router.get("/:id/unidades", verificarToken, (req, res) => {
       });
     }
 
-    // Agregar numero_unidad en JS (sin ROW_NUMBER)
     const conNumero = results.map((u, i) => ({ ...u, numero_unidad: i + 1 }));
     res.json(conNumero);
   });
 });
 
-// POST — crear grupo
+// ─── POST importar grupos desde CSV ────────────────────────────────────────
 router.post("/csv", soloAdmin, async (req, res) => {
   const { grupos } = req.body;
 
@@ -209,6 +200,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
   });
 });
 
+// ─── POST crear grupo ─────────────────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, rfc, id_periodo, limite_alumnos } = req.body;
 
@@ -250,7 +242,7 @@ function insertarGrupo(res, clave_materia, rfc, id_periodo, limite_alumnos) {
   );
 }
 
-// POST — auto-vincular todas las unidades de la materia del grupo
+// ─── POST auto-vincular unidades de la materia ────────────────────────────
 router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
   const idGrupo = req.params.id;
 
@@ -283,13 +275,10 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
           let vinculadas = 0;
           let pendientes = unidades.length;
 
-          // Obtener IDs de unidades originales que ya fueron reemplazadas
-          // por divisiones o fusiones (registradas en grupo_unidad_layout)
           db.query(
             `SELECT ids_origen FROM grupo_unidad_layout WHERE id_grupo = ?`,
             [idGrupo],
             (errL, layouts) => {
-              // Construir set de IDs que NO deben re-vincularse
               const idsReemplazados = new Set();
               (layouts || []).forEach(row => {
                 row.ids_origen.split(",").forEach(id => idsReemplazados.add(parseInt(id)));
@@ -327,7 +316,7 @@ router.post("/:id/unidades/auto-vincular", maestroOAdmin, (req, res) => {
 });
 
 
-// PUT — editar grupo
+// ─── PUT editar grupo ─────────────────────────────────────────────────────
 router.put("/:id", soloAdmin, (req, res) => {
   const { limite_alumnos, estatus } = req.body;
   db.query(
@@ -347,7 +336,7 @@ router.put("/:id", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — quitar unidad de grupo
+// ─── DELETE quitar unidad de grupo ────────────────────────────────────────
 router.delete("/:id/unidades/:id_unidad", maestroOAdmin, (req, res) => {
   db.query(
     "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
@@ -362,7 +351,7 @@ router.delete("/:id/unidades/:id_unidad", maestroOAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar grupo
+// ─── DELETE eliminar grupo ────────────────────────────────────────────────
 router.delete("/:id", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM grupo WHERE id_grupo = ?",
@@ -379,16 +368,13 @@ router.delete("/:id", soloAdmin, (req, res) => {
 
 
 
-// ─── Helpers de promesa ───────────────────────────────────────────────────────
 function qp(sql, params = []) {
   return new Promise((res, rej) =>
     db.query(sql, params, (err, r) => (err ? rej(err) : res(r)))
   );
 }
 
-// POST /:id/dividir-unidad
-// Body: { id_unidad: N, nombre_a: "...", nombre_b: "..." }
-// Crea dos unidades nuevas en `unidad`, las vincula al grupo y registra en layout.
+// ─── POST dividir una unidad ──────────────────────────────────────────────
 router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
   const id_grupo  = parseInt(req.params.id);
   const { id_unidad, nombre_a, nombre_b } = req.body;
@@ -400,7 +386,6 @@ router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
   if (res.headersSent) return;
 
   try {
-    // 1. Verificar que la unidad pertenece al grupo y no tiene actividades
     const [gu] = await qp(
       "SELECT * FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
       [id_grupo, id_unidad]
@@ -414,11 +399,9 @@ router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
     if (total > 0)
       return res.status(409).json({ error: "No se puede dividir: la unidad ya tiene actividades configuradas" });
 
-    // 2. Obtener clave_materia del grupo
     const [grupo] = await qp("SELECT clave_materia FROM grupo WHERE id_grupo = ?", [id_grupo]);
     if (!grupo) return res.status(404).json({ error: "Grupo no encontrado" });
 
-    // 3. Crear las dos unidades nuevas en `unidad`
     const rA = await qp(
       "INSERT INTO unidad (clave_materia, nombre_unidad) VALUES (?, ?)",
       [grupo.clave_materia, nombre_a.trim()]
@@ -430,19 +413,15 @@ router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
     const id_a = rA.insertId;
     const id_b = rB.insertId;
 
-    // 4. Vincular las nuevas unidades al grupo en grupo_unidad
     await qp(
       "INSERT INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES (?, ?, 'dividida'), (?, ?, 'dividida')",
       [id_grupo, id_a, id_grupo, id_b]
     );
 
-    // 5. Registrar en grupo_unidad_layout
     await qp(
       "INSERT INTO grupo_unidad_layout (id_grupo, id_unidad_real, ids_origen, tipo) VALUES (?, ?, ?, 'division_a'), (?, ?, ?, 'division_b')",
       [id_grupo, id_a, String(id_unidad), id_grupo, id_b, String(id_unidad)]
     );
-
-    // 6. Desvincular la unidad original del grupo
     await qp(
       "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
       [id_grupo, id_unidad]
@@ -462,9 +441,7 @@ router.post("/:id/dividir-unidad", maestroOAdmin, async (req, res) => {
   }
 });
 
-// POST /:id/fusionar-unidades
-// Body: { id_unidad_a: N, id_unidad_b: M, nombre_fusion: "..." }
-// Crea una unidad nueva que reemplaza a las dos originales.
+// ─── POST fusionar dos unidades ───────────────────────────────────────────
 router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
   const id_grupo = parseInt(req.params.id);
   const { id_unidad_a, id_unidad_b, nombre_fusion } = req.body;
@@ -478,7 +455,6 @@ router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
     return res.status(400).json({ error: "No se puede fusionar una unidad consigo misma" });
 
   try {
-    // 1. Verificar que ambas unidades pertenecen al grupo
     const guRows = await qp(
       "SELECT id_unidad FROM grupo_unidad WHERE id_grupo = ? AND id_unidad IN (?, ?)",
       [id_grupo, id_unidad_a, id_unidad_b]
@@ -486,7 +462,6 @@ router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
     if (guRows.length < 2)
       return res.status(404).json({ error: "Una o ambas unidades no pertenecen a este grupo" });
 
-    // 2. Verificar que ninguna tiene actividades
     const [{ totalA }] = await qp(
       "SELECT COUNT(*) AS totalA FROM actividad WHERE id_grupo = ? AND id_unidad = ?",
       [id_grupo, id_unidad_a]
@@ -498,29 +473,23 @@ router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
     if (totalA > 0 || totalB > 0)
       return res.status(409).json({ error: "No se puede fusionar: una o ambas unidades ya tienen actividades configuradas" });
 
-    // 3. Obtener clave_materia
     const [grupo] = await qp("SELECT clave_materia FROM grupo WHERE id_grupo = ?", [id_grupo]);
 
-    // 4. Crear la unidad fusionada
     const rF = await qp(
       "INSERT INTO unidad (clave_materia, nombre_unidad) VALUES (?, ?)",
       [grupo.clave_materia, nombre_fusion.trim()]
     );
     const id_fusion = rF.insertId;
 
-    // 5. Vincular al grupo
     await qp(
       "INSERT INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES (?, ?, 'fusionada')",
       [id_grupo, id_fusion]
     );
 
-    // 6. Registrar en layout
     await qp(
       "INSERT INTO grupo_unidad_layout (id_grupo, id_unidad_real, ids_origen, tipo) VALUES (?, ?, ?, 'fusion')",
       [id_grupo, id_fusion, `${id_unidad_a},${id_unidad_b}`]
     );
-
-    // 7. Desvincular las originales del grupo
     await qp(
       "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad IN (?, ?)",
       [id_grupo, id_unidad_a, id_unidad_b]
@@ -538,9 +507,7 @@ router.post("/:id/fusionar-unidades", maestroOAdmin, async (req, res) => {
   }
 });
 
-// POST /:id/revertir-unidad
-// Body: { id_unidad_real: N }
-// Revierte una división o fusión, restaurando las unidades originales.
+// ─── POST revertir división o fusión de una unidad ────────────────────────
 router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
   const id_grupo      = parseInt(req.params.id);
   const { id_unidad_real } = req.body;
@@ -552,7 +519,6 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
   if (res.headersSent) return;
 
   try {
-    // 1. Buscar el registro en layout para la unidad enviada
     const [layout] = await qp(
       "SELECT * FROM grupo_unidad_layout WHERE id_grupo = ? AND id_unidad_real = ?",
       [id_grupo, id_unidad_real]
@@ -560,15 +526,12 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
     if (!layout)
       return res.status(404).json({ error: "No se encontró registro de división/fusión para esta unidad" });
 
-    // 2. Buscar TODAS las unidades del mismo origen (para divisiones: la hermana)
-    //    Una división crea dos filas con el mismo ids_origen — ambas deben revertirse juntas
     const hermanas = await qp(
       "SELECT * FROM grupo_unidad_layout WHERE id_grupo = ? AND ids_origen = ?",
       [id_grupo, layout.ids_origen]
     );
     const todasLasIds = hermanas.map(h => h.id_unidad_real);
 
-    // 3. Verificar que ninguna tiene actividades
     const placeholders = todasLasIds.map(() => "?").join(",");
     const [{ total }] = await qp(
       `SELECT COUNT(*) AS total FROM actividad WHERE id_grupo = ? AND id_unidad IN (${placeholders})`,
@@ -577,10 +540,8 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
     if (total > 0)
       return res.status(409).json({ error: "No se puede revertir: hay actividades configuradas. Elimínalas primero." });
 
-    // 4. Obtener IDs origen (originales a restaurar)
     const idsOrigen = layout.ids_origen.split(",").map(Number);
 
-    // 5. Re-vincular las unidades originales al grupo
     for (const id_orig of idsOrigen) {
       await qp(
         "INSERT IGNORE INTO grupo_unidad (id_grupo, id_unidad, tipo_config) VALUES (?, ?, 'original')",
@@ -588,7 +549,6 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
       );
     }
 
-    // 6. Eliminar TODAS las unidades hermanas del layout y del grupo
     for (const id_hermana of todasLasIds) {
       await qp(
         "DELETE FROM grupo_unidad_layout WHERE id_grupo = ? AND id_unidad_real = ?",
@@ -598,7 +558,6 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
         "DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad = ?",
         [id_grupo, id_hermana]
       );
-      // Eliminar de unidad si ya no la usa ningún grupo
       const [{ usos }] = await qp(
         "SELECT COUNT(*) AS usos FROM grupo_unidad WHERE id_unidad = ?",
         [id_hermana]
@@ -618,24 +577,19 @@ router.post("/:id/revertir-unidad", maestroOAdmin, async (req, res) => {
   }
 });
 
-// GET /:id/layout-unidades
-// Devuelve las unidades efectivas del grupo, considerando divisiones y fusiones.
+// ─── GET unidades efectivas del grupo (layout) ────────────────────────────
 router.get("/:id/layout-unidades", verificarToken, async (req, res) => {
   const id_grupo = parseInt(req.params.id);
   try {
-    // Unidades directas del grupo (grupo_unidad) con sus datos
     const unidades = await qp(
       `SELECT u.id_unidad, u.nombre_unidad, u.clave_materia,
               gu.tipo_config,
               gul.ids_origen, gul.tipo AS tipo_layout,
-              -- Para unidades custom (division/fusion), ordenar por el menor ID de origen
-              -- Para unidades originales, ordenar por su propio id_unidad
               CASE
                 WHEN gul.ids_origen IS NOT NULL
                 THEN CAST(SUBSTRING_INDEX(gul.ids_origen, ',', 1) AS UNSIGNED)
                 ELSE u.id_unidad
               END AS orden_efectivo,
-              -- numero_unidad: posición de la unidad original más pequeña
               CASE
                 WHEN gul.ids_origen IS NOT NULL
                 THEN CAST(SUBSTRING_INDEX(gul.ids_origen, ',', 1) AS UNSIGNED)
@@ -656,15 +610,12 @@ router.get("/:id/layout-unidades", verificarToken, async (req, res) => {
 });
 
 
-// POST /:id/reset-unidades
-// Elimina TODAS las divisiones y fusiones del grupo de una sola vez,
-// restaurando las unidades originales de la materia.
+// ─── POST resetear unidades a original ────────────────────────────────────
 router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
   const id_grupo = parseInt(req.params.id);
   await new Promise((resolve) => verificarPropietarioGrupo(id_grupo, req, res, resolve));
   if (res.headersSent) return;
   try {
-    // 1. Verificar que ninguna unidad custom tiene actividades
     const custom = await qp(
       "SELECT id_unidad_real FROM grupo_unidad_layout WHERE id_grupo = ?",
       [id_grupo]
@@ -680,11 +631,9 @@ router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
         return res.status(409).json({ error: "No se puede restaurar: hay unidades con actividades configuradas. Elimínalas primero." });
     }
 
-    // 2. Obtener clave_materia del grupo
     const [grupo] = await qp("SELECT clave_materia FROM grupo WHERE id_grupo = ?", [id_grupo]);
     if (!grupo) return res.status(404).json({ error: "Grupo no encontrado" });
 
-    // 3. Eliminar todas las unidades custom de grupo_unidad para este grupo
     if (custom.length) {
       const ids = custom.map(r => r.id_unidad_real);
       const placeholders = ids.map(() => "?").join(",");
@@ -692,9 +641,7 @@ router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
         `DELETE FROM grupo_unidad WHERE id_grupo = ? AND id_unidad IN (${placeholders})`,
         [id_grupo, ...ids]
       );
-      // 4. Eliminar de grupo_unidad_layout
       await qp("DELETE FROM grupo_unidad_layout WHERE id_grupo = ?", [id_grupo]);
-      // 5. Eliminar las filas de unidad que ya no usa ningún grupo
       for (const id of ids) {
         const [{ usos }] = await qp(
           "SELECT COUNT(*) AS usos FROM grupo_unidad WHERE id_unidad = ?", [id]
@@ -703,7 +650,6 @@ router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
       }
     }
 
-    // 6. Re-vincular todas las unidades originales de la materia
     const unidades = await qp(
       "SELECT id_unidad FROM unidad WHERE clave_materia = ?",
       [grupo.clave_materia]
@@ -723,8 +669,7 @@ router.post("/:id/reset-unidades", maestroOAdmin, async (req, res) => {
 });
 
 
-// PATCH /:id/cerrar — el maestro cierra su propio grupo (Activo → Cerrado)
-// Solo el maestro propietario o un admin puede cerrarlo
+// ─── PATCH cerrar grupo ───────────────────────────────────────────────────
 router.patch("/:id/cerrar", maestroOAdmin, (req, res) => {
   const id_grupo = req.params.id;
   const { rol, id_referencia } = req.usuario;

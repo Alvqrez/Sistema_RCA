@@ -44,7 +44,6 @@ function soloAdmin(req, res, next) {
     });
 }
 
-// Maestro o administrador pueden pasar
 function maestroOAdmin(req, res, next) {
     verificarToken(req, res, () => {
         if (req.usuario.rol !== "maestro" && req.usuario.rol !== "administrador") {
@@ -54,8 +53,6 @@ function maestroOAdmin(req, res, next) {
     });
 }
 
-// Verifica que el maestro autenticado sea el propietario del grupo.
-// Los administradores pasan directamente.
 function verificarPropietarioGrupo(id_grupo, req, res, callback) {
   if (req.usuario.rol !== "maestro") return callback(true);
   db.query(

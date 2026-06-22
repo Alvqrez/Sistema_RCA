@@ -1,9 +1,9 @@
-// src/routes/unidades.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
+// ─── GET todas las unidades ───────────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM unidad ORDER BY clave_materia, id_unidad",
@@ -15,7 +15,7 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
-// GET /csv — exportar TODAS las unidades (todas las materias) en formato plano
+// ─── GET exportar todas las unidades en CSV ───────────────────────────────
 router.get("/csv", verificarToken, soloAdmin, (req, res) => {
   db.query(
     `SELECT u.clave_materia, m.nombre_materia,
@@ -32,23 +32,17 @@ router.get("/csv", verificarToken, soloAdmin, (req, res) => {
   );
 });
 
-// POST /csv — importar unidades desde CSV
-// Body: { unidades: [ { clave_materia, numero_unidad, nombre_unidad }, ... ] }
-// Agrupa por clave_materia y llama a la lógica de configurar para cada una.
-// IMPORTANTE: el número de unidades en el CSV debe coincidir con no_unidades en materia,
-// o se actualiza automáticamente si todas las filas de una materia son válidas.
+// ─── POST importar unidades desde CSV ──────────────────────────────────────
 router.post("/csv", soloAdmin, async (req, res) => {
   const { unidades } = req.body;
   if (!Array.isArray(unidades) || !unidades.length)
     return res.status(400).json({ error: "No se recibieron datos" });
 
-  // Función helper para queries con promesas
   const q = (sql, params = []) =>
     new Promise((resolve, reject) =>
       db.query(sql, params, (err, r) => (err ? reject(err) : resolve(r)))
     );
 
-  // Agrupar filas por clave_materia, ordenadas por numero_unidad
   const porMateria = {};
   for (const fila of unidades) {
     const clave = (fila.clave_materia || "").trim();
@@ -95,13 +89,11 @@ router.post("/csv", soloAdmin, async (req, res) => {
         );
       }
 
-      // Obtener unidades existentes
       const existentes = await q(
         "SELECT id_unidad FROM unidad WHERE clave_materia = ? ORDER BY id_unidad",
         [clave]
       );
 
-      // Aplicar la misma lógica que /configurar: actualizar existentes, insertar nuevas
       const ops = nombres.map((nombre, i) => {
         if (existentes[i]) {
           return q(
@@ -116,7 +108,6 @@ router.post("/csv", soloAdmin, async (req, res) => {
         }
       });
 
-      // Si hay más existentes que nombres en el CSV, eliminar el exceso
       if (existentes.length > nombres.length) {
         const sobrantes = existentes.slice(nombres.length);
         for (const s of sobrantes) {
@@ -143,7 +134,7 @@ router.post("/csv", soloAdmin, async (req, res) => {
   });
 });
 
-// Unidades de una materia específica
+// ─── GET unidades de una materia específica ────────────────────────────────
 router.get("/materia/:clave", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM unidad WHERE clave_materia = ? ORDER BY id_unidad",
@@ -157,7 +148,7 @@ router.get("/materia/:clave", verificarToken, (req, res) => {
   );
 });
 
-// Materias de los grupos asignados al maestro autenticado
+// ─── GET materias del maestro autenticado ─────────────────────────────────
 router.get("/mis-materias", verificarToken, (req, res) => {
   if (req.usuario.rol !== "maestro") {
     return res.status(403).json({ error: "Solo para maestros" });
@@ -177,6 +168,7 @@ router.get("/mis-materias", verificarToken, (req, res) => {
   );
 });
 
+// ─── GET unidad por id ────────────────────────────────────────────────────
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM unidad WHERE id_unidad = ?",
@@ -191,6 +183,7 @@ router.get("/:id", verificarToken, (req, res) => {
   );
 });
 
+// ─── POST crear unidad ────────────────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, nombre_unidad } = req.body;
   if (!clave_materia || !nombre_unidad) {
@@ -213,6 +206,7 @@ router.post("/", soloAdmin, (req, res) => {
   );
 });
 
+// ─── PUT editar unidad ────────────────────────────────────────────────────
 router.put("/:id", soloAdmin, (req, res) => {
   const { nombre_unidad } = req.body;
   db.query(
@@ -228,6 +222,7 @@ router.put("/:id", soloAdmin, (req, res) => {
   );
 });
 
+// ─── DELETE eliminar unidad ───────────────────────────────────────────────
 router.delete("/:id", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM unidad WHERE id_unidad = ?",
@@ -242,7 +237,7 @@ router.delete("/:id", soloAdmin, (req, res) => {
   );
 });
 
-// POST /materia/:clave/configurar
+// ─── POST configurar unidades de una materia ──────────────────────────────
 router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
   const clave = req.params.clave;
   const unidades = req.body;
@@ -329,7 +324,7 @@ router.post("/materia/:clave/configurar", soloAdmin, (req, res) => {
   );
 });
 
-// ─── Tipos de actividad habilitados por unidad ────────────────────────────────
+// ─── GET tipos de actividad de una unidad ─────────────────────────────────
 router.get("/:id/tipos", verificarToken, (req, res) => {
   db.query(
     `SELECT ta.*
@@ -346,6 +341,7 @@ router.get("/:id/tipos", verificarToken, (req, res) => {
   );
 });
 
+// ─── POST asignar tipos de actividad a unidad ────────────────────────────
 router.post("/:id/tipos", soloAdmin, (req, res) => {
   const { id_tipos } = req.body;
   db.query(

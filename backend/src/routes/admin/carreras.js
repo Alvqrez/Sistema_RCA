@@ -1,10 +1,9 @@
-// src/routes/admin/carreras.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
-// GET — todas las carreras
+// ─── GET todas las carreras ───────────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   db.query(
     `SELECT id_carrera, nombre_carrera, siglas
@@ -17,7 +16,7 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
-// GET por id
+// ─── GET carrera por id ───────────────────────────────────────────────────
 router.get("/:id", verificarToken, (req, res) => {
   db.query(
     "SELECT id_carrera, nombre_carrera, siglas FROM carrera WHERE id_carrera = ?",
@@ -31,7 +30,7 @@ router.get("/:id", verificarToken, (req, res) => {
   );
 });
 
-// POST — crear carrera directamente como Aceptada
+// ─── POST crear carrera ───────────────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { id_carrera, nombre_carrera, siglas } = req.body;
 
@@ -56,7 +55,7 @@ router.post("/", soloAdmin, (req, res) => {
   );
 });
 
-// PUT — editar carrera
+// ─── PUT editar carrera ───────────────────────────────────────────────────
 router.put("/:id", soloAdmin, (req, res) => {
   const { nombre_carrera, siglas } = req.body;
   if (!nombre_carrera)
@@ -75,7 +74,7 @@ router.put("/:id", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar carrera
+// ─── DELETE eliminar carrera ──────────────────────────────────────────────
 router.delete("/:id", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM carrera WHERE id_carrera=?",

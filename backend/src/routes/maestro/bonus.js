@@ -1,7 +1,3 @@
-// src/routes/bonus.js
-// M-4 FIX: los endpoints POST de bonus ahora verifican que el maestro
-//           autenticado sea el responsable del grupo. Los administradores
-//           pueden operar en cualquier grupo.
 const express = require("express");
 const router  = express.Router();
 const db      = require("../../db");
@@ -11,6 +7,7 @@ const MAX_CALIFICACION = 100;
 
 // ─── BONUS UNIDAD ──────────────────────────────────────────────────────────
 
+// ─── GET bonus de unidad por grupo ─────────────────────────────────────────
 router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT bu.*,
@@ -29,6 +26,7 @@ router.get("/unidad/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   });
 });
 
+// ─── GET bonus de unidad por alumno ───────────────────────────────────────
 router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
   if (rol === "alumno" && id_referencia !== req.params.no_control) {
@@ -50,8 +48,7 @@ router.get("/unidad/:no_control/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-// POST — asignar bonus de unidad
-// M-4: verifica propietario del grupo antes de continuar.
+// ─── POST asignar bonus de unidad ─────────────────────────────────────────
 router.post("/unidad", maestroOAdmin, (req, res) => {
   const { no_control, id_unidad, id_grupo, puntos_otorgados } = req.body;
   const rfc = req.usuario.id_referencia;
@@ -67,7 +64,6 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
       .json({ error: "Los puntos deben ser un valor positivo" });
   }
 
-  // M-4: verificar propietario del grupo
   verificarPropietarioGrupo(id_grupo, req, res, () => {
     // Verificar inscripción del alumno
     db.query(
@@ -133,6 +129,7 @@ router.post("/unidad", maestroOAdmin, (req, res) => {
   });
 });
 
+// ─── DELETE cancelar bonus de unidad ──────────────────────────────────────
 router.delete(
   "/unidad/:no_control/:id_unidad/:id_grupo",
   maestroOAdmin,
@@ -156,6 +153,7 @@ router.delete(
 
 // ─── BONUS FINAL ───────────────────────────────────────────────────────────
 
+// ─── GET bonus final por grupo ─────────────────────────────────────────────
 router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT bf.*,
@@ -172,6 +170,7 @@ router.get("/final/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   });
 });
 
+// ─── GET bonus final por alumno ───────────────────────────────────────────
 router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
   if (rol === "alumno" && id_referencia !== req.params.no_control) {
@@ -191,8 +190,7 @@ router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   });
 });
 
-// POST — asignar bonus final
-// M-4: verifica propietario del grupo antes de continuar.
+// ─── POST asignar bonus final ─────────────────────────────────────────────
 router.post("/final", maestroOAdmin, (req, res) => {
   const { no_control, id_grupo, puntos_otorgados } = req.body;
   const rfc = req.usuario.id_referencia;
@@ -208,7 +206,6 @@ router.post("/final", maestroOAdmin, (req, res) => {
       .json({ error: "Los puntos deben ser un valor positivo" });
   }
 
-  // M-4: verificar propietario del grupo
   verificarPropietarioGrupo(id_grupo, req, res, () => {
     db.query(
       "SELECT promedio_unidades, calificacion_oficial FROM calificacion_final WHERE no_control = ? AND id_grupo = ?",
@@ -281,6 +278,7 @@ router.post("/final", maestroOAdmin, (req, res) => {
   });
 });
 
+// ─── DELETE eliminar bonus final ──────────────────────────────────────────
 router.delete(
   "/final/:no_control/:id_grupo",
   maestroOAdmin,
@@ -288,7 +286,6 @@ router.delete(
     const { no_control, id_grupo } = req.params;
     const calculo = require("../../services/calculo");
 
-    // Guard: maestro solo puede eliminar bonuses de sus propios grupos
     verificarPropietarioGrupo(id_grupo, req, res, () => {
     db.query(
       "DELETE FROM bonusfinal WHERE no_control = ? AND id_grupo = ?",
@@ -301,9 +298,7 @@ router.delete(
 
         try {
           await calculo.calcularCalificacionFinal(no_control, id_grupo);
-        } catch (_) {
-          /* no bloquear si falla el recálculo */
-        }
+        } catch (_) {}
 
         res.json({
           success: true,
@@ -311,7 +306,7 @@ router.delete(
         });
       }
     );
-    }); // fin verificarPropietarioGrupo
+    });
   }
 );
 

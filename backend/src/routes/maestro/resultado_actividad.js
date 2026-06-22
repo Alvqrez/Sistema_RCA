@@ -1,15 +1,8 @@
-// backend/src/routes/resultado_actividad.js
-// C-2 FIX: el POST ahora verifica que el maestro autenticado sea el responsable
-//          del grupo al que pertenece la actividad. Un administrador puede operar
-//          en cualquier grupo.
 const express = require("express");
 const router  = express.Router();
 const db      = require("../../db");
 const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
-// ── Helper: verificar que el maestro autenticado imparte el grupo ──────────
-// Retorna un error 403 si el rol es 'maestro' y el RFC no coincide.
-// Para administradores no hay restricción.
 function verificarPropietarioGrupo(rfc_grupo, req, res) {
   if (req.usuario.rol === "maestro" && req.usuario.id_referencia !== rfc_grupo) {
     res.status(403).json({
@@ -21,7 +14,7 @@ function verificarPropietarioGrupo(rfc_grupo, req, res) {
   return true;
 }
 
-// GET — resultados de una actividad con alumnos inscritos en el grupo (solo maestros/admin)
+// ─── GET resultados de una actividad ───────────────────────────────────────
 router.get("/actividad/:id_actividad", maestroOAdmin, (req, res) => {
   const sql = `
     SELECT
@@ -48,7 +41,7 @@ router.get("/actividad/:id_actividad", maestroOAdmin, (req, res) => {
   });
 });
 
-// GET — promedio ponderado de un alumno en una unidad/grupo
+// ─── GET promedio ponderado de un alumno en una unidad/grupo ───────────────
 router.get(
   "/promedio/:no_control/:id_grupo/:id_unidad",
   verificarToken,
@@ -82,8 +75,7 @@ router.get(
   }
 );
 
-// POST — registrar / actualizar resultado individual
-// C-2: verifica que el maestro sea propietario del grupo antes de insertar.
+// ─── POST registrar / actualizar resultado individual ──────────────────────
 router.post("/", maestroOAdmin, (req, res) => {
   const { no_control, id_actividad, calificacion_obtenida, estatus } =
     req.body;
@@ -93,7 +85,6 @@ router.post("/", maestroOAdmin, (req, res) => {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
-  // C-2: obtener grupo y su RFC propietario junto con el flag bloqueado
   db.query(
     `SELECT a.bloqueado, g.rfc AS rfc_grupo
      FROM actividad a
@@ -106,7 +97,6 @@ router.post("/", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
-      // C-2: rechazar si el maestro no es el responsable del grupo
       if (!verificarPropietarioGrupo(rows[0].rfc_grupo, req, res)) return;
 
       const cal =
@@ -148,8 +138,7 @@ router.post("/", maestroOAdmin, (req, res) => {
   );
 });
 
-// POST — guardar múltiples resultados en una sola llamada (bulk)
-// C-2: misma verificación de propietario de grupo.
+// ─── POST guardar múltiples resultados (bulk) ──────────────────────────────
 router.post("/bulk", maestroOAdmin, (req, res) => {
   const { id_actividad, resultados } = req.body;
   const rfc = req.usuario.id_referencia;
@@ -158,7 +147,6 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
     return res.status(400).json({ error: "Faltan datos" });
   }
 
-  // C-2: obtener grupo y RFC propietario
   db.query(
     `SELECT a.bloqueado, g.rfc AS rfc_grupo
      FROM actividad a
@@ -171,7 +159,6 @@ router.post("/bulk", maestroOAdmin, (req, res) => {
       if (rows.length === 0)
         return res.status(404).json({ error: "Actividad no encontrada" });
 
-      // C-2: rechazar si el maestro no es el responsable del grupo
       if (!verificarPropietarioGrupo(rows[0].rfc_grupo, req, res)) return;
 
       const values = resultados.map((r) => {

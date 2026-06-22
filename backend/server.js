@@ -57,7 +57,6 @@ const origenesPermitidos = process.env.CORS_ORIGIN
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Permitir peticiones sin origin (Postman, curl, mismo servidor)
       if (!origin || origenesPermitidos.includes(origin)) {
         callback(null, true);
       } else {
@@ -73,7 +72,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── A-2: rate limiting en /login — máx. 5 intentos por minuto por IP ─────
 const loginLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minuto
+  windowMs: 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
@@ -86,7 +85,7 @@ const loginLimiter = rateLimit({
 });
 
 const cambiarPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -173,7 +172,6 @@ app.post("/login", loginLimiter, (req, res) => {
           token,
           rol: userRow.rol,
           nombre: `${persona[0].nombre} ${persona[0].apellido_paterno}`,
-          // A-3: indicar si el usuario nunca ha cambiado su contraseña
           primer_acceso: userRow.primer_acceso === 1,
         });
       });
@@ -182,7 +180,6 @@ app.post("/login", loginLimiter, (req, res) => {
 });
 
 // ── CAMBIAR CONTRASEÑA (A-3) ──────────────────────────────────────────────
-// Requiere token válido. Verifica la contraseña actual y actualiza.
 app.post("/cambiar-password", cambiarPasswordLimiter, verificarToken, async (req, res) => {
   const { password_actual, password_nuevo } = req.body;
   const id_usuario = req.usuario.id_usuario;
@@ -277,12 +274,12 @@ app.get("/", (req, res) =>
   res.json({ mensaje: "API RCA activa", version: "1.2" }),
 );
 
-// ── NOTIFICACIONES (stub — retorna arreglo vacío para que el frontend no reciba 404) ──
+// ── NOTIFICACIONES ──
 app.get("/api/notificaciones", verificarToken, (req, res) => {
   res.json([]);
 });
 
-// ── INFO PÚBLICA (sin token) ──────────────────────────────────────────────
+// ── INFO PÚBLICA ──────────────────────────────────────────────
 app.get("/api/info-publica", (req, res) => {
   db.query(
     `SELECT
@@ -299,7 +296,7 @@ app.get("/api/info-publica", (req, res) => {
   );
 });
 
-// Error handler global — captura excepciones no manejadas sin exponer detalles al cliente
+// ── ERROR HANDLER ──────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
   if (res.headersSent) return next(err);

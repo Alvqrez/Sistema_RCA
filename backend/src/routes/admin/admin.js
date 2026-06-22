@@ -1,11 +1,10 @@
-// src/routes/admin/admin.js
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../../db");
 const { soloAdmin, verificarToken } = require("../../middleware/auth");
 
-// GET — estadísticas generales del sistema (dashboard)
+// ─── GET estadísticas generales del sistema ───────────────────────────────
 router.get("/stats", soloAdmin, (req, res) => {
   const queries = {
     alumnos: "SELECT COUNT(*) AS total FROM alumno",
@@ -36,7 +35,7 @@ router.get("/stats", soloAdmin, (req, res) => {
   });
 });
 
-// GET — todos los usuarios del sistema
+// ─── GET todos los usuarios del sistema ───────────────────────────────────
 router.get("/usuarios", soloAdmin, (req, res) => {
   db.query(
     `SELECT id_usuario, username, rol, id_referencia, activo, fecha_creacion, ultimo_acceso
@@ -49,7 +48,7 @@ router.get("/usuarios", soloAdmin, (req, res) => {
   );
 });
 
-// POST — crear usuario para cualquier rol
+// ─── POST crear usuario para cualquier rol ────────────────────────────────
 router.post("/usuarios", soloAdmin, async (req, res) => {
   const { username, password, rol, id_referencia } = req.body;
   if (!username || !password || !rol || !id_referencia)
@@ -79,7 +78,7 @@ router.post("/usuarios", soloAdmin, async (req, res) => {
   }
 });
 
-// PUT — activar/desactivar usuario (y sincroniza administrador.activo si aplica)
+// ─── PUT activar/desactivar usuario ───────────────────────────────────────
 router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
   const { activo } = req.body;
   if (activo === undefined)
@@ -94,7 +93,11 @@ router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
       if (!result.affectedRows)
         return res.status(404).json({ error: "Usuario no encontrado" });
 
-      // Si es administrador, sincronizar administrador.activo
+      db.query(
+        "SELECT rol, id_referencia FROM usuario WHERE id_usuario = ?",
+        [req.params.id],
+        (err2, rows) => {
+          if (!err2 && rows.length && rows[0].rol === "administrador") {
       db.query(
         "SELECT rol, id_referencia FROM usuario WHERE id_usuario = ?",
         [req.params.id],
@@ -116,7 +119,7 @@ router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
   );
 });
 
-// PUT — resetear contraseña de usuario por admin
+// ─── PUT resetear contraseña de usuario ───────────────────────────────────
 router.put("/usuarios/:id/password", soloAdmin, async (req, res) => {
   const { nuevaPassword } = req.body;
   if (!nuevaPassword)
@@ -141,7 +144,7 @@ router.put("/usuarios/:id/password", soloAdmin, async (req, res) => {
 
 // ── ADMINISTRADORES ────────────────────────────────────────────────────────────
 
-// GET — todos los administradores (activos e inactivos)
+// ─── GET todos los administradores ────────────────────────────────────────
 router.get("/administradores", soloAdmin, (req, res) => {
   db.query(
     `SELECT rfc, nombre, apellido_paterno, apellido_materno,
@@ -155,8 +158,7 @@ router.get("/administradores", soloAdmin, (req, res) => {
   );
 });
 
-// POST — crear administrador + usuario (RFC = PK y username)
-// CORRECCIÓN: ahora guarda correo_personal y tel_celular correctamente
+// ─── POST crear administrador + usuario ───────────────────────────────────
 router.post("/administradores", soloAdmin, async (req, res) => {
   const {
     rfc,
@@ -242,7 +244,7 @@ router.post("/administradores", soloAdmin, async (req, res) => {
   }
 });
 
-// PUT — editar administrador (datos personales y de contacto)
+// ─── PUT editar administrador ─────────────────────────────────────────────
 router.put("/administradores/:id", soloAdmin, (req, res) => {
   const {
     nombre,
@@ -280,7 +282,7 @@ router.put("/administradores/:id", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — desactivar administrador (soft delete)
+// ─── DELETE desactivar administrador ──────────────────────────────────────
 router.delete("/administradores/:id", soloAdmin, (req, res) => {
   if (String(req.usuario.id_referencia) === String(req.params.id))
     return res
@@ -306,7 +308,7 @@ router.delete("/administradores/:id", soloAdmin, (req, res) => {
 
 // ── RESPALDO ───────────────────────────────────────────────────────────────────
 
-// GET — exportar respaldo completo del sistema en JSON
+// ─── GET exportar respaldo completo del sistema ────────────────────────────
 router.get("/backup", soloAdmin, (req, res) => {
   const tablas = {
     carreras: "SELECT * FROM carrera",
@@ -355,9 +357,7 @@ router.get("/backup", soloAdmin, (req, res) => {
   });
 });
 
-// POST — importar / restaurar respaldo JSON
-// Usa REPLACE INTO para que el respaldo siempre sobreescriba datos existentes
-// (resuelve el conflicto cuando seedVacia.js ya creó un usuario con id=1)
+// ─── POST importar respaldo JSON ──────────────────────────────────────────
 router.post("/backup/restore", soloAdmin, async (req, res) => {
   const { datos, sistema } = req.body;
 
@@ -366,7 +366,6 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
       .status(400)
       .json({ error: "El archivo no es un respaldo válido del sistema RCA" });
 
-  // Orden respetando dependencias de FK
   const orden = [
     { clave: "carreras", tabla: "carrera" },
     { clave: "periodos", tabla: "periodo_escolar" },
@@ -412,9 +411,6 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
 
       for (const fila of filas) {
         const cols = Object.keys(fila);
-        // Convertir strings ISO (2026-05-10T06:00:00.000Z) al formato MySQL (2026-05-10 06:00:00)
-        // El driver de Node devuelve DATE/DATETIME como objetos Date que JSON serializa en ISO.
-        // MySQL con STRICT_TRANS_TABLES rechaza el formato ISO → hay que normalizarlo.
         const vals = cols.map((c) => {
           const v = fila[c];
           if (
@@ -427,7 +423,6 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
         });
         const colsStr = cols.map((c) => `\`${c}\``).join(", ");
         const placeholders = cols.map(() => "?").join(", ");
-        // REPLACE INTO elimina el registro existente con la misma PK e inserta el del respaldo
         const sql = `REPLACE INTO \`${tabla}\` (${colsStr}) VALUES (${placeholders})`;
         try {
           const r = await q(sql, vals);
@@ -458,7 +453,7 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
 
 // ── PERFIL PROPIO ──────────────────────────────────────────────────────────────
 
-// PUT — cambiar contraseña del usuario autenticado (cualquier rol)
+// ─── PUT cambiar contraseña del usuario autenticado ────────────────────────
 router.put("/mi-password", verificarToken, async (req, res) => {
   const { passwordActual, nuevaPassword } = req.body;
 
@@ -496,5 +491,4 @@ router.put("/mi-password", verificarToken, async (req, res) => {
   );
 });
 
-// IMPORTANTE: module.exports SIEMPRE al final para que todas las rutas queden registradas
 module.exports = router;

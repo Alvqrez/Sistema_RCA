@@ -1,10 +1,9 @@
-// src/routes/materias.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
-// GET — todas las materias con sus carreras asociadas
+// ─── GET todas las materias con sus carreras asociadas ─────────────────────
 router.get("/", verificarToken, (req, res) => {
   const sql = `
     SELECT m.*,
@@ -38,17 +37,15 @@ router.get("/", verificarToken, (req, res) => {
   });
 });
 
-// POST CSV — importar materias desde archivo
-// El CSV puede incluir columnas opcionales: id_carrera, semestre
-// Una materia con varias carreras se repite en varias filas con distinto id_carrera
+// ─── POST importar materias desde CSV ──────────────────────────────────────
 router.post("/csv", soloAdmin, (req, res) => {
   const { materias } = req.body;
   if (!Array.isArray(materias) || !materias.length)
     return res.status(400).json({ error: "No se recibieron datos" });
 
   const errores = [];
-  let insertados = 0;          // materias nuevas
-  let reticulas = 0;           // vínculos carrera insertados/actualizados
+  let insertados = 0;
+  let reticulas = 0;
   let pendientes = materias.length;
 
   const finalizar = () => {
@@ -74,7 +71,6 @@ router.post("/csv", soloAdmin, (req, res) => {
       continue;
     }
 
-    // 1. Insertar materia (ignorar si ya existe)
     db.query(
       `INSERT IGNORE INTO materia (clave_materia, nombre_materia, no_unidades)
        VALUES (?, ?, ?)`,
@@ -92,7 +88,6 @@ router.post("/csv", soloAdmin, (req, res) => {
 
         if (result.affectedRows > 0) insertados++;
 
-        // 2. Si viene id_carrera, vincular en retícula
         if (id_carrera && String(id_carrera).trim() !== "") {
           db.query(
             `INSERT INTO reticula (clave_materia, id_carrera, semestre)
@@ -116,7 +111,6 @@ router.post("/csv", soloAdmin, (req, res) => {
             }
           );
         } else {
-          // Sin carrera → solo materia
           finalizar();
         }
       }
@@ -124,7 +118,7 @@ router.post("/csv", soloAdmin, (req, res) => {
   }
 });
 
-// GET — una materia por clave (con carreras)
+// ─── GET materia por clave ────────────────────────────────────────────────
 router.get("/:clave", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM materia WHERE clave_materia = ?",
@@ -152,7 +146,7 @@ router.get("/:clave", verificarToken, (req, res) => {
   );
 });
 
-// POST — crear materia
+// ─── POST crear materia ───────────────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { clave_materia, nombre_materia, no_unidades } = req.body;
   if (!clave_materia || !nombre_materia)
@@ -175,7 +169,7 @@ router.post("/", soloAdmin, (req, res) => {
   );
 });
 
-// PUT — editar materia
+// ─── PUT editar materia ───────────────────────────────────────────────────
 router.put("/:clave", soloAdmin, (req, res) => {
   const { nombre_materia, no_unidades } = req.body;
   if (!nombre_materia)
@@ -195,7 +189,7 @@ router.put("/:clave", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar materia (borra retícula primero para evitar error de FK)
+// ─── DELETE eliminar materia ──────────────────────────────────────────────
 router.delete("/:clave", soloAdmin, (req, res) => {
   const clave = req.params.clave;
   db.query("DELETE FROM reticula WHERE clave_materia=?", [clave], (err) => {
@@ -217,7 +211,7 @@ router.delete("/:clave", soloAdmin, (req, res) => {
 
 // ── RETÍCULA (asociar materia ↔ carrera) ──────────────────────────────────────
 
-// POST — vincular materia a una carrera
+// ─── POST vincular materia a una carrera ──────────────────────────────────
 router.post("/:clave/carreras", soloAdmin, (req, res) => {
   const { id_carrera, semestre } = req.body;
   if (!id_carrera)
@@ -236,7 +230,7 @@ router.post("/:clave/carreras", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — desvincular materia de una carrera
+// ─── DELETE desvincular materia de una carrera ────────────────────────────
 router.delete("/:clave/carreras/:id_carrera", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM reticula WHERE clave_materia=? AND id_carrera=?",

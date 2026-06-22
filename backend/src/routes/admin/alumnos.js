@@ -1,4 +1,3 @@
-// src/routes/admin/alumnos.js — v12
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
@@ -80,7 +79,6 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
 });
 
 // ─── GET un alumno por no_control ─────────────────────────────────────────────
-// Guard IDOR: alumno solo puede ver su propio perfil.
 router.get("/:no_control", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
   if (rol === "alumno" && id_referencia !== req.params.no_control) {

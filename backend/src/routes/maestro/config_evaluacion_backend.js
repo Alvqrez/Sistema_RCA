@@ -3,9 +3,7 @@ const router = express.Router();
 const db = require("../../db");
 const { verificarToken, maestroOAdmin } = require("../../middleware/auth");
 
-// IMPORTANTE: /grupo/:id_grupo DEBE ir antes de /:id_grupo/:id_unidad
-// porque Express evalúa rutas en orden y "/grupo/5" coincidiría con
-// /:id_grupo/:id_unidad si esta estuviera primero (id_grupo="grupo", id_unidad="5")
+// ─── GET configuración de evaluación por grupo ─────────────────────────────
 router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   db.query(
     `SELECT c.*, u.nombre_unidad
@@ -21,7 +19,7 @@ router.get("/grupo/:id_grupo", verificarToken, (req, res) => {
   );
 });
 
-// Esta ruta va DESPUÉS de /grupo/:id_grupo para que Express no la capture primero
+// ─── GET configuración de evaluación por grupo/unidad ──────────────────────
 router.get("/:id_grupo/:id_unidad", verificarToken, (req, res) => {
   db.query(
     "SELECT * FROM config_evaluacion_unidad WHERE id_grupo = ? AND id_unidad = ?",
@@ -44,6 +42,7 @@ router.get("/:id_grupo/:id_unidad", verificarToken, (req, res) => {
   );
 });
 
+// ─── POST guardar configuración de evaluación ─────────────────────────────
 router.post("/", maestroOAdmin, (req, res) => {
   const {
     id_grupo,
@@ -59,7 +58,6 @@ router.post("/", maestroOAdmin, (req, res) => {
       .status(400)
       .json({ error: "id_grupo e id_unidad son requeridos" });
 
-  // Usar 0 como default real — no || que convierte 0 en el default original
   const pA = isNaN(parseFloat(pct_actividades))
     ? 0
     : parseFloat(pct_actividades);
@@ -68,7 +66,6 @@ router.post("/", maestroOAdmin, (req, res) => {
     ? 0
     : parseFloat(pct_asistencia);
 
-  // Validar la suma: si viene nota (rubros personalizados), usar la suma total de nota
   let totalSum = pA + pE + pAs;
   if (nota) {
     try {

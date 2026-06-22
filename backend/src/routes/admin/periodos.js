@@ -1,10 +1,9 @@
-// backend/src/routes/admin/periodos.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, soloAdmin } = require("../../middleware/auth");
 
-// GET — lista
+// ─── GET lista de periodos ────────────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   db.query(
     `SELECT id_periodo, descripcion,
@@ -18,7 +17,7 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
-// GET — periodo vigente
+// ─── GET periodo vigente ──────────────────────────────────────────────────
 router.get("/vigente", verificarToken, (req, res) => {
   db.query(
     `SELECT id_periodo, descripcion,
@@ -32,7 +31,7 @@ router.get("/vigente", verificarToken, (req, res) => {
   );
 });
 
-// POST — crear periodo
+// ─── POST crear periodo ───────────────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { descripcion, fecha_inicio, fecha_fin, estatus } = req.body;
 
@@ -44,7 +43,6 @@ router.post("/", soloAdmin, (req, res) => {
 
   const anio = new Date(fecha_inicio + "T00:00:00").getFullYear();
 
-  // 1) Verificar duplicado: misma descripcion en el mismo año
   db.query(
     `SELECT id_periodo FROM periodo_escolar
      WHERE descripcion = ? AND YEAR(fecha_inicio) = ?`,
@@ -54,7 +52,6 @@ router.post("/", soloAdmin, (req, res) => {
       if (dup.length > 0)
         return res.status(409).json({ error: `Ya existe el periodo "${descripcion}" para el año ${anio}` });
 
-      // 2) Verificar solapamiento de fechas
       db.query(
         `SELECT id_periodo, descripcion, YEAR(fecha_inicio) AS anio
          FROM periodo_escolar
@@ -66,8 +63,6 @@ router.post("/", soloAdmin, (req, res) => {
             return res.status(409).json({
               error: `Las fechas se solapan con: "${solapados[0].descripcion} ${solapados[0].anio}"`
             });
-
-          // 3) Insertar
           db.query(
             "INSERT INTO periodo_escolar (descripcion, fecha_inicio, fecha_fin, estatus) VALUES (?,?,?,?)",
             [descripcion, fecha_inicio, fecha_fin, estatus || "Proximo"],
@@ -82,7 +77,7 @@ router.post("/", soloAdmin, (req, res) => {
   );
 });
 
-// PUT — solo permite cambiar el estatus
+// ─── PUT cambiar estatus de periodo ───────────────────────────────────────
 router.put("/:id", soloAdmin, (req, res) => {
   const { estatus } = req.body;
   const id = req.params.id;
@@ -103,7 +98,6 @@ router.put("/:id", soloAdmin, (req, res) => {
     );
   };
 
-  // Si se marca como Vigente, el anterior Vigente pasa a Concluido
   if (estatus === "Vigente") {
     db.query(
       "UPDATE periodo_escolar SET estatus = 'Concluido' WHERE estatus = 'Vigente' AND id_periodo != ?",
@@ -115,11 +109,10 @@ router.put("/:id", soloAdmin, (req, res) => {
   }
 });
 
-// DELETE — solo si no hay grupos que usen el periodo
+// ─── DELETE eliminar periodo ──────────────────────────────────────────────
 router.delete("/:id", soloAdmin, (req, res) => {
   const id = req.params.id;
 
-  // Verificar si el periodo tiene grupos asociados
   db.query(
     "SELECT COUNT(*) AS total FROM grupo WHERE id_periodo = ?",
     [id],
@@ -144,7 +137,7 @@ router.delete("/:id", soloAdmin, (req, res) => {
 });
 
 
-// POST — importar periodos desde CSV
+// ─── POST importar periodos desde CSV ──────────────────────────────────────
 router.post("/csv", soloAdmin, async (req, res) => {
   const { periodos } = req.body;
   if (!Array.isArray(periodos) || periodos.length === 0)

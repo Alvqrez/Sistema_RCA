@@ -1,12 +1,3 @@
-// src/routes/calificaciones.js
-// N-2 FIX: GET /alumno/:no_control, GET /final/:no_control/:id_grupo y
-//          GET /desglose/:no_control/:id_grupo/:id_unidad ahora verifican
-//          que un alumno solo pueda consultar sus propios datos (mismo IDOR
-//          que ya se corrigió en reportes.js).
-// N-3 FIX: GET / filtra por rol — alumnos ven solo sus propias calificaciones,
-//          maestros solo las de sus grupos, admins ven todo.
-// MEJORA:  POST / y endpoints de cálculo verifican que el maestro sea
-//          propietario del grupo antes de registrar o calcular.
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
@@ -15,9 +6,6 @@ const { verificarToken, maestroOAdmin, verificarPropietarioGrupo } = require("..
 
 const CALIFICACION_APROBATORIA = 70;
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-// IDOR guard: alumno solo ve sus propios datos
 function alumnoSoloPropios(no_control, req, res) {
   if (
     req.usuario.rol === "alumno" &&
@@ -31,8 +19,7 @@ function alumnoSoloPropios(no_control, req, res) {
   return true;
 }
 
-// ── GET — todas las calificaciones de unidad ─────────────────────────────
-// N-3: filtrado estricto por rol.
+// ─── GET todas las calificaciones de unidad ───────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
 
@@ -47,15 +34,12 @@ router.get("/", verificarToken, (req, res) => {
   `;
 
   if (rol === "alumno") {
-    // Alumno: solo sus propias calificaciones
     query = base + " WHERE cu.no_control = ?";
     params = [id_referencia];
   } else if (rol === "maestro") {
-    // Maestro: solo los grupos que imparte
     query = base + " JOIN grupo g ON cu.id_grupo = g.id_grupo WHERE g.rfc = ?";
     params = [id_referencia];
   } else {
-    // Admin: todo
     query = base;
     params = [];
   }
@@ -67,8 +51,7 @@ router.get("/", verificarToken, (req, res) => {
   });
 });
 
-// GET — calificaciones de un alumno específico
-// N-2: alumno solo puede consultar su propio no_control.
+// ─── GET calificaciones de un alumno específico ────────────────────────────
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
   if (!alumnoSoloPropios(req.params.no_control, req, res)) return;
 
@@ -87,9 +70,8 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
   );
 });
 
-// GET — calificaciones de todos los alumnos de un grupo (maestro propietario o admin)
+// ─── GET calificaciones de todos los alumnos de un grupo ────────────────────
 router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
-  // Guard: maestro solo puede ver calificaciones de sus propios grupos
   if (req.usuario.rol === "maestro") {
     db.query(
       "SELECT rfc FROM grupo WHERE id_grupo = ?",
@@ -126,8 +108,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   }
 });
 
-// POST — registrar calificación de unidad manualmente
-// MEJORA: verifica propietario del grupo.
+// ─── POST registrar calificación de unidad ────────────────────────────────
 router.post("/", maestroOAdmin, async (req, res) => {
   const { no_control, id_grupo, id_unidad, calificacion_unidad_final } =
     req.body;
@@ -170,8 +151,7 @@ router.post("/", maestroOAdmin, async (req, res) => {
   });
 });
 
-// POST — calcular y cerrar calificación de unidad automáticamente
-// MEJORA: verifica propietario.
+// ─── POST calcular y cerrar calificación de unidad ────────────────────────
 router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
   const { no_control, id_unidad, id_grupo, cal_examen, cal_asistencia } =
     req.body;
@@ -199,8 +179,7 @@ router.post("/calcular-unidad", maestroOAdmin, async (req, res) => {
   });
 });
 
-// POST — calcular calificación final de la materia
-// MEJORA: verifica propietario.
+// ─── POST calcular calificación final de la materia ────────────────────────
 router.post("/calcular-final", maestroOAdmin, async (req, res) => {
   const { no_control, id_grupo } = req.body;
   if (!no_control || !id_grupo)
@@ -220,8 +199,7 @@ router.post("/calcular-final", maestroOAdmin, async (req, res) => {
   });
 });
 
-// POST — calcular todo (todas las unidades + final) para un alumno en un grupo
-// MEJORA: verifica propietario.
+// ─── POST calcular todo (todas las unidades + final) ────────────────────────
 router.post("/calcular-todo", maestroOAdmin, async (req, res) => {
   const { no_control, id_grupo } = req.body;
   if (!no_control || !id_grupo)
@@ -238,8 +216,7 @@ router.post("/calcular-todo", maestroOAdmin, async (req, res) => {
   });
 });
 
-// GET — calificación final de un alumno en un grupo
-// N-2: alumno solo puede consultar su propio no_control.
+// ─── GET calificación final de un alumno en un grupo ────────────────────────
 router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   if (!alumnoSoloPropios(req.params.no_control, req, res)) return;
 
@@ -262,8 +239,7 @@ router.get("/final/:no_control/:id_grupo", verificarToken, (req, res) => {
   );
 });
 
-// GET — desglose de actividades de un alumno en una unidad
-// N-2: alumno solo puede consultar su propio desglose.
+// ─── GET desglose de actividades de un alumno en una unidad ────────────────
 router.get(
   "/desglose/:no_control/:id_grupo/:id_unidad",
   verificarToken,
@@ -307,8 +283,7 @@ router.get(
   },
 );
 
-// POST — guardar calificaciones directas (examen, asistencia) por alumno
-// MEJORA: verifica propietario del grupo.
+// ─── POST guardar calificaciones directas ─────────────────────────────────
 router.post("/guardar-directos", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad, grades } = req.body;
   if (!id_grupo || !id_unidad || !grades || typeof grades !== "object")
@@ -352,7 +327,7 @@ router.post("/guardar-directos", maestroOAdmin, (req, res) => {
   });
 });
 
-// GET — obtener calificaciones directas de todos los alumnos de una unidad (solo maestros/admin)
+// ─── GET obtener calificaciones directas de una unidad ──────────────────────
 router.get("/directos/:id_grupo/:id_unidad", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad } = req.params;
   db.query(
@@ -372,7 +347,7 @@ router.get("/directos/:id_grupo/:id_unidad", maestroOAdmin, (req, res) => {
   );
 });
 
-// GET — verificar si una unidad ya tiene calificaciones calculadas
+// ─── GET verificar si una unidad ya tiene calificaciones calculadas ────────
 router.get(
   "/estado-unidad/:id_grupo/:id_unidad",
   verificarToken,

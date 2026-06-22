@@ -1,8 +1,3 @@
-// backend/src/routes/inscripciones.js
-// N-2 FIX: GET /alumno/:no_control ahora verifica que un alumno solo pueda
-//          consultar sus propias inscripciones.
-// MEJORA:  GET / filtra por rol — alumnos ven solo las suyas, maestros ven
-//          solo los alumnos de sus grupos, admins ven todo.
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
@@ -12,8 +7,7 @@ const {
   maestroOAdmin,
 } = require("../../middleware/auth");
 
-// GET — todas las inscripciones (filtrado por rol)
-// MEJORA: antes devolvía todo a cualquier usuario autenticado.
+// ─── GET todas las inscripciones (filtrado por rol) ────────────────────────
 router.get("/", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
 
@@ -51,8 +45,7 @@ router.get("/", verificarToken, (req, res) => {
   });
 });
 
-// GET — inscripciones de un alumno específico
-// N-2: alumno solo puede consultar sus propias inscripciones.
+// ─── GET inscripciones de un alumno específico ─────────────────────────────
 router.get("/alumno/:no_control", verificarToken, (req, res) => {
   const { rol, id_referencia } = req.usuario;
   const { no_control } = req.params;
@@ -95,7 +88,7 @@ router.get("/alumno/:no_control", verificarToken, (req, res) => {
   );
 });
 
-// GET — alumnos inscritos en un grupo (maestro propietario o admin)
+// ─── GET alumnos inscritos en un grupo ────────────────────────────────────
 router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   db.query(
     `SELECT i.no_control, i.fecha_inscripcion, i.estatus, i.tipo_curso,
@@ -116,7 +109,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
   );
 });
 
-// POST — inscribir alumno a grupo
+// ─── POST inscribir alumno a grupo ────────────────────────────────────────
 router.post("/", soloAdmin, (req, res) => {
   const { no_control, id_grupo, tipo_curso } = req.body;
   if (!no_control || !id_grupo)
@@ -226,7 +219,7 @@ router.post("/", soloAdmin, (req, res) => {
   });
 });
 
-// POST — inscripción masiva
+// ─── POST inscripción masiva ──────────────────────────────────────────────
 router.post("/bulk", soloAdmin, async (req, res) => {
   let registros = [];
 
@@ -456,7 +449,7 @@ router.post("/bulk", soloAdmin, async (req, res) => {
     .catch(() => res.status(500).json({ error: "Error interno del servidor" }));
 });
 
-// PUT — cambiar estatus de inscripción
+// ─── PUT cambiar estatus de inscripción ───────────────────────────────────
 router.put("/:no_control/:id_grupo/estatus", soloAdmin, (req, res) => {
   const { estatus } = req.body;
   if (!estatus) return res.status(400).json({ error: "Estatus requerido" });
@@ -473,7 +466,7 @@ router.put("/:no_control/:id_grupo/estatus", soloAdmin, (req, res) => {
   );
 });
 
-// DELETE — dar de baja inscripción
+// ─── DELETE dar de baja inscripción ───────────────────────────────────────
 router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
   db.query(
     "DELETE FROM inscripcion WHERE no_control = ? AND id_grupo = ?",
@@ -488,7 +481,7 @@ router.delete("/:no_control/:id_grupo", soloAdmin, (req, res) => {
   );
 });
 
-// POST — validar carga de alumnos sin insertar
+// ─── POST validar carga de alumnos sin insertar ────────────────────────────
 router.post("/validar-carga", verificarToken, (req, res) => {
   const { no_controls, id_grupo } = req.body;
   if (!Array.isArray(no_controls) || !no_controls.length || !id_grupo)

@@ -1,13 +1,9 @@
-// src/routes/actividades.js
-// N-1 FIX: POST, PUT, DELETE y /bloquear-unidad ahora verifican que el maestro
-//          autenticado sea el responsable del grupo antes de modificar datos.
-//          Los administradores pueden operar en cualquier grupo.
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
 const { verificarToken, maestroOAdmin, verificarPropietarioGrupo } = require("../../middleware/auth");
 
-// GET — actividades filtradas por rol y opcionalmente por id_grupo e id_unidad
+// ─── GET actividades ─────────────────────────────────────────────────────────
 router.get("/", verificarToken, (req, res) => {
   const { id_referencia, rol } = req.usuario;
   const { id_grupo, id_unidad } = req.query;
@@ -51,8 +47,7 @@ router.get("/", verificarToken, (req, res) => {
   );
 });
 
-// POST — crear actividad
-// N-1: verifica propietario del grupo antes de insertar.
+// ─── POST crear actividad ─────────────────────────────────────────────────────
 router.post("/", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad, ponderacion, id_tipo_actividad } = req.body;
 
@@ -124,8 +119,7 @@ router.post("/", maestroOAdmin, (req, res) => {
   });
 });
 
-// PUT — editar ponderación de actividad
-// N-1: obtiene id_grupo de la actividad y verifica propietario.
+// ─── PUT editar actividad ─────────────────────────────────────────────────────
 router.put("/:id", maestroOAdmin, (req, res) => {
   const { ponderacion } = req.body;
 
@@ -186,8 +180,7 @@ router.put("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
-// DELETE — eliminar actividad
-// N-1: verifica propietario del grupo y ausencia de calificaciones.
+// ─── DELETE eliminar actividad ────────────────────────────────────────────────
 router.delete("/:id", maestroOAdmin, (req, res) => {
   db.query(
     "SELECT id_grupo FROM actividad WHERE id_actividad = ?",
@@ -232,8 +225,7 @@ router.delete("/:id", maestroOAdmin, (req, res) => {
   );
 });
 
-// POST /bloquear-unidad
-// N-1: verifica propietario antes de bloquear.
+// ─── POST bloquear unidad ─────────────────────────────────────────────────────
 router.post("/bloquear-unidad", maestroOAdmin, (req, res) => {
   const { id_grupo, id_unidad } = req.body;
   if (!id_grupo || !id_unidad)
