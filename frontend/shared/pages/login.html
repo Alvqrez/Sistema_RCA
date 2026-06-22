@@ -710,7 +710,7 @@
             <span id="errorTexto"></span>
           </div>
         </form>
-        <div class="form-footer">&nbsp; Sistema RCA - Versión 1.0.3</div>
+        <div class="form-footer">&nbsp; Sistema RCA - Versión 1.0.4</div>
       </div>
     </div>
 
@@ -961,12 +961,14 @@
       }
 
       // Confirmar cambio de contraseña con Enter dentro del modal
-      document.getElementById('modalCambioPass').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          cambiarPassword();
-        }
-      });
+      document
+        .getElementById("modalCambioPass")
+        .addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            cambiarPassword();
+          }
+        });
 
       // Cargar stats del panel izquierdo
       (async function cargarStats() {
