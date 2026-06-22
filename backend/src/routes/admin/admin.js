@@ -98,11 +98,6 @@ router.put("/usuarios/:id/estatus", soloAdmin, (req, res) => {
         [req.params.id],
         (err2, rows) => {
           if (!err2 && rows.length && rows[0].rol === "administrador") {
-      db.query(
-        "SELECT rol, id_referencia FROM usuario WHERE id_usuario = ?",
-        [req.params.id],
-        (err2, rows) => {
-          if (!err2 && rows.length && rows[0].rol === "administrador") {
             db.query(
               "UPDATE administrador SET activo = ? WHERE rfc = ?",
               [activo ? 1 : 0, rows[0].id_referencia],
