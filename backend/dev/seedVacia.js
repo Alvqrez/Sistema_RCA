@@ -7,7 +7,7 @@
 //   Contraseña: admin123
 
 const bcrypt = require("bcrypt");
-const db = require("./src/db");
+const db = require("../src/db");
 
 function q(sql, params = []) {
   return new Promise((res, rej) =>
