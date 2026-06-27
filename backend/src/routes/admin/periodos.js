@@ -38,17 +38,22 @@ router.post("/", soloAdmin, (req, res) => {
   if (!descripcion || !fecha_inicio || !fecha_fin)
     return res.status(400).json({ error: "Faltan campos requeridos" });
 
-  if (new Date(fecha_inicio) >= new Date(fecha_fin))
+  const fechaInicioDate = new Date(fecha_inicio + "T00:00:00");
+  const fechaFinDate = new Date(fecha_fin + "T00:00:00");
+  if (isNaN(fechaInicioDate.getTime()) || isNaN(fechaFinDate.getTime()))
+    return res.status(400).json({ error: "Formato de fecha inválido. Usa YYYY-MM-DD." });
+
+  if (fechaInicioDate >= fechaFinDate)
     return res.status(400).json({ error: "La fecha de inicio debe ser anterior a la de fin" });
 
-  const anio = new Date(fecha_inicio + "T00:00:00").getFullYear();
+  const anio = fechaInicioDate.getFullYear();
 
   db.query(
     `SELECT id_periodo FROM periodo_escolar
      WHERE descripcion = ? AND YEAR(fecha_inicio) = ?`,
     [descripcion, anio],
     (err, dup) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
+      if (err) return res.status(500).json({ error: "Error interno del servidor"});
       if (dup.length > 0)
         return res.status(409).json({ error: `Ya existe el periodo "${descripcion}" para el año ${anio}` });
 
@@ -58,7 +63,7 @@ router.post("/", soloAdmin, (req, res) => {
          WHERE ? < fecha_fin AND ? > fecha_inicio`,
         [fecha_inicio, fecha_fin],
         (err2, solapados) => {
-          if (err2) return res.status(500).json({ error: "Error interno del servidor", detalle: err2.message });
+          if (err2) return res.status(500).json({ error: "Error interno del servidor"});
           if (solapados.length > 0)
             return res.status(409).json({
               error: `Las fechas se solapan con: "${solapados[0].descripcion} ${solapados[0].anio}"`
@@ -67,7 +72,7 @@ router.post("/", soloAdmin, (req, res) => {
             "INSERT INTO periodo_escolar (descripcion, fecha_inicio, fecha_fin, estatus) VALUES (?,?,?,?)",
             [descripcion, fecha_inicio, fecha_fin, estatus || "Proximo"],
             (err3, r) => {
-              if (err3) return res.status(500).json({ error: "Error interno del servidor", detalle: err3.message });
+              if (err3) return res.status(500).json({ error: "Error interno del servidor"});
               res.status(201).json({ success: true, id_periodo: r.insertId });
             }
           );
@@ -91,7 +96,7 @@ router.put("/:id", soloAdmin, (req, res) => {
       "UPDATE periodo_escolar SET estatus=? WHERE id_periodo=?",
       [estatus, id],
       (err, r) => {
-        if (err) return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
+        if (err) return res.status(500).json({ error: "Error interno del servidor"});
         if (r.affectedRows === 0) return res.status(404).json({ error: "Periodo no encontrado" });
         res.json({ success: true });
       }
@@ -117,7 +122,7 @@ router.delete("/:id", soloAdmin, (req, res) => {
     "SELECT COUNT(*) AS total FROM grupo WHERE id_periodo = ?",
     [id],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor", detalle: err.message });
+      if (err) return res.status(500).json({ error: "Error interno del servidor"});
       if (rows[0].total > 0)
         return res.status(409).json({
           error: `No se puede eliminar: el periodo tiene ${rows[0].total} grupo(s) asignado(s). Elimina los grupos primero.`
@@ -127,7 +132,7 @@ router.delete("/:id", soloAdmin, (req, res) => {
         "DELETE FROM periodo_escolar WHERE id_periodo = ?",
         [id],
         (err2, r) => {
-          if (err2) return res.status(500).json({ error: "Error interno del servidor", detalle: err2.message });
+          if (err2) return res.status(500).json({ error: "Error interno del servidor"});
           if (r.affectedRows === 0) return res.status(404).json({ error: "Periodo no encontrado" });
           res.json({ success: true });
         }

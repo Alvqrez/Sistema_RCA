@@ -39,16 +39,33 @@ function generarPasswordDesdeFecha(fechaStr) {
 
 // ─── GET todos los alumnos ────────────────────────────────────────────────────
 router.get("/", maestroOAdmin, (req, res) => {
-  db.query(
-    `SELECT no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
+  const { rol, id_referencia } = req.usuario;
+  const campos = `no_control, id_carrera, nombre, apellido_paterno, apellido_materno,
             curp, fecha_nacimiento,
-            correo_institucional, correo_personal, tel_celular
-     FROM alumno`,
-    (err, results) => {
-      if (err) return res.status(500).json({ error: "Error interno del servidor" });
-      res.json(results);
-    },
-  );
+            correo_institucional, correo_personal, tel_celular`;
+
+  if (rol === "maestro") {
+    db.query(
+      `SELECT DISTINCT ${campos}
+       FROM alumno a
+       JOIN inscripcion i ON i.no_control = a.no_control
+       JOIN grupo g ON i.id_grupo = g.id_grupo
+       WHERE g.rfc = ?`,
+      [id_referencia],
+      (err, results) => {
+        if (err) return res.status(500).json({ error: "Error interno del servidor" });
+        res.json(results);
+      },
+    );
+  } else {
+    db.query(
+      `SELECT ${campos} FROM alumno`,
+      (err, results) => {
+        if (err) return res.status(500).json({ error: "Error interno del servidor" });
+        res.json(results);
+      },
+    );
+  }
 });
 
 // ─── GET siguiente no_control (antes de /:no_control) ────────────────────────
@@ -108,6 +125,15 @@ router.post("/", soloAdmin, async (req, res) => {
 
   if (!nombre || !apellido_paterno || !id_carrera || !fecha_nacimiento)
     return res.status(400).json({ error: "Faltan campos requeridos: nombre, apellido paterno, carrera y fecha de nacimiento." });
+
+  if (nombre.length > 100 || apellido_paterno.length > 100 || (apellido_materno && apellido_materno.length > 100))
+    return res.status(400).json({ error: "Los campos de nombre no pueden exceder 100 caracteres." });
+  if (curp && curp.length > 18)
+    return res.status(400).json({ error: "El CURP no puede exceder 18 caracteres." });
+  if (tel_celular && tel_celular.length > 15)
+    return res.status(400).json({ error: "El teléfono no puede exceder 15 caracteres." });
+  if (correo_personal && correo_personal.length > 100)
+    return res.status(400).json({ error: "El correo personal no puede exceder 100 caracteres." });
 
   try {
     const no_control = await generarNumeroControl();
@@ -286,21 +312,46 @@ router.post("/csv", soloAdmin, async (req, res) => {
 // ─── DELETE eliminar alumno ───────────────────────────────────────────────────
 router.delete("/:no_control", soloAdmin, (req, res) => {
   const { no_control } = req.params;
-  db.query(
-    "DELETE FROM alumno WHERE no_control = ?",
-    [no_control],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_ROW_IS_REFERENCED_2")
-          return res.status(409).json({ error: "No se puede eliminar: el alumno tiene inscripciones o calificaciones registradas." });
-        return res.status(500).json({ error: "Error interno del servidor" });
-      }
-      if (!result.affectedRows) return res.status(404).json({ error: "Alumno no encontrado" });
-      // Eliminar usuario asociado
-      db.query("DELETE FROM usuario WHERE id_referencia = ? AND rol = 'alumno'", [no_control]);
-      res.json({ success: true, mensaje: "Alumno eliminado" });
-    },
-  );
+
+  db.getConnection((connErr, conn) => {
+    if (connErr) return res.status(500).json({ error: "Error interno del servidor" });
+
+    conn.beginTransaction((txErr) => {
+      if (txErr) { conn.release(); return res.status(500).json({ error: "Error interno del servidor" }); }
+
+      conn.query("DELETE FROM usuario WHERE id_referencia = ? AND rol = 'alumno'", [no_control], (err1) => {
+        if (err1) {
+          return conn.rollback(() => {
+            conn.release();
+            return res.status(500).json({ error: "Error interno del servidor" });
+          });
+        }
+
+        conn.query("DELETE FROM alumno WHERE no_control = ?", [no_control], (err2, result) => {
+          if (err2) {
+            return conn.rollback(() => {
+              conn.release();
+              if (err2.code === "ER_ROW_IS_REFERENCED_2")
+                return res.status(409).json({ error: "No se puede eliminar: el alumno tiene inscripciones o calificaciones registradas." });
+              return res.status(500).json({ error: "Error interno del servidor" });
+            });
+          }
+          if (!result.affectedRows) {
+            return conn.rollback(() => {
+              conn.release();
+              return res.status(404).json({ error: "Alumno no encontrado" });
+            });
+          }
+
+          conn.commit((commitErr) => {
+            conn.release();
+            if (commitErr) return res.status(500).json({ error: "Error interno del servidor" });
+            res.json({ success: true, mensaje: "Alumno eliminado" });
+          });
+        });
+      });
+    });
+  });
 });
 
 module.exports = router;

@@ -69,8 +69,17 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── Rate limiting general para todas las rutas /api/ ──────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiadas solicitudes. Por favor espera un momento." },
+});
 
 // ── A-2: rate limiting en /login — máx. 5 intentos por minuto por IP ─────
 const loginLimiter = rateLimit({
@@ -243,6 +252,7 @@ app.post(
 app.use(express.static(path.join(__dirname, "frontend")));
 
 // ── RUTAS ─────────────────────────────────────────────────────────────────
+app.use("/api/", apiLimiter);
 
 // ADMIN
 app.use("/api/alumnos", require("./src/routes/admin/alumnos"));

@@ -98,7 +98,6 @@ router.post("/", maestroOAdmin, (req, res) => {
       if (err)
         return res.status(500).json({
           error: "Error al guardar en base de datos",
-          detail: err.message,
         });
       res.json({ success: true });
     },

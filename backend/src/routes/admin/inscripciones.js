@@ -103,7 +103,7 @@ router.get("/grupo/:id_grupo", maestroOAdmin, (req, res) => {
       if (err)
         return res
           .status(500)
-          .json({ error: "Error interno del servidor", detalle: err.message });
+          .json({ error: "Error interno del servidor" });
       res.json(r);
     },
   );
@@ -200,7 +200,6 @@ router.post("/", soloAdmin, (req, res) => {
               if (err)
                 return res.status(500).json({
                   error: "Error interno del servidor",
-                  detalle: err.message,
                 });
               if (result.affectedRows === 0)
                 return res.status(200).json({
@@ -431,7 +430,6 @@ router.post("/bulk", soloAdmin, async (req, res) => {
                 if (err)
                   return res.status(500).json({
                     error: "Error interno del servidor",
-                    detalle: err.message,
                   });
                 res.status(201).json({
                   success: true,

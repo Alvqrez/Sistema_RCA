@@ -57,6 +57,9 @@ router.post("/", maestroOAdmin, (req, res) => {
       .json({ error: "Faltan campos requeridos (incluida la justificación)" });
   }
 
+  if (justificacion.length > 500)
+    return res.status(400).json({ error: "La justificación no puede exceder 500 caracteres." });
+
   const nueva = parseFloat(calif_modificada);
   if (isNaN(nueva) || nueva < 0 || nueva > 100) {
     return res

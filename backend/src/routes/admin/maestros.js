@@ -154,6 +154,15 @@ router.post("/", soloAdmin, async (req, res) => {
   )
     return res.status(400).json({ error: "Faltan campos requeridos" });
 
+  if (rfc.trim().length < 12 || rfc.trim().length > 13)
+    return res.status(400).json({ error: "El RFC debe tener entre 12 y 13 caracteres." });
+  if (nombre.length > 100 || apellido_paterno.length > 100 || (apellido_materno && apellido_materno.length > 100))
+    return res.status(400).json({ error: "Los campos de nombre no pueden exceder 100 caracteres." });
+  if (password.length > 200)
+    return res.status(400).json({ error: "La contraseña es demasiado larga." });
+  if (correo_institucional.length > 100)
+    return res.status(400).json({ error: "El correo no puede exceder 100 caracteres." });
+
   try {
     const hash = await bcrypt.hash(password, 10);
     const rfcClean = rfc.trim().toUpperCase();
@@ -181,7 +190,7 @@ router.post("/", soloAdmin, async (req, res) => {
                 conn.release();
                 if (err.code === "ER_DUP_ENTRY")
                   return res.status(409).json({ error: "El RFC ya está registrado" });
-                return res.status(500).json({ error: err.message });
+                return res.status(500).json({ error: "Error interno del servidor" });
               });
             }
             conn.query(
@@ -259,22 +268,46 @@ router.put("/:id", soloAdmin, (req, res) => {
 // DELETE — eliminar maestro
 router.delete("/:id", soloAdmin, (req, res) => {
   const rfc = req.params.id;
-  db.query(
-    "DELETE FROM maestro WHERE rfc = ?",
-    [rfc],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_ROW_IS_REFERENCED_2")
-          return res.status(409).json({ error: "No se puede eliminar: el maestro tiene grupos asignados." });
-        return res.status(500).json({ error: "Error interno del servidor" });
-      }
-      if (!result.affectedRows)
-        return res.status(404).json({ error: "Maestro no encontrado" });
-      // Eliminar usuario asociado
-      db.query("DELETE FROM usuario WHERE id_referencia = ? AND rol = 'maestro'", [rfc]);
-      res.json({ success: true, mensaje: "Maestro eliminado" });
-    },
-  );
+
+  db.getConnection((connErr, conn) => {
+    if (connErr) return res.status(500).json({ error: "Error interno del servidor" });
+
+    conn.beginTransaction((txErr) => {
+      if (txErr) { conn.release(); return res.status(500).json({ error: "Error interno del servidor" }); }
+
+      conn.query("DELETE FROM usuario WHERE id_referencia = ? AND rol = 'maestro'", [rfc], (err1) => {
+        if (err1) {
+          return conn.rollback(() => {
+            conn.release();
+            return res.status(500).json({ error: "Error interno del servidor" });
+          });
+        }
+
+        conn.query("DELETE FROM maestro WHERE rfc = ?", [rfc], (err2, result) => {
+          if (err2) {
+            return conn.rollback(() => {
+              conn.release();
+              if (err2.code === "ER_ROW_IS_REFERENCED_2")
+                return res.status(409).json({ error: "No se puede eliminar: el maestro tiene grupos asignados." });
+              return res.status(500).json({ error: "Error interno del servidor" });
+            });
+          }
+          if (!result.affectedRows) {
+            return conn.rollback(() => {
+              conn.release();
+              return res.status(404).json({ error: "Maestro no encontrado" });
+            });
+          }
+
+          conn.commit((commitErr) => {
+            conn.release();
+            if (commitErr) return res.status(500).json({ error: "Error interno del servidor" });
+            res.json({ success: true, mensaje: "Maestro eliminado" });
+          });
+        });
+      });
+    });
+  });
 });
 
 module.exports = router;

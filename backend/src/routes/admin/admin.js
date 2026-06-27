@@ -305,6 +305,7 @@ router.delete("/administradores/:id", soloAdmin, (req, res) => {
 
 // ─── GET exportar respaldo completo del sistema ────────────────────────────
 router.get("/backup", soloAdmin, (req, res) => {
+  console.log(`[BACKUP] ${new Date().toISOString()} — usuario: ${req.usuario.username} (${req.usuario.id_referencia}) descargó el respaldo del sistema`);
   const tablas = {
     carreras: "SELECT * FROM carrera",
     periodos: "SELECT * FROM periodo_escolar",
@@ -442,7 +443,7 @@ router.post("/backup/restore", soloAdmin, async (req, res) => {
     await q("SET FOREIGN_KEY_CHECKS = 1").catch(() => {});
     return res
       .status(500)
-      .json({ error: "Error al restaurar el respaldo", detalle: err.message });
+      .json({ error: "Error al restaurar el respaldo" });
   }
 });
 
