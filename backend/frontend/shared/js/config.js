@@ -1,6 +1,6 @@
 // Configuración global del frontend.
 // Edita solo este archivo para apuntar a un entorno diferente.
-window.API_URL = "http://localhost:3000";
+window.API_URL = "https://rca.elprofecoss.tech";
 
 // Escapa HTML para evitar XSS en contenido dinámico insertado con innerHTML.
 window.esc = (s) =>
