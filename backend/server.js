@@ -304,9 +304,17 @@ app.get("/api/info-publica", (req, res) => {
   );
 });
 
-app.get("/", (req, res) => {
+// ── CAPTURA DE LA PÁGINA PRINCIPAL (LOGIN) ──────────────────────
+app.get("/", (req, res, next) => {
+  // Usamos el callback de res.sendFile para capturar el error exacto si no encuentra el archivo
   res.sendFile(
     path.join(__dirname, "frontend", "shared", "pages", "login.html"),
+    (err) => {
+      if (err) {
+        console.error("❌ Error al enviar login.html:", err.message);
+        next(err); // Esto lo pasa al Error Handler para que no se quede colgado
+      }
+    },
   );
 });
 
