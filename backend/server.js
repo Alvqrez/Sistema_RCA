@@ -325,4 +325,13 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: "Error interno del servidor" });
 });
 
+const fs = require("fs");
+console.log("📁 Archivos en la raíz:", fs.readdirSync(__dirname));
+if (fs.existsSync(path.join(__dirname, "frontend"))) {
+  console.log(
+    "📁 Archivos dentro de frontend:",
+    fs.readdirSync(path.join(__dirname, "frontend")),
+  );
+}
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
