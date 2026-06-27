@@ -464,7 +464,6 @@ CREATE TABLE `modificacionfinal` (
   COMMENT='Historial de ajustes manuales del docente sobre la calificación final';
 
 
-
 INSERT INTO `tipo_actividad` (`nombre`, `descripcion`) VALUES
   ('Examen',        'Evaluación escrita o en línea'),
   ('Tarea',         'Actividad de trabajo en casa o individual'),

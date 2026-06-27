@@ -1,4 +1,6 @@
 // server.js
+const ejecutarSeed = require("./dev/seedVacia"); // Asegúrate de que la ruta apunte bien a tu archivo
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -334,4 +336,18 @@ if (fs.existsSync(path.join(__dirname, "frontend"))) {
   );
 }
 
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+app.listen(3000, async () => {
+  console.log("Servidor corriendo en puerto 3000");
+
+  // ── EJECUCIÓN TEMPORAL DEL SEED EN PRODUCCIÓN ──
+  try {
+    if (typeof ejecutarSeed === "function") {
+      await ejecutarSeed();
+      console.log("🌱 ¡Base de datos sembrada con éxito!");
+    } else {
+      console.log("⚠️ El archivo seed no exporta una función por defecto.");
+    }
+  } catch (error) {
+    console.error("❌ Error al ejecutar el seed desde server.js:", error);
+  }
+});
