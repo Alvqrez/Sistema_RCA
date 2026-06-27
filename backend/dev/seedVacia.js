@@ -1,10 +1,4 @@
 // backend/seedVacia.js
-// Seed mínimo: solo crea un administrador listo para la demo.
-// Uso: node seedVacia.js
-//
-// Credenciales creadas:
-//   Usuario:    admin
-//   Contraseña: admin123
 
 const bcrypt = require("bcrypt");
 const db = require("../src/db");
