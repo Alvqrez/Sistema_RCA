@@ -1,6 +1,7 @@
 // server.js
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
@@ -89,7 +90,10 @@ const cambiarPasswordLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: "Demasiados intentos. Espera 15 minutos." },
+  message: {
+    success: false,
+    message: "Demasiados intentos. Espera 15 minutos.",
+  },
 });
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
@@ -180,54 +184,62 @@ app.post("/login", loginLimiter, (req, res) => {
 });
 
 // ── CAMBIAR CONTRASEÑA (A-3) ──────────────────────────────────────────────
-app.post("/cambiar-password", cambiarPasswordLimiter, verificarToken, async (req, res) => {
-  const { password_actual, password_nuevo } = req.body;
-  const id_usuario = req.usuario.id_usuario;
+app.post(
+  "/cambiar-password",
+  cambiarPasswordLimiter,
+  verificarToken,
+  async (req, res) => {
+    const { password_actual, password_nuevo } = req.body;
+    const id_usuario = req.usuario.id_usuario;
 
-  if (!password_actual || !password_nuevo) {
-    return res
-      .status(400)
-      .json({ error: "Se requieren password_actual y password_nuevo" });
-  }
-  if (password_nuevo.length < 8) {
-    return res
-      .status(400)
-      .json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
-  }
+    if (!password_actual || !password_nuevo) {
+      return res
+        .status(400)
+        .json({ error: "Se requieren password_actual y password_nuevo" });
+    }
+    if (password_nuevo.length < 8) {
+      return res.status(400).json({
+        error: "La nueva contraseña debe tener al menos 8 caracteres",
+      });
+    }
 
-  db.query(
-    "SELECT pwd FROM usuario WHERE id_usuario = ?",
-    [id_usuario],
-    async (err, rows) => {
-      if (err)
-        return res.status(500).json({ error: "Error interno del servidor" });
-      if (!rows.length)
-        return res.status(404).json({ error: "Usuario no encontrado" });
+    db.query(
+      "SELECT pwd FROM usuario WHERE id_usuario = ?",
+      [id_usuario],
+      async (err, rows) => {
+        if (err)
+          return res.status(500).json({ error: "Error interno del servidor" });
+        if (!rows.length)
+          return res.status(404).json({ error: "Usuario no encontrado" });
 
-      const valida = await bcrypt.compare(password_actual, rows[0].pwd);
-      if (!valida)
-        return res
-          .status(401)
-          .json({ error: "La contraseña actual es incorrecta" });
+        const valida = await bcrypt.compare(password_actual, rows[0].pwd);
+        if (!valida)
+          return res
+            .status(401)
+            .json({ error: "La contraseña actual es incorrecta" });
 
-      const nuevoHash = await bcrypt.hash(password_nuevo, 10);
-      db.query(
-        "UPDATE usuario SET pwd = ?, primer_acceso = 0 WHERE id_usuario = ?",
-        [nuevoHash, id_usuario],
-        (err2) => {
-          if (err2)
-            return res
-              .status(500)
-              .json({ error: "Error interno del servidor" });
-          res.json({
-            success: true,
-            mensaje: "Contraseña actualizada correctamente",
-          });
-        },
-      );
-    },
-  );
-});
+        const nuevoHash = await bcrypt.hash(password_nuevo, 10);
+        db.query(
+          "UPDATE usuario SET pwd = ?, primer_acceso = 0 WHERE id_usuario = ?",
+          [nuevoHash, id_usuario],
+          (err2) => {
+            if (err2)
+              return res
+                .status(500)
+                .json({ error: "Error interno del servidor" });
+            res.json({
+              success: true,
+              mensaje: "Contraseña actualizada correctamente",
+            });
+          },
+        );
+      },
+    );
+  },
+);
+// ── SERVIR ARCHIVOS ESTÁTICOS DEL FRONTEND ───────────────────────
+// Si tus HTML/CSS están dentro de una carpeta llamada 'public':
+app.use(express.static(path.join(__dirname, "frontend")));
 
 // ── RUTAS ─────────────────────────────────────────────────────────────────
 
@@ -270,10 +282,6 @@ app.use(
   require("./src/routes/shared/modificacion_final"),
 );
 
-app.get("/", (req, res) =>
-  res.json({ mensaje: "API RCA activa", version: "1.2" }),
-);
-
 // ── NOTIFICACIONES ──
 app.get("/api/notificaciones", verificarToken, (req, res) => {
   res.json([]);
@@ -293,6 +301,12 @@ app.get("/api/info-publica", (req, res) => {
       if (err) return res.status(500).json({ error: "Error" });
       res.json(rows[0] || {});
     },
+  );
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "frontend", "shared", "pages", "login.html"),
   );
 });
 
