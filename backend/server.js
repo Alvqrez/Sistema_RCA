@@ -319,28 +319,6 @@ app.get("/", (req, res, next) => {
   );
 });
 
-// ── RUTA TEMPORAL PARA SEMBRAR DATOS DESDE EL NAVEGADOR ──
-app.get("/ejecutar-mi-seed-secreta", async (req, res) => {
-  try {
-    // Lo importamos localmente aquí adentro para que si falla, no tire el servidor entero
-    // Ajusta la ruta exacta a tu archivo 'seedVacia.js' o 'seed.js'
-    const ejecutarSeed = require("./dev/seedVacia");
-
-    if (typeof ejecutarSeed === "function") {
-      await ejecutarSeed();
-      res.send("🌱 ¡Base de datos sembrada con éxito en Hostinger!");
-    } else {
-      // Si tu archivo no exporta una función y corre solo con llamarlo, se ejecutará al hacer el require de arriba
-      res.send(
-        "🌱 Seed ejecutado (revisa si se cargaron las tablas en phpMyAdmin).",
-      );
-    }
-  } catch (error) {
-    console.error("❌ Error en seeding:", error);
-    res.status(500).send("Error al correr el seed: " + error.message);
-  }
-});
-
 // ── ERROR HANDLER ──────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
