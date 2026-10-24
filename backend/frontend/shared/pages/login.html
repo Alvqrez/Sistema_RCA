@@ -13,6 +13,17 @@
       rel="stylesheet"
     />
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <script>
+      Promise.all([
+        fetch("/shared/icons/mdi.json").then((r) => r.json()),
+        fetch("/shared/icons/lucide.json").then((r) => r.json()),
+      ])
+        .then(([mdi, lucide]) => {
+          Iconify.addCollection(mdi);
+          Iconify.addCollection(lucide);
+        })
+        .catch((err) => console.error("Error cargando íconos locales:", err));
+    </script>
     <style>
       *,
       *::before,
