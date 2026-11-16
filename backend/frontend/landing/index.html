@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema RCA · Registro y cálculo de calificaciones para planteles TecNM</title>
+  <meta name="description" content="Sistema RCA registra las calificaciones de cada unidad y las calcula con las reglas de evaluación del TecNM: ponderaciones, NP, puntos extra y redondeo institucional. Un acceso para alumnos, maestros y administración.">
+  <link rel="canonical" href="https://rca.elprofecoss.tech/">
+  <meta name="theme-color" content="#f3f5f9">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:site_name" content="Sistema RCA">
+  <meta property="og:url" content="https://rca.elprofecoss.tech/">
+  <meta property="og:title" content="Sistema RCA · Registro y cálculo de calificaciones">
+  <meta property="og:description" content="Registro y cálculo de resultados académicos con las reglas de evaluación del TecNM.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/landing/img/favicon-32.png">
+  <link rel="apple-touch-icon" href="/landing/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/landing/css/tokens.css">
+  <link rel="stylesheet" href="/landing/css/base.css">
+  <link rel="stylesheet" href="/landing/css/componentes.css">
+  <link rel="stylesheet" href="/landing/css/secciones.css">
+  <link rel="stylesheet" href="/landing/css/mockups.css">
+  <link rel="stylesheet" href="/landing/css/simulador.css">
+  <script src="/landing/js/landing.js"></script>
+  <script src="/landing/js/iconos.js" defer></script>
+  <script src="/landing/js/motor.js" defer></script>
+  <script src="/landing/js/mockups.js" defer></script>
+  <script src="/landing/js/simulador.js" defer></script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sistema RCA","alternateName":"Sistema de Registro y Cálculo de Resultados Académicos","applicationCategory":"EducationalApplication","operatingSystem":"Web","inLanguage":"es-MX","url":"https://rca.elprofecoss.tech/"}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <!-- ── Navegación ─────────────────────────────────────────────────── -->
+  <header class="nav" data-header>
+    <div class="nav-bar">
+      <a class="brand" href="#inicio"><img src="/landing/img/rca-icon-96.png" width="34" height="34" alt="">Sistema RCA</a>
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#producto">Producto</a>
+        <a href="#simulador">Simulador</a>
+        <a href="#roles">Roles</a>
+        <a href="#seguridad">Seguridad</a>
+        <a href="#preguntas">Preguntas</a>
+        <a class="nav-login" href="/login">Acceder</a>
+      </nav>
+      <a class="btn btn-sm nav-cta" href="#contacto">Solicitar información<span class="btn-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span></a>
+      <button class="nav-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu-movil" aria-label="Abrir menú"><span></span><span></span></button>
+    </div>
+    <div class="nav-menu" id="menu-movil">
+      <ul>
+        <li><a href="#producto">Producto</a></li>
+        <li><a href="#simulador">Simulador</a></li>
+        <li><a href="#roles">Roles</a></li>
+        <li><a href="#seguridad">Seguridad</a></li>
+        <li><a href="#preguntas">Preguntas</a></li>
+      </ul>
+      <div class="nav-menu-foot">
+        <a class="btn" href="#contacto">Solicitar información<span class="btn-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span></a>
+        <a class="link-arrow" href="/login"><span>Acceder a mi cuenta</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <!-- ── Hero ───────────────────────────────────────────────────── -->
+    <section class="hero" id="inicio" aria-labelledby="titulo">
+      <div class="wrap hero-grid">
+        <div class="hero-copy" data-reveal-group>
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>En uso en el Instituto Tecnológico de Veracruz</p>
+          <h1 class="display" id="titulo">Registro y cálculo de calificaciones para planteles TecNM.</h1>
+          <p class="lead">Los maestros capturan las actividades de cada unidad. RCA aplica las ponderaciones, el NP, los puntos extra y el redondeo institucional, y cada alumno consulta su resultado en su propio portal.</p>
+          <div class="hero-actions">
+            <a class="btn" href="#contacto" data-magnetic>Solicitar información<span class="btn-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span></a>
+            <a class="link-arrow" href="#simulador"><span>Probar el cálculo</span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+          </div>
+          <p class="hero-roles">Un acceso para cada rol: <b>Alumno</b> <b>Maestro</b> <b>Administrador</b></p>
+        </div>
+        <figure class="hero-visual" data-reveal data-delay="2">
+          <div class="bezel"><div class="bezel-core">
+            <div data-mockup="captura" data-min-scale="0.42" aria-label="Pantalla de captura de calificaciones de RCA: seis alumnos con sus calificaciones por actividad y el promedio ponderado de la unidad 2."></div>
+          </div></div>
+          <div class="hero-cien" aria-hidden="true"><span class="hero-cien-bar"><i></i><i></i><i></i><i></i></span>100 %</div>
+          <div class="hero-float" data-mockup="tarjeta" aria-label="Vista del alumno: Fundamentos de Bases de Datos, unidad 2, calificación 94.8, aprobada."></div>
+          <figcaption class="caption">Captura de calificaciones de la unidad 2. Datos de ejemplo.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ── Problema y solución ────────────────────────────────────── -->
+    <section class="section contraste" id="producto" aria-labelledby="t-problema">
+      <div class="wrap">
+        <div class="section-head" data-reveal-group>
+          <h2 class="h2" id="t-problema">Hoy, cada maestro calcula a su manera.</h2>
+          <p class="lead">Cuando las calificaciones viven en hojas de cálculo separadas, cada grupo aplica las reglas por su cuenta y el alumno se entera al final. RCA reúne el registro y el cálculo en un solo lugar.</p>
+        </div>
+        <div class="pares-head" aria-hidden="true"><span>Sin un sistema común</span><span></span><span>Con RCA</span></div>
+        <ul class="pares" data-reveal-group>
+          <li class="par"><p class="par-antes">Una hoja de cálculo por maestro, cada una con sus fórmulas.</p><span class="par-flecha" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span><p class="par-rca">Un mismo motor de cálculo para todos los grupos del plantel.</p></li>
+          <li class="par"><p class="par-antes">Ponderaciones que no siempre suman 100.</p><span class="par-flecha" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span><p class="par-rca">La unidad no se guarda hasta que sus ponderaciones suman 100 %.</p></li>
+          <li class="par"><p class="par-antes">NP, puntos extra y redondeo aplicados a mano.</p><span class="par-flecha" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span><p class="par-rca">NP como cero, puntos extra con tope de 100 y redondeo institucional, siempre igual.</p></li>
+          <li class="par"><p class="par-antes">El alumno espera el acta para saber cómo va.</p><span class="par-flecha" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span><p class="par-rca">Cada alumno consulta sus unidades cerradas y su historial desde su portal.</p></li>
+          <li class="par"><p class="par-antes">Correcciones finales sin registro de su motivo.</p><span class="par-flecha" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span><p class="par-rca">Modificar una calificación final exige una justificación, y queda registrada.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── Simulador ──────────────────────────────────────────────── -->
+    <section class="section campo" id="simulador" aria-labelledby="t-sim">
+      <div class="wrap sim-wrap">
+        <div class="sim-intro" data-reveal-group>
+          <h2 class="h2" id="t-sim">Prueba el cálculo que usa RCA.</h2>
+          <p class="lead">Es la misma lógica que aplica el sistema al cerrar una unidad y la materia. Cambia las ponderaciones, marca un NP o agrega puntos extra.</p>
+          <ul class="reglas">
+            <li><span><b>NP</b> cuenta como cero.</span></li>
+            <li><span>La unidad solo se guarda cuando sus ponderaciones suman <b>100 %</b>.</span></li>
+            <li><span>Los puntos extra nunca llevan la calificación arriba de <b>100</b>.</span></li>
+            <li><span>La final es el promedio de las unidades; el <b>redondeo</b> va al último y una fracción de 0.5 o más sube.</span></li>
+            <li><span>Calificación aprobatoria: <b>70</b>.</span></li>
+          </ul>
+          <p class="sim-nota">Datos de ejemplo. Las unidades 1 y 3 ya están cerradas.</p>
+        </div>
+        <div class="sim-host" data-simulador data-reveal>
+          <p class="sim-fallback">Activa JavaScript para usar el simulador.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Funciones ──────────────────────────────────────────────── -->
+    <section class="section" id="funciones" aria-labelledby="t-func">
+      <div class="wrap">
+        <div class="section-head" data-reveal-group>
+          <h2 class="h2" id="t-func">Todo el periodo, de la configuración al acta.</h2>
+          <p class="lead">RCA acompaña cada paso de la evaluación: preparar la unidad, capturar, cerrar, corregir con respaldo y reportar.</p>
+        </div>
+        <div class="bento">
+          <article class="tile tile-7" data-reveal>
+            <div class="bezel"><div class="bezel-core"><div class="tile-fit" data-mockup="ponderacion" aria-label="Configuración de actividades de la unidad 2: examen 40 %, prácticas 30 %, proyecto 20 % y tareas 10 %, total 100 %."></div></div></div>
+            <div class="tile-text"><h3 class="h3">Configura la evaluación de cada unidad</h3><p>El maestro define las actividades y su ponderación. RCA muestra cuánto falta para llegar a 100 % antes de guardar.</p></div>
+          </article>
+          <article class="tile tile-5" data-reveal data-delay="1">
+            <div class="bezel"><div class="bezel-core"><div class="tile-fit" data-mockup="modificacion" aria-label="Ventana para modificar una calificación final de 68 a 71, con justificación obligatoria."></div></div></div>
+            <div class="tile-text"><h3 class="h3">Corrige con justificación</h3><p>Cambiar una calificación final requiere explicar el motivo, hasta 500 caracteres. La modificación queda registrada.</p></div>
+          </article>
+          <article class="tile tile-5" data-reveal>
+            <div class="bezel"><div class="bezel-core"><div class="tile-fit" data-mockup="importar" aria-label="Importación de 36 alumnos desde un archivo CSV, sin errores."></div></div></div>
+            <div class="tile-text"><h3 class="h3">Carga masiva desde CSV</h3><p>Carreras, materias, unidades, maestros, alumnos, grupos, inscripciones y actividades se importan desde archivo.</p></div>
+          </article>
+          <article class="tile tile-7" data-reveal data-delay="1">
+            <div class="bezel"><div class="bezel-core"><div data-mockup="estadisticas" aria-label="Estadísticas de un grupo: 6 alumnos, 4 aprobados, 2 reprobados, promedio 74.2, gráfica por alumno con la línea de 70."></div></div></div>
+            <div class="tile-text"><h3 class="h3">Reportes y estadísticas por grupo</h3><p>Aprobados, reprobados, promedio y extremos de cada grupo, con exportación a CSV.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Roles ──────────────────────────────────────────────────── -->
+    <section class="section roles" id="roles" aria-labelledby="t-roles">
+      <div class="wrap">
+        <div class="section-head" data-reveal-group>
+          <h2 class="h2" id="t-roles">Una vista distinta para cada persona.</h2>
+          <p class="lead">Cada cuenta tiene un rol, y el servidor revisa ese rol en cada consulta. Nadie ve más de lo que le corresponde.</p>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Roles de RCA" data-reveal>
+          <button class="tab" role="tab" id="tab-alumno" aria-controls="panel-alumno" aria-selected="true" type="button">Alumno</button>
+          <button class="tab" role="tab" id="tab-maestro" aria-controls="panel-maestro" aria-selected="false" tabindex="-1" type="button">Maestro</button>
+          <button class="tab" role="tab" id="tab-admin" aria-controls="panel-admin" aria-selected="false" tabindex="-1" type="button">Administrador</button>
+        </div>
+
+        <div class="rol is-active" role="tabpanel" id="panel-alumno" aria-labelledby="tab-alumno" tabindex="0">
+          <div class="rol-copy">
+            <h3 class="h3">Su avance, sin esperar el acta.</h3>
+            <p>El alumno entra con su número de control y ve únicamente su propia información.</p>
+            <ul class="checks">
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Materias aprobadas, reprobadas y en curso, con su promedio general.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>La calificación de cada unidad cerrada, con su desglose.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Historial por periodo: materia, maestro, tipo de curso y calificación.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Cambio de contraseña desde su cuenta.</li>
+            </ul>
+          </div>
+          <div class="rol-visual bezel"><div class="bezel-core"><div data-mockup="alumno" data-min-scale="0.5" aria-label="Portal del alumno: promedio general 91.4, materias del periodo e historial académico."></div></div></div>
+        </div>
+
+        <div class="rol" role="tabpanel" id="panel-maestro" aria-labelledby="tab-maestro" tabindex="0" hidden>
+          <div class="rol-copy">
+            <h3 class="h3">Sus grupos y su forma de evaluar.</h3>
+            <p>El maestro trabaja solo con los grupos que tiene asignados.</p>
+            <ul class="checks">
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Panel con sus grupos activos y el estado de configuración de cada uno.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Actividades y ponderaciones por unidad.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Captura de calificaciones, también desde archivo CSV.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Puntos extra por unidad y por materia.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Reportes, estadísticas y exportación a CSV.</li>
+            </ul>
+          </div>
+          <div class="rol-visual bezel"><div class="bezel-core"><div data-mockup="captura" data-min-scale="0.5" aria-label="Captura de calificaciones del maestro con promedio ponderado por alumno."></div></div></div>
+        </div>
+
+        <div class="rol" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" hidden>
+          <div class="rol-copy">
+            <h3 class="h3">El plantel completo, en orden.</h3>
+            <p>La administración prepara cada periodo y cuida las cuentas.</p>
+            <ul class="checks">
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Carreras, materias, unidades, maestros, alumnos, grupos y periodos.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Inscripción de alumnos a grupos, individual o masiva.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Activar o desactivar cuentas y restablecer contraseñas.</li>
+              <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Respaldo y restauración de la información.</li>
+            </ul>
+          </div>
+          <div class="rol-visual bezel"><div class="bezel-core"><div data-mockup="admin" data-min-scale="0.5" aria-label="Panel de administración: totales de alumnos, maestros, grupos, materias e inscripciones, accesos rápidos y usuarios del sistema."></div></div></div>
+        </div>
+        <p class="caption">Pantallas reales de RCA con datos de ejemplo.</p>
+      </div>
+    </section>
+
+    <!-- ── Cómo arranca un periodo ────────────────────────────────── -->
+    <section class="section" id="periodo" aria-labelledby="t-periodo">
+      <div class="wrap">
+        <div class="section-head" data-reveal-group>
+          <h2 class="h2" id="t-periodo">Cómo arranca un periodo.</h2>
+          <p class="lead">Del periodo registrado a la primera unidad cerrada, sin volver a capturar lo que ya existe en archivos.</p>
+        </div>
+        <ol class="pasos" data-live data-reveal-group>
+          <li class="paso"><h3>Registro del periodo</h3><p>La administración da de alta el periodo escolar que va a evaluarse.</p></li>
+          <li class="paso"><h3>Carga de catálogos</h3><p>Carreras, materias, maestros, alumnos y grupos se importan desde archivos CSV.</p></li>
+          <li class="paso"><h3>Inscripción</h3><p>Los alumnos quedan inscritos a sus grupos, uno por uno o de forma masiva.</p></li>
+          <li class="paso"><h3>Primer acceso</h3><p>Cada persona entra con su cuenta y su rol. En el primer acceso, el sistema pide cambiar la contraseña.</p></li>
+          <li class="paso"><h3>Operación</h3><p>Los maestros configuran y capturan; los alumnos consultan conforme se cierran las unidades.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ── Seguridad ──────────────────────────────────────────────── -->
+    <section class="section seguridad" id="seguridad" aria-labelledby="t-seg">
+      <div class="wrap">
+        <div class="section-head" data-reveal-group>
+          <h2 class="h2" id="t-seg">Información académica, con acceso controlado.</h2>
+          <p class="lead">Estas son las medidas que hoy están implementadas en RCA.</p>
+        </div>
+        <ul class="medidas" data-reveal-group>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><h3>Contraseñas protegidas con bcrypt</h3><p>Nunca se guardan en texto plano, y el primer acceso pide cambiarlas.</p></li>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16.5 6.5l2.5 2.5"/></svg><h3>Sesiones que caducan</h3><p>Cada sesión usa un token firmado que expira a las 8 horas y se borra al cerrar la pestaña.</p></li>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg><h3>Permisos revisados en el servidor</h3><p>Un alumno solo consulta su propio expediente y un maestro solo modifica sus grupos.</p></li>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5.5 13.5H12L11 21l7.5-10.5H12z"/></svg><h3>Límite de intentos</h3><p>El inicio de sesión se frena tras cinco intentos fallidos en un minuto.</p></li>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.8a3.3 3.3 0 0 1 0 6.4M18.2 14.8c1.7.7 2.9 2.4 3.3 5.2"/></svg><h3>Cuentas bajo control</h3><p>La administración puede desactivar cuentas y restablecer contraseñas.</p></li>
+          <li class="medida"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h8l4.5 4.5v12.5H6z"/><path d="M13.5 3.5V8.5h5"/></svg><h3>Respaldo y trazabilidad</h3><p>Respaldo y restauración de la información, y registro de cada corrección de calificaciones finales.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── Preguntas ──────────────────────────────────────────────── -->
+    <section class="section" id="preguntas" aria-labelledby="t-faq">
+      <div class="wrap faq-grid">
+        <div class="section-side" data-reveal-group>
+          <h2 class="h2" id="t-faq">Preguntas frecuentes.</h2>
+          <p class="lead">Lo que suelen preguntar las direcciones y jefaturas antes de conocer el sistema.</p>
+        </div>
+        <div class="faq" data-reveal-group>
+          <details><summary>¿RCA funciona para cualquier escuela?</summary><p>No. RCA está hecho para las reglas de evaluación del TecNM: unidades, ponderaciones, NP, calificación aprobatoria de 70 y redondeo institucional. Si tu plantel forma parte del TecNM, RCA trabaja con las reglas que ya aplicas.</p></details>
+          <details><summary>¿Dónde se usa actualmente?</summary><p>Por ahora, en el Instituto Tecnológico de Veracruz, donde el sistema se sigue mejorando.</p></details>
+          <details><summary>¿Hay que capturar todo desde cero?</summary><p>No. Carreras, materias, unidades, maestros, alumnos, grupos, inscripciones y actividades se pueden importar desde archivos CSV.</p></details>
+          <details><summary>¿Un alumno puede ver las calificaciones de otros?</summary><p>No. Cada alumno accede solo a su propia información, y el servidor lo verifica en cada consulta.</p></details>
+          <details><summary>¿Qué pasa si hay que corregir una calificación final?</summary><p>El maestro puede modificarla, pero el sistema exige una justificación y la modificación queda registrada.</p></details>
+          <details><summary>¿Podemos sacar nuestra información del sistema?</summary><p>Sí. Los reportes se exportan a CSV y la administración puede descargar un respaldo completo de la información.</p></details>
+          <details><summary>¿Se puede usar desde el celular?</summary><p>Sí. RCA funciona en el navegador y su interfaz se adapta a pantallas pequeñas.</p></details>
+          <details><summary>¿RCA está a la venta?</summary><p>Por ahora no se comercializa. Si te interesa conocerlo para tu plantel, escríbenos y lo conversamos.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Contacto ───────────────────────────────────────────────── -->
+    <section class="section contraste" id="contacto" aria-labelledby="t-contacto">
+      <div class="wrap contacto-grid">
+        <div class="contacto-copy" data-reveal-group>
+          <h2 class="h2" id="t-contacto">¿Tu plantel evalúa con las reglas del TecNM? Conversemos.</h2>
+          <p class="lead">Cuéntanos sobre tu plantel y te mostramos RCA con calma, con tus propios casos de evaluación.</p>
+          <div class="correo">
+            <a href="mailto:alvqrez.dev@gmail.com">alvqrez.dev@gmail.com</a>
+            <button class="chip-btn" type="button" data-copiar>Copiar correo</button>
+          </div>
+          <p class="firma">Leonardo Alvarez Díaz recibe y responde las solicitudes.</p>
+          <ul class="checks agenda" aria-label="En la conversación revisamos">
+            <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Cómo evalúa hoy tu plantel y qué reglas aplica.</li>
+            <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Un recorrido por RCA con las vistas de alumno, maestro y administración.</li>
+            <li><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Si RCA se ajusta a la forma en que trabaja tu plantel.</li>
+          </ul>
+        </div>
+        <form class="form bezel" data-contacto data-reveal novalidate>
+          <div class="bezel-core">
+            <div class="field"><label for="f-nombre">Nombre</label><input id="f-nombre" name="nombre" autocomplete="name" maxlength="100" required aria-describedby="e-nombre"><p class="field-error" id="e-nombre" aria-live="polite"></p></div>
+            <div class="field"><label for="f-cargo">Cargo</label><input id="f-cargo" name="cargo" autocomplete="organization-title" maxlength="100" required aria-describedby="e-cargo"><p class="field-error" id="e-cargo" aria-live="polite"></p></div>
+            <div class="field full"><label for="f-inst">Institución o plantel</label><input id="f-inst" name="institucion" autocomplete="organization" maxlength="150" required aria-describedby="e-inst"><p class="field-error" id="e-inst" aria-live="polite"></p></div>
+            <div class="field full"><label for="f-correo">Correo institucional</label><input id="f-correo" name="correo" type="email" autocomplete="email" maxlength="120" required aria-describedby="e-correo"><p class="field-error" id="e-correo" aria-live="polite"></p></div>
+            <div class="field full"><label for="f-msg">Mensaje <span>(opcional)</span></label><textarea id="f-msg" name="mensaje" maxlength="1500" aria-describedby="e-msg"></textarea><p class="field-error" id="e-msg"></p></div>
+            <div class="form-foot full">
+              <p class="form-nota">Se abrirá tu aplicación de correo con el mensaje listo para enviar.</p>
+              <button class="btn" type="submit">Preparar correo<span class="btn-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span></button>
+            </div>
+            <p class="form-estado" data-estado role="status"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Pie ────────────────────────────────────────────────────── -->
+  <footer class="pie">
+    <div class="wrap">
+      <div class="pie-top">
+        <div class="pie-brand">
+          <a class="brand" href="#inicio"><img src="/landing/img/rca-icon-96.png" width="34" height="34" alt="">Sistema RCA</a>
+          <p>Sistema de Registro y Cálculo de Resultados Académicos. Hecho para las reglas de evaluación del TecNM.</p>
+        </div>
+        <nav aria-labelledby="pie-producto"><h2 id="pie-producto">Producto</h2><ul><li><a href="#simulador">Simulador</a></li><li><a href="#funciones">Funciones</a></li><li><a href="#roles">Roles</a></li><li><a href="#seguridad">Seguridad</a></li></ul></nav>
+        <nav aria-labelledby="pie-contacto"><h2 id="pie-contacto">Contacto</h2><ul><li><a href="mailto:alvqrez.dev@gmail.com">alvqrez.dev@gmail.com</a></li><li><a href="#contacto">Solicitar información</a></li></ul></nav>
+        <nav aria-labelledby="pie-acceso"><h2 id="pie-acceso">Acceso</h2><ul><li><a href="/login">Iniciar sesión</a></li></ul></nav>
+        <nav aria-labelledby="pie-legal"><h2 id="pie-legal">Legal</h2><ul><li><a href="/landing/legal/privacidad.html">Aviso de privacidad</a></li><li><a href="/landing/legal/terminos.html">Términos y condiciones</a></li></ul></nav>
+      </div>
+      <p class="pie-marca" aria-hidden="true">RCA</p>
+      <div class="pie-legal">
+        <span>© 2026 Sistema RCA</span>
+        <span>Sistema RCA no es un producto oficial del Tecnológico Nacional de México.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

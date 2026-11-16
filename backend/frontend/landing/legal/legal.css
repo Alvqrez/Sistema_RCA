@@ -1,0 +1,9 @@
+/* legal.css — Páginas legales provisionales; los colores vienen de tokens.css */
+.legal{max-width:760px;padding-block:72px;display:flex;flex-direction:column;gap:20px}
+.legal img{border-radius:50%}
+.legal h1{font-size:clamp(2rem,4vw,2.75rem);letter-spacing:-.03em;line-height:1.1}
+.legal h2{font-size:1.25rem;margin-top:12px}
+.legal ul{color:var(--muted);display:flex;flex-direction:column;gap:8px;padding-left:20px}
+.aviso{background:#fff4d6;color:#5c3d00;border-radius:12px;padding:16px 20px}
+.volver{color:var(--accent);font-weight:600;min-height:44px;display:inline-flex;align-items:center}
+.contacto{color:var(--muted)}.contacto a{color:var(--accent)}

@@ -1,0 +1,42 @@
+/*
+ * tokens.css — Sistema de diseño de la landing de Sistema RCA.
+ * Colores tomados de la app (backend/frontend/css/styles.css, paleta TecNM):
+ * --accent = --primary (#1a386a), --accent-night = --primary-hover (#00043e),
+ * --accent-soft = --primary-light (#dde5f4), --ink = --text-main (#0d1b35).
+ * Todo el resto de la hoja usa solo estos tokens.
+ */
+:root {
+  /* Color */
+  --ground: #f3f5f9;
+  --surface: #ffffff;
+  --tint: #e9eef6;
+  --ink: #0d1b35;
+  --muted: #4a5a75;
+  --accent: #1a386a;
+  --accent-deep: #0f2248;
+  --accent-night: #00043e;
+  --accent-soft: #dde5f4;
+  --on-accent: #ffffff;
+  --on-accent-muted: #b9c8e2;
+  --ok: #047857;
+  --danger: #b42318;
+  --focus: #1a386a;
+
+  /* Tipografía */
+  --font-text: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-text);
+
+  /* Espacio y forma */
+  --gutter: clamp(16px, 4vw, 48px);
+  --maxw: 1320px;
+  --section: clamp(96px, 12vw, 176px);
+  --r-xl: 32px;
+  --r-lg: 24px;
+
+  /* Profundidad: solo para lo que flota */
+  --shadow-soft: 0 40px 80px -40px rgba(13, 27, 53, 0.28), 0 12px 24px -16px rgba(13, 27, 53, 0.12);
+
+  /* Movimiento */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}

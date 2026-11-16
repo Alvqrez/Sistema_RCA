@@ -315,18 +315,25 @@ app.get("/api/info-publica", (req, res) => {
   );
 });
 
-// ── CAPTURA DE LA PÁGINA PRINCIPAL (LOGIN) ──────────────────────
+// ── PÁGINA PRINCIPAL: LANDING PÚBLICA ──────────────────────────
+// La landing vive en frontend/landing/ y no consulta la base de datos.
 app.get("/", (req, res, next) => {
   // Usamos el callback de res.sendFile para capturar el error exacto si no encuentra el archivo
   res.sendFile(
-    path.join(__dirname, "frontend", "shared", "pages", "login.html"),
+    path.join(__dirname, "frontend", "landing", "index.html"),
     (err) => {
       if (err) {
-        console.error("❌ Error al enviar login.html:", err.message);
+        console.error("❌ Error al enviar landing/index.html:", err.message);
         next(err); // Esto lo pasa al Error Handler para que no se quede colgado
       }
     },
   );
+});
+
+// ── ACCESO AL SISTEMA ──────────────────────────────────────────
+// Alias corto para el login; la ruta original sigue funcionando igual.
+app.get("/login", (req, res) => {
+  res.redirect(302, "/shared/pages/login.html");
 });
 
 // ── ERROR HANDLER ──────────────────────────────────────────────

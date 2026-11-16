@@ -44,3 +44,5 @@ backend/.env
 
 # Archivos de sistema
 *.swp
+# Prototipos de la landing: se conservan solo en local, no se suben
+prototipos/
