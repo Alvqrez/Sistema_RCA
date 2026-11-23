@@ -279,7 +279,8 @@ function eliminarGrupo(id) {
 function toastGrupo(msg, tipo = "success") {
   const c = document.getElementById("toast-container");
   if (!c) {
-    alert(msg);
+    if (typeof showToast === "function") showToast(msg, tipo);
+    else alert(msg);
     return;
   }
   const t = document.createElement("div");

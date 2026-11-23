@@ -1,799 +1,192 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
-    <title>Iniciar Sesión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iniciar sesión · Sistema RCA</title>
+    <link rel="icon" type="image/png" href="../../assets/images/icons/favicon-32.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="icon"
-      type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
     />
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="stylesheet" href="../css/rca.css" />
     <script>
-      Promise.all([
-        fetch("/shared/icons/mdi.json").then((r) => r.json()),
-        fetch("/shared/icons/lucide.json").then((r) => r.json()),
-      ])
-        .then(([mdi, lucide]) => {
-          Iconify.addCollection(mdi);
-          Iconify.addCollection(lucide);
-        })
-        .catch((err) => console.error("Error cargando íconos locales:", err));
+      // Mismo tema que el resto de la app (clave «tema» que guarda sidebar.js)
+      try {
+        if (localStorage.getItem("tema") === "oscuro")
+          document.documentElement.classList.add("dark-mode");
+      } catch (e) {}
     </script>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      :root {
-        --cyan: #1a386a;
-        --cyan-dark: #00043e;
-        --navy: #00043e;
-        --navy-mid: #0f2248;
-        --navy-lt: #1a386a;
-        --gold: #f5a623;
-        --white: #ffffff;
-        --gray-100: #f1f5f9;
-        --gray-300: #cbd5e1;
-        --gray-500: #64748b;
-        --gray-700: #334155;
-        --radius: 12px;
-        --shadow: 0 20px 60px rgba(0, 4, 62, 0.45);
-      }
-      body {
-        font-family: "Inter", sans-serif;
-        background:
-          repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 40px,
-            rgba(255, 255, 255, 0.015) 40px,
-            rgba(255, 255, 255, 0.015) 41px
-          ),
-          repeating-linear-gradient(
-            -45deg,
-            transparent,
-            transparent 40px,
-            rgba(255, 255, 255, 0.015) 40px,
-            rgba(255, 255, 255, 0.015) 41px
-          ),
-          linear-gradient(
-            135deg,
-            #00043e 0%,
-            #0d1e50 35%,
-            #1a386a 70%,
-            #1b396a 100%
-          );
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        overflow: hidden;
-        position: relative;
-      }
-      body::before {
-        content: "";
-        position: absolute;
-        width: 500px;
-        height: 500px;
-        border-radius: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(255, 255, 255, 0.05) 0%,
-          transparent 70%
-        );
-        top: -180px;
-        right: -100px;
-        pointer-events: none;
-      }
-      body::after {
-        content: "";
-        position: absolute;
-        width: 400px;
-        height: 400px;
-        border-radius: 50%;
-        background: radial-gradient(
-          circle,
-          rgba(0, 4, 62, 0.5) 0%,
-          transparent 70%
-        );
-        bottom: -150px;
-        left: -100px;
-        pointer-events: none;
-      }
-      .login-wrapper {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
-        max-width: 900px;
-        min-height: 560px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: var(--shadow);
-        position: relative;
-        z-index: 1;
-      }
-      .panel-left {
-        background: linear-gradient(
-          145deg,
-          var(--navy-mid) 0%,
-          var(--navy-lt) 100%
-        );
-        padding: 48px 40px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        position: relative;
-        overflow: hidden;
-      }
-      .bubbles {
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .bubble {
-        position: absolute;
-        bottom: -80px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-        animation: rise linear infinite;
-      }
-      @keyframes rise {
-        0% {
-          transform: translateY(0) scale(1);
-          opacity: 0;
-        }
-        10% {
-          opacity: 1;
-        }
-        90% {
-          opacity: 0.6;
-        }
-        100% {
-          transform: translateY(-110vh) scale(1.1);
-          opacity: 0;
-        }
-      }
-      .bubble:nth-child(1) {
-        width: 28px;
-        height: 28px;
-        left: 8%;
-        animation-duration: 9s;
-        animation-delay: 0s;
-      }
-      .bubble:nth-child(2) {
-        width: 18px;
-        height: 18px;
-        left: 22%;
-        animation-duration: 12s;
-        animation-delay: 2s;
-      }
-      .bubble:nth-child(3) {
-        width: 40px;
-        height: 40px;
-        left: 38%;
-        animation-duration: 10s;
-        animation-delay: 1s;
-      }
-      .bubble:nth-child(4) {
-        width: 14px;
-        height: 14px;
-        left: 55%;
-        animation-duration: 8s;
-        animation-delay: 4s;
-      }
-      .bubble:nth-child(5) {
-        width: 32px;
-        height: 32px;
-        left: 70%;
-        animation-duration: 11s;
-        animation-delay: 0.5s;
-      }
-      .bubble:nth-child(6) {
-        width: 22px;
-        height: 22px;
-        left: 15%;
-        animation-duration: 13s;
-        animation-delay: 6s;
-      }
-      .bubble:nth-child(7) {
-        width: 50px;
-        height: 50px;
-        left: 45%;
-        animation-duration: 14s;
-        animation-delay: 3s;
-      }
-      .bubble:nth-child(8) {
-        width: 16px;
-        height: 16px;
-        left: 80%;
-        animation-duration: 9s;
-        animation-delay: 7s;
-      }
-      .bubble:nth-child(9) {
-        width: 36px;
-        height: 36px;
-        left: 28%;
-        animation-duration: 10s;
-        animation-delay: 5s;
-      }
-      .bubble:nth-child(10) {
-        width: 20px;
-        height: 20px;
-        left: 62%;
-        animation-duration: 12s;
-        animation-delay: 1.5s;
-      }
-      .inst-logo {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        position: relative;
-        z-index: 1;
-      }
-      .inst-icon {
-        position: relative;
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-      }
-      .inst-icon img {
-        width: 85%;
-        height: 85%;
-        object-fit: contain;
-      }
-      .inst-icon::after {
-        content: "";
-        position: absolute;
-        width: 120%;
-        height: 120%;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(
-          circle,
-          rgba(255, 255, 255, 0.8) 0%,
-          rgba(255, 255, 255, 0.4) 40%,
-          rgba(255, 255, 255, 0) 70%
-        );
-        filter: blur(12px);
-        z-index: -1;
-      }
-      .inst-text .inst-name {
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--gray-300);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        line-height: 1.2;
-      }
-      .inst-text .inst-short {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--white);
-        letter-spacing: 0.02em;
-      }
-      .panel-left-main {
-        position: relative;
-        z-index: 1;
-      }
-      .rca-title {
-        font-size: 3.8rem;
-        font-weight: 800;
-        color: var(--white);
-        letter-spacing: -0.03em;
-        line-height: 1;
-        margin-bottom: 12px;
-      }
-      .rca-title span {
-        color: rgba(255, 255, 255, 0.55);
-      }
-      .rca-subtitle {
-        font-size: 0.92rem;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.6;
-        max-width: 280px;
-      }
-      .stats-panel {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        position: relative;
-        z-index: 1;
-      }
-      .stat-box {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 10px;
-        padding: 10px 12px;
-        text-align: center;
-      }
-      .stat-box-num {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #fff;
-        line-height: 1;
-        margin-bottom: 3px;
-      }
-      .stat-box-label {
-        font-size: 0.68rem;
-        color: rgba(255, 255, 255, 0.55);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-      .periodo-badge {
-        margin-top: 10px;
-        text-align: center;
-        position: relative;
-        z-index: 1;
-        font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.35);
-      }
-      .panel-right {
-        background: var(--white);
-        padding: 48px 44px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-      .form-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--navy);
-        margin-bottom: 6px;
-      }
-      .form-subtitle {
-        font-size: 0.85rem;
-        color: var(--gray-500);
-        margin-bottom: 28px;
-      }
-      .rol-selector {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 24px;
-      }
-      .rol-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-        padding: 10px 6px;
-        border-radius: 10px;
-        border: 2px solid var(--gray-300);
-        background: transparent;
-        cursor: pointer;
-        transition: all 0.2s;
-        color: var(--gray-500);
-        font-family: "Inter", sans-serif;
-        font-size: 0.72rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-      .rol-btn iconify-icon {
-        font-size: 1.3rem;
-      }
-      .rol-btn:hover {
-        border-color: var(--navy-lt);
-        color: var(--navy);
-        background: var(--gray-100);
-      }
-      .rol-btn.active {
-        border-color: var(--cyan);
-        color: var(--cyan);
-        background: rgba(26, 56, 106, 0.07);
-      }
-      .input-field {
-        margin-bottom: 16px;
-        position: relative;
-      }
-      .input-field label {
-        display: block;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: var(--gray-700);
-        margin-bottom: 6px;
-        letter-spacing: 0.03em;
-      }
-      .input-wrap {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-      .input-icon {
-        position: absolute;
-        left: 14px;
-        color: var(--gray-500);
-        font-size: 1rem;
-        pointer-events: none;
-        display: flex;
-      }
-      .input-field input {
-        width: 100%;
-        padding: 12px 14px 12px 40px;
-        border: 2px solid var(--gray-300);
-        border-radius: 10px;
-        font-family: "Inter", sans-serif;
-        font-size: 0.9rem;
-        color: var(--navy);
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s;
-        outline: none;
-        background: var(--gray-100);
-      }
-      .input-field input:focus {
-        border-color: var(--cyan);
-        background: var(--white);
-        box-shadow: 0 0 0 3px rgba(26, 56, 106, 0.12);
-      }
-      .btn-toggle-pass {
-        position: absolute;
-        right: 12px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--gray-500);
-        font-size: 1rem;
-        padding: 4px;
-        border-radius: 6px;
-        display: flex;
-        transition: color 0.2s;
-      }
-      .btn-toggle-pass:hover {
-        color: var(--navy);
-      }
-      .btn-submit {
-        width: 100%;
-        padding: 13px;
-        background: linear-gradient(
-          135deg,
-          var(--cyan) 0%,
-          var(--cyan-dark) 100%
-        );
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-family: "Inter", sans-serif;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-top: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        letter-spacing: 0.02em;
-      }
-      .btn-submit:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 24px rgba(26, 56, 106, 0.45);
-      }
-      .btn-submit:active {
-        transform: translateY(0);
-      }
-      .btn-submit.loading {
-        opacity: 0.7;
-        pointer-events: none;
-      }
-      .error-msg {
-        margin-top: 12px;
-        padding: 10px 14px;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        color: #dc2626;
-        font-size: 0.82rem;
-        font-weight: 500;
-        display: none;
-        align-items: center;
-        gap: 8px;
-      }
-      .error-msg.visible {
-        display: flex;
-      }
-      .form-footer {
-        margin-top: 24px;
-        text-align: center;
-        font-size: 0.75rem;
-        color: var(--gray-500);
-      }
-
-      /* ── A-3: Modal de cambio de contraseña ────────────────────────────── */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 4, 62, 0.55);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s;
-      }
-      .modal-overlay.visible {
-        opacity: 1;
-        pointer-events: all;
-      }
-      .modal-box {
-        background: white;
-        border-radius: 16px;
-        padding: 36px 32px;
-        width: 100%;
-        max-width: 420px;
-        box-shadow: 0 24px 60px rgba(0, 4, 62, 0.35);
-        transform: translateY(20px);
-        transition: transform 0.25s;
-      }
-      .modal-overlay.visible .modal-box {
-        transform: translateY(0);
-      }
-      .modal-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--navy);
-        margin-bottom: 6px;
-      }
-      .modal-subtitle {
-        font-size: 0.83rem;
-        color: var(--gray-500);
-        margin-bottom: 22px;
-        line-height: 1.5;
-      }
-      .modal-error {
-        padding: 9px 13px;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        color: #dc2626;
-        font-size: 0.8rem;
-        margin-bottom: 12px;
-        display: none;
-      }
-      .modal-error.visible {
-        display: block;
-      }
-
-      @media (max-width: 680px) {
-        .login-wrapper {
-          grid-template-columns: 1fr;
-          max-width: 420px;
-        }
-        .panel-left {
-          display: none;
-        }
-        .panel-right {
-          padding: 36px 28px;
-        }
-      }
-    </style>
   </head>
   <body>
-    <div class="login-wrapper">
-      <!-- Panel izquierdo -->
-      <div class="panel-left">
-        <div class="bubbles">
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-          <div class="bubble"></div>
-        </div>
-        <div class="inst-logo">
-          <div class="inst-icon">
-            <img
-              src="../../assets/images/icons/logo-itv.png"
-              alt="Instituto Tecnológico de Veracruz"
-            />
+    <div class="login" id="login">
+      <!-- Formulario -->
+      <main class="login-main">
+        <div class="login-card">
+          <div class="login-marca" data-anim style="--i: 0">
+            <img src="../../assets/images/icons/rca-icon-96.png" width="40" height="40" alt="" />
+            <span>
+              <b>Sistema RCA</b>
+              <small>Registro y Cálculo de Resultados Académicos</small>
+            </span>
           </div>
-          <div class="inst-text">
-            <div class="inst-name">Instituto Tecnológico de Veracruz</div>
-            <div class="inst-short">TecNM · ITV</div>
+
+          <span class="eyebrow" data-anim style="--i: 1">
+            <img src="../../assets/images/icons/escudo-itv.png" width="22" height="20" alt="" />
+            Instituto Tecnológico de Veracruz
+          </span>
+
+          <div data-anim style="--i: 2">
+            <h1 class="login-titulo">Entra a tu cuenta</h1>
           </div>
-        </div>
-        <div class="panel-left-main">
-          <div class="rca-title">R<span>C</span>A</div>
-          <p class="rca-subtitle">
-            Sistema de Registro y Cálculo de Resultados Académicos
+          <p class="login-sub" data-anim style="--i: 2">Elige tu tipo de cuenta e inicia sesión.</p>
+
+          <div class="segmento segmento-block" role="radiogroup" aria-label="Tipo de cuenta" data-anim style="--i: 3">
+            <button type="button" class="segmento-op rol-btn active" role="radio" aria-checked="true" data-rol="alumno">Alumno</button>
+            <button type="button" class="segmento-op rol-btn" role="radio" aria-checked="false" data-rol="maestro">Docente</button>
+            <button type="button" class="segmento-op rol-btn" role="radio" aria-checked="false" data-rol="administrador">Administración</button>
+          </div>
+
+          <form id="loginForm" class="login-form" novalidate data-anim style="--i: 4">
+            <input type="hidden" id="rolActual" value="alumno" />
+            <div class="campo">
+              <label for="user">Usuario</label>
+              <div class="campo-input campo-lg">
+                <i data-ico="persona"></i>
+                <input
+                  type="text"
+                  id="user"
+                  autocomplete="username"
+                  placeholder="Ingresa tu usuario"
+                  aria-describedby="ayudaUsuario"
+                  required
+                />
+              </div>
+              <span class="campo-ayuda" id="ayudaUsuario">Tu número de control.</span>
+            </div>
+            <div class="campo">
+              <label for="pass">Contraseña</label>
+              <div class="campo-input campo-lg">
+                <i data-ico="candado"></i>
+                <input
+                  type="password"
+                  id="pass"
+                  autocomplete="current-password"
+                  placeholder="Tu contraseña"
+                  required
+                />
+                <button type="button" class="icon-btn" id="btnTogglePass" aria-label="Mostrar contraseña">
+                  <i data-ico="ojo" id="iconPass"></i>
+                </button>
+              </div>
+            </div>
+            <div class="alerta alerta-error error-msg" id="errorMsg" role="alert">
+              <i data-ico="alerta"></i>
+              <div><span id="errorTexto"></span></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block btn-submit" id="btnSubmit">
+              <span>Iniciar sesión</span><span class="btn-ico"><i data-ico="entrar"></i></span>
+            </button>
+          </form>
+
+          <p class="login-ayuda" data-anim style="--i: 5">
+            ¿Olvidaste tu contraseña? La administración de tu plantel puede restablecerla.
           </p>
-        </div>
-        <div>
-          <div class="stats-panel">
-            <div class="stat-box">
-              <div class="stat-box-num" id="statAlumnos">—</div>
-              <div class="stat-box-label">Alumnos</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-box-num" id="statMaestros">—</div>
-              <div class="stat-box-label">Maestros</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-box-num" id="statGrupos">—</div>
-              <div class="stat-box-label">Grupos</div>
-            </div>
+          <div class="login-pie" data-anim style="--i: 5">
+            <a href="/"><i data-ico="deshacer"></i>Volver al sitio</a>
+            <span>Versión 1.0.4</span>
           </div>
-          <div class="periodo-badge" id="periodoLabel"></div>
         </div>
-      </div>
+      </main>
 
-      <!-- Panel derecho — formulario -->
-      <div class="panel-right">
-        <div class="form-title">¡Bienvenido!</div>
-        <div class="form-subtitle">
-          Selecciona tu tipo de cuenta e inicia sesión
-        </div>
-
-        <div class="rol-selector">
-          <button
-            class="rol-btn active"
-            data-rol="alumno"
-            onclick="seleccionarRol(this)"
-          >
-            <iconify-icon icon="mdi:account-school"></iconify-icon>Alumno
-          </button>
-          <button
-            class="rol-btn"
-            data-rol="maestro"
-            onclick="seleccionarRol(this)"
-          >
-            <iconify-icon icon="lucide:graduation-cap"></iconify-icon>Docente
-          </button>
-          <button
-            class="rol-btn"
-            data-rol="administrador"
-            onclick="seleccionarRol(this)"
-          >
-            <iconify-icon icon="mdi:shield-account"></iconify-icon>Admin
-          </button>
-        </div>
-
-        <form id="loginForm" onsubmit="iniciarSesion(event)">
-          <input type="hidden" id="rolActual" value="alumno" />
-          <div class="input-field">
-            <label>Usuario</label>
-            <div class="input-wrap">
-              <span class="input-icon"
-                ><iconify-icon icon="mdi:account-outline"></iconify-icon
-              ></span>
-              <input
-                type="text"
-                id="user"
-                autocomplete="username"
-                placeholder="Ingresa tu usuario"
-                required
-              />
+      <!-- Panel institucional: cifras reales de /api/info-publica -->
+      <aside class="login-aside" aria-label="Sistema RCA en el Instituto Tecnológico de Veracruz">
+        <div class="login-aside-in" data-anim style="--i: 2">
+          <div class="bezel">
+            <div class="bezel-core">
+              <span class="eyebrow eyebrow-noche">
+                <img src="../../assets/images/icons/escudo-itv.png" width="22" height="20" alt="" />
+                TecNM · Instituto Tecnológico de Veracruz
+              </span>
+              <div>
+                <p class="login-lema">Calificaciones calculadas con las reglas del TecNM.</p>
+                <p class="login-reglas">
+                  Ponderación por actividad, NP como cero, aprobatoria de 70 y redondeo institucional al cerrar la materia.
+                </p>
+              </div>
+              <dl class="login-cifras">
+                <div><dt>Alumnos</dt><dd id="statAlumnos">—</dd></div>
+                <div><dt>Docentes</dt><dd id="statMaestros">—</dd></div>
+                <div><dt>Grupos activos</dt><dd id="statGrupos">—</dd></div>
+              </dl>
+              <p class="login-periodo" id="periodoLabel"></p>
             </div>
           </div>
-          <div class="input-field">
-            <label>Contraseña</label>
-            <div class="input-wrap">
-              <span class="input-icon"
-                ><iconify-icon icon="mdi:lock-outline"></iconify-icon
-              ></span>
-              <input
-                type="password"
-                id="pass"
-                autocomplete="current-password"
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button"
-                class="btn-toggle-pass"
-                onclick="togglePass()"
-                id="btnTogglePass"
-              >
-                <iconify-icon
-                  id="iconPass"
-                  icon="mdi:eye-outline"
-                ></iconify-icon>
-              </button>
+          <div class="login-chip" aria-hidden="true">
+            <span class="barra"><i style="--p: 1"></i></span>100 %
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Primer acceso: cambio de contraseña obligatorio -->
+    <div class="modal" id="modalCambioPass" role="dialog" aria-modal="true" aria-labelledby="mcpTitulo" aria-describedby="mcpTexto">
+      <div class="modal-scrim"></div>
+      <div class="modal-caja">
+        <div class="modal-head modal-head-ico">
+          <span class="modal-ico modal-ico-accent"><i data-ico="llave"></i></span>
+          <div>
+            <h2 id="mcpTitulo">Cambia tu contraseña</h2>
+            <p id="mcpTexto">
+              Es tu primer acceso al sistema. Por seguridad, establece una contraseña personal antes de continuar.
+            </p>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="alerta alerta-error modal-error" id="modalError" role="alert"></div>
+          <div class="campo">
+            <label for="passActual">Contraseña actual (temporal)</label>
+            <div class="campo-input">
+              <i data-ico="candado"></i>
+              <input type="password" id="passActual" placeholder="Tu contraseña temporal" autocomplete="current-password" />
             </div>
           </div>
-          <button type="submit" class="btn-submit" id="btnSubmit">
-            <iconify-icon icon="mdi:login"></iconify-icon>Iniciar sesión
-          </button>
-          <div class="error-msg" id="errorMsg">
-            <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
-            <span id="errorTexto"></span>
+          <div class="campo">
+            <label for="passNueva">Nueva contraseña</label>
+            <div class="campo-input">
+              <i data-ico="llave"></i>
+              <input type="password" id="passNueva" placeholder="Mínimo 8 caracteres" autocomplete="new-password" aria-describedby="ayudaNueva" />
+            </div>
+            <span class="campo-ayuda" id="ayudaNueva">Mínimo 8 caracteres.</span>
           </div>
-        </form>
-        <div class="form-footer">&nbsp; Versión 1.0.4</div>
+          <div class="campo">
+            <label for="passConfirmar">Confirmar nueva contraseña</label>
+            <div class="campo-input">
+              <i data-ico="llave"></i>
+              <input type="password" id="passConfirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button type="button" class="btn btn-primary btn-submit" id="btnCambiar">
+            <span>Guardar y continuar</span><span class="btn-ico"><i data-ico="check"></i></span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- ── A-3: Modal de cambio de contraseña en primer acceso ─────────── -->
-    <div class="modal-overlay" id="modalCambioPass">
-      <div class="modal-box">
-        <div class="modal-title">
-          <iconify-icon
-            icon="mdi:lock-reset"
-            style="
-              font-size: 1.3rem;
-              vertical-align: -3px;
-              margin-right: 6px;
-              color: var(--cyan);
-            "
-          ></iconify-icon
-          >Cambia tu contraseña
-        </div>
-        <div class="modal-subtitle">
-          Es tu primer acceso al sistema. Por seguridad debes establecer una
-          contraseña personal antes de continuar.<br />
-          <strong>Mínimo 8 caracteres.</strong>
-        </div>
-        <div class="modal-error" id="modalError"></div>
-        <div class="input-field">
-          <label>Contraseña actual (temporal)</label>
-          <div class="input-wrap">
-            <span class="input-icon"
-              ><iconify-icon icon="mdi:lock-outline"></iconify-icon
-            ></span>
-            <input
-              type="password"
-              id="passActual"
-              placeholder="Tu contraseña temporal"
-            />
-          </div>
-        </div>
-        <div class="input-field">
-          <label>Nueva contraseña</label>
-          <div class="input-wrap">
-            <span class="input-icon"
-              ><iconify-icon icon="mdi:lock-check-outline"></iconify-icon
-            ></span>
-            <input
-              type="password"
-              id="passNueva"
-              placeholder="Mínimo 8 caracteres"
-            />
-          </div>
-        </div>
-        <div class="input-field">
-          <label>Confirmar nueva contraseña</label>
-          <div class="input-wrap">
-            <span class="input-icon"
-              ><iconify-icon icon="mdi:lock-check-outline"></iconify-icon
-            ></span>
-            <input
-              type="password"
-              id="passConfirmar"
-              placeholder="Repite la nueva contraseña"
-            />
-          </div>
-        </div>
-        <button class="btn-submit" id="btnCambiar" onclick="cambiarPassword()">
-          <iconify-icon icon="mdi:shield-check"></iconify-icon>Guardar y
-          continuar
-        </button>
-      </div>
-    </div>
-
+    <script src="../js/iconos.js"></script>
     <script src="/shared/js/config.js"></script>
     <script>
+      // Contenido visual de los botones (solo presentación)
+      const ico = (n) => window.RCAIconos.icono(n);
+      const HTML_ENTRAR = `<span>Iniciar sesión</span><span class="btn-ico">${ico("entrar")}</span>`;
+      const HTML_VERIFICANDO = `<span>Verificando…</span><span class="btn-ico"><span class="spinner" aria-hidden="true"></span></span>`;
+      const HTML_GUARDAR = `<span>Guardar y continuar</span><span class="btn-ico">${ico("check")}</span>`;
+      const HTML_GUARDANDO = `<span>Guardando…</span><span class="btn-ico"><span class="spinner" aria-hidden="true"></span></span>`;
+
       // Token temporal guardado durante el flujo de primer acceso
       let _tokenTemporal = null;
       let _rolTemporal = null;
@@ -812,13 +205,11 @@
 
       function togglePass() {
         const inp = document.getElementById("pass");
-        const icon = document.getElementById("iconPass");
+        const btn = document.getElementById("btnTogglePass");
         const show = inp.type === "password";
         inp.type = show ? "text" : "password";
-        icon.setAttribute(
-          "icon",
-          show ? "mdi:eye-off-outline" : "mdi:eye-outline",
-        );
+        btn.innerHTML = ico(show ? "ojoNo" : "ojo");
+        btn.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña");
       }
 
       function mostrarError(msg) {
@@ -844,7 +235,7 @@
 
         const btn = document.getElementById("btnSubmit");
         btn.classList.add("loading");
-        btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Verificando...`;
+        btn.innerHTML = HTML_VERIFICANDO;
 
         try {
           const res = await fetch(`${API_URL}/login`, {
@@ -865,8 +256,9 @@
               document
                 .getElementById("modalCambioPass")
                 .classList.add("visible");
+              setTimeout(() => document.getElementById("passNueva").focus(), 80);
               btn.classList.remove("loading");
-              btn.innerHTML = `<iconify-icon icon="mdi:login"></iconify-icon> Iniciar sesión`;
+              btn.innerHTML = HTML_ENTRAR;
               return;
             }
 
@@ -875,14 +267,14 @@
           } else {
             mostrarError(data.message || "Usuario o contraseña incorrectos");
             btn.classList.remove("loading");
-            btn.innerHTML = `<iconify-icon icon="mdi:login"></iconify-icon> Iniciar sesión`;
+            btn.innerHTML = HTML_ENTRAR;
           }
         } catch {
           mostrarError(
             "No se pudo conectar con el servidor. Verifica que el sistema esté activo.",
           );
           btn.classList.remove("loading");
-          btn.innerHTML = `<iconify-icon icon="mdi:login"></iconify-icon> Iniciar sesión`;
+          btn.innerHTML = HTML_ENTRAR;
         }
       }
 
@@ -933,7 +325,7 @@
         }
 
         btn.classList.add("loading");
-        btn.innerHTML = `<iconify-icon icon="mdi:loading" style="animation:spin 1s linear infinite"></iconify-icon> Guardando...`;
+        btn.innerHTML = HTML_GUARDANDO;
 
         try {
           const res = await fetch(`${API_URL}/cambiar-password`, {
@@ -961,13 +353,13 @@
               data.error || "Error al cambiar la contraseña.";
             errorEl.classList.add("visible");
             btn.classList.remove("loading");
-            btn.innerHTML = `<iconify-icon icon="mdi:shield-check"></iconify-icon> Guardar y continuar`;
+            btn.innerHTML = HTML_GUARDAR;
           }
         } catch {
           errorEl.textContent = "No se pudo conectar con el servidor.";
           errorEl.classList.add("visible");
           btn.classList.remove("loading");
-          btn.innerHTML = `<iconify-icon icon="mdi:shield-check"></iconify-icon> Guardar y continuar`;
+          btn.innerHTML = HTML_GUARDAR;
         }
       }
 
@@ -981,7 +373,32 @@
           }
         });
 
-      // Cargar stats del panel izquierdo
+      // Eventos (en lugar de onclick/onsubmit en el HTML, que la CSP bloquea)
+      document.querySelectorAll(".rol-btn").forEach((b) =>
+        b.addEventListener("click", () => seleccionarRol(b)),
+      );
+      document.getElementById("loginForm").addEventListener("submit", iniciarSesion);
+      document.getElementById("btnTogglePass").addEventListener("click", togglePass);
+      document.getElementById("btnCambiar").addEventListener("click", cambiarPassword);
+
+      // Presentación del selector de rol: estado accesible y ayuda del campo usuario
+      const AYUDA_USUARIO = {
+        alumno: "Tu número de control.",
+        maestro: "Tu RFC.",
+        administrador: "El usuario que te asignó el sistema.",
+      };
+      document.querySelectorAll(".rol-btn").forEach((b) =>
+        b.addEventListener("click", () => {
+          document.querySelectorAll(".rol-btn").forEach((x) =>
+            x.setAttribute("aria-checked", String(x === b)),
+          );
+          document.getElementById("ayudaUsuario").textContent =
+            AYUDA_USUARIO[b.dataset.rol] || "";
+          document.getElementById("user").focus();
+        }),
+      );
+
+      // Cargar stats del panel institucional
       (async function cargarStats() {
         try {
           const res = await fetch(`${API_URL}/api/info-publica`);
@@ -1006,9 +423,6 @@
         }
       })();
 
-      const style = document.createElement("style");
-      style.textContent = `@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`;
-      document.head.appendChild(style);
     </script>
   </body>
 </html>

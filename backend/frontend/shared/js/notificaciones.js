@@ -119,7 +119,7 @@
                  transition:background 0.12s"
           onmouseover="this.style.background='var(--bg-app)'"
           onmouseout="this.style.background='none'"
-          aria-label="Descartar notificación">✕</button>
+          aria-label="Descartar notificación"><iconify-icon icon="lucide:x"></iconify-icon></button>
       </div>`;
   }
 

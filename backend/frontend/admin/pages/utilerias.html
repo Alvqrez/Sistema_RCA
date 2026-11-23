@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Utilerías — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/favicon-32.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       .util-grid {
         display: grid;
@@ -187,6 +187,7 @@
         }
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -260,7 +261,7 @@
               />
             </div>
             <p class="msg-ok" id="perfilOk">
-              ✓ Contraseña actualizada correctamente
+              Contraseña actualizada correctamente
             </p>
             <p class="msg-err" id="perfilErr"></p>
             <button
@@ -410,7 +411,7 @@
               y descargar respaldo
             </button>
             <p class="msg-ok" id="backupOk">
-              ✓ Respaldo generado correctamente
+              Respaldo generado correctamente
             </p>
             <p class="msg-err" id="backupErr"></p>
             <p
@@ -500,7 +501,7 @@
               respaldo
             </button>
             <p class="msg-ok" id="restoreOk">
-              ✓ Respaldo importado correctamente
+              Respaldo importado correctamente
             </p>
             <p class="msg-err" id="restoreErr"></p>
           </div>
@@ -682,7 +683,7 @@
       <div class="modal-panel" style="max-width: 480px">
         <div class="modal-header">
           <h2 id="modalAdminTitulo" class="modal-title">Nuevo administrador</h2>
-          <button class="modal-close" onclick="cerrarModalAdmin()">✕</button>
+          <button class="modal-close" onclick="cerrarModalAdmin()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <!-- Datos oficiales -->
@@ -846,9 +847,7 @@
                 .getElementById('modalElimAdmin')
                 .classList.remove('visible')
             "
-          >
-            ✕
-          </button>
+          ><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p style="margin: 0">
@@ -1234,13 +1233,13 @@
             const d = parsed.datos;
             const sumEl = document.getElementById("restoreSummary");
             const lineas = [
-              `📅 Fecha del respaldo: <strong>${new Date(parsed.fecha_backup).toLocaleString("es-MX")}</strong>`,
-              `👤 Alumnos: <strong>${(d.alumnos || []).length}</strong>`,
-              `🧑‍🏫 Maestros: <strong>${(d.maestros || []).length}</strong>`,
-              `📚 Materias: <strong>${(d.materias || []).length}</strong>`,
-              `🏫 Grupos: <strong>${(d.grupos || []).length}</strong>`,
-              `📋 Inscripciones: <strong>${(d.inscripciones || []).length}</strong>`,
-              `📊 Calificaciones (unidad): <strong>${(d.calificaciones_unidad || []).length}</strong>`,
+              `Fecha del respaldo: <strong>${new Date(parsed.fecha_backup).toLocaleString("es-MX")}</strong>`,
+              `Alumnos: <strong>${(d.alumnos || []).length}</strong>`,
+              `Maestros: <strong>${(d.maestros || []).length}</strong>`,
+              `Materias: <strong>${(d.materias || []).length}</strong>`,
+              `Grupos: <strong>${(d.grupos || []).length}</strong>`,
+              `Inscripciones: <strong>${(d.inscripciones || []).length}</strong>`,
+              `Calificaciones (unidad): <strong>${(d.calificaciones_unidad || []).length}</strong>`,
             ];
             sumEl.innerHTML = lineas.join("<br/>");
             sumEl.style.display = "block";
@@ -1316,7 +1315,7 @@
               `${k}: <strong>${v.insertadas}</strong> nuevos, ${v.omitidas} omitidos`,
           );
           sumEl.innerHTML = `
-            <strong style="color:var(--success,#16a34a)">✓ Importación completada</strong><br/>
+            <strong style="color:var(--success,#16a34a)">Importación completada</strong><br/>
             Total nuevos registros: <strong>${total}</strong> | Omitidos (ya existían): ${omitidas}<br/><br/>
             ${lineas.join("<br/>")}
           `;

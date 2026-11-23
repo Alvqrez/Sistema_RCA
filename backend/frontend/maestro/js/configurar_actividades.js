@@ -113,7 +113,7 @@ async function cargarTiposActividad() {
 }
 
 // ─── Modal de confirmación ─────────────────────────────────────────────────
-function mostrarConfirm({ icono = "⚠️", titulo, mensaje, labelOk = "Confirmar", colorOk = "var(--danger)" } = {}) {
+function mostrarConfirm({ icono = "lucide:alert-triangle", titulo, mensaje, labelOk = "Confirmar", colorOk = "var(--danger)" } = {}) {
   return new Promise((resolve) => {
     const modal   = document.getElementById("modalConfirm");
     const title   = document.getElementById("confirmTitle");
@@ -122,7 +122,7 @@ function mostrarConfirm({ icono = "⚠️", titulo, mensaje, labelOk = "Confirma
     const btnOk   = document.getElementById("confirmOk");
     const btnCan  = document.getElementById("confirmCancel");
 
-    icon.textContent    = icono;
+    icon.innerHTML      = '<iconify-icon icon="' + icono + '"></iconify-icon>';
     title.textContent   = titulo;
     msg.textContent     = mensaje;
     btnOk.textContent   = labelOk;
@@ -476,8 +476,8 @@ function renderCuerpoUnidad(idGrupo, idUnidad, acts, total, guardada) {
           disponible > 0
             ? `Disponible: ${disponible.toFixed(0)}%`
             : total > 100
-              ? "⚠️ Excede 100%"
-              : '<span style="color:var(--success,#16a34a)">✓ Completo</span>'
+              ? "Excede 100%"
+              : '<span style="color:var(--success,#16a34a)">Completo</span>'
         }
       </span>
     </div>
@@ -775,7 +775,7 @@ async function confirmarAgregar() {
     const restante = 100 - (totalActual + pct);
     toast(
       restante <= 0
-        ? "✓ ¡100%! Ya puedes guardar la unidad."
+        ? "¡100%! Ya puedes guardar la unidad."
         : `Actividad agregada. Disponible: ${restante.toFixed(0)}%`,
       "success",
     );
@@ -791,7 +791,7 @@ async function eliminarActividad(idGrupo, idUnidad, idActividad) {
   if (!act) return;
   const nombreAct = act.nombre_tipo || "esta actividad";
   const ok1 = await mostrarConfirm({
-    icono: "🗑️",
+    icono: "lucide:trash-2",
     titulo: `Eliminar actividad`,
     mensaje: `¿Estás seguro de que deseas eliminar "${nombreAct}"? Esta acción no se puede deshacer.`,
     labelOk: "Eliminar",
@@ -828,7 +828,7 @@ async function guardarUnidad(idGrupo, idUnidad) {
     return;
   }
   const ok = await mostrarConfirm({
-    icono: "🔒",
+    icono: "lucide:lock",
     titulo: "¿Guardar y bloquear esta unidad?",
     mensaje: "Una vez guardada, ya no podrás agregar, eliminar ni modificar actividades. Esta acción no se puede deshacer desde aquí.",
     labelOk: "Guardar y bloquear",
@@ -859,7 +859,7 @@ async function guardarUnidad(idGrupo, idUnidad) {
     actualizarBadge(idGrupo, idUnidad);
     actualizarFooterGrupo(idGrupo);
     recalcularStats();
-    toast("✓ Unidad guardada y bloqueada.", "success");
+    toast("Unidad guardada y bloqueada.", "success");
   } catch {
     toast("Error de conexión", "error");
   }
@@ -873,17 +873,15 @@ async function guardarConfiguracion(idGrupo) {
   );
 
   if (sinGuardar.length > 0) {
-    alert(
-      "Aún hay unidades sin guardar:\n\n" +
-        sinGuardar
-          .map((u, i) => `• Unidad ${i + 1}: ${u.nombre_unidad}`)
-          .join("\n") +
-        "\n\nGuarda cada unidad antes de continuar.",
-    );
+    const textoPendientes =
+      "Aún hay unidades sin guardar: " +
+      sinGuardar.map((u, i) => `Unidad ${i + 1} (${u.nombre_unidad})`).join(", ") + ". Guarda cada unidad antes de continuar.";
+    if (typeof showToast === "function") showToast(textoPendientes, "error");
+    else alert(textoPendientes);
     return;
   }
   const okGrupo = await mostrarConfirm({
-    icono: "✅",
+    icono: "lucide:check-circle",
     titulo: "¿Marcar grupo como configurado?",
     mensaje: "Todas las unidades están guardadas. Esto indica que el grupo está listo para registrar calificaciones.",
     labelOk: "Confirmar",
@@ -904,7 +902,7 @@ async function guardarConfiguracion(idGrupo) {
     nombreEl.appendChild(badge);
   }
   recalcularStats();
-  toast("✓ Configuración del grupo guardada.", "success");
+  toast("Configuración del grupo guardada.", "success");
 }
 
 // ─── Footer del grupo ──────────────────────────────────────────────────────
@@ -965,8 +963,8 @@ function badgeInfo(total, guardada = false) {
     };
   const r = Math.round(total);
   if (r === 100)
-    return { cls: "completa", label: "✓ 100% — Listo para guardar" };
-  if (r > 100) return { cls: "excedida", label: `⚠ ${r}%` };
+    return { cls: "completa", label: "100% — Listo para guardar" };
+  if (r > 100) return { cls: "excedida", label: `${r}%` };
   return { cls: "pendiente", label: `${r}% / 100%` };
 }
 
@@ -1055,7 +1053,7 @@ async function renderResumenActividades(grupos) {
         <div style="height:100%;width:${Math.min(pct, 100)}%;background:${color};border-radius:99px;transition:width .4s"></div>
       </div>
       <div style="font-size:.72rem;margin-top:5px;font-weight:600;color:${color}">
-        ${completa ? "✓ Unidad completa" : `Disponible: ${Math.max(0, 100 - pct).toFixed(0)}%`}
+        ${completa ? "Unidad completa" : `Disponible: ${Math.max(0, 100 - pct).toFixed(0)}%`}
       </div>
     </div>`;
     })

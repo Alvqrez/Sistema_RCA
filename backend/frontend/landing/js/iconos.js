@@ -31,6 +31,9 @@
     rayo: '<path d="M13 3 5.5 13.5H12L11 21l7.5-10.5H12z"/>',
     exportar: '<path d="M12 4.5V15M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 15v3.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/>',
     usuarioX: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.3-5.5 6.5-5.5 1.5 0 2.9.4 4 1.2M16.5 15.5l4 4M20.5 15.5l-4 4"/>',
+    persona: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/>',
+    biblioteca: '<path d="M5 4v16M9 4v16M13 5l4.5 15M17.5 4.5 21 19"/>',
+    usuarioMas: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.3-5.5 6.5-5.5 1.5 0 2.9.4 4 1.2"/><path d="M18.5 14v6M15.5 17h6"/>',
   };
 
   function icono(nombre, clase) {

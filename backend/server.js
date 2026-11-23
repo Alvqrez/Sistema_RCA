@@ -36,6 +36,9 @@ app.use(
           "https://cdn.jsdelivr.net",
           "'unsafe-inline'",
         ],
+        // Las páginas usan onclick/oninput/onchange en el HTML; sin esto helmet
+        // los bloquea (script-src-attr 'none'). Producción ya lo permite.
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:"],

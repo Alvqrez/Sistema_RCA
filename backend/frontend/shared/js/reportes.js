@@ -46,7 +46,7 @@ async function poblarFiltroPeriodo() {
     sel.innerHTML = `<option value="">Todos los periodos</option>`;
     periodos.forEach((p) => {
       const etiqueta =
-        p.estatus === "Vigente" ? " ✓" : p.estatus === "Proximo" ? " (próximo)" : "";
+        p.estatus === "Vigente" ? "" : p.estatus === "Proximo" ? " (próximo)" : "";
       sel.innerHTML += `<option value="${p.id_periodo}">${p.descripcion} (${p.anio})${etiqueta}</option>`;
     });
   } catch {

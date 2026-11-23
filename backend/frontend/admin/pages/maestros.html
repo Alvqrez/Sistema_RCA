@@ -1,16 +1,19 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Maestros — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="icon" type="image/png" href="../../assets/images/icons/favicon-32.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       .modal-section { padding: 16px 22px; border-top: 1px solid var(--border); }
       .modal-section:first-child { border-top: none; }
@@ -23,6 +26,7 @@
       .required-hint { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 12px; }
       #modalMaestro .modal-body { overflow-y: auto; max-height: 70vh; }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -92,7 +96,7 @@
       <div class="modal-panel" style="max-width:620px">
         <div class="modal-header">
           <h2 id="modalTitulo">Nuevo maestro</h2>
-          <button class="modal-close" onclick="cerrarModal('modalMaestro')">✕</button>
+          <button class="modal-close" onclick="cerrarModal('modalMaestro')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
 
@@ -196,7 +200,7 @@
       <div class="modal-panel modal-sm">
         <div class="modal-header">
           <h2>Eliminar maestro</h2>
-          <button class="modal-close" onclick="cerrarModalEliminarMaestro()">✕</button>
+          <button class="modal-close" onclick="cerrarModalEliminarMaestro()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p style="margin:0 0 8px">¿Eliminar al maestro <strong id="nombreEliminarMaestro"></strong>?</p>
@@ -220,7 +224,7 @@
       <div class="modal-panel" style="max-width:580px">
         <div class="modal-header">
           <h2>Importar Maestros desde CSV</h2>
-          <button class="modal-close" onclick="cerrarModalCSVMaestros()">✕</button>
+          <button class="modal-close" onclick="cerrarModalCSVMaestros()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <button class="btn btn-outline" style="font-size:0.85rem;gap:6px;margin-bottom:14px"

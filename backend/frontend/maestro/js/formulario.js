@@ -1268,7 +1268,7 @@ async function guardarYCerrarUnidad() {
       vacios.slice(0, 3).join(", ") +
       (vacios.length > 3 ? ` y ${vacios.length - 3} más` : "");
     mostrarConfirm(
-      "⚠️ Campos sin calificar",
+      "Campos sin calificar",
       "Los siguientes alumnos tienen actividades sin calificar:\n" +
         nombres +
         ".\n\nAl cerrar la unidad, los campos vacíos se calcularán con valor 0" +
@@ -1320,7 +1320,7 @@ async function _ejecutarCierre() {
 
   mostrarToast(
     errores === 0
-      ? "Unidad calculada y cerrada ✓"
+      ? "Unidad calculada y cerrada"
       : `${errores} errores al calcular`,
     errores === 0 ? "success" : "error",
   );
@@ -1550,7 +1550,7 @@ async function recalcularCalificacionesFinal() {
     }
   }
 
-  if (ok > 0) mostrarToast(`✓ Recalculado para ${ok} alumno(s)`, "success");
+  if (ok > 0) mostrarToast(`Recalculado para ${ok} alumno(s)`, "success");
   if (err > 0) mostrarToast(`${err} error(es) al recalcular`, "error");
 
   await calcularVistaFinal();

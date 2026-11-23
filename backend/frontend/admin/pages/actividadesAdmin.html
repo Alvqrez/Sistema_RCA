@@ -1,16 +1,19 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Actividades — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-    <link rel="icon" type="image/png" href="../../assets/images/icons/rca-icon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="icon" type="image/png" href="../../assets/images/icons/favicon-32.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       .act-table { width: 100%; border-collapse: collapse; }
       .act-table th {
@@ -35,6 +38,7 @@
         overflow: hidden; text-overflow: ellipsis;
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -80,7 +84,7 @@
 
         <!-- Buscador -->
         <div class="card" style="padding:14px 18px;margin-bottom:16px">
-          <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o descripción…"
+          <input type="text" id="filtroBusqueda" placeholder="Buscar por nombre o descripción…"
             oninput="filtrar()"
             style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
                    background:var(--card-bg);color:var(--text-primary);font-size:.88rem;

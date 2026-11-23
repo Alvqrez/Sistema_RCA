@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Alumnos — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/favicon-32.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       /* ── Secciones del modal ─────────────────────────────────────── */
       .modal-section {
@@ -166,6 +166,7 @@
         max-height: 68vh;
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -261,9 +262,7 @@
       <div class="modal-panel">
         <div class="modal-header">
           <h2 id="modalTitulo">Nuevo alumno</h2>
-          <button class="modal-close" onclick="cerrarModal('modalAlumno')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalAlumno')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
 
         <div class="modal-body">
@@ -473,9 +472,7 @@
       <div class="modal-panel modal-sm">
         <div class="modal-header">
           <h2>Importar alumnos desde CSV</h2>
-          <button class="modal-close" onclick="cerrarModal('modalImport')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalImport')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom: 12px;">
@@ -538,9 +535,7 @@
               id="cursosNombreAlumno"
             ></p>
           </div>
-          <button class="modal-close" onclick="cerrarModal('modalCursos')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalCursos')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body" style="padding: 0">
           <div style="overflow-x: auto">
@@ -571,9 +566,7 @@
       <div class="modal-panel modal-sm">
         <div class="modal-header">
           <h2>Eliminar alumno</h2>
-          <button class="modal-close" onclick="cerrarModal('modalEliminar')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalEliminar')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p>
@@ -608,7 +601,7 @@
       <div class="modal-panel modal-sm">
         <div class="modal-header">
           <h2>Eliminar alumno</h2>
-          <button class="modal-close" onclick="cerrarModalEliminarAlumno()">✕</button>
+          <button class="modal-close" onclick="cerrarModalEliminarAlumno()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p style="margin: 0 0 8px">

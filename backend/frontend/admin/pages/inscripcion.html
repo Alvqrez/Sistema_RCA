@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Inscripción de Alumnos — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/favicon-32.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       .wizard-layout {
         display: grid;
@@ -485,6 +485,7 @@
         }
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -646,7 +647,7 @@
                 <input
                   type="text"
                   id="buscarAlumno"
-                  placeholder="🔍 Nombre o no. control…"
+                  placeholder="Nombre o no. control…"
                   oninput="filtrarAlumnos()"
                 />
                 <button
@@ -870,7 +871,7 @@
             <iconify-icon icon="mdi:account-remove-outline"></iconify-icon>
             Dar de baja
           </h2>
-          <button class="modal-close" onclick="cerrarModal('modalBaja')">✕</button>
+          <button class="modal-close" onclick="cerrarModal('modalBaja')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p style="margin:0">
@@ -896,7 +897,7 @@
             <iconify-icon icon="lucide:trash-2"></iconify-icon>
             Eliminar inscripción
           </h2>
-          <button class="modal-close" onclick="cerrarModal('modalEliminarInsc')">✕</button>
+          <button class="modal-close" onclick="cerrarModal('modalEliminarInsc')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p style="margin:0">
@@ -926,9 +927,7 @@
                 .getElementById('modalCSVInscripcion')
                 .classList.remove('visible')
             "
-          >
-            ✕
-          </button>
+          ><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom: 12px;">

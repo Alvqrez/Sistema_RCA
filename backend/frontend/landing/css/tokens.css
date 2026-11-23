@@ -1,6 +1,6 @@
 /*
  * tokens.css — Sistema de diseño de la landing de Sistema RCA.
- * Colores tomados de la app (backend/frontend/css/styles.css, paleta TecNM):
+ * Colores tomados de la app (paleta TecNM, hoy en backend/frontend/shared/css/rca.css):
  * --accent = --primary (#1a386a), --accent-night = --primary-hover (#00043e),
  * --accent-soft = --primary-light (#dde5f4), --ink = --text-main (#0d1b35).
  * Todo el resto de la hoja usa solo estos tokens.

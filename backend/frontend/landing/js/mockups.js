@@ -42,25 +42,38 @@
     );
   }
 
-  function sidebar(rol, nombre, items, activo) {
-    var nav = items.map(function (it, i) {
-      return '<span class="ui-nav' + (i === activo ? " is-on" : "") + '">' + I(it[0]) + "<span>" + it[1] + "</span>" + (it[2] ? I("chevron", "ui-chev") : "") + "</span>";
+  // Barra lateral isla, como shared/js/sidebar.js: grupos abiertos con su título
+  function sidebar(rol, nombre, grupos, activo) {
+    var nav = grupos.map(function (g) {
+      return (g[0] ? '<span class="ui-side-t">' + g[0] + "</span>" : "") +
+        g[1].map(function (it) {
+          return '<span class="ui-nav' + (it[1] === activo ? " is-on" : "") + '">' + I(it[0]) + "<span>" + it[1] + "</span></span>";
+        }).join("");
     }).join("");
+    var ini2 = nombre.replace(/^(Mtra?.|Mtro.)s*/, "").split(" ").slice(0, 2).map(function (p) { return p[0]; }).join("");
     return (
       '<aside class="ui-side">' +
-      '<div class="ui-side-top"><span class="ui-side-av">' + I(rol === "Administrador" ? "escudo" : rol === "Docente" ? "birrete" : "usuarios") + "</span>" +
-      '<span class="ui-side-hi">¡Bienvenido!</span><span class="ui-side-name">' + nombre + "</span>" +
-      '<span class="ui-side-rol">' + rol + "</span></div>" +
+      '<div class="ui-side-top"><span class="ui-side-logo">R</span><span><b>Sistema RCA</b><small>Tecnológico de Veracruz</small></span></div>' +
       '<nav class="ui-side-nav">' + nav + "</nav>" +
-      '<div class="ui-side-foot"><span class="ui-nav">' + I("luna") + "<span>Modo oscuro</span></span>" +
+      '<div class="ui-side-foot"><span class="ui-user"><span class="ui-ini ui-ini-sm">' + ini2 + "</span><span><b>" + nombre + "</b><small>" + rol + "</small></span></span>" +
+      '<span class="ui-logout">' + I("luna") + "Modo oscuro</span>" +
       '<span class="ui-logout">' + I("salir") + "Cerrar sesión</span></div>" +
       "</aside>"
     );
   }
 
-  var NAV_MAESTRO = [["panel", "Inicio"], ["carpeta", "Catálogo", 1], ["lapiz", "Asignar y calificar", 1], ["ajustes", "Utilerías", 1]];
-  var NAV_ADMIN = [["panel", "Panel"], ["carpeta", "Catálogo", 1], ["ajustes", "Utilerías", 1]];
-  var NAV_ALUMNO = [["panel", "Mis calificaciones"], ["ajustes", "Utilerías"]];
+  var NAV_MAESTRO = [
+    ["", [["panel", "Inicio"]]],
+    ["Catálogo", [["usuarios", "Mis alumnos"], ["biblioteca", "Mis grupos"]]],
+    ["Asignar y calificar", [["ajustes", "Configurar evaluación"], ["lapiz", "Capturar calificaciones"]]],
+    ["Utilerías", [["ajustes", "Utilerías"], ["grafica", "Estadísticas"], ["lista", "Reportes"]]],
+  ];
+  var NAV_ADMIN = [
+    ["", [["panel", "Panel"]]],
+    ["Catálogo", [["birrete", "Carreras"], ["libro", "Materias"], ["capas", "Unidades"], ["birrete", "Maestros"], ["persona", "Alumnos"], ["biblioteca", "Grupos"], ["usuarioMas", "Inscripciones"]]],
+    ["Utilerías", [["calendario", "Periodos escolares"], ["grafica", "Reportes"], ["ajustes", "Utilerías del sistema"]]],
+  ];
+  var NAV_ALUMNO = [["", [["panel", "Mis calificaciones"], ["ajustes", "Utilerías"]]]];
 
   /* ── Fragmentos ─────────────────────────────────────────────────────── */
   var F = {};
@@ -81,7 +94,7 @@
       );
     }).join("");
     var cuerpo =
-      sidebar("Docente", "Mtra. Inés Barradas", NAV_MAESTRO, 2) +
+      sidebar("Docente", "Mtra. Inés Barradas", NAV_MAESTRO, "Capturar calificaciones") +
       '<main class="ui-main">' +
       '<header class="ui-head"><div><h3>Captura de Calificaciones</h3><p>Fundamentos de Bases de Datos · Agosto–Diciembre 2026</p></div>' +
       '<span class="ui-btn ui-btn-ghost">' + I("subir") + "Importar CSV</span></header>" +
@@ -107,12 +120,12 @@
       ["Contabilidad Financiera", "Ene–Jun 2026", "Mtra. Sofía Landa", "Ordinario", "86"],
       ["Probabilidad y Estadística", "Ago–Dic 2025", "Mtro. Joel Tiburcio", "Ordinario", "95"],
     ].map(function (h) {
-      return "<tr><td><b>" + h[0] + "</b></td><td>" + h[1] + "</td><td>" + h[2] + "</td><td>" + h[3] + '</td><td class="num"><b>' + h[4] + '</b></td><td><span class="ui-badge ui-badge-green">Aprobada</span></td></tr>';
+      return "<tr><td><b>" + h[0] + "</b></td><td>" + h[1] + "</td><td>" + h[2] + '</td><td><span class="ui-badge ui-badge-green">' + h[3] + "</span></td>" + '<td class="num"><b>' + h[4] + '</b></td><td><span class="ui-badge ui-badge-green">Aprobada</span></td></tr>';
     }).join("");
     var cuerpo =
-      sidebar("Alumno", "Valeria Ortiz", NAV_ALUMNO, 0) +
+      sidebar("Alumno", "Valeria Ortiz", NAV_ALUMNO, "Mis calificaciones") +
       '<main class="ui-main">' +
-      '<section class="ui-hero-al"><div><small>Portal del alumno</small><h3>Valeria Ortiz Mendoza</h3><p>Ingeniería en Sistemas Computacionales · No. control 25000170</p></div>' +
+      '<section class="ui-hero-al"><div><small>¡Bienvenida de nuevo!</small><h3>Valeria Ortiz Mendoza</h3><p><span>No. Control: 25000170</span><span>ISC</span></p></div>' +
       '<div class="ui-al-stats"><span><b>12</b>Aprobadas</span><span><b>0</b>Reprobadas</span><span><b>3</b>Cursando</span><span class="ui-al-prom"><b>91.4</b>Promedio general</span></div></section>' +
       '<div class="ui-sub"><h4>Materias del periodo</h4><span class="ui-badge">Agosto–Diciembre 2026</span></div>' +
       '<div class="ui-mats">' + materias + "</div>" +
@@ -141,7 +154,7 @@
       return '<div class="ui-quick"><span class="ui-quick-ico">' + I(a[0]) + "</span><span><b>" + a[1] + "</b><small>" + a[2] + "</small></span>" + I("chevron", "ui-chev") + "</div>";
     }).join("");
     var users = [
-      ["A", "admin", "Admin", "violet", "15/11/2026"],
+      ["A", "ADMN800101ITV", "Admin", "slate", "15/11/2026"],
       ["B", "BAIM810314KP2", "Maestro", "green", "14/11/2026"],
       ["2", "25000170", "Alumno", "slate", "14/11/2026"],
       ["2", "25000158", "Alumno", "slate", "Nunca"],
@@ -149,7 +162,7 @@
       return '<tr><td><span class="ui-person"><span class="ui-ini ui-ini-sm">' + u[0] + "</span>" + u[1] + '</span></td><td><span class="ui-badge ui-badge-' + u[3] + '">' + u[2] + "</span></td><td>" + u[4] + '</td><td><span class="ui-badge ui-badge-green">Activo</span></td><td class="ui-acts"><span>' + I("llave") + "</span><span>" + I("usuarioX") + "</span></td></tr>";
     }).join("");
     var cuerpo =
-      sidebar("Administrador", "Admin Sistema", NAV_ADMIN, 0) +
+      sidebar("Administrador", "Leonardo Álvarez", NAV_ADMIN, "Panel") +
       '<main class="ui-main">' +
       '<header class="ui-head ui-head-line"><div><h3>Panel de Administración</h3><p>Vista general del sistema RCA</p></div></header>' +
       '<div class="ui-stats">' + stats + "</div>" +

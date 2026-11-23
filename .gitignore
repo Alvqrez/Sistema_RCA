@@ -1,48 +1,72 @@
-# Dependencias de Node
+# ── Dependencias ─────────────────────────────────────────────────────────
 node_modules/
-backend/node_modules/
-frontend/node_modules/
+.npm/
+.pnpm-store/
 
-# Variables de entorno (contraseñas, tokens, etc)
+# ── Variables de entorno y secretos (nunca se suben) ─────────────────────
 .env
-.env.local
-.env.development
-.env.production
-backend/.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+credentials*.json
+secrets*.json
 
-# Logs
-logs
+# ── Herramientas de desarrollo con datos sensibles ───────────────────────
+# Scripts de semilla (contraseñas por defecto en texto plano) y peticiones
+# de prueba (.http con tokens). Viven solo en la máquina de cada desarrollador.
+backend/dev/
+*.http
+*.rest
+
+# ── Respaldos y volcados de base de datos ────────────────────────────────
+# El esquema versionado (database/rca_sistema_v*.sql) sí se sube.
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+*.sql.gz
+database/backups/
+backup*.json
+respaldo*.json
+restaurar_*.sql
+
+# ── Logs ─────────────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Archivos del sistema
+# ── Sistema operativo ────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*~
 
-# Archivos de VS Code 
+# ── Editores e IA local ──────────────────────────────────────────────────
 .vscode/
+.idea/
+*.code-workspace
+.claude/settings.local.json
 
-# Archivos de build
+# ── Builds, cachés y pruebas ─────────────────────────────────────────────
 dist/
 build/
-
-# Archivos temporales
+coverage/
+.cache/
+.eslintcache
 tmp/
 temp/
+.chrome-*/
 
-# Cobertura de tests
-coverage/
-
-# Archivos de base de datos locales
-*.sqlite
-*.db
-
-# Archivos de entorno del backend
-backend/.env
-
-# Archivos de sistema
-*.swp
-# Prototipos de la landing: se conservan solo en local, no se suben
-prototipos/
+# ── Documento de trabajo del rediseño: solo local ──────────────────────
+RCA_REDESIGN_PROGRESS.md

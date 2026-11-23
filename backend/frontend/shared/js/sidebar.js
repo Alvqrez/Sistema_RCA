@@ -44,13 +44,6 @@
       rol
     ] || rol;
 
-  const iconoRol =
-    {
-      administrador: "lucide:shield-check",
-      maestro: "lucide:graduation-cap",
-      alumno: "lucide:user-circle-2",
-    }[rol] || "lucide:user";
-
   const linksPorRol = {
     alumno: [
       {
@@ -215,38 +208,26 @@
     .split("#")[0];
   const isDark = localStorage.getItem("tema") === "oscuro";
 
-  function buildLink(link) {
-    if (link.separador) {
-      return `<div class="nav-group-label">${link.separador}</div>`;
-    }
-    const getFilename = (href) =>
-      href ? href.split("/").pop().split("?")[0].split("#")[0] : "";
+  const getFilename = (href) =>
+    href ? href.split("/").pop().split("?")[0].split("#")[0] : "";
+  let tituloActual = "";
 
-    if (link.hijos) {
-      const algunoActivo = link.hijos.some(
-        (h) => h.href && getFilename(h.href) === paginaActual,
-      );
-      const hijosHTML = link.hijos
-        .map((h) => {
-          const pg = getFilename(h.href);
-          return `<a href="${h.href}" class="submenu-item ${pg === paginaActual ? "active" : ""}">
-          <iconify-icon icon="${h.icono}"></iconify-icon><span>${h.texto}</span>
-        </a>`;
-        })
-        .join("");
-      return `<div class="nav-group ${algunoActivo ? "open" : ""}">
-        <button class="nav-group-btn" onclick="toggleSubmenu(this)">
-          <iconify-icon icon="${link.icono}"></iconify-icon>
-          <span>${link.texto}</span>
-          <iconify-icon class="chevron" icon="lucide:chevron-right"></iconify-icon>
-        </button>
-        <div class="submenu">${hijosHTML}</div>
-      </div>`;
-    }
-    const linkPage = getFilename(link.href);
-    return `<a href="${link.href}" class="${linkPage === paginaActual ? "active" : ""}">
+  // Un enlace del menú (los grupos se muestran abiertos, con su título)
+  function itemNav(link) {
+    const activo = getFilename(link.href) === paginaActual;
+    if (activo) tituloActual = link.texto;
+    return `<a href="${link.href}" class="sb-item ${activo ? "active" : ""}" title="${link.texto}"${activo ? ' aria-current="page"' : ""}>
       <iconify-icon icon="${link.icono}"></iconify-icon><span>${link.texto}</span>
     </a>`;
+  }
+  function buildLink(link) {
+    if (link.separador) {
+      return `<p class="sb-titulo">${link.separador}</p>`;
+    }
+    if (link.hijos) {
+      return `<div class="sb-grupo"><p class="sb-titulo">${link.texto}</p>${link.hijos.map(itemNav).join("")}</div>`;
+    }
+    return `<div class="sb-grupo">${itemNav(link)}</div>`;
   }
 
   const aside = document.querySelector("aside.sidebar");
@@ -259,27 +240,78 @@
     document.body.classList.add("sidebar-collapsed");
   }
 
+  const inicioRol =
+    {
+      maestro: "../../maestro/pages/panelMaestro.html",
+      alumno: "../../alumno/pages/portalAlumno.html",
+      administrador: "../../admin/pages/admin.html",
+    }[rol] || "#";
+  const iniciales =
+    String(nombre || "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p.charAt(0))
+      .join("")
+      .toUpperCase() || "RCA";
+  const navHTML = links.map(buildLink).join("");
+
+  aside.setAttribute("id", "sidebarRCA");
   aside.innerHTML = `
-    <div class="sidebar-accent-bar"></div>
-    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Colapsar / expandir menú">
-      <iconify-icon icon="lucide:chevron-left"></iconify-icon>
-    </button>
-    <div class="sidebar-logo">
-      <div class="sidebar-avatar"><iconify-icon icon="${iconoRol}"></iconify-icon></div>
-      <p class="sidebar-bienvenida">¡Bienvenido!</p>
-      <span class="sidebar-nombre">${esc(nombre) || "Usuario"}</span>
-      <span class="sidebar-rol-badge rol-${esc(rol)}">${esc(etiquetaRol)}</span>
+    <div class="sb-cabeza">
+      <a class="sb-marca" href="${inicioRol}" title="Inicio">
+        <img src="../../assets/images/icons/rca-icon-96.png" width="34" height="34" alt="" />
+        <span><b>Sistema RCA</b><small><img src="../../assets/images/icons/escudo-itv.png" width="14" height="13" alt="" />Tecnológico de Veracruz</small></span>
+      </a>
+      <button type="button" class="sidebar-toggle-btn" id="btnColapsarMenu" title="Contraer o expandir menú" aria-label="Contraer o expandir menú">
+        <iconify-icon icon="lucide:chevron-left"></iconify-icon>
+      </button>
     </div>
-    <nav>${links.map(buildLink).join("")}</nav>
-    <button class="theme-icon-btn" id="themeBtnSidebar" onclick="toggleTheme()"
-            title="${isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}">
-      <iconify-icon id="themeIcon" icon="${isDark ? "lucide:sun" : "lucide:moon"}"></iconify-icon>
-      <span id="themeLabel">${isDark ? "Modo claro" : "Modo oscuro"}</span>
-    </button>
-    <button class="logout-btn" onclick="cerrarSesion()">
-      <iconify-icon icon="lucide:log-out"></iconify-icon><span>Cerrar sesión</span>
-    </button>
+    <div class="sb-nav" role="navigation" aria-label="Menú principal">${navHTML}</div>
+    <div class="sb-pie">
+      <div class="sb-user" title="${esc(nombre) || "Usuario"}">
+        <span class="sb-avatar">${esc(iniciales)}</span>
+        <span class="sb-user-txt"><b>${esc(nombre) || "Usuario"}</b><small>${esc(etiquetaRol)}</small></span>
+      </div>
+      <button type="button" class="sb-accion" id="themeBtnSidebar"
+              title="${isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}">
+        <iconify-icon id="themeIcon" icon="${isDark ? "lucide:sun" : "lucide:moon"}"></iconify-icon>
+        <span id="themeLabel">${isDark ? "Modo claro" : "Modo oscuro"}</span>
+      </button>
+      <button type="button" class="sb-accion sb-salir" id="btnCerrarSesion" title="Cerrar sesión">
+        <iconify-icon icon="lucide:log-out"></iconify-icon><span>Cerrar sesión</span>
+      </button>
+    </div>
   `;
+
+  // Barra superior y fondo del menú en tablet y celular
+  const movil = document.createElement("header");
+  movil.className = "sb-movil";
+  movil.innerHTML = `
+    <button type="button" class="sb-movil-menu" id="btnMenuMovil" aria-label="Abrir menú" aria-controls="sidebarRCA" aria-expanded="false">
+      <iconify-icon icon="lucide:list"></iconify-icon>
+    </button>
+    <span class="sb-movil-titulo">${esc(tituloActual || "Sistema RCA")}</span>
+    <span class="sb-avatar" aria-hidden="true">${esc(iniciales)}</span>`;
+  const scrim = document.createElement("div");
+  scrim.className = "sb-scrim";
+  document.body.insertBefore(movil, document.body.firstChild);
+  document.body.appendChild(scrim);
+
+  function menuMovil(abrir) {
+    document.body.classList.toggle("menu-abierto", abrir);
+    document.getElementById("btnMenuMovil").setAttribute("aria-expanded", String(abrir));
+  }
+  document.getElementById("btnMenuMovil").addEventListener("click", () =>
+    menuMovil(!document.body.classList.contains("menu-abierto")),
+  );
+  scrim.addEventListener("click", () => menuMovil(false));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("menu-abierto")) menuMovil(false);
+  });
+  document.getElementById("btnColapsarMenu").addEventListener("click", () => toggleSidebar());
+  document.getElementById("themeBtnSidebar").addEventListener("click", () => toggleTheme());
+  document.getElementById("btnCerrarSesion").addEventListener("click", () => cerrarSesion());
 })();
 
 (function () {
@@ -305,10 +337,6 @@ function toggleTheme() {
   if (label) label.textContent = isDark ? "Modo claro" : "Modo oscuro";
   if (btn)
     btn.title = isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
-}
-
-function toggleSubmenu(btn) {
-  btn.closest(".nav-group").classList.toggle("open");
 }
 
 function soloPermitido(...roles) {

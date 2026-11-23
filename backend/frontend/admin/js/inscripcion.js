@@ -265,7 +265,7 @@ async function irPaso4() {
           ? "límite de verano (máx. 2)"
           : "límite de créditos (máx. 36)";
         showToast(
-          `⚠️ Se removieron ${rechazados.length} alumno(s) por ${tipoLimite}: ${nombres}`,
+          `Se removieron ${rechazados.length} alumno(s) por ${tipoLimite}: ${nombres}`,
           "error",
         );
 
@@ -637,7 +637,7 @@ async function confirmarInscripcion() {
       })
       .join(", ");
     showToast(
-      `⚠️ ${bloqueados.length} alumno(s) ya inscritos en otro grupo de esta materia en el mismo periodo: ${nombres}. Quítalos de la selección.`,
+      `${bloqueados.length} alumno(s) ya inscritos en otro grupo de esta materia en el mismo periodo: ${nombres}. Quítalos de la selección.`,
       "error",
     );
     return;
@@ -663,9 +663,9 @@ async function confirmarInscripcion() {
     if (r.ok) {
       const ok = data.insertados ?? alumnosSel.size;
       const rechazados = data.rechazados || [];
-      let msg = `✅ ${ok} alumno${ok !== 1 ? "s" : ""} inscrito${ok !== 1 ? "s" : ""}`;
+      let msg = `${ok} alumno${ok !== 1 ? "s" : ""} inscrito${ok !== 1 ? "s" : ""}`;
       if (rechazados.length > 0) {
-        msg += ` — ⚠️ ${rechazados.length} omitido${rechazados.length !== 1 ? "s" : ""} por exceder créditos`;
+        msg += ` — ${rechazados.length} omitido${rechazados.length !== 1 ? "s" : ""} por exceder créditos`;
       }
       showToast(msg, rechazados.length > 0 ? "info" : "success");
       // Reset wizard
@@ -927,7 +927,7 @@ async function importarCSVInsc() {
     msg.style.display = "block";
     if (r.ok) {
       msg.style.color = "var(--success)";
-      msg.textContent = `✓ ${data.insertados} inscripción(es) importada(s). ${data.errores?.length || 0} omitida(s).`;
+      msg.textContent = `${data.insertados} inscripción(es) importada(s). ${data.errores?.length || 0} omitida(s).`;
       await cargarInscripciones();
     } else {
       msg.style.color = "var(--danger)";

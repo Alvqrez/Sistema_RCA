@@ -69,7 +69,7 @@ function leerArchivo(file, cb) {
 
   if (esExcel) {
     if (!window.XLSX) {
-      alert("SheetJS no está cargado. No se puede leer archivos Excel.");
+      (typeof showToast === "function" ? (m) => showToast(m, "error") : alert)("No se pudo leer el archivo Excel: el lector de Excel no está disponible. Guárdalo como CSV e impórtalo de nuevo.");
       return;
     }
     const reader = new FileReader();

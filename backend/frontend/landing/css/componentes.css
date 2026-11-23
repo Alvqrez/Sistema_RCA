@@ -6,6 +6,9 @@
 /* Etiqueta superior (una sola, en el hero) */
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px 6px 8px; background: var(--surface); box-shadow: inset 0 0 0 1px rgba(26, 56, 106, 0.1); font-size: 0.8125rem; font-weight: 500; color: var(--accent); letter-spacing: 0.01em; }
 .eyebrow-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; }
+/* Variante con el escudo del ITV (institución donde se usa RCA) */
+.eyebrow-itv { gap: 10px; padding: 5px 16px 5px 6px; font-size: 0.875rem; }
+.eyebrow-escudo { width: 28px; height: auto; flex: none; }
 .eyebrow-dot::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulso 2.4s var(--ease) infinite; }
 @keyframes pulso { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.45; } }
 
@@ -39,7 +42,12 @@
 .nav-links { display: flex; gap: 2px; }
 .nav-links a { padding: 10px 14px; border-radius: 999px; font-size: 0.9375rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.3s var(--ease), background-color 0.3s var(--ease); }
 .nav-links a:hover { color: var(--ink); background: rgba(26, 56, 106, 0.06); }
-.nav-links .nav-login { color: var(--accent); }
+/* Acceso al sistema: botón propio, visible en todos los anchos */
+.nav-acceso { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px 0 14px; margin-left: 4px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 0.9375rem; font-weight: 600; text-decoration: none; white-space: nowrap; box-shadow: inset 0 0 0 1px rgba(26, 56, 106, 0.14); transition: background-color 0.3s var(--ease), box-shadow 0.3s var(--ease), transform 0.5s var(--ease-spring); }
+.nav-acceso .ico { width: 18px; height: 18px; transition: transform 0.5s var(--ease-spring); }
+.nav-acceso:hover { background: #cdd9ee; box-shadow: inset 0 0 0 1px rgba(26, 56, 106, 0.28); }
+.nav-acceso:hover .ico { transform: translateX(2px); }
+.nav-acceso:active { transform: scale(0.98); }
 .nav-cta { white-space: nowrap; }
 .nav-toggle { display: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent-soft); position: relative; }
 .nav-toggle span { position: absolute; left: 13px; right: 13px; height: 1.5px; background: var(--accent); border-radius: 2px; transition: transform 0.5s var(--ease-spring); }
@@ -98,6 +106,7 @@
 @media (max-width: 1100px) {
   .nav-links { display: none; }
   .nav-toggle { display: block; }
+  .nav-acceso { margin-left: auto; }
 }
 @media (max-width: 900px) {
   .tabs { display: flex; width: 100%; }

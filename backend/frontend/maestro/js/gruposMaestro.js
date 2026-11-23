@@ -327,9 +327,9 @@ function buildUnidadConfig(id_grupo, unidad) {
   const bloqueada = acts.length > 0 && acts.every((a) => a.bloqueado);
 
   const sumaBadge = bloqueada
-    ? `<span class="cfg-badge cfg-badge-ok" style="font-size:.7rem">✓ 100%</span>`
+    ? `<span class="cfg-badge cfg-badge-ok" style="font-size:.7rem">100%</span>`
     : sumaOk
-      ? `<span class="cfg-badge cfg-badge-ok" style="font-size:.7rem">✓ 100%</span>`
+      ? `<span class="cfg-badge cfg-badge-ok" style="font-size:.7rem">100%</span>`
       : `<span class="cfg-badge cfg-badge-pending" style="font-size:.7rem">${suma.toFixed(0)}% / 100%</span>`;
 
   const lockNotice = bloqueada
@@ -443,7 +443,7 @@ function actualizarSuma(id_grupo, id_unidad) {
     badge.className = `cfg-badge ${sumaOk ? "cfg-badge-ok" : "cfg-badge-pending"}`;
     badge.style.fontSize = ".7rem";
     badge.textContent = `${suma.toFixed(0)}% / 100%`;
-    if (sumaOk) badge.textContent = "✓ 100%";
+    if (sumaOk) badge.textContent = "100%";
   }
   const sumaRow = block.querySelector(".suma-row");
   if (sumaRow)

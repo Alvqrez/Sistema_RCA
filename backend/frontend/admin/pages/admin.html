@@ -1,194 +1,56 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Panel de Administración — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/favicon-32.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
-      /* ── Barras de distribución ──────────────────────────────── */
-      .dist-bar-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 12px;
-      }
-      .dist-bar-label {
-        width: 80px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .dist-bar-track {
-        flex: 1;
-        height: 7px;
-        background: var(--border);
-        border-radius: 99px;
-        overflow: hidden;
-      }
-      .dist-bar-fill {
-        height: 100%;
-        border-radius: 99px;
-        transition: width 0.55s ease;
-      }
-      .dist-bar-count {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: var(--text-main);
-        min-width: 24px;
-        text-align: right;
-      }
-
-      /* ── Grid de stats — 5 columnas ─────────────────────────── */
-      #statsRow {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 14px;
-        margin-bottom: 22px;
-      }
-      @media (max-width: 1100px) {
-        #statsRow {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      /* ── Grid inferior — 2 columnas ─────────────────────────── */
-      #gridInferior {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-      }
-      @media (max-width: 900px) {
-        #gridInferior {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* ── Card título con ícono ───────────────────────────────── */
-      .card-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 18px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--border);
-      }
-      .card-head iconify-icon {
-        color: var(--primary);
-        font-size: 1.1rem;
-      }
-
-      /* ── Buscador de usuarios ────────────────────────────────── */
-      .users-search-wrap {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: var(--bg-app);
-        border: 1.5px solid var(--border);
-        border-radius: 8px;
-        padding: 5px 10px;
-      }
-      .users-search-wrap input {
-        background: none;
-        border: none;
-        outline: none;
-        color: var(--text-main);
-        font-size: 0.78rem;
-        font-family: "Inter", sans-serif;
-        width: 120px;
-      }
-      .users-search-wrap input::placeholder {
-        color: var(--text-muted);
-      }
-      .users-search-wrap iconify-icon {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-      }
-
-      /* ── Tabla de usuarios ───────────────────────────────────── */
-      .ut {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .ut th {
-        font-size: 0.62rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        color: var(--text-muted);
-        padding: 8px 10px;
-        text-align: left;
-        border-bottom: 1.5px solid var(--border);
-        background: var(--bg-app);
-      }
-      .ut td {
-        padding: 10px 10px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.82rem;
-        vertical-align: middle;
-        color: var(--text-main);
-      }
-      .ut tr:last-child td {
-        border-bottom: none;
-      }
-      .ut tbody tr {
-        transition: background 0.13s;
-      }
-      .ut tbody tr:hover td {
-        background: var(--row-hover, rgba(59, 130, 246, 0.06));
-      }
-
-      /* Avatar de inicial */
-      .user-av {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: var(--primary-light);
-        color: var(--primary);
-        font-size: 0.7rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .dark-mode .user-av {
-        background: rgba(59, 130, 246, 0.18);
-        color: #60a5fa;
-      }
-      .user-cell {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      /* ── Columna derecha: stacked ────────────────────────────── */
-      .right-col {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
+      /* Panel de administración — estilos propios (tokens de rca.css) */
+      #statsRow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: var(--gap); }
+      #gridInferior { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--gap); align-items: start; }
+      #gridInferior > .card, .right-col > .card { margin-bottom: 0; }
+      .right-col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+      .card-head { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-size: var(--t-lg); font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+      .card-head iconify-icon { font-size: 18px; color: var(--accent-text); }
+      .quick-link strong { display: block; font-size: var(--t-md); font-weight: 600; }
+      .quick-link p { font-size: var(--t-xs); color: var(--muted); }
+      /* Distribución */
+      .dist-bar-row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 36px; align-items: center; gap: 12px; margin-bottom: 12px; }
+      .dist-bar-label { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); font-weight: 500; color: var(--muted); }
+      .dist-bar-track { height: 8px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; }
+      .dist-bar-fill { height: 100%; border-radius: inherit; transition: width var(--d-4) var(--ease); }
+      .dist-bar-count { font-size: var(--t-md); font-weight: 600; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+      /* Buscador de usuarios */
+      .users-search-wrap { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 12px; border-radius: var(--r-pill); background: var(--input-bg); box-shadow: inset 0 0 0 1px var(--line-input); color: var(--subtle); }
+      .users-search-wrap:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px var(--focus-ring); }
+      .layout .users-search-wrap input { width: 150px; min-height: 36px; padding: 0; background: none; box-shadow: none; font-size: var(--t-sm); }
+      .users-search-wrap iconify-icon { font-size: 16px; }
+      /* Tabla de usuarios */
+      .ut { width: 100%; }
+      .user-av { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; font-size: 0.6875rem; font-weight: 700; background: var(--accent-soft); color: var(--accent-text); }
+      .user-cell { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.92em; }
+      @media (max-width: 1100px) { #statsRow { grid-template-columns: repeat(3, minmax(0, 1fr)); } #gridInferior { grid-template-columns: minmax(0, 1fr); } }
+      @media (max-width: 640px) {
+        #statsRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .layout .users-search-wrap input { width: 100%; }
+        .users-search-wrap { flex: 1 1 100%; }
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -541,9 +403,7 @@
       <div class="modal-panel modal-sm">
         <div class="modal-header">
           <h2>Resetear contraseña</h2>
-          <button class="modal-close" onclick="cerrarModal('modalReset')">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modalReset')"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p

@@ -77,7 +77,7 @@ async function poblarSelectMaterias() {
         texto.textContent = `Esta materia tiene ${opt.dataset.noUnidades} unidad(es) en su plan de estudios.`;
         info.style.display = "block";
       } else if (sel.value) {
-        texto.textContent = "⚠️ Esta materia tiene 0 unidades. Edítala primero.";
+        texto.textContent = "Esta materia tiene 0 unidades. Edítala primero.";
         info.style.display = "block";
       } else {
         info.style.display = "none";
@@ -333,7 +333,7 @@ async function guardarUnidadesEditables() {
       toast(data.error || "Error al guardar unidades", "error");
       return;
     }
-    toast(`✓ Unidades de "${nombre_materia}" actualizadas correctamente.`, "success");
+    toast(`Unidades de "${nombre_materia}" actualizadas correctamente.`, "success");
     await cargarConfiguracion();
   } catch {
     toast("Error de conexión con el servidor", "error");
@@ -400,7 +400,7 @@ async function guardarUnidades() {
       )
     );
 
-    toast(`✓ Unidades de "${materiaActual.nombre_materia}" guardadas correctamente.`, "success");
+    toast(`Unidades de "${materiaActual.nombre_materia}" guardadas correctamente.`, "success");
     const resGet = await fetch(
       `${API_URL}/api/unidades/materia/${encodeURIComponent(clave_materia)}`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -604,7 +604,7 @@ async function agregarActividadMateria(idUnidad, claveMateria) {
     nombreEl.value = "";
     await cargarActividadesMateria(claveMateria);
     renderActividadesCard();
-    toast("✓ Actividad agregada", "success");
+    toast("Actividad agregada", "success");
   } catch (_) { toast("Error de conexión", "error"); }
 }
 

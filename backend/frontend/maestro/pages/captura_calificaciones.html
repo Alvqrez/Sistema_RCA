@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Captura de Calificaciones — RCA</title>
     <script>
       if (localStorage.getItem("tema") === "oscuro")
         document.documentElement.classList.add("dark-mode");
     </script>
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <link
       rel="icon"
       type="image/png"
-      href="../../assets/images/icons/rca-icon.png"
+      href="../../assets/images/icons/favicon-32.png"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../../css/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="../../shared/css/rca.css" />
+    <link rel="stylesheet" href="../../shared/css/rca-app.css" />
     <style>
       /* ── Layout principal ───────────────────────────────────────────── */
       .cc-layout {
@@ -111,7 +111,7 @@
         padding-left: 11px;
       }
       .alumno-item.guardado .ai-prom::before {
-        content: "✓ ";
+        content: "";
         color: #16a34a;
         font-size: 0.68rem;
         font-weight: 700;
@@ -648,6 +648,7 @@
         display: none;
       }
     </style>
+    <script src="../../shared/js/iconos.js"></script>
   </head>
   <body>
     <div class="layout">
@@ -841,7 +842,7 @@
               <input
                 type="text"
                 id="buscarAlumno"
-                placeholder="🔍 Buscar…"
+                placeholder="Buscar…"
                 oninput="filtrarListaAlumnos(this.value)"
               />
             </div>
@@ -909,7 +910,7 @@
                   font-weight: 700;
                   flex-shrink: 0;
                 "
-                >✓</span
+                ></span
               >
               <span
                 style="
@@ -1166,9 +1167,7 @@
             <iconify-icon icon="mdi:star-plus-outline"></iconify-icon> Asignar
             Bonus Final
           </span>
-          <button class="modal-close" onclick="cerrarModalBonusFinal()">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModalBonusFinal()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div
           class="modal-body"
@@ -1265,9 +1264,7 @@
             <iconify-icon icon="mdi:pencil-circle-outline"></iconify-icon>
             Modificación Final Manual
           </span>
-          <button class="modal-close" onclick="cerrarModalModificacionFinal()">
-            ✕
-          </button>
+          <button class="modal-close" onclick="cerrarModalModificacionFinal()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div
           class="modal-body"
@@ -1288,7 +1285,7 @@
               color: #991b1b;
             "
           >
-            ⚠️ Esta operación sobreescribe la calificación final. Requiere
+            Esta operación sobreescribe la calificación final. Requiere
             justificación obligatoria y queda registrada para auditoría.
           </div>
           <div>
@@ -1417,7 +1414,7 @@
             ></iconify-icon>
             Importar CSV
           </h2>
-          <button class="modal-close" onclick="cerrarModalCSV()">✕</button>
+          <button class="modal-close" onclick="cerrarModalCSV()"><iconify-icon icon="lucide:x"></iconify-icon></button>
         </div>
         <div class="modal-body">
           <p
@@ -1680,7 +1677,7 @@
             : calcularCalFinal(a.no_control));
           return p !== null && p >= 70;
         }).length;
-        navStats.textContent = `${ok}/${estado.alumnos.length} ✓`;
+        navStats.textContent = `${ok}/${estado.alumnos.length}`;
       }
 
       const _guardados = new Set();

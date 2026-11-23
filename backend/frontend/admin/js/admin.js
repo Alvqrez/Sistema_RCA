@@ -113,8 +113,8 @@ function renderDistribucion(s) {
     return;
   }
   const grupos = [
-    { label: "Alumnos", val: s.alumnos ?? 0, color: "#3b82f6" },
-    { label: "Maestros", val: s.maestros ?? 0, color: "#10b981" },
+    { label: "Alumnos", val: s.alumnos ?? 0, color: "var(--accent)" },
+    { label: "Maestros", val: s.maestros ?? 0, color: "var(--subtle)" },
   ];
   cont.innerHTML =
     grupos

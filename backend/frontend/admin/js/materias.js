@@ -154,7 +154,7 @@ function renderChips() {
                  padding:2px 10px;font-size:.78rem;font-weight:600">
       ${c.id_carrera} · Sem ${c.semestre || 1}
       <button type="button" onclick="quitarCarrera('${c.id_carrera}')"
-        style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:.85rem;padding:0;line-height:1">✕</button>
+        style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:.85rem;padding:0;line-height:1"><iconify-icon icon="lucide:x"></iconify-icon></button>
     </span>
   `
     )
